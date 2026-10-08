@@ -5,6 +5,7 @@ from functools import partial
 from .storage import crud
 from .operation import DEFAULT_CHECKER, RequestError, run_operation
 from .configuration.loader import DEFAULT_ROOT, Loader
+from .feedback import InputError
 
 
 WRITES = {"create": crud.create, "update": crud.update, "delete": crud.delete}
@@ -50,7 +51,8 @@ def dispatch(connection, request, *, config_root=DEFAULT_ROOT, checker=DEFAULT_C
                         connection, kind, operation_id=operation_id, **args,
                     )
                 else:
-                    raise ValueError(f"未知 action：{action}")
+                    raise InputError(f"未知 action：{action}", code="unknown_action", field="action",
+                                     allowed=["create", "read", "update", "delete"])
                 result = {
                     "action": action, "kind": kind,
                     "project_id": args.get("project_id"),
@@ -61,7 +63,7 @@ def dispatch(connection, request, *, config_root=DEFAULT_ROOT, checker=DEFAULT_C
                 if change is not None:
                     changes.append(change)
             except Exception as error:
-                raise RequestError(error, index) from error
+                raise RequestError(error, index, item) from error
         return results, changes
 
     static_requests = request if batch else [request]

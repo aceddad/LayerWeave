@@ -1,10 +1,13 @@
 """通用记录 CRUD：写入方须先开启事务；不提交，不读取配置或执行内容检测。"""
 
 import json
+from difflib import get_close_matches
 
 from ..values import same_value
+from ..feedback import InputError
 from .database import allocate_id
 from .journal import append_change, json_text
+from .errors import execute
 
 
 # 字段列表只用于确定 SQL 列和托管字段，不校验封装内容。
@@ -38,9 +41,11 @@ SPECS = {
 
 def _spec(kind, *, writing=False):
     if kind not in SPECS:
-        raise ValueError(f"未知 kind：{kind}")
+        allowed = [name for name in SPECS if not writing or name != "change"]
+        suffix = "；change 仅支持 read" if not writing else ""
+        raise InputError(f"未知 kind：{kind}{suffix}", code="unknown_kind", field="kind", allowed=allowed)
     if writing and kind == "change":
-        raise ValueError("改动日志由写操作记录，接口只提供查询")
+        raise InputError("改动日志由写操作记录，change 仅支持 read", code="readonly_kind", field="action", allowed=["read"])
     return SPECS[kind]
 
 
@@ -56,7 +61,16 @@ def _encode(spec, data):
         raise TypeError("data 必须是字段字典")
     unknown = set(data) - set(spec["fields"])
     if unknown:
-        raise ValueError(f"不能写入这些字段：{', '.join(sorted(unknown))}")
+        suggestions = {}
+        for key in sorted(unknown):
+            if key == "start" and "begin" in spec["fields"]:
+                suggestions[key] = "begin"
+            else:
+                close = get_close_matches(key, spec["fields"], n=1, cutoff=0.75)
+                if close:
+                    suggestions[key] = close[0]
+        raise InputError(f"不能写入这些字段：{', '.join(sorted(unknown))}", code="unknown_fields",
+                         field=", ".join(sorted(unknown)), allowed=list(spec["fields"]), suggestions=suggestions)
     return {
         key: (None if key == "axis" and value is None else json_text(value))
         if key in spec["json"] else value
@@ -88,7 +102,8 @@ def _where(spec, project_id, id, filters):
         allowed.add("project_id")
     for key, value in (filters or {}).items():
         if key not in allowed or key in spec["json"]:
-            raise ValueError(f"不支持此筛选字段：{key}；当前支持普通列的等值和空值筛选")
+            raise InputError(f"不支持此筛选字段：{key}；当前支持普通列的等值和空值筛选", code="unknown_filter",
+                             field=f"filters.{key}", allowed=sorted(allowed - set(spec["json"])))
         if value is None:
             terms.append(f'"{key}" IS NULL')
         else:
@@ -119,12 +134,13 @@ def create(connection, kind, data, *, operation_id, project_id=None):
     if values:
         columns = ", ".join(f'"{key}"' for key in values)
         placeholders = ", ".join("?" for _ in values)
-        cursor = connection.execute(
+        cursor = execute(connection,
             f'INSERT INTO "{spec["table"]}" ({columns}) VALUES ({placeholders})',
-            list(values.values()),
+            list(values.values()), kind=kind, record=values, action="create",
         )
     else:
-        cursor = connection.execute(f'INSERT INTO "{spec["table"]}" DEFAULT VALUES')
+        cursor = execute(connection, f'INSERT INTO "{spec["table"]}" DEFAULT VALUES', (),
+                         kind=kind, record=values, action="create")
     record_id = values["id"] if spec["scoped"] else cursor.lastrowid
     record = read(connection, kind, project_id=project_id, id=record_id)
     change = append_change(connection, operation_id, kind, None, record)
@@ -155,9 +171,9 @@ def update(connection, kind, id, data, *, operation_id, project_id=None):
         return before, None
     where, key_values = _where(spec, project_id, id, None)
     assignments = ", ".join(f'"{key}" = ?' for key in changed)
-    connection.execute(
+    execute(connection,
         f'UPDATE "{spec["table"]}" SET {assignments}{where}',
-        [*changed.values(), *key_values],
+        [*changed.values(), *key_values], kind=kind, record={**before, **values}, action="update",
     )
     after = read(connection, kind, project_id=project_id, id=id)
     change = append_change(connection, operation_id, kind, before, after)
@@ -173,6 +189,6 @@ def delete(connection, kind, id, *, operation_id, project_id=None):
     if before is None:
         return None, None
     where, values = _where(spec, project_id, id, None)
-    connection.execute(f'DELETE FROM "{spec["table"]}"{where}', values)
+    execute(connection, f'DELETE FROM "{spec["table"]}"{where}', values, kind=kind, record=before, action="delete")
     change = append_change(connection, operation_id, kind, before, None)
     return before, change

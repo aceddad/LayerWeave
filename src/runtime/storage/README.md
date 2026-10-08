@@ -1,6 +1,6 @@
 # SQLite 存储
 
-`schema.sql` 定义四张业务表和一张 changes 日志表；`database.py` 提供打开连接、初始化和项目内发号，`crud.py` 提供通用操作，`journal.py` 记录改动。完整模型读写优先见 [公共 API](../API.md)；单条请求和检测协议见 [运行接口说明](../README.md)。
+`schema.sql` 定义四张业务表和一张 changes 日志表；`database.py` 提供打开连接、初始化和项目内发号，`crud.py` 提供通用操作，`journal.py` 记录改动；`errors.py` 仅在 SQL 约束失败时解释缺失/被引用的记录。完整模型读写优先见 [公共 API](../API.md)；单条请求和检测协议见 [运行接口说明](../README.md)。
 
 ## 初始化
 
@@ -31,6 +31,7 @@ python -X utf8 -B -m runtime.storage.database ../output/ai-production.sqlite3
 - 项目归属和层归属有外键；father 可为 NULL 表示根层，objects.layer 必须非空并指向同项目实际存在的层。没有级联更新或删除。
 - bind 两端没有实体外键，可以保存或保留失效引用；kind 的含义为 layer 或 object，独立检测通道统一检查两端。
 - 不检查区间先后、环、轴设置、JSON 内容、资源存在性和封装规则。
+- 外键由 SQLite 原有约束处理；失败时在回滚前读取失败现场，区分缺项目、缺所属层/父层以及删除仍被引用的实体。不会为成功写入额外查询这些引用，也不把其他 SQL 错误误报为外键问题。
 
 ## 发号与写入
 

@@ -92,6 +92,12 @@ result = save_layer(connection, project_id, {
 
 整个保存只有一个 operation_id，数据与日志在同一个事务提交，检测在提交后执行一次。返回包含 ok、applied、operation_id、kind、project_id、data、checks。成功后回填输入的 id、对象 layer 和关联 id；失败不回填回滚掉的编号。检测异常不撤销成功的数据写入。
 
+操作结果另由 operation 明确表达：status 为 committed（变更已提交）、unchanged（成功但没有变更）、read（只读成功）或 failed（本次未写入）。operation.changes 按执行顺序列出已提交的 action 和 target；失败批次不返回临时创建编号。原有 ok/applied/data/checks 保留。
+
+内置诊断仍逐条放在 checks.issues，包含 severity、target、rule、message，可带 field。scope=direct 表示问题目标在本次操作中发生过修改，related 表示关联检查涉及但本次未直接修改的目标；主动 validate 使用 manual。checked_target 在规则执行目标与问题目标不同时补充，例如检查 layer 却发现其中一个 object 的配置缺失。scope 只说明检查范围，不判断问题新旧。
+
+错误可附 code、allowed、suggestions、candidates、reference 等修正线索；候选仅用于提示，不自动替换输入。format_feedback(result) 可将操作结果与各条诊断分别格式化成编译器式文字；format_issue(issue) 格式化单条诊断，也适用于主动复查和只读工具。这两个函数均从 runtime.api 导入。JSON 返回不依赖字段顺序，原有 JSON/退出码保持不变。完整内存示例为 `python -X utf8 -B -m examples.feedback`。
+
 无变化的字段不会执行 UPDATE。JSON 内容按解码后的实际类型比较，`1`、`1.0`、`true` 互相变化会被记录；字典键顺序不影响结果。普通 SQL 数值列仍遵循存储的数值语义，例如 begin=1 与已有的 1.0 不产生额外修改。
 
 ## 在事务内计算写入请求

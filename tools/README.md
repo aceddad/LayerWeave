@@ -244,7 +244,7 @@ result = copy_object(connection, project_id, object_id, layer_id=target_layer_id
 
 ### 第二批命令行
 
-从 src/ 目录运行，返回标准操作与检测 JSON。成功和无变化操作退出码为 0，操作失败为 1；检测报告问题不会把已经成功写入的操作改成失败。
+从 src/ 目录运行，默认返回标准操作与检测 JSON。在子命令之前加 `--text` 可逐条显示写入结果与诊断，例如 `python -X utf8 -B -m tools.common.positions ../output/ai-production.sqlite3 1 --text duration 2 4`。成功和无变化操作退出码为 0，操作失败为 1；检测报告问题不会把已经成功写入的操作改成失败。
 
 ```sh
 python -X utf8 -B -m tools.common.positions ../output/ai-production.sqlite3 1 arrange 1 --start 0

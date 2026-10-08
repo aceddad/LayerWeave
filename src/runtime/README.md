@@ -7,6 +7,7 @@
 - [api.py](api.py)：完整记录读取、模型装载与保存的固定入口。
 - [dispatch.py](dispatch.py)：记录请求分流，可选择完整读取。
 - [operation.py](operation.py)：单条 CRUD 与组合保存共用事务、operation_id 和提交后检测。
+- [feedback.py](feedback.py)：带修正线索的错误、明确的操作状态，以及逐条诊断文字格式。
 - [console.py](console.py)：JSON 文件／标准输入入口，输出 JSON 结果。
 - [validation/channel.py](validation/channel.py)：独立检测反馈；默认使用内置执行器。
 - [validation/README.md](validation/README.md)：检测时点、主动复查、模块划分和新增规则示例。
@@ -79,13 +80,25 @@ dispatch 管理整个事务，连接中不能已有待提交操作。低层 CRUD
 python -X utf8 -B -m runtime.console ../output/ai-production.sqlite3 --request examples/requests/read-projects.json
 ```
 
+可加 `--text` 将输出切换为编译器式文字：先显示操作结果，再逐条列出诊断。默认仍为 JSON。
+
+```sh
+python -X utf8 -B -m runtime.console ../output/ai-production.sqlite3 --text --request examples/requests/read-projects.json
+```
+
 省略 --request 时从标准输入读 JSON。操作成功返回退出码 0，操作失败返回 1。检测发现问题或执行失败不会把已成功提交的操作改成失败退出码。
 
 ## 操作与检测的反馈
 
-单次反馈包含 operation_id、ok、action、kind、project_id、id、applied、data、checks。project 和 bind 的身份不使用项目号，顶层 project_id 为 null；它们的实际项目上下文见数据或日志。
+单次反馈包含 operation_id、operation、ok、action、kind、project_id、id、applied、data、checks。project 和 bind 的身份不使用项目号，顶层 project_id 为 null；它们的实际项目上下文见数据或日志。
 
-批次反馈包含 operation_id、ok、applied、results、checks。失败时不返回已回滚的临时成功结果，并提供 error.request_index（从 0 开始）。operation_id 由入口用 uuid4().hex 生成，每次调用一个；同一批改动日志共用它。
+批次反馈包含 operation_id、operation、ok、applied、results、checks。失败时不返回已回滚的临时成功结果，并提供 error.request_index（从 0 开始）。operation_id 由入口用 uuid4().hex 生成，每次调用一个；同一批改动日志共用它。
+
+operation.status 单独描述操作：committed 表示变更已提交，unchanged 表示成功但无变更，read 表示只读成功，failed 表示本次未写入。operation.changes 按顺序列出已提交的 action/target；创建后同批删除会如实列出两个动作。任何失败批次的 changes 均为空，不把已经回滚的临时编号作为创建成功返回。
+
+常见错误附带 code/field 和修正线索：未知 action/kind 列出适用值（change 仅可读取）；未知字段列出可写字段，可附 start→begin 或近似拼写建议。建议不自动改写输入。外键失败在回滚前定位缺失的项目/层或阻止删除的引用；其他 SQL 错误仍保留实际原因，正常写入不额外查询这些引用。
+
+缺失配置显示相对于配置根目录的路径，并附同种配置候选；最多 8 条，优先近似匹配，candidate_count 表示候选路径总数。语法错误和读取失败保留自己的具体原因，不都归类成“文件不存在”。
 
 检测在事务成功提交之后运行，一批只调用一次。回调形式为：
 
@@ -106,7 +119,7 @@ def checker(changes, read_record):
 - checks.status = partial：部分检查未完成；逐条 issues 说明原因，其他检查继续。
 - checks.status = failed：检测未完成，附带错误说明；已经提交的数据和日志仍然保留。
 
-CRUD 仅存取 config_ref，不要求配置文件此时存在。提交后的检测读取配置；缺失配置不会撤销数据，会返回 partial 与具体目标、原因。问题包含 severity（warn/error）、rule、target、message；可附 field、related、skipped。completed 表示执行完成，不表示没有约定问题。
+CRUD 仅存取 config_ref，不要求配置文件此时存在。提交后的检测读取配置；缺失配置不会撤销数据，会返回 partial 与具体目标、原因。内置问题包含 severity（warn/error）、rule、target、message、scope；可附 field、related、skipped、checked_target。scope=direct 表示问题目标本次发生过修改，related 表示关联检查的目标未被本次直接修改，manual 表示主动复查。checked_target 标明与问题目标不同的实际检查目标，例如层的兼容检查发现某个对象配置缺失。这些标记不判断问题是否以前存在。completed 表示执行完成，不表示没有约定问题。
 
 主动复查使用 validation.runner.validate，不写日志。示例与自定义配置目录接入见 [检测说明](validation/README.md)。直接调用低层 CRUD 时，调用方负责提交并显式调用检测器；不会通过类构造或属性赋值暗中触发检测。
 

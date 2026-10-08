@@ -4,6 +4,7 @@ from copy import deepcopy
 from importlib import import_module
 
 from ..configuration.loader import DEFAULT_ROOT, Loader
+from ..feedback import InputError, target
 from . import crud
 from .assembly import read_layer, read_object
 
@@ -45,8 +46,10 @@ def restore_model(record, kind, loader):
         values.update(id=record["id"], bind=deepcopy(record.get("bind", [])))
         instance = cls(**values)
     except Exception as error:
-        raise ValueError(f"无法装载 {kind} ({record.get('project_id')}, {record.get('id')})，"
-                         f"配置 {record.get('config_ref')!r}：{error}") from error
+        raise InputError(f"无法装载 {kind} ({record.get('project_id')}, {record.get('id')})，"
+                         f"配置 {record.get('config_ref')!r}：{error}",
+                         **{"target": target(kind, record.get("project_id"), record.get("id")),
+                            **getattr(error, "details", {})}) from error
     if kind == "layer":
         instance.objects = [restore_model(obj, "object", loader) for obj in record.get("objects", [])]
     return instance

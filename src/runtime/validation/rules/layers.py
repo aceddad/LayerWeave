@@ -38,14 +38,16 @@ def accepts_objects(record, config, read_record):
     try:
         expected = loader.object_config(config["objects"])
     except (ConfigError, KeyError) as error:
-        return [problem(f"无法确定层接受的对象配置：{error}", skipped=True)]
+        return [problem(f"无法确定层接受的对象配置：{error}", skipped=True,
+                        **{"field": "config_ref", **getattr(error, "details", {})})]
     issues = []
     for obj in read_record("object", project_id=record["project_id"], filters={"layer": record["id"]}):
         target = {"kind": "object", "project_id": obj["project_id"], "id": obj["id"]}
         try:
             actual = loader.load(obj["config_ref"], "object")
         except ConfigError as error:
-            issues.append(problem(f"无法判断对象兼容性：{error}", target=target, skipped=True))
+            issues.append(problem(f"无法判断对象兼容性：{error}", target=target, skipped=True,
+                                  **{"field": "config_ref", **getattr(error, "details", {})}))
             continue
         if expected["_ref"] not in actual["_lineage"]:
             issues.append(problem(f"层接受 {expected['type']} 及其派生配置，当前对象为 {actual['type']}",

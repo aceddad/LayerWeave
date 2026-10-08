@@ -3,6 +3,7 @@
 from copy import deepcopy
 
 from ..configuration.loader import DEFAULT_ROOT, Loader
+from ..feedback import target
 from ..operation import DEFAULT_CHECKER, run_operation
 from . import crud
 from .assembly import read_layer, read_object
@@ -92,10 +93,19 @@ def _save(connection, kind, project_id, value, *, config_root=DEFAULT_ROOT, chec
     def work(operation_id):
         changes = []
         loader = Loader(config_root)
-        row = _save_entity(connection, kind, project_id, value, loader, operation_id, changes, updates)
+
+        def save_entity(entity_kind, entity, **context):
+            try:
+                return _save_entity(connection, entity_kind, project_id, entity, loader, operation_id, changes, updates, **context)
+            except Exception as error:
+                error.details = {"target": target(entity_kind, project_id, _get(entity, "id")),
+                                 **getattr(error, "details", {})}
+                raise
+
+        row = save_entity(kind, value)
         if kind == "layer":
             for obj in _get(value, "objects", []):
-                _save_entity(connection, "object", project_id, obj, loader, operation_id, changes, updates, layer_id=row["id"])
+                save_entity("object", obj, layer_id=row["id"])
             data = read_layer(connection, project_id, row["id"])
         else:
             data = read_object(connection, project_id, row["id"])

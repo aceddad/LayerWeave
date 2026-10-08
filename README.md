@@ -1,6 +1,6 @@
 # LayerWeave
 
-创建日期：2026-10-08。当前状态：六类封装及 Title 派生示例、SQLite 存储与日志、完整读写、配置继承与检测已实现。已提供概览/详细展开、对象检索、文本汇集及位置编辑工具；缺字段给 warn，工具生成位置按轴精度落点。可视化尚未开始。
+创建日期：2026-10-08。当前状态：六类封装及 Title 派生示例、SQLite 存储与日志、完整读写、配置继承与检测已实现。已提供概览/详细展开、对象检索、文本汇集及位置编辑工具；操作结果与逐条诊断可输出编译器式文字；缺字段给 warn，工具生成位置按轴精度落点。可视化尚未开始。
 
 ## 快速开始
 
@@ -14,6 +14,8 @@ python -X utf8 -B -m examples.read_write
 ```
 
 此示例使用自己的临时数据库文件，演示创建层与对象、关闭重开、还原 Python 实例、修改并再次保存、读取关联和日志，不改动输出数据库。原有记录 CRUD 示例仍可用：`python -X utf8 -B -m examples.crud`。
+
+反馈示例：`python -X utf8 -B -m examples.feedback`。先单列写入结果，再逐条显示诊断目标、字段、原因和检查范围；JSON CLI 可加 `--text` 使用同一格式。
 
 派生封装示例：`python -X utf8 -B -m examples.title`。Title 继承 Text，标题 TOML 继承文字 TOML 并绑定 Title；普通文字层可同时装载两种对象，保存时不需要额外指定配置。
 
@@ -136,7 +138,7 @@ python -X utf8 -B -m unittest discover -s ../tests -v
 
 测试覆盖配置继承、父约定保护、字段类型、区间边界、类型兼容、检测触发范围、逐项继续、批次最终状态、按需导入，以及存储、日志、迁移、完整记录/实例往返、关闭重开和 CLI。使用内存库和专用临时文件，不写入输出数据库。
 
-当前包含详细展开、缺字段提醒和轴精度回归在内的 154 项测试通过。JSON 内容变化会区分 `1`、`1.0` 与 `true`，日志、批次最终状态和检测字段选择使用同一比较方式；字典键顺序不产生变化。无变化的字段在 SQL UPDATE 前跳过。
+当前包含详细展开、缺字段提醒和轴精度回归在内的 168 项测试通过。JSON 内容变化会区分 `1`、`1.0` 与 `true`，日志、批次最终状态和检测字段选择使用同一比较方式；字典键顺序不产生变化。无变化的字段在 SQL UPDATE 前跳过。
 
 此前读写优化时的本地 100 对象场景记录（现有层、新 Text 实例自动匹配配置、内置检测开启；以下文件读取数是加入 Title 与配置唯一性检查前的基线）：
 
@@ -155,7 +157,9 @@ python -X utf8 -B -m unittest discover -s ../tests -v
 - read 按 id 返回单条或 null，未传 id 返回筛选列表；第一版支持普通列等值和空值条件。
 - update 只修改传入字段，JSON 字段整体替换；身份与计数由系统管理。delete 不级联。记录不存在或数据未变化时不记日志，applied 为 false。
 - 分流入口接收字典或字典列表，列表原子提交；使用中的连接不能已有待提交操作。
-- 反馈区分 ok/applied 与 checks。检测状态为 not_run、completed、partial、failed；completed 时也可能存在 issues。
+- 反馈区分操作与检查：operation.status 为 committed、unchanged、read 或 failed；operation.changes 列出已提交的动作和目标。保留 ok/applied 与 checks，诊断 error 不撤销已提交数据。检测状态仍为 not_run、completed、partial、failed。
+- 内置诊断按目标逐条列出，scope 标注本次直接修改、关联检查或主动复查；不推断问题新旧。常见输入错误提供可选值、字段建议或同种配置候选。
+- 外键错误仅在 SQL 失败时补充引用原因，正常写入不增加重复存在性检查；失败批次不返回临时成功记录。
 - 默认 CLI 与 dispatch 已接入配置规则。可传 checker(changes, read_record) 替换内置检测器；它拿到前后记录与查询入口，一批只调用一次。
 - 配置文件不存在不会被 CRUD 额外拦截；config_ref 原样存取，缺失配置由提交后的检测逐条报告 partial，其他目标继续。
 

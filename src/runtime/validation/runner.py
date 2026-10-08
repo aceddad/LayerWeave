@@ -5,6 +5,7 @@ import json
 
 from ..configuration.loader import ConfigError, DEFAULT_ROOT, Loader
 from ..values import same_value
+from ..feedback import target as make_target
 from .channel import report
 from .registry import RULES
 
@@ -62,14 +63,19 @@ def _collect(changes, read_record):
     return jobs
 
 
-def _execute(jobs, read_record, loader):
+def _execute(jobs, read_record, loader, modified=None):
     issues, configs, invalid_configs, prepared = [], {}, set(), set()
 
     def add(key, rule, message, **extra):
         kind, project_id, entity_id = key
-        issues.append({"severity": "error", "rule": rule,
-                       "target": {"kind": kind, "project_id": project_id, "id": entity_id},
-                       "message": message, **extra})
+        checked = make_target(kind, project_id, entity_id)
+        issue = {"severity": "error", "rule": rule, "target": checked, "message": message, **extra}
+        actual = issue["target"]
+        identity = (actual["kind"], actual.get("project_id") if actual["kind"] in {"layer", "object"} else None, actual["id"])
+        issue["scope"] = "manual" if modified is None else "direct" if identity in modified else "related"
+        if actual != checked:
+            issue["checked_target"] = checked
+        issues.append(issue)
 
     for (key, rule), (record, changed_fields) in jobs.items():
         spec = RULES[rule]
@@ -82,7 +88,8 @@ def _execute(jobs, read_record, loader):
                     configs[key] = loader.load(record["config_ref"], kind)
                 except Exception as error:
                     invalid_configs.add(key)
-                    add(key, "configuration", f"配置不可用，依赖它的检查未完成：{error}", skipped=True)
+                    add(key, "configuration", f"配置不可用，依赖它的检查未完成：{error}", skipped=True,
+                        **{"field": "config_ref", **getattr(error, "details", {})})
                     # 基础约定独立可读时仍可检查，不冒充已检查缺失的派生约定。
                     try:
                         configs[key] = loader.load(f"{kind}s/base.toml", kind)
@@ -151,7 +158,7 @@ def check_changes(changes, read_record, *, config_root=DEFAULT_ROOT):
         change["after"] = _read(read_record, key)
         if not same_value(change["before"], change["after"]):
             final.append(change)
-    return _execute(_collect(final, read_record), read_record, Loader(config_root))
+    return _execute(_collect(final, read_record), read_record, Loader(config_root), modified=set(merged))
 
 
 def validate(targets, read_record, *, config_root=DEFAULT_ROOT):
@@ -168,7 +175,7 @@ def validate(targets, read_record, *, config_root=DEFAULT_ROOT):
         row = _read(read_record, key)
         if row is None:
             missing.append({"severity": "warn", "rule": "target", "target": target,
-                            "message": "指定目标不存在，未进行复查", "skipped": True})
+                            "message": "指定目标不存在，未进行复查", "skipped": True, "scope": "manual"})
             continue
         include(kind, row)
         if kind == "layer":

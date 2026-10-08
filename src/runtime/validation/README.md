@@ -7,6 +7,7 @@
 | 模块 | 责任 |
 |---|---|
 | [channel.py](channel.py) | 区分操作结果与检测反馈；兼容外部 checker |
+| [feedback.py](../feedback.py) | 独立显示操作状态、目标和逐条诊断；不执行规则 |
 | [runner.py](runner.py) | 合并批次变化、查询最终记录、选择目标、逐项执行与去重 |
 | [registry.py](registry.py) | 规则名、函数路径、触发字段与检查范围 |
 | [rules/fields.py](rules/fields.py) | 共用类型判断与已声明字段检测 |
@@ -50,7 +51,23 @@
 
 ## 反馈
 
-内置问题为普通字典：severity（warn/error）、rule、target（kind/project_id/id）、message；可附 field、related、skipped。
+内置问题为普通字典：severity（warn/error）、rule、target（kind/project_id/id）、message、scope；可附 field、related、skipped、checked_target，以及候选值等修正线索。
+
+scope=direct 表示该问题目标在本次操作中发生过修改；related 表示关联检查涉及但本次未直接修改的目标；主动复查用 manual。规则实际检查的实体与问题目标不同时，checked_target 保留检查实体，例如 accepts_objects 检查层而报告其中的某个对象。旧对象可能因本次操作产生新冲突，因此不标“旧问题”，也不额外存诊断历史。
+
+格式化示例（原始结构化数据仍可直接读取）：
+
+```text
+[写入成功] object (1, 4)：已创建
+
+[ERROR] object (1, 3) · config_ref
+  无法判断对象兼容性：配置不存在：objects/txt.toml
+  检查：accepts_objects
+  检查对象：layer (1, 1)
+  范围：关联目标，本次未直接修改
+```
+
+写入结果与诊断分开；检查的 error 不改变 operation.status=committed。外部 checker 的问题字典保持由提供方定义，不擅自猜测缺少的目标。
 
 - completed：本次选择的检查执行完成，issues 仍可含 error。
 - partial：部分检查无法执行，每条 skipped=true 的问题说明原因，其他继续。

@@ -64,7 +64,7 @@ def main():
                                  after_id=args.after_id, empty_start=args.empty_start)
         return copy_object(connection, args.project_id, args.object_id, layer_id=args.layer_id,
                            name=args.name, begin=args.begin, append=args.append)
-    return run_cli(parser, execute)
+    return run_cli(parser, execute, operation_output=True)
 
 
 if __name__ == "__main__":

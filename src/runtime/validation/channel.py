@@ -2,6 +2,8 @@
 
 import json
 
+from ..feedback import error_detail
+
 
 def report(issues):
     """completed 表示检查执行完成；是否符合约定仍须查看 issues。"""
@@ -23,6 +25,6 @@ def run_checks(changes, read_record, checker=None):
     except Exception as error:
         return {
             "status": "failed", "issues": [],
-            "error": {"type": type(error).__name__, "message": str(error)},
+            "error": error_detail(error),
         }
     return report(issues)

@@ -1,16 +1,18 @@
 """每次检测复用一个 Loader；只读取 TOML，不导入配置中的 class。"""
 
 from copy import deepcopy
+from difflib import get_close_matches
 from pathlib import Path
 import tomllib
 
 from ..values import same_value
+from ..feedback import InputError
 
 
 DEFAULT_ROOT = Path(__file__).resolve().parents[3] / "configs"
 
 
-class ConfigError(ValueError):
+class ConfigError(InputError):
     """某份配置无法解释，调用方将其作为单条诊断报告。"""
 
 
@@ -46,6 +48,14 @@ class Loader:
             return path.relative_to(self.root).as_posix()
         except ValueError:
             return str(path)
+
+    def _missing(self, path, kind):
+        ref = self.ref(path)
+        refs = sorted(self.ref(item) for item in (self.root / f"{kind}s").rglob("*.toml"))
+        close = get_close_matches(ref, refs, n=3, cutoff=0.5)
+        candidates = (close + [item for item in refs if item not in close])[:8]
+        return ConfigError(f"配置不存在：{ref}", code="config_not_found", field="config_ref",
+                           value=ref, candidates=candidates, candidate_count=len(refs))
 
     def load(self, ref, kind, _chain=()):
         path = (self.root / ref).resolve()
@@ -84,7 +94,13 @@ class Loader:
             self.cache[key] = result
             return result
         except (OSError, ValueError, KeyError, TypeError, AttributeError) as error:
-            failure = error if isinstance(error, ConfigError) else ConfigError(f"{self.ref(path)}：{error}")
+            if isinstance(error, FileNotFoundError):
+                failure = self._missing(path, kind)
+            elif isinstance(error, OSError):
+                failure = ConfigError(f"无法读取配置 {self.ref(path)}：{error.strerror}",
+                                      code="config_unreadable", field="config_ref", value=self.ref(path))
+            else:
+                failure = error if isinstance(error, ConfigError) else ConfigError(f"{self.ref(path)}：{error}")
             self.cache[key] = failure
             raise failure
 

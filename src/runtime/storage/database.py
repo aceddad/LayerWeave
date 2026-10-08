@@ -5,6 +5,8 @@ from contextlib import closing
 from pathlib import Path
 import sqlite3
 
+from ..feedback import InputError, target
+
 
 SCHEMA_PATH = Path(__file__).with_name("schema.sql")
 
@@ -60,7 +62,8 @@ def allocate_id(connection: sqlite3.Connection, project_id: int) -> int:
         (project_id,),
     ).fetchone()
     if row is None:
-        raise KeyError(f"项目不存在：{project_id}")
+        raise InputError(f"项目 {project_id} 不存在", code="missing_reference", field="project_id",
+                         reference=target("project", None, project_id))
     return row[0]
 
 

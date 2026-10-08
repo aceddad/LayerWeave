@@ -156,7 +156,7 @@ def main():
         if args.command == "align":
             return align_objects(connection, args.project_id, args.ids, position=args.position, edge=args.edge, layer_id=args.layer_id)
         return set_duration(connection, args.project_id, args.object_id, args.duration)
-    return run_cli(parser, execute)
+    return run_cli(parser, execute, operation_output=True)
 
 
 if __name__ == "__main__":

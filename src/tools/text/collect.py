@@ -15,14 +15,14 @@ def collect_text(connection, project_id, layer_id, *, separator="\n", begin=None
         return result
     loader = Loader() if config_root is None else Loader(config_root)
 
-    def issue(kind, id, field, message, severity="error"):
+    def issue(kind, id, field, message, severity="error", details=None):
         result["issues"].append({"severity": severity, "target": {"kind": kind, "project_id": project_id, "id": id},
-                                 "field": field, "message": message})
+                                 "field": field, "message": message, **(details or {})})
 
     try:
         expected = loader.object_config("text")
     except (ValueError, OSError) as error:
-        issue("layer", layer_id, "config_ref", f"文字基准配置不可用，未汇集本层文本：{error}")
+        issue("layer", layer_id, "config_ref", f"文字基准配置不可用，未汇集本层文本：{error}", details=getattr(error, "details", {}))
         result.update(status="partial", skipped_count=len(records))
         return result
 
@@ -30,7 +30,7 @@ def collect_text(connection, project_id, layer_id, *, separator="\n", begin=None
         try:
             config = loader.load(record["config_ref"], "object")
         except (ValueError, OSError) as error:
-            issue("object", record["id"], "config_ref", f"无法判断对象是否为文字类型：{error}")
+            issue("object", record["id"], "config_ref", f"无法判断对象是否为文字类型：{error}", details=getattr(error, "details", {}))
             continue
         if expected["_ref"] not in config["_lineage"]:
             continue

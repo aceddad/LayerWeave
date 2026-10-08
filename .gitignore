@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+scratch/
+output/
+*.sqlite3
+*.sqlite3-*
+.env
+.env.*
+!.env.example

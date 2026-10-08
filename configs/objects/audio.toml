@@ -1,0 +1,33 @@
+# 音频对象封装
+# extends 相对于当前配置文件；配置由 runtime.configuration 读取，约定在提交后检测。
+# 基础字段、return_self() 和基础检测规则沿用父配置，不重复声明。
+
+[object]
+type    = "audio"
+version = 1
+name    = "音频对象"
+class   = "models.objects.audio:Audio"
+extends = "base.toml"
+note    = "用 information.source 引用音频资源"
+open    = true                 # 保留附加内容
+
+# 声明内容类型；不新增必填、格式白名单或资源存在性检查。
+# 引用只作为字符串保存，由使用方解释；本类不读取或解析资源。
+[object.information]
+source = { type = "str", note = "音频资源引用，例如本地路径、URL 或使用方约定的资源地址" }
+
+[object.constraint]
+duration = "any"               # 可以有时长，也可以表示瞬间
+
+[object.display]
+visibility = true              # 默认允许显隐控制
+
+# 创建参数示例，假设已有编号为 1 的层；资源地址仅作示意。
+# 创建后由调用方将对象实例放入该层的 objects。
+[object.example]
+id          = 2
+name        = "开场音乐"
+layer       = 1
+begin       = 0.0
+end         = 5.0
+information = { source = "assets/music.wav" }

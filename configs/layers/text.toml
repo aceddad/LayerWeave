@@ -19,7 +19,6 @@ visibility = true                         # 允许视图提供显隐控制
 
 # 空文字层的创建参数示例；随后向 objects 放入 Text 实例。
 [layer.example]
-id      = 1
 name    = "主线说明"
 axis    = { unit = "秒", precision = 0.001 }
 tips    = "记录作品各段的意图"

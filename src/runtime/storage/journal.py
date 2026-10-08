@@ -3,6 +3,8 @@
 from datetime import datetime, timezone
 import json
 
+from ..values import same_value
+
 
 def json_text(value):
     """输出标准 JSON，保留中文和扩展内容。"""
@@ -11,7 +13,7 @@ def json_text(value):
 
 def append_change(connection, operation_id, kind, before, after):
     """只记录实际发生的变化，返回供检测通道使用的变更描述。"""
-    if before == after:
+    if same_value(before, after):
         return None
     record = after if after is not None else before
     if kind == "project":

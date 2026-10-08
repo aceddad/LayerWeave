@@ -1,6 +1,6 @@
-# AI 制作工具（暂未命名）
+# LayerWeave
 
-创建日期：2026-10-08。当前状态：六类封装、SQLite 存储与日志、CRUD、配置继承、模块化检测和按需导入已实现。派生 Python 对象还原、工具和视图接入仍待后续。
+创建日期：2026-10-08。当前状态：六类封装、SQLite 存储与日志、CRUD、完整层/对象读写、Python 实例装载、配置继承、模块化检测和按需导入已实现。业务小工具与视图尚未开始。
 
 ## 快速开始
 
@@ -10,12 +10,12 @@
 
 ```sh
 cd src
-python -X utf8 -B -m examples.crud
+python -X utf8 -B -m examples.read_write
 ```
 
-此示例使用内存数据库，演示创建项目和层、批量创建对象、修改、查询、删除、日志查询、内置配置检测和主动复查，不改动输出数据库。
+此示例使用自己的临时数据库文件，演示创建层与对象、关闭重开、还原 Python 实例、修改并再次保存、读取关联和日志，不改动输出数据库。原有记录 CRUD 示例仍可用：`python -X utf8 -B -m examples.crud`。
 
-纯模型示例仍可用：`python -X utf8 -B -m examples.all_layers` 或 `python -X utf8 -B -m examples.text`。其中手动编号和短编号 bind 只演示单项目内存结构。
+纯模型示例仍可用：`python -X utf8 -B -m examples.all_layers` 或 `python -X utf8 -B -m examples.text`。其中手动编号只用于演示内存结构，持久化时由核心分配编号。
 
 初始化数据库（同样从 src 目录执行）：
 
@@ -23,7 +23,7 @@ python -X utf8 -B -m examples.crud
 python -X utf8 -B -m runtime.storage.database ../output/ai-production.sqlite3
 ```
 
-已提供[可用数据库](output/ai-production.sqlite3)，没有写入示例数据。初始化会补建缺失表，并将旧版 objects.layer 升级为 NOT NULL，保留原数据；存在未归属的旧对象时停止迁移并列出编号，不自动猜测归属。
+数据库由上述命令在本地生成，默认位置为 `output/ai-production.sqlite3`，不随 Git 上传。初始化会补建缺失表，并将旧版 objects.layer 升级为 NOT NULL，保留原数据；存在未归属的旧对象时停止迁移并列出编号，不自动猜测归属。
 
 读取项目列表的 JSON 入口：
 
@@ -31,12 +31,13 @@ python -X utf8 -B -m runtime.storage.database ../output/ai-production.sqlite3
 python -X utf8 -B -m runtime.console ../output/ai-production.sqlite3 --request examples/requests/read-projects.json
 ```
 
-完整请求、批量事务和反馈格式见[运行接口说明](src/runtime/README.md)。
+完整读写与内部工具开发优先阅读[公共 API](src/runtime/API.md)。单条请求、批量事务和反馈格式见[运行接口说明](src/runtime/README.md)。
 
 ## 按任务找入口
 
 | 要做什么 | 从哪里开始 |
 |---|---|
+| 读写完整层/对象、开发内部工具 | [公共 API](src/runtime/API.md)、[统一入口](src/runtime/api.py)、[往返示例](src/examples/read_write.py) |
 | 理解层的基础结构 | [层基础类](src/models/layers/base.py)、[层基础配置](configs/layers/base.toml) |
 | 理解对象的基础结构 | [对象基础类](src/models/objects/base.py)、[对象基础配置](configs/objects/base.toml) |
 | 新增一种封装 | 对照 [文字层类](src/models/layers/text.py)、[文字对象类](src/models/objects/text.py)、[层配置](configs/layers/text.toml)、[对象配置](configs/objects/text.toml) |
@@ -48,7 +49,7 @@ python -X utf8 -B -m runtime.console ../output/ai-production.sqlite3 --request e
 | 调用 CRUD 和查看日志 | [运行接口说明](src/runtime/README.md)、[CRUD](src/runtime/storage/crud.py)、[分流](src/runtime/dispatch.py) |
 | 新增约束或主动复查 | [规则登记表](src/runtime/validation/registry.py)、[检测与扩充示例](src/runtime/validation/README.md) |
 | 查看全部约束及检测设计 | [约束与触发时点](src/runtime/validation/README.md) |
-| 继续实现对象还原 | 先读下方“存储映射待落实” |
+| 修改模型与存储映射 | [完整记录读取](src/runtime/storage/assembly.py)、[实例装载](src/runtime/storage/models.py)、[组合保存](src/runtime/storage/save.py) |
 
 新增一个与现有六类同样形式的封装，最少需要四个文件：层类、对象类、层配置、对象配置。配置中的 class 指向实际模块和类；extends 相对于当前配置文件。
 
@@ -60,6 +61,7 @@ python -X utf8 -B -m runtime.console ../output/ai-production.sqlite3 --request e
 - 底层保持精简和自由。Layer、Object 只保存字段和返回自身；检测、配置读取、持久化由外部执行代码承担。
 - Layer.type 是类上的层名，name 是创建实例时传入的名字；objects 实际装载对象实例。
 - Object.layer 是必传关键字参数，保存时保证非空且层存在。information 是内容字典；Python 类型注解本身不做运行时拦截，所有封装保留 open = true。
+- 完整读写使用 runtime.api；read 返回记录字典，load 返回派生实例，save 同时接受字典和实例。整层保存明确设置所传对象的归属；省略对象或关联不表示删除。
 - return_self() 返回同一个 Python 实例；它不是 JSON 导出或数据库序列化方法。
 - visible 已从基础类移除。visibility 是配置中的显隐控制能力，默认 true；实际显示状态由外部视图管理。
 - 基础配置说明类本身及共同检测约定；后续封装延续基础检查，相同检查不重复执行。可调整的默认约定与共同规则分开。
@@ -108,7 +110,7 @@ source 目前原样保存，由使用方解释。封装不读取资源，也不�
 - 同项目 father、layer 引用可利用项目上下文解释。跨项目 bind 必须明确两端的项目和种类。
 - 可视状态暂不持久化。轻量修改历史已使用独立 changes 表，日志不占项目内实体编号，也不对被记录的实体加外键。
 
-存储方式：config_ref 保存相对于 configs/ 的配置路径，给后续读回正确的类提供依据；它是存储元数据，不加进基础类。axis、information 保存为 JSON 文本。层的 objects 和两类的 bind 分别从对象表、关联表反查，不重复保存在实体行里。
+存储方式：config_ref 保存相对于 configs/ 的配置路径，给按需装载正确的类提供依据；它是存储元数据，不加进基础类。axis、information 保存为 JSON 文本。层的 objects 和两类的 bind 分别从对象表、关联表反查，不重复保存在实体行里。
 
 已启用项目归属、同项目父层和对象所属层的外键；father 可为 NULL，objects.layer 必须非空。没有级联删除或更新，也没有把时间、环、轴、资源或封装规则写成数据库检测。普通删除不级联，项目搬移接口仍待实现。
 
@@ -118,7 +120,19 @@ source 目前原样保存，由使用方解释。封装不读取资源，也不�
 python -X utf8 -B -m unittest discover -s ../tests -v
 ```
 
-测试覆盖配置继承、父约定保护、字段类型、区间边界、类型兼容、检测触发范围、逐项继续、批次最终状态、按需导入，以及存储、日志、迁移和 CLI。使用内存库和专用临时文件，不写入输出数据库。
+测试覆盖配置继承、父约定保护、字段类型、区间边界、类型兼容、检测触发范围、逐项继续、批次最终状态、按需导入，以及存储、日志、迁移、完整记录/实例往返、关闭重开和 CLI。使用内存库和专用临时文件，不写入输出数据库。
+
+2026-10-09 修复与减负后，82 项测试通过。JSON 内容变化会区分 `1`、`1.0` 与 `true`，日志、批次最终状态和检测字段选择使用同一比较方式；字典键顺序不产生变化。无变化的字段在 SQL UPDATE 前跳过。
+
+相同的本地 100 对象场景复测（现有层、新 Text 实例自动匹配配置、内置检测开启）：
+
+| 操作 | 修复前 | 修复后 |
+|---|---|---|
+| 新增 100 个对象的 TOML 读取次数 | 711 | 18 |
+| 完整读层的 SELECT 次数 | 103 | 4 |
+| 原样保存整层的 UPDATE 次数 | 101 | 0 |
+
+配置索引只在本次调用内复用，下次调用重新读取；关联按所属层成批查询。以上是操作次数，数据量与返回内容仍随对象数量增长。
 
 ## CRUD 与反馈
 
@@ -131,25 +145,29 @@ python -X utf8 -B -m unittest discover -s ../tests -v
 - 默认 CLI 与 dispatch 已接入配置规则。可传 checker(changes, read_record) 替换内置检测器；它拿到前后记录与查询入口，一批只调用一次。
 - 配置文件不存在不会被 CRUD 额外拦截；config_ref 原样存取，缺失配置由提交后的检测逐条报告 partial，其他目标继续。
 
-## 存储映射待落实
+## 完整读写
 
-记录级读写已有对应字段，继续实现 Python 模型还原时需要接清楚：
+- read_layer/read_object 读取完整记录及发出的关联，层同时装载直属对象；不依赖配置文件可读。
+- load_layer/load_object 按每条记录的 config_ref 还原 Python 派生实例，不递归父层、子层或关联目标。
+- save_layer/save_object 新增或更新显式传入项；已有配置引用默认保留，事务成功后回填编号。删除仍为显式操作。
+- bind 采用包含 kind、project_id、id 的完整来源/目标字典，新建时可只填写目标，由保存入口补齐来源。
+- config_ref 与 project_id 保持为存储元数据，不添加到基础类。普通 Python 实例调用方保留项目上下文；新增用途配置可显式指定引用。
 
-1. 当前纯模型示例的 bind 是短编号形式；CRUD 的 bind 记录已经使用 kind、project_id、id 两端完整字段。把关系装回 Python 实例的格式尚未实现。
-2. CRUD 已保存 config_ref 和层的 type 并返回记录字典，JSON 字段已还原；按配置找到并实例化对应 Python 类的适配仍待实现。普通 asdict() 不能单独完成这种还原。
+API 参数、保存范围与错误反馈见 [公共 API](src/runtime/API.md)。源码位置与后续工具开发说明见 [工具指南](tools/README.md)。
 
-尚未实现的部分为派生 Python 对象还原、完整关系装载、Skill／MCP、视图与工具接入。记录级 CRUD 与配置规则检测已经可用。
+尚未实现业务小工具、项目搬移、视图、Skill／MCP；这些功能不影响当前非可视化读写路径。
 
 ## 目录职责
 
 - configs/layers、configs/objects：基础约定与具体封装配置。
 - src/models/layers、src/models/objects：Python 类。
 - src/examples：模型示例、CRUD 全流程示例和 JSON 请求示例。
-- src/runtime/storage：表结构、初始化、发号、CRUD 和事务日志。
+- src/runtime/storage：表结构、初始化、发号、CRUD、日志、完整记录组合与模型适配。
+- src/runtime/api.py：内部工具的固定导入入口；operation.py 提供共享事务与提交后检测。
 - src/runtime/dispatch.py、console.py：分流与 JSON 入口；validation 为模块化规则执行器，configuration 负责配置读取和继承。
 - tests：存储、CRUD、事务日志、检测接口及 CLI 检查。
 - output：可供使用的 SQLite 数据库。
-- tools：工具入口，当前占位。
+- tools：工具开发说明；具体 Python 业务工具未来按需放入 src/tools/<内容类型>/。
 
 各分类可继续分子目录。原始模板与通用封装模板 V3 分开理解；配置合并遵循 defaults、固定约定与 options 的区分，见配置说明；工具如何挂入配置留待对应功能设计。
 
@@ -159,14 +177,14 @@ python -X utf8 -B -m unittest discover -s ../tests -v
 - 可调选项与固定约定分开；默认仅根层可设轴，根不必填轴。持续区间采用 [begin,end)，瞬间占一个点，允许首尾衔接。
 - 配置缺失、未知规则、规则异常逐项报告，其他检查继续。主动复查直接使用 validate，不制造修改或日志。
 - 按需导入已解决旧版包入口一次加载全部封装的耦合，保持 from models import Text 等用法。
-- 后续只推进存储还原、工具接入、视图和明确提出的新用途；不预先增加资源检查或更多字段限制。
+- 后续推进项目内部工具、视图和明确提出的新用途；不预先增加资源检查或更多字段限制。
 - 当前是源码和本地运行验证，尚未做独立 AI 的使用评测。
 
 ## 非可视化版本与可视化分支
 
 非可视化核心长期保留并独立使用。`main` 继续开发核心、配置、检测和项目内部小工具；核心的导入与命令行使用不依赖界面或图形环境。
 
-当前源码基线使用本地 Git 标签 `core-v0.1.0` 保存。以后开始可视化时，从当时的主线创建 `visualization` 分支。视图调用核心接口；通用修复与工具回到主线维护，界面依赖留在可视化部分。现在不提前创建空的视图模块。
+早期非可视化源码基线使用 Git 标签 `core-v0.1.0` 保存，后续核心读写与修复沿 `main` 继续。以后开始可视化时，从当时的主线创建 `visualization` 分支。视图调用核心接口；通用修复与工具回到主线维护，界面依赖留在可视化部分。现在不提前创建空的视图模块。
 
 Git 保存源码、配置、测试和文档；`output/` 的实际数据库、`scratch/`、缓存与本地环境文件不纳入版本。新检出可使用上方初始化命令生成数据库；用户项目数据单独备份。标签保存源码版本，不代表项目数据快照。
 

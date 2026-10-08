@@ -1,8 +1,12 @@
 # 工具本体的执行代码
 
+内部工具开发优先使用 [公共 API](API.md)；此文档保留底层记录请求协议。
+
 - [storage/crud.py](storage/crud.py)：通用记录增删改查，值使用 SQL 参数，JSON 字段自动编解码。
 - [storage/journal.py](storage/journal.py)：记录实际改动的前后值，与业务写入共用事务。
-- [dispatch.py](dispatch.py)：分流入口，生成 operation_id、管理事务、提交后统一调用检测。
+- [api.py](api.py)：完整记录读取、模型装载与保存的固定入口。
+- [dispatch.py](dispatch.py)：记录请求分流，可选择完整读取。
+- [operation.py](operation.py)：单条 CRUD 与组合保存共用事务、operation_id 和提交后检测。
 - [console.py](console.py)：JSON 文件／标准输入入口，输出 JSON 结果。
 - [validation/channel.py](validation/channel.py)：独立检测反馈；默认使用内置执行器。
 - [validation/README.md](validation/README.md)：检测时点、主动复查、模块划分和新增规则示例。
@@ -34,10 +38,11 @@
 | id | read 的可选编号；update、delete 必须指定 |
 | data | create、update 的字段字典 |
 | filters | read 的可选普通列等值条件，None 表示 SQL NULL |
+| full | read 指定单条 layer/object 时可设为 true，带回装载对象与发出的关联 |
 
 层创建须传 type 与 config_ref，对象创建须传 config_ref 与实际存在的 layer。其他列可使用数据库默认值，见 [schema.sql](storage/schema.sql)。项目只需 name、tips 等内容；编号、项目归属键和 max_id 由入口参数及发号方法管理，不通过 data 改写。
 
-read 提供 id 时返回单条字典或 null，否则返回列表。对象列表按 begin、end、id 排序，其余按 id 排序。第一版不包含 JSON 内部字段筛选、区间交叠查询或自动展开子树。
+read 提供 id 时返回单条字典或 null，否则返回列表。对象列表按 begin、end、id 排序，其余按 id 排序。full=true 的层读取还包含直属 objects，每个实体带发出的 bind。完整读取需要明确 id，不使用 filters；普通列表查询仍为单表记录。当前不包含 JSON 内部字段筛选、区间交叠查询或自动展开子树。
 
 update 只修改传入字段，JSON 字段整体替换。delete 只删除指定记录，不级联。目标不存在时返回 data = null、applied = false；空修改、修改成相同值也不产生改动日志。改号、迁移不属于本版普通 update。
 
@@ -87,7 +92,7 @@ def checker(changes, read_record):
     # changes 包含 action、kind、project_id、id、before、after、change_id、operation_id。
     # read_record(kind, project_id=..., id=..., filters=...) 读取当前记录。
     # 只读取变更描述和查询结果，不修改它们。
-    return []  # 问题字典列表；示例见 examples/crud.py
+    return []  # 问题字典列表；规则示例见 validation/README.md
 ```
 
 默认 dispatch 与 CLI 已接入内置执行器。显式传 checker=None 可关闭自动检测；传入自定义 checker 会替换内置执行器。变更描述保留修改前后数据，内置执行器以最终数据库记录检查，选择相关旧层、新层或被删除目标的剩余关联，并对目标与规则去重。

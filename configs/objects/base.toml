@@ -18,7 +18,7 @@ begin       = { type = "float", default = 0.0, note = "开始位置，单位按�
 end         = { type = "float", default = 0.0, note = "结束位置；持续区间为 [begin,end)，相等时单独占用该点；本类不自动取整" }
 information = { type = "dict", default = {}, note = "具体内容或内容的引用；每个实例独立持有字典" }
 tips        = { type = "str", default = "", note = "自由备注" }
-bind        = { type = "list", default = [], note = "关联及说明；每个实例独立持有列表，允许相互引用。当前内存示例使用单项目短编号；数据库关联两端须带 kind、project_id、id，完整引用装回 Python 实例的适配仍待实现" }
+bind        = { type = "list", default = [], note = "发出的关联字典列表；新建可提供 target_kind、target_project_id、target_id 和 tips；保存时补齐来源与关联 id，读回保留完整引用；允许相互引用" }
 
 [object.methods]
 return_self = "无参数，返回当前实例本身；子类可直接继承"
@@ -39,7 +39,6 @@ visibility = true           # 默认允许显隐控制；需要固定显示的�
 # 对象的创建参数示例，假设已存在编号为 1 的层。
 # 创建后由调用方将此对象实例放入该层的 objects。
 [object.example]
-id          = 2
 name        = "一条说明"
 layer       = 1
 begin       = 0.0

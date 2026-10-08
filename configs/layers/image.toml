@@ -19,7 +19,6 @@ visibility = true             # 默认允许显隐控制
 
 # 空层创建参数示例；向 objects 放入对应的对象实例。
 [layer.example]
-id      = 1
 name    = "背景图片"
 axis    = { unit = "秒", precision = 0.001 }
 objects = []

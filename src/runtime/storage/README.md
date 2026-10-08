@@ -1,6 +1,6 @@
 # SQLite 存储
 
-`schema.sql` 定义四张业务表和一张 changes 日志表；`database.py` 提供打开连接、初始化和项目内发号，`crud.py` 提供通用操作，`journal.py` 记录改动。请求入口和检测协议见 [运行接口说明](../README.md)。
+`schema.sql` 定义四张业务表和一张 changes 日志表；`database.py` 提供打开连接、初始化和项目内发号，`crud.py` 提供通用操作，`journal.py` 记录改动。完整模型读写优先见 [公共 API](../API.md)；单条请求和检测协议见 [运行接口说明](../README.md)。
 
 ## 初始化
 
@@ -24,10 +24,10 @@ python -X utf8 -B -m runtime.storage.database ../output/ai-production.sqlite3
 | binds | 两端各自记录 kind、project_id、id，另存 tips 和独立的内部行号 |
 | changes | 内部 id、operation_id、UTC 时间、目标种类/项目/编号、动作和修改前后的 JSON 快照 |
 
-- `config_ref` 是两类实体的存储元数据，路径相对于项目的 `configs/`，例如 `objects/image.toml`。它给后续读取配置、恢复对应 Python 类提供依据，不添加到基础类中。
+- `config_ref` 是两类实体的存储元数据，路径相对于项目的 `configs/`，例如 `objects/image.toml`。它给读取配置、恢复对应 Python 类提供依据，不添加到基础类中。
 - 层的 `type` 单独保存其类属性。写入方须显式提供实际的 type 和 config_ref，不能只依靠 asdict()。
 - `axis` 和 `information` 使用 JSON 文本；无轴说明使用 SQL NULL，空 information 使用 `{}`。
-- 层的 objects 从对象表反查并装载，bind 从关联表反查，不在实体行内再存副本。
+- 层的 objects 从对象表反查并装载，bind 从关联表反查当前实体发出的关联，不在实体行内再存副本。
 - 项目归属和层归属有外键；father 可为 NULL 表示根层，objects.layer 必须非空并指向同项目实际存在的层。没有级联更新或删除。
 - bind 两端没有实体外键，可以保存或保留失效引用；kind 的含义为 layer 或 object，独立检测通道统一检查两端。
 - 不检查区间先后、环、轴设置、JSON 内容、资源存在性和封装规则。
@@ -65,6 +65,8 @@ with closing(open_database("../output/ai-production.sqlite3")) as connection:
 ## 改动日志
 
 - 实际发生的 create、update、delete 各记录目标行的前后快照；read、空修改、无变化及目标不存在的操作不记日志。
+- JSON 值比较保留布尔、整数、浮点数的类型区别，覆盖嵌套字典和列表；字典键顺序不计为变化。同一比较方式用于日志和检测范围，避免已经改变数据却漏记日志、漏检。
+- UPDATE 前排除未变化字段；普通 SQL 数值列接受等值 int/float 的存储规范化。没有变化时不执行写语句。
 - 业务写入与日志同事务提交；数据或日志写入失败时，由事务调用方一起回滚。
 - operation_id 由分流入口生成 UUID，同一批操作共用，不占 projects.max_id。低层组合操作由其调用方生成一次并传入。
 - 日志没有实体外键，目标被删除后仍能查看历史。日志本身通过 read(kind="change") 查询。
@@ -72,7 +74,7 @@ with closing(open_database("../output/ai-production.sqlite3")) as connection:
 
 ## 范围与验证
 
-目前已实现表结构、初始化与所属层迁移、发号、记录 CRUD、事务日志、分流、配置加载与模块化检测。返回的是 JSON 已解码的记录字典；派生 Python 对象还原及关联装载尚未实现。
+目前已实现表结构、初始化与所属层迁移、发号、记录 CRUD、事务日志、分流、配置加载、模块化检测和完整读写。assembly.py 组合层/对象及关联的记录字典；models.py 按配置还原派生实例；save.py 原子保存模型或记录字典。三者经 runtime.api 对外提供稳定入口，底层 CRUD 仍返回单表记录。
 
 在项目的 `src/` 下运行存储检查：
 

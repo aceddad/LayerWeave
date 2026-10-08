@@ -4,6 +4,8 @@ from copy import deepcopy
 from pathlib import Path
 import tomllib
 
+from ..values import same_value
+
 
 DEFAULT_ROOT = Path(__file__).resolve().parents[3] / "configs"
 
@@ -18,7 +20,7 @@ def _fixed(parent, child, location):
     for key, value in child.items():
         if key in result and isinstance(result[key], dict) and isinstance(value, dict):
             result[key] = _fixed(result[key], value, f"{location}.{key}")
-        elif key in result and result[key] != value:
+        elif key in result and not same_value(result[key], value):
             raise ConfigError(f"{location}.{key} 改写父约定：{result[key]!r} → {value!r}")
         else:
             result[key] = deepcopy(value)
@@ -29,7 +31,7 @@ class Loader:
     def __init__(self, root=DEFAULT_ROOT):
         self.root = Path(root).resolve()
         self.cache = {}
-        self.index = None
+        self.indexes = {}
 
     def ref(self, path):
         try:
@@ -90,7 +92,7 @@ class Loader:
         for section in ("rules", "constraint", "display"):
             contracts[section] = _fixed(contracts.get(section, {}), raw.get(section, {}), section)
             result[section] = {**defaults.get(section, {}), **contracts[section]}
-        if parent and "open" in parent and "open" in raw and raw["open"] != parent["open"]:
+        if parent and "open" in parent and "open" in raw and not same_value(raw["open"], parent["open"]):
             raise ConfigError("object.open 改写父约定")
         result["_contracts"] = contracts
         # options 是明确允许派生调整的选项，当前只有 axis_only_on_root。
@@ -100,18 +102,32 @@ class Loader:
                 result[key] = deepcopy(value)
         return result
 
-    def object_config(self, type_name):
-        if self.index is None:
-            self.index = {}
-            for path in sorted((self.root / "objects").rglob("*.toml")):
+    def _index(self, kind):
+        """同一个 Loader 内每种配置只扫描一次，同时索引名称与直接声明的类。"""
+        if kind not in self.indexes:
+            index = {"type": {}, "class": {}}
+            for path in sorted((self.root / f"{kind}s").rglob("*.toml")):
                 try:
                     with path.open("rb") as file:
-                        name = tomllib.load(file)["object"]["type"]
-                    self.index.setdefault(name, []).append(self.ref(path))
-                except (OSError, ValueError, KeyError, TypeError):
+                        section = tomllib.load(file)[kind]
+                    for key in index:
+                        value = section.get(key)
+                        if isinstance(value, str):
+                            index[key].setdefault(value, []).append(self.ref(path))
+                except (OSError, ValueError, KeyError, TypeError, AttributeError):
                     # 无关的损坏文件不阻断当前目标；直接引用时仍会报告原始错误。
                     continue
-        refs = self.index.get(type_name, [])
+            self.indexes[kind] = index
+        return self.indexes[kind]
+
+    def class_config(self, class_path, kind):
+        refs = self._index(kind)["class"].get(class_path, [])
+        if len(refs) != 1:
+            raise ConfigError(f"{class_path} 对应 {len(refs)} 份直接声明配置，请显式提供 config_ref")
+        return refs[0]
+
+    def object_config(self, type_name):
+        refs = self._index("object")["type"].get(type_name, [])
         if len(refs) != 1:
             raise ConfigError(f"对象配置 {type_name!r} 无法唯一定位：找到 {len(refs)} 份")
         return self.load(refs[0], "object")

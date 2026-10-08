@@ -4,6 +4,7 @@ from importlib import import_module
 import json
 
 from ..configuration.loader import ConfigError, DEFAULT_ROOT, Loader
+from ..values import same_value
 from .channel import report
 from .registry import RULES
 
@@ -47,7 +48,7 @@ def _collect(changes, read_record):
     for change in changes:
         before, after, kind = change["before"], change["after"], change["kind"]
         changed = {key for key in (before or {}).keys() | (after or {}).keys()
-                   if (before or {}).get(key) != (after or {}).get(key)}
+                   if not same_value((before or {}).get(key), (after or {}).get(key))}
         for rule, spec in RULES.items():
             if kind not in spec["triggers"]:
                 continue
@@ -148,7 +149,7 @@ def check_changes(changes, read_record, *, config_root=DEFAULT_ROOT):
     final = []
     for key, change in merged.items():
         change["after"] = _read(read_record, key)
-        if change["before"] != change["after"]:
+        if not same_value(change["before"], change["after"]):
             final.append(change)
     return _execute(_collect(final, read_record), read_record, Loader(config_root))
 

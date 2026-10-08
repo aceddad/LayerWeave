@@ -2,6 +2,7 @@
 
 import json
 
+from ..values import same_value
 from .database import allocate_id
 from .journal import append_change, json_text
 
@@ -139,11 +140,24 @@ def update(connection, kind, id, data, *, operation_id, project_id=None):
     before = read(connection, kind, project_id=project_id, id=id)
     if before is None or not values:
         return before, None
+    changed = {}
+    for key, value in values.items():
+        if key in spec["json"]:
+            # 比较真正要保存的 JSON 值，兼容 tuple→list、非字符串键等编码转换。
+            candidate = json.loads(value) if value is not None else None
+            equal = same_value(before[key], candidate)
+        else:
+            # 普通 SQL 数值列会规范化 int/float/bool；不把 0 与 0.0 当成内容变化。
+            equal = before[key] == value
+        if not equal:
+            changed[key] = value
+    if not changed:
+        return before, None
     where, key_values = _where(spec, project_id, id, None)
-    assignments = ", ".join(f'"{key}" = ?' for key in values)
+    assignments = ", ".join(f'"{key}" = ?' for key in changed)
     connection.execute(
         f'UPDATE "{spec["table"]}" SET {assignments}{where}',
-        [*values.values(), *key_values],
+        [*changed.values(), *key_values],
     )
     after = read(connection, kind, project_id=project_id, id=id)
     change = append_change(connection, operation_id, kind, before, after)

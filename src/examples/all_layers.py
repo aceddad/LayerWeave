@@ -55,7 +55,8 @@ def create_example():
 
     model = layers[-2].objects[0]
     action = layers[-1].objects[0]
-    action.bind.append([model.id, "作用于这个模型"])
+    action.bind.append({"target_kind": "object", "target_project_id": 1,
+                        "target_id": model.id, "tips": "作用于这个模型"})
 
     return [layer.return_self() for layer in layers]
 

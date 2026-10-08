@@ -25,7 +25,6 @@ visibility = true              # 默认允许显隐控制
 # 创建参数示例，假设已有编号为 1 的层；资源地址仅作示意。
 # 创建后由调用方将对象实例放入该层的 objects。
 [object.example]
-id          = 2
 name        = "开场片段"
 layer       = 1
 begin       = 0.0

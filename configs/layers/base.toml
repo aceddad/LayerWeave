@@ -17,7 +17,7 @@ name    = { type = "str", default = "", note = "创建时传入的名字，可�
 father  = { type = "int | None", note = "父层编号，初始为 None；为空表示根层，非空编号由数据库保证指向同项目实际父层" }
 axis    = { type = "dict | None", note = "可选的轴说明，初始为 None；默认仅根层可填写，单位由使用方解释" }
 tips    = { type = "str", default = "", note = "自由备注" }
-bind    = { type = "list", default = [], note = "关联及说明；每个实例独立持有列表，允许相互引用。当前内存示例使用单项目短编号；数据库关联两端须带 kind、project_id、id，完整引用装回 Python 实例的适配仍待实现" }
+bind    = { type = "list", default = [], note = "发出的关联字典列表；新建可提供 target_kind、target_project_id、target_id 和 tips；保存时补齐来源与关联 id，读回保留完整引用；允许相互引用" }
 objects = { type = "list", default = [], note = "实际装载 Object 或其子类的实例；每个层独立持有列表，不自动改写对象的 layer" }
 
 [layer.methods]
@@ -39,9 +39,8 @@ overlap = true             # 默认允许层内对象在轴上的区间重叠；
 visibility = true          # 默认允许显隐控制；需要固定显示的封装可设为 false
 # 实例当前的显示状态由外部视图管理；false 不表示当前隐藏或不进入视图。
 
-# 空层的创建参数示例。编号在示例中显式给出。
+# 空层的创建参数示例。新实例不填 id，由保存入口分配编号。
 [layer.example]
-id      = 1
 name    = "主线"
 axis    = { unit = "秒", precision = 0.001 }
 tips    = "记录各段的意图"

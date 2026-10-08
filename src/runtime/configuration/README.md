@@ -2,6 +2,8 @@
 
 入口为 [Loader](loader.py)。每次检测使用一个 Loader，在该次调用内缓存；下次调用重新读取文件，因此配置修改后可直接主动复查。只读取 TOML，不导入 class 或实例化 Python 对象。
 
+配置名称和直接声明的 Python 类共用按种类构建的索引；同一 Loader 内每个种类只扫描一次。模型保存通过 class_config 查找新实例的配置，不再为每个实例重新扫描目录。
+
 ```python
 from runtime.configuration.loader import Loader
 config = Loader().load("objects/text.toml", "object")
@@ -47,4 +49,4 @@ axis_only_on_root = false
 
 对象缺少 text/source/data 不自动报必填问题；目前只检查已经提供的字段类型。类型支持 str、int、float、dict、list、bool、None，以及用竖线组合的联合类型。float 接受整数坐标；bool 不作为数值类型。未实现的显式类型或规则报告未检查，普通说明字段不因未知而报错。
 
-内部有效配置含 _ref、_lineage 和 _contracts，分别记录配置路径、继承链与固定约定，用于兼容判断和合并。读取失败抛出 ConfigError，由检测器逐目标转为诊断，其他目标继续。配置中的 class 目前只记录用途；Python 类导入与恢复由未来存储适配负责。
+内部有效配置含 _ref、_lineage 和 _contracts，分别记录配置路径、继承链与固定约定，用于兼容判断和合并。读取失败抛出 ConfigError，由检测器逐目标转为诊断，其他目标继续。配置读取器不执行 class 导入；需要还原实例时，由 storage/models.py 按需导入配置指定的类。

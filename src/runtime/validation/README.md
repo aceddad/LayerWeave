@@ -68,7 +68,7 @@ checks = validate(
 )
 ```
 
-层复查包含直接装载的对象，不递归子层；项目目标 {"kind":"project","id":1} 检查该项目全部层、对象与两端涉及该项目的关联。对象目标复查该对象及相关层。此接口面向数据库记录，尚未实现 Python 实例的存储还原适配。
+层复查包含直接装载的对象，不递归子层；项目目标 {"kind":"project","id":1} 检查该项目全部层、对象与两端涉及该项目的关联。对象目标复查该对象及相关层。此接口面向数据库目标；Python 实例的读取与保存见 [公共 API](../API.md)。
 
 ```python
 from runtime.dispatch import dispatch

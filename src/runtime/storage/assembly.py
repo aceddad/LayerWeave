@@ -52,3 +52,20 @@ def read_layer(connection, project_id, id):
             for row in rows:
                 objects[row["source_id"]]["bind"].append(dict(row))
         return record
+
+
+def read_project_index(connection, project_id):
+    """项目与层摘要：只取身份、层级和直属对象数，不读取正文、轴或配置文件。"""
+    with _snapshot(connection):
+        project = crud.read(connection, "project", id=project_id)
+        if project is None:
+            return None
+        rows = connection.execute(
+            "SELECT l.project_id, l.id, l.name, l.type, l.config_ref, l.father, "
+            "COUNT(o.id) AS object_count "
+            "FROM layers AS l LEFT JOIN objects AS o "
+            "ON o.project_id = l.project_id AND o.layer = l.id "
+            "WHERE l.project_id = ? GROUP BY l.project_id, l.id ORDER BY l.id",
+            (project_id,),
+        )
+        return {"project": project, "layers": [dict(row) for row in rows]}

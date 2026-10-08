@@ -1,6 +1,6 @@
 # LayerWeave
 
-创建日期：2026-10-08。当前状态：六类封装、SQLite 存储与日志、CRUD、完整层/对象读写、Python 实例装载、配置继承、模块化检测和按需导入已实现。业务小工具与视图尚未开始。
+创建日期：2026-10-08。当前状态：六类封装、SQLite 存储与日志、完整读写、配置继承与检测已实现。第一批内部工具（项目概览、对象检索、关联查询、文本汇集）已可用；可视化尚未开始。
 
 ## 快速开始
 
@@ -16,6 +16,8 @@ python -X utf8 -B -m examples.read_write
 此示例使用自己的临时数据库文件，演示创建层与对象、关闭重开、还原 Python 实例、修改并再次保存、读取关联和日志，不改动输出数据库。原有记录 CRUD 示例仍可用：`python -X utf8 -B -m examples.crud`。
 
 纯模型示例仍可用：`python -X utf8 -B -m examples.all_layers` 或 `python -X utf8 -B -m examples.text`。其中手动编号只用于演示内存结构，持久化时由核心分配编号。
+
+查看第一批四个工具的完整演示：`python -X utf8 -B -m examples.first_batch`。只查看项目概览可运行 `python -X utf8 -B -m examples.project_overview`。真实数据库的用法和结果格式见 [内部工具说明](tools/README.md)。
 
 初始化数据库（同样从 src 目录执行）：
 
@@ -44,7 +46,9 @@ python -X utf8 -B -m runtime.console ../output/ai-production.sqlite3 --request e
 | 看 CRUD、日志和检测组合 | [完整内存示例](src/examples/crud.py) |
 | 看六类模型的创建装载 | [六类组合示例](src/examples/all_layers.py) |
 | 修改配置读取与继承 | [配置读取器](src/runtime/configuration/loader.py)、[合并约定](src/runtime/configuration/README.md) |
-| 设计工具接入 | [工具占位说明](tools/README.md) |
+| 查看项目层级与数量 | [项目概览工具](src/tools/common/project_overview.py)、[用法与示例](tools/README.md) |
+| 检索对象、查询关联、汇集文字 | [第一批工具说明](tools/README.md)、[完整组合示例](src/examples/first_batch.py) |
+| 开发内部工具 | [工具开发说明](tools/README.md) |
 | 查看表结构与存储操作 | [建表脚本](src/runtime/storage/schema.sql)、[初始化与发号](src/runtime/storage/database.py)、[存储说明](src/runtime/storage/README.md) |
 | 调用 CRUD 和查看日志 | [运行接口说明](src/runtime/README.md)、[CRUD](src/runtime/storage/crud.py)、[分流](src/runtime/dispatch.py) |
 | 新增约束或主动复查 | [规则登记表](src/runtime/validation/registry.py)、[检测与扩充示例](src/runtime/validation/README.md) |
@@ -122,7 +126,7 @@ python -X utf8 -B -m unittest discover -s ../tests -v
 
 测试覆盖配置继承、父约定保护、字段类型、区间边界、类型兼容、检测触发范围、逐项继续、批次最终状态、按需导入，以及存储、日志、迁移、完整记录/实例往返、关闭重开和 CLI。使用内存库和专用临时文件，不写入输出数据库。
 
-2026-10-09 修复与减负后，82 项测试通过。JSON 内容变化会区分 `1`、`1.0` 与 `true`，日志、批次最终状态和检测字段选择使用同一比较方式；字典键顺序不产生变化。无变化的字段在 SQL UPDATE 前跳过。
+当前包含第一批四个只读工具在内的 103 项测试通过。JSON 内容变化会区分 `1`、`1.0` 与 `true`，日志、批次最终状态和检测字段选择使用同一比较方式；字典键顺序不产生变化。无变化的字段在 SQL UPDATE 前跳过。
 
 相同的本地 100 对象场景复测（现有层、新 Text 实例自动匹配配置、内置检测开启）：
 
@@ -155,7 +159,7 @@ python -X utf8 -B -m unittest discover -s ../tests -v
 
 API 参数、保存范围与错误反馈见 [公共 API](src/runtime/API.md)。源码位置与后续工具开发说明见 [工具指南](tools/README.md)。
 
-尚未实现业务小工具、项目搬移、视图、Skill／MCP；这些功能不影响当前非可视化读写路径。
+第一批四个内部工具均为只读功能，复用核心查询和配置能力。后续批次的写入工具、项目搬移、视图、Skill／MCP 尚未实现。
 
 ## 目录职责
 
@@ -167,7 +171,9 @@ API 参数、保存范围与错误反馈见 [公共 API](src/runtime/API.md)。�
 - src/runtime/dispatch.py、console.py：分流与 JSON 入口；validation 为模块化规则执行器，configuration 负责配置读取和继承。
 - tests：存储、CRUD、事务日志、检测接口及 CLI 检查。
 - output：可供使用的 SQLite 数据库。
-- tools：工具开发说明；具体 Python 业务工具未来按需放入 src/tools/<内容类型>/。
+- src/tools/common：通用内部工具，包括项目概览、对象检索和关联查询。
+- src/tools/text：文字工具，目前为文本汇集；其他类型目录按实际需要创建。
+- tools：已有工具用法与后续开发说明。
 
 各分类可继续分子目录。原始模板与通用封装模板 V3 分开理解；配置合并遵循 defaults、固定约定与 options 的区分，见配置说明；工具如何挂入配置留待对应功能设计。
 

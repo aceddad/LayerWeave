@@ -1,0 +1,43 @@
+"""对象检索：结构条件交给核心查询，内容子串匹配只读取 JSON 中的字符串值。"""
+
+from runtime.api import query_objects
+
+
+def _contains_text(value, text):
+    pending = [value]
+    while pending:
+        item = pending.pop()
+        if isinstance(item, str) and text in item:
+            return True
+        if isinstance(item, dict):
+            pending.extend(item.values())
+        elif isinstance(item, list):
+            pending.extend(item)
+    return False
+
+
+def find_objects(connection, project_id, *, layer_id=None, name=None, content=None, begin=None, end=None):
+    """条件之间为 AND；name/content 区分大小写、按字面匹配，返回原始对象记录列表。"""
+    records = query_objects(connection, project_id, layer_id=layer_id, name=name, begin=begin, end=end)
+    if content is None:
+        return records
+    return [record for record in records if _contains_text(record["information"], content)]
+
+
+def main():
+    from tools._cli import parser_for, run_cli
+
+    parser = parser_for("LayerWeave 对象检索（只读，输出 JSON）")
+    parser.add_argument("--layer-id", type=int, help="仅查指定层直接装载的对象")
+    parser.add_argument("--name", help="名字中的字面子串")
+    parser.add_argument("--content", help="information 字符串值中的字面子串")
+    parser.add_argument("--begin", type=float, help="位置范围起点")
+    parser.add_argument("--end", type=float, help="位置范围终点；与起点相同时查询该点")
+    return run_cli(parser, lambda connection, args: find_objects(
+        connection, args.project_id, layer_id=args.layer_id, name=args.name, content=args.content,
+        begin=args.begin, end=args.end,
+    ))
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

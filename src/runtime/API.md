@@ -17,6 +17,23 @@ read/load 不写数据或日志，不自动运行检测；目标不存在返回 
 
 read 返回保留 project_id/config_ref 的普通字典，不需要配置文件可用。load 才读取配置、按 class 路径导入对应 Python 类；配置或类不可用时抛出包含目标和配置路径的 ValueError，仍可通过 read 取得原始完整记录。配置应来自调用方信任的项目代码，因为 class 导入会执行模块代码。
 
+项目摘要使用 read_project_index(connection, project_id)：返回 project 与层摘要列表，每个层带直属 object_count，不读取正文或配置文件。它提供一次读取事务内的平面数据；层级排列与纯文本展示由 [项目概览工具](../tools/common/project_overview.py) 完成。
+
+## 通用只读查询
+
+以下能力也经 runtime.api 提供，供各类型工具复用：
+
+| 调用 | 用途 |
+|---|---|
+| read_record(connection, kind, ...) | 现有单表 CRUD.read 的公开只读入口，支持 id 和等值 filters |
+| read_snapshot(connection) | with 上下文中的读取快照；借用已有事务时不会替调用方提交 |
+| query_objects(connection, project_id, layer_id=None, name=None, begin=None, end=None) | 参数化筛选对象记录；可选参数用关键字传入，name 是区分大小写的字面子串 |
+| read_bindings(connection, kind, project_id, id, direction="both") | 按完整实体身份查询 outgoing/incoming/both 直接关联，direction 使用关键字传入 |
+
+位置查询采用相交语义：[begin,end)，begin=end 表示点查询，一端 None 表示该方向未限定。提供位置条件时排除无效区间；没有位置条件时不因此过滤记录。query_objects 不读取配置文件、不装载关联或换算单位；read_bindings 保留失效引用且不装载端点。
+
+对象检索、关联分组和文字提取的业务整理放在对应工具中，完整用法见 [第一批工具](../../tools/README.md)。SQL 只在存储层维护，工具不复制查询实现。
+
 ## Python 实例的完整往返
 
 ```python
@@ -122,4 +139,4 @@ result = save_object(connection, project_id, obj)
 - operation.py：CRUD 与组合保存共用事务、日志编号和检测入口。
 - configuration/ 与 validation/：继续负责配置与约束。
 
-后续业务小工具放在 src/tools/<内容类型>/，共用工具放在 src/tools/common/，第一项工具落地时再创建目录。它们调用上述 API；核心不反向导入工具。开发指南见 [工具说明](../../tools/README.md)。
+业务小工具放在 src/tools/<内容类型>/，共用工具放在 src/tools/common/，具体目录按实际工具需要创建。它们调用上述 API；核心不反向导入工具。第一批四个只读工具与开发指南见 [工具说明](../../tools/README.md)。

@@ -17,11 +17,11 @@ def model_fields(value, kind):
     """只序列化已定义的存储字段；information/axis 原样深拷贝。"""
     if not isinstance(value, _base(kind)):
         raise TypeError(f"需要 {kind} 对应的基础类或派生实例")
-    return {name: deepcopy(getattr(value, name)) for name in crud.SPECS[kind]["fields"] if name != "config_ref"}
+    return {name: deepcopy(getattr(value, name)) for name in crud.SPECS[kind]["fields"] if name not in {"config_ref", "type"}}
 
 
 def infer_config(value, kind, loader):
-    """新实例使用明确声明该 Python 类的唯一配置；派生配置别名由调用方指定。"""
+    """每个实例使用明确绑定其实际 Python 类的唯一配置。"""
     class_path = f"{type(value).__module__}:{type(value).__qualname__}"
     return loader.class_config(class_path, kind)
 
@@ -36,8 +36,10 @@ def restore_model(record, kind, loader):
             cls = getattr(cls, part)
         if not isinstance(cls, type) or not issubclass(cls, _base(kind)):
             raise TypeError(f"{config['class']} 必须继承 {_base(kind).__name__}")
-        if kind == "layer" and cls.type != record["type"]:
-            raise ValueError(f"存储 type={record['type']!r} 与类 type={cls.type!r} 不一致")
+        if f"{cls.__module__}:{cls.__qualname__}" != config["class"]:
+            raise ValueError("class 必须指向类的定义位置，不能通过导入别名重复绑定")
+        if kind == "layer" and config["type"] != record["type"]:
+            raise ValueError(f"存储 type={record['type']!r} 与配置 type={config['type']!r} 不一致")
         names = [name for name in crud.SPECS[kind]["fields"] if name not in {"config_ref", "type"}]
         values = {name: deepcopy(record[name]) for name in names}
         values.update(id=record["id"], bind=deepcopy(record.get("bind", [])))

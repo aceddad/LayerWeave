@@ -27,11 +27,12 @@ class ConfigurationTests(unittest.TestCase):
             config = loader.load(loader.ref(path), kind)
             self.assertTrue(config["display"]["visibility"])
             self.assertIn(f"{kind}s/base.toml", config["_lineage"])
-        self.assertEqual(len(loader.cache), 14)
+        self.assertEqual(len(loader.cache), 15)
 
     def test_derived_field_addition_repeats_rule_once(self):
         self.write("objects/dialogue.toml", '''[object]
 type="dialogue"
+class="fixture_types:DialogueObject"
 extends="text.toml"
 [object.information]
 speaker={type="str"}
@@ -45,13 +46,13 @@ begin_le_end=true
 
     def test_parent_field_and_rule_cannot_be_rewritten(self):
         for suffix in ('[object.information]\ntext={type="int"}', '[object.rules]\nbegin_le_end=false'):
-            self.write("objects/bad.toml", '[object]\ntype="bad"\nextends="text.toml"\n' + suffix)
+            self.write("objects/bad.toml", '[object]\ntype="bad"\nclass="fixture_types:BadObject"\nextends="text.toml"\n' + suffix)
             with self.assertRaises(ConfigError):
                 Loader(self.root).load("objects/bad.toml", "object")
 
     def test_defaults_can_be_chosen_but_explicit_parent_contract_is_fixed(self):
-        self.write("layers/track.toml", '[layer]\ntype="track"\nextends="base.toml"\n[layer.constraint]\noverlap=false\n[layer.display]\nvisibility=false\n')
-        self.write("layers/child.toml", '[layer]\ntype="child"\nextends="track.toml"\n[layer.constraint]\noverlap=true\n')
+        self.write("layers/track.toml", '[layer]\ntype="track"\nclass="fixture_types:TrackLayer"\nextends="base.toml"\n[layer.constraint]\noverlap=false\n[layer.display]\nvisibility=false\n')
+        self.write("layers/child.toml", '[layer]\ntype="child"\nclass="fixture_types:ChildLayer"\nextends="track.toml"\n[layer.constraint]\noverlap=true\n')
         loader = Loader(self.root)
         track = loader.load("layers/track.toml", "layer")
         self.assertFalse(track["constraint"]["overlap"])
@@ -60,16 +61,16 @@ begin_le_end=true
             loader.load("layers/child.toml", "layer")
 
     def test_axis_option_can_change_without_rewriting_fixed_rules(self):
-        self.write("layers/local.toml", '[layer]\ntype="local"\nextends="text.toml"\n[layer.options]\naxis_only_on_root=false\n')
+        self.write("layers/local.toml", '[layer]\ntype="local"\nclass="fixture_types:LocalLayer"\nextends="text.toml"\n[layer.options]\naxis_only_on_root=false\n')
         config = Loader(self.root).load("layers/local.toml", "layer")
         self.assertFalse(config["options"]["axis_only_on_root"])
         self.assertTrue(config["rules"]["no_cycle"])
         self.assertNotIn("root_has_axis", config["rules"])
 
     def test_cycle_missing_and_malformed_configs_are_individual_errors(self):
-        self.write("objects/a.toml", '[object]\ntype="a"\nextends="b.toml"\n')
-        self.write("objects/b.toml", '[object]\ntype="b"\nextends="a.toml"\n')
-        self.write("objects/bad.toml", '[object]\ntype="bad"\nfields=123\n')
+        self.write("objects/a.toml", '[object]\ntype="a"\nclass="fixture_types:AObject"\nextends="b.toml"\n')
+        self.write("objects/b.toml", '[object]\ntype="b"\nclass="fixture_types:BObject"\nextends="a.toml"\n')
+        self.write("objects/bad.toml", '[object]\ntype="bad"\nclass="fixture_types:BadObject"\nfields=123\n')
         loader = Loader(self.root)
         for ref in ("objects/a.toml", "objects/missing.toml", "objects/bad.toml"):
             with self.subTest(ref=ref), self.assertRaises(ConfigError):
@@ -77,11 +78,11 @@ begin_le_end=true
         self.assertEqual(loader.load("objects/text.toml", "object")["type"], "text")
 
     def test_object_reference_ambiguity_and_layer_narrowing(self):
-        self.write("objects/extra/text.toml", '[object]\ntype="text"\nextends="../base.toml"\n')
+        self.write("objects/extra/text.toml", '[object]\ntype="text"\nclass="fixture_types:TextObject"\nextends="../base.toml"\n')
         with self.assertRaisesRegex(ConfigError, "唯一定位"):
             Loader(self.root).object_config("text")
         (self.root / "objects/extra/text.toml").unlink()
-        self.write("layers/bad.toml", '[layer]\ntype="bad"\nextends="text.toml"\nobjects="image"\n')
+        self.write("layers/bad.toml", '[layer]\ntype="bad"\nclass="fixture_types:BadLayer"\nextends="text.toml"\nobjects="image"\n')
         with self.assertRaises(ConfigError):
             Loader(self.root).load("layers/bad.toml", "layer")
 

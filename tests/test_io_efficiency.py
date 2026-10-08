@@ -57,10 +57,10 @@ class IOEfficiencyTests(unittest.TestCase):
                 '[object]\ntype="other"\nextends="text.toml"\nclass="models.objects.text:Text"\n', encoding="utf-8")
             second = save_object(self.connection, self.project_id, Text(layer=layer.id), config_root=configs)
             self.assertFalse(second["ok"])
-            self.assertIn("config_ref", second["error"]["message"])
-            explicit = save_object(self.connection, self.project_id, Text(layer=layer.id),
-                                   config_root=configs, config_ref="objects/other.toml")
-            self.assertTrue(explicit["ok"], explicit)
+            self.assertIn("只绑定一份配置", second["error"]["message"])
+            explicit = save_object(self.connection, self.project_id,
+                                   {"layer": layer.id, "config_ref": "objects/other.toml"}, config_root=configs)
+            self.assertFalse(explicit["ok"], explicit)
 
     def test_unchanged_layer_issues_no_update_or_log(self):
         layer = self.layer()

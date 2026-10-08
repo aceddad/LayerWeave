@@ -4,7 +4,7 @@ from importlib import import_module
 
 
 _LAYERS = {"Layer", "TextLayer", "ImageLayer", "AudioLayer", "MovieLayer", "ModelLayer", "ActiveLayer"}
-_OBJECTS = {"Object", "Text", "Image", "Audio", "Movie", "Model", "Active"}
+_OBJECTS = {"Object", "Text", "Title", "Image", "Audio", "Movie", "Model", "Active"}
 __all__ = sorted(_LAYERS | _OBJECTS)
 
 

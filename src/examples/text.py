@@ -30,7 +30,7 @@ def create_example():
 
 if __name__ == "__main__":
     layer = create_example()
-    print("层名：", layer.type)
+    print("Python 类：", type(layer).__name__)
     print("实例名字：", layer.name)
     print("层返回自身：", layer.return_self() is layer)
     for text in layer.objects:

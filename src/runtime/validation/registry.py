@@ -3,6 +3,10 @@
 # fields=None 表示任意字段；config_ref 变化和新建会触发该种类的全部相关规则。
 # scope：self 当前记录，layer 相关旧/新层，binds 关联自身或被删除实体的关联。
 RULES = {
+    "layer_type": {
+        "function": "runtime.validation.rules.layers:layer_type",
+        "triggers": {"layer": ("type",)}, "scope": "self",
+    },
     "fields": {
         "function": "runtime.validation.rules.fields:check",
         "triggers": {"layer": None, "object": None}, "scope": "self",

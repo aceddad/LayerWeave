@@ -10,7 +10,7 @@ import sys
 import tempfile
 import unittest
 
-from models import Text, TextLayer
+from models import Text, TextLayer, Title
 from runtime.api import (dispatch, initialize_database, load_layer, load_object, open_database,
                          read_layer, read_object, save_layer, save_object)
 from runtime.configuration.loader import DEFAULT_ROOT
@@ -161,13 +161,14 @@ class IOTests(unittest.TestCase):
         logs = crud.read(self.connection, "change", filters={"operation_id": result["operation_id"]})
         self.assertEqual(len(logs), 2)
 
-    def test_config_alias_survives_loading_and_saving_same_python_class(self):
-        (self.configs / "objects/title.toml").write_text('[object]\ntype="title"\nextends="text.toml"\n', encoding="utf-8")
+    def test_derived_title_keeps_its_class_and_config_when_saved_again(self):
         layer = self.layer()
-        layer.objects = [Text(layer=layer.id, information={"text": "title"}), Text(layer=layer.id)]
-        result = save_layer(self.connection, self.project_id, layer, config_root=self.configs, object_config_refs={0: "objects/title.toml"})
+        layer.objects = [Title(layer=layer.id, information={"text": "title"}), Text(layer=layer.id)]
+        result = save_layer(self.connection, self.project_id, layer, config_root=self.configs)
         self.assertTrue(result["ok"], result)
         loaded = load_layer(self.connection, self.project_id, layer.id, config_root=self.configs)
+        self.assertIs(type(loaded.objects[0]), Title)
+        self.assertIs(type(loaded.objects[1]), Text)
         loaded.objects[0].tips = "edit"
         result = save_layer(self.connection, self.project_id, loaded, config_root=self.configs)
         self.assertTrue(result["ok"], result)
@@ -176,13 +177,13 @@ class IOTests(unittest.TestCase):
 
     def test_missing_config_does_not_prevent_raw_io_but_load_explains_target(self):
         layer = self.layer()
-        obj = Text(layer=layer.id)
-        result = save_object(self.connection, self.project_id, obj, config_ref="objects/missing.toml")
+        result = dispatch(self.connection, {"action": "create", "kind": "object", "project_id": self.project_id,
+                                           "data": {"layer": layer.id, "config_ref": "objects/missing.toml"}})
         self.assertTrue(result["ok"])
         self.assertEqual(result["checks"]["status"], "partial")
-        self.assertEqual(read_object(self.connection, self.project_id, obj.id)["config_ref"], "objects/missing.toml")
+        self.assertEqual(read_object(self.connection, self.project_id, result["id"])["config_ref"], "objects/missing.toml")
         with self.assertRaisesRegex(ValueError, "objects/missing.toml"):
-            load_object(self.connection, self.project_id, obj.id)
+            load_object(self.connection, self.project_id, result["id"])
 
     def test_read_missing_and_read_inside_callers_transaction(self):
         self.assertIsNone(read_layer(self.connection, self.project_id, 999))

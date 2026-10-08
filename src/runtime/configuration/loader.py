@@ -32,6 +32,14 @@ class Loader:
         self.root = Path(root).resolve()
         self.cache = {}
         self.indexes = {}
+        self.raw_cache = {}
+
+    def _raw(self, path, kind):
+        key = (kind, path)
+        if key not in self.raw_cache:
+            with path.open("rb") as file:
+                self.raw_cache[key] = tomllib.load(file)[kind]
+        return self.raw_cache[key]
 
     def ref(self, path):
         try:
@@ -51,10 +59,16 @@ class Loader:
                 raise cached
             return cached
         try:
-            with path.open("rb") as file:
-                raw = tomllib.load(file)[kind]
+            raw = self._raw(path, kind)
             if not isinstance(raw.get("type"), str):
                 raise ConfigError(f"{self.ref(path)} 缺少 {kind}.type 字符串")
+            if not isinstance(raw.get("class"), str) or ":" not in raw["class"]:
+                raise ConfigError(f"{self.ref(path)} 必须明确声明自己的 {kind}.class（模块:类），不能继承父类绑定")
+            refs = self._index(kind)["class"].get(raw["class"], [])
+            # 直接引用根目录外的配置时，也将当前文件计入唯一性判断。
+            refs = sorted(set([*refs, self.ref(path)]))
+            if len(refs) != 1:
+                raise ConfigError(f"{raw['class']} 必须只绑定一份配置，实际为：{', '.join(refs)}")
             parent = None
             if "extends" in raw:
                 parent_path = (path.parent / raw["extends"]).resolve()
@@ -108,8 +122,7 @@ class Loader:
             index = {"type": {}, "class": {}}
             for path in sorted((self.root / f"{kind}s").rglob("*.toml")):
                 try:
-                    with path.open("rb") as file:
-                        section = tomllib.load(file)[kind]
+                    section = self._raw(path.resolve(), kind)
                     for key in index:
                         value = section.get(key)
                         if isinstance(value, str):
@@ -123,7 +136,7 @@ class Loader:
     def class_config(self, class_path, kind):
         refs = self._index(kind)["class"].get(class_path, [])
         if len(refs) != 1:
-            raise ConfigError(f"{class_path} 对应 {len(refs)} 份直接声明配置，请显式提供 config_ref")
+            raise ConfigError(f"{class_path} 必须只绑定一份配置，实际找到 {len(refs)} 份：{', '.join(refs)}")
         return refs[0]
 
     def object_config(self, type_name):

@@ -40,7 +40,7 @@
 | filters | read 的可选普通列等值条件，None 表示 SQL NULL |
 | full | read 指定单条 layer/object 时可设为 true，带回装载对象与发出的关联 |
 
-层创建须传 type 与 config_ref，对象创建须传 config_ref 与实际存在的 layer。其他列可使用数据库默认值，见 [schema.sql](storage/schema.sql)。项目只需 name、tips 等内容；编号、项目归属键和 max_id 由入口参数及发号方法管理，不通过 data 改写。
+层创建提供 config_ref，省略 type 时 dispatch 从 TOML 补齐；更新 config_ref 且省略 type 时也同步取得新配置标识。Python dispatch 可传 config_root，自动补齐与默认检测使用同一目录。底层原始请求仍可明确传 type；矛盾值会在提交后由 layer_type 报告 error。配置缺失时若提供原始 type，仍可保存并报告配置问题；缺少 type 则无法推导，操作失败。对象创建须传 config_ref 与实际存在的 layer。其他列可使用数据库默认值，见 [schema.sql](storage/schema.sql)。项目只需 name、tips 等内容；编号、项目归属键和 max_id 由入口参数及发号方法管理，不通过 data 改写。
 
 read 提供 id 时返回单条字典或 null，否则返回列表。对象列表按 begin、end、id 排序，其余按 id 排序。full=true 的层读取还包含直属 objects，每个实体带发出的 bind。完整读取需要明确 id，不使用 filters；普通列表查询仍为单表记录。当前不包含 JSON 内部字段筛选、区间交叠查询或自动展开子树。
 

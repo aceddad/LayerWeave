@@ -1,0 +1,16 @@
+# 派生封装示例：配置和 Python 类分别继承文字封装。
+# 不增加非空、长度等限制；TextLayer 可直接装载 Title。
+
+[object]
+type = "title"
+class = "models.objects.title:Title"
+extends = "text.toml"
+name = "标题对象"
+note = "用独立 Python 类表示派生封装，内容仍保存在 information.text"
+
+[object.example]
+name = "开场标题"
+layer = 1
+begin = 0.0
+end = 3.0
+information = { text = "第一章" }

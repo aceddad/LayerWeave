@@ -19,7 +19,7 @@ def create_example():
     with closing(open_database(":memory:")) as connection:
         connection.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
         project_id = _ok(dispatch(connection, {"action": "create", "kind": "project", "data": {"name": "第二批工具示例"}}))["id"]
-        layer = _ok(save_layer(connection, project_id, {"type": "text", "config_ref": "layers/text.toml", "name": "主线"}))["data"]
+        layer = _ok(save_layer(connection, project_id, {"config_ref": "layers/text.toml", "name": "主线"}))["data"]
         a = _ok(append_object(connection, project_id, layer["id"], {
             "config_ref": "objects/text.toml", "name": "A", "information": {"text": "第一句"},
         }, duration=3))
@@ -32,7 +32,7 @@ def create_example():
         }}))
         shifted = _ok(shift_objects(connection, project_id, [a["id"], b["id"]], offset=4))
         arranged = _ok(arrange_objects(connection, project_id, layer["id"], object_ids=[b["id"], a["id"]], start=0))
-        second_layer = _ok(save_layer(connection, project_id, {"type": "text", "config_ref": "layers/text.toml", "name": "副本"}))["data"]
+        second_layer = _ok(save_layer(connection, project_id, {"config_ref": "layers/text.toml", "name": "副本"}))["data"]
         copied = _ok(copy_object(connection, project_id, a["id"], layer_id=second_layer["id"], append=True))
         aligned = _ok(align_objects(connection, project_id, [a["id"], copied["id"]], position=10))
         resized = _ok(set_duration(connection, project_id, copied["id"], 4))

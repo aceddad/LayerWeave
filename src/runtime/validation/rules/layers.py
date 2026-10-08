@@ -4,6 +4,13 @@ from ...configuration.loader import ConfigError
 from .fields import interval, problem
 
 
+def layer_type(record, config, read_record):
+    if record["type"] != config["type"]:
+        return [problem(f"存储 type={record['type']!r} 与配置 type={config['type']!r} 不一致",
+                        field="type")]
+    return []
+
+
 def no_cycle(record, config, read_record):
     seen = set()
     current = record

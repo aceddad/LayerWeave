@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS layers (
     project_id  INTEGER NOT NULL,
     id          INTEGER NOT NULL,      -- 项目内编号，由项目级发号方法提供
     name        TEXT NOT NULL DEFAULT '',
-    type        TEXT NOT NULL,         -- 保存类属性，例如 Layer、text、image
+    type        TEXT NOT NULL,         -- 保存配置中的类型标识，例如 Layer、text、image
     config_ref  TEXT NOT NULL,         -- 相对于 configs/，例如 layers/image.toml
     father      INTEGER,               -- 同项目的父层编号；NULL 表示模块根
     axis        TEXT,                  -- JSON；没有轴说明时为 SQL NULL

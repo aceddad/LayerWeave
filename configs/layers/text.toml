@@ -3,7 +3,7 @@
 # 基础字段、return_self() 和基础检测规则沿用父配置，不重复声明。
 
 [layer]
-type    = "text"                         # 对应 TextLayer 的类属性 type
+type    = "text"                         # 层的类型标识，由保存接口读取
 version = 1                              # 这份配置的版本
 name    = "文字层"                       # 封装显示名；实例名字创建时另传
 class   = "models.layers.text:TextLayer"  # 对应的 Python 类

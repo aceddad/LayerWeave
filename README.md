@@ -1,6 +1,6 @@
 # LayerWeave
 
-创建日期：2026-10-08。当前状态：六类封装、SQLite 存储与日志、完整读写、配置继承与检测已实现。已提供概览/详细展开、对象检索、文本汇集及位置编辑工具；缺字段给 warn，工具生成位置按轴精度落点。可视化尚未开始。
+创建日期：2026-10-08。当前状态：六类封装及 Title 派生示例、SQLite 存储与日志、完整读写、配置继承与检测已实现。已提供概览/详细展开、对象检索、文本汇集及位置编辑工具；缺字段给 warn，工具生成位置按轴精度落点。可视化尚未开始。
 
 ## 快速开始
 
@@ -14,6 +14,8 @@ python -X utf8 -B -m examples.read_write
 ```
 
 此示例使用自己的临时数据库文件，演示创建层与对象、关闭重开、还原 Python 实例、修改并再次保存、读取关联和日志，不改动输出数据库。原有记录 CRUD 示例仍可用：`python -X utf8 -B -m examples.crud`。
+
+派生封装示例：`python -X utf8 -B -m examples.title`。Title 继承 Text，标题 TOML 继承文字 TOML 并绑定 Title；普通文字层可同时装载两种对象，保存时不需要额外指定配置。
 
 纯模型示例仍可用：`python -X utf8 -B -m examples.all_layers` 或 `python -X utf8 -B -m examples.text`。其中手动编号只用于演示内存结构，持久化时由核心分配编号。
 
@@ -61,7 +63,7 @@ python -X utf8 -B -m runtime.console ../output/ai-production.sqlite3 --request e
 | 查看全部约束及检测设计 | [约束与触发时点](src/runtime/validation/README.md) |
 | 修改模型与存储映射 | [完整记录读取](src/runtime/storage/assembly.py)、[实例装载](src/runtime/storage/models.py)、[组合保存](src/runtime/storage/save.py) |
 
-新增一个与现有六类同样形式的封装，最少需要四个文件：层类、对象类、层配置、对象配置。配置中的 class 指向实际模块和类；extends 相对于当前配置文件。
+新增一种完整内容类别可对照现有六类，分别提供层类、对象类和两份配置。只扩展对象时，例如 Title，仅新增对象类与对象配置即可，继续装入 TextLayer。每份封装 TOML 显式声明自己的 type 与 class；class 指向类定义位置，一个类在同一配置根目录内只绑定一份配置。extends 相对于当前配置文件。
 
 可以直接从具体模块导入新增类。若还要支持统一的 `from models import ...` 入口，目前需要同步三个导出文件：`src/models/__init__.py`、`src/models/layers/__init__.py`、`src/models/objects/__init__.py`。这些入口现在只按请求加载对应模块，不导入全部封装。若不需要统一入口，只从具体模块导入即可。
 
@@ -69,7 +71,7 @@ python -X utf8 -B -m runtime.console ../output/ai-production.sqlite3 --request e
 
 - 给 AI 用的制作辅助工具：用层、对象组织内容、关系及其在轴上的位置。
 - 底层保持精简和自由。Layer、Object 只保存字段和返回自身；检测、配置读取、持久化由外部执行代码承担。
-- Layer.type 是类上的层名，name 是创建实例时传入的名字；objects 实际装载对象实例。
+- type 字符串统一由 TOML 提供，Python 类不再重复声明；name 是创建实例时传入的名字，objects 实际装载对象实例。常规保存自动填写层记录的 type，原始 CRUD 的矛盾值由独立检测报告。
 - Object.layer 是必传关键字参数，保存时保证非空且层存在。information 是内容字典；Python 类型注解本身不做运行时拦截，所有封装保留 open = true。
 - 完整读写使用 runtime.api；read 返回记录字典，load 返回派生实例，save 同时接受字典和实例。整层保存明确设置所传对象的归属；省略对象或关联不表示删除。
 - return_self() 返回同一个 Python 实例；它不是 JSON 导出或数据库序列化方法。
@@ -91,6 +93,8 @@ python -X utf8 -B -m runtime.console ../output/ai-production.sqlite3 --request e
 | movie | MovieLayer／Movie | information.source：视频引用 |
 | model | ModelLayer／Model | source：模型引用；data：可选字典 |
 | active | ActiveLayer／Active | source：动作引用；data：可选字典；bind：作用对象关联 |
+
+另有 [Title 类](src/models/objects/title.py) 和 [标题配置](configs/objects/title.toml) 作为派生示例；继承 Text 的内容与约定，不新增非空或长度限制，也不新增标题层。
 
 source 目前原样保存，由使用方解释。封装不读取资源，也不新增必填、资源存在性检查或格式白名单。主线、歌词、背景、原画等用途可通过实例名字区分，复用同一种封装。
 
@@ -132,9 +136,9 @@ python -X utf8 -B -m unittest discover -s ../tests -v
 
 测试覆盖配置继承、父约定保护、字段类型、区间边界、类型兼容、检测触发范围、逐项继续、批次最终状态、按需导入，以及存储、日志、迁移、完整记录/实例往返、关闭重开和 CLI。使用内存库和专用临时文件，不写入输出数据库。
 
-当前包含详细展开、缺字段提醒和轴精度回归在内的 142 项测试通过。JSON 内容变化会区分 `1`、`1.0` 与 `true`，日志、批次最终状态和检测字段选择使用同一比较方式；字典键顺序不产生变化。无变化的字段在 SQL UPDATE 前跳过。
+当前包含详细展开、缺字段提醒和轴精度回归在内的 154 项测试通过。JSON 内容变化会区分 `1`、`1.0` 与 `true`，日志、批次最终状态和检测字段选择使用同一比较方式；字典键顺序不产生变化。无变化的字段在 SQL UPDATE 前跳过。
 
-相同的本地 100 对象场景复测（现有层、新 Text 实例自动匹配配置、内置检测开启）：
+此前读写优化时的本地 100 对象场景记录（现有层、新 Text 实例自动匹配配置、内置检测开启；以下文件读取数是加入 Title 与配置唯一性检查前的基线）：
 
 | 操作 | 修复前 | 修复后 |
 |---|---|---|
@@ -159,9 +163,9 @@ python -X utf8 -B -m unittest discover -s ../tests -v
 
 - read_layer/read_object 读取完整记录及发出的关联，层同时装载直属对象；不依赖配置文件可读。
 - load_layer/load_object 按每条记录的 config_ref 还原 Python 派生实例，不递归父层、子层或关联目标。
-- save_layer/save_object 新增或更新显式传入项；已有配置引用默认保留，事务成功后回填编号。删除仍为显式操作。
+- save_layer/save_object 新增或更新显式传入项；Python 实例按实际类取得配置，字典更新省略 config_ref 时保留原引用。层的 type 从配置取得，事务成功后回填编号。删除仍为显式操作。
 - bind 采用包含 kind、project_id、id 的完整来源/目标字典，新建时可只填写目标，由保存入口补齐来源。
-- config_ref 与 project_id 保持为存储元数据，不添加到基础类。普通 Python 实例调用方保留项目上下文；新增用途配置可显式指定引用。
+- config_ref 与 project_id 保持为存储元数据，不添加到基础类。常规 save 需要可解析的对应配置；缺配置的原始数据仍可通过 dispatch/CRUD 保存，再由检测逐条报告。省略 type 时必须能读取层配置，接口不猜测。
 
 API 参数、保存范围与错误反馈见 [公共 API](src/runtime/API.md)。源码位置与后续工具开发说明见 [工具指南](tools/README.md)。
 

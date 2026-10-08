@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from typing import ClassVar
 
 from ..objects.base import Object
 
@@ -7,8 +6,6 @@ from ..objects.base import Object
 @dataclass
 class Layer:
     """层的基础类：组织上下文并装载对象。"""
-
-    type: ClassVar[str] = "Layer"  # 这类层的名称，子类可自行指定。
 
     id: int | None = None
     name: str = ""  # 创建时传入的实例名字。

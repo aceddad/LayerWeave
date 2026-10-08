@@ -3,7 +3,7 @@
 from importlib import import_module
 
 
-_MODULES = {'Object': 'base', 'Text': 'text', 'Image': 'image', 'Audio': 'audio', 'Movie': 'movie', 'Model': 'model', 'Active': 'active'}
+_MODULES = {'Object': 'base', 'Text': 'text', 'Title': 'title', 'Image': 'image', 'Audio': 'audio', 'Movie': 'movie', 'Model': 'model', 'Active': 'active'}
 __all__ = list(_MODULES)
 
 

@@ -63,7 +63,7 @@ def create_example():
 
 if __name__ == "__main__":
     for layer in create_example():
-        print(f"{layer.id} {layer.type}：{layer.name}")
+        print(f"{layer.id} {type(layer).__name__}：{layer.name}")
         for obj in layer.objects:
             result = obj.return_self()
             print(f"  {result.id} {type(result).__name__}：{result.information}")

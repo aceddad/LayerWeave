@@ -48,7 +48,7 @@ class ValidationTests(unittest.TestCase):
         path.write_text(content, encoding="utf-8")
 
     def track(self):
-        self.write("layers/track.toml", '[layer]\ntype="track"\nextends="base.toml"\nobjects="text"\n[layer.constraint]\noverlap=false\n')
+        self.write("layers/track.toml", '[layer]\ntype="track"\nclass="fixture_types:TrackLayer"\nextends="base.toml"\nobjects="text"\n[layer.constraint]\noverlap=false\n')
         return self.layer(type="track", config_ref="layers/track.toml")["id"]
 
     def issues(self, result, rule):
@@ -77,7 +77,7 @@ class ValidationTests(unittest.TestCase):
         self.assertEqual(renamed["data"]["information"], {"text": 123})
 
     def test_inheritance_compatibility_and_config_ref_change(self):
-        self.write("objects/dialogue.toml", '[object]\ntype="dialogue"\nextends="text.toml"\n[object.information]\nspeaker={type="str"}\n')
+        self.write("objects/dialogue.toml", '[object]\ntype="dialogue"\nclass="fixture_types:DialogueObject"\nextends="text.toml"\n[object.information]\nspeaker={type="str"}\n')
         result = self.obj(config_ref="objects/dialogue.toml", information={"text": "hello", "speaker": "A"})
         self.assertEqual(result["checks"]["issues"], [])
         changed = self.call("update", "object", id=result["id"], data={"config_ref": "objects/image.toml"})
@@ -101,7 +101,7 @@ class ValidationTests(unittest.TestCase):
     def test_axis_option_parent_change_and_no_root_requirement(self):
         child = self.layer(father=self.layer_id, axis={"unit": "frame"})
         self.assertEqual(len(self.issues(child, "axis_only_on_root")), 1)
-        self.write("layers/local.toml", '[layer]\ntype="local"\nextends="text.toml"\n[layer.options]\naxis_only_on_root=false\n')
+        self.write("layers/local.toml", '[layer]\ntype="local"\nclass="fixture_types:LocalLayer"\nextends="text.toml"\n[layer.options]\naxis_only_on_root=false\n')
         changed = self.call("update", "layer", id=child["id"], data={"config_ref": "layers/local.toml", "type": "local"})
         self.assertEqual(changed["checks"]["issues"], [])
         root = self.layer(axis={"unit": "second"})
@@ -164,7 +164,7 @@ class ValidationTests(unittest.TestCase):
         self.assertEqual(changed["checks"]["issues"], [])
 
     def test_duration_and_invalid_input_skip_dependent_arithmetic(self):
-        self.write("objects/positive.toml", '[object]\ntype="positive"\nextends="base.toml"\n[object.constraint]\nduration="positive"\n')
+        self.write("objects/positive.toml", '[object]\ntype="positive"\nclass="fixture_types:PositiveObject"\nextends="base.toml"\n[object.constraint]\nduration="positive"\n')
         layer = self.layer(type="Layer", config_ref="layers/base.toml")["id"]
         result = self.obj(layer=layer, config_ref="objects/positive.toml")
         self.assertEqual(len(self.issues(result, "duration")), 1)
@@ -188,7 +188,7 @@ class ValidationTests(unittest.TestCase):
         self.assertIsNotNone(crud.read(self.connection, "bind", id=bind["id"]))
 
     def test_unknown_rule_invalid_parameter_and_rule_failure_continue(self):
-        self.write("objects/custom.toml", '[object]\ntype="custom"\nextends="base.toml"\n[object.rules]\nunknown=true\n[object.constraint]\nduration="mystery"\n')
+        self.write("objects/custom.toml", '[object]\ntype="custom"\nclass="fixture_types:CustomObject"\nextends="base.toml"\n[object.rules]\nunknown=true\n[object.constraint]\nduration="mystery"\n')
         result = self.obj(config_ref="objects/custom.toml", begin=4, end=1)
         self.assertEqual(result["checks"]["status"], "partial")
         self.assertTrue(self.issues(result, "begin_le_end"))
@@ -230,7 +230,7 @@ else:
         self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_new_rule_uses_registry_without_changing_runner(self):
-        self.write("objects/title.toml", '[object]\ntype="title"\nextends="text.toml"\n[object.rules]\ntext_nonempty=true\n')
+        self.write("objects/title.toml", '[object]\ntype="title"\nclass="models.objects.title:Title"\nextends="text.toml"\n[object.rules]\ntext_nonempty=true\n')
         module = Path(self.temp.name) / "custom_rule.py"
         module.write_text('def check(record, config, read_record):\n    return [{"severity":"error", "field":"information.text", "message":"标题不能为空"}] if record["information"].get("text") == "" else []\n', encoding="utf-8")
         sys.path.insert(0, self.temp.name)
@@ -255,7 +255,7 @@ else:
         self.assertIsNotNone(crud.read(self.connection, "object", project_id=self.project, id=result["id"]))
 
     def test_rule_declared_for_wrong_kind_is_not_silently_accepted(self):
-        self.write("objects/wrong.toml", '[object]\ntype="wrong"\nextends="text.toml"\n[object.rules]\nno_cycle=true\n')
+        self.write("objects/wrong.toml", '[object]\ntype="wrong"\nclass="fixture_types:WrongObject"\nextends="text.toml"\n[object.rules]\nno_cycle=true\n')
         result = self.obj(config_ref="objects/wrong.toml")
         self.assertEqual(result["checks"]["status"], "partial")
         self.assertIn("rules.no_cycle", self.issues(result, "configuration")[0]["message"])

@@ -4,12 +4,13 @@ from functools import partial
 
 from .storage import crud
 from .operation import DEFAULT_CHECKER, RequestError, run_operation
+from .configuration.loader import DEFAULT_ROOT, Loader
 
 
 WRITES = {"create": crud.create, "update": crud.update, "delete": crud.delete}
 
 
-def dispatch(connection, request, *, checker=DEFAULT_CHECKER):
+def dispatch(connection, request, *, config_root=DEFAULT_ROOT, checker=DEFAULT_CHECKER):
     """接收请求或 request(read_record) 工厂；工厂在写事务内计算请求，提交后统一检测。"""
     batch = isinstance(request, list)
     dynamic = callable(request)
@@ -20,6 +21,7 @@ def dispatch(connection, request, *, checker=DEFAULT_CHECKER):
         batch = isinstance(resolved, list)
         requests = resolved if batch else [resolved]
         results, changes = [], []
+        loader = Loader(config_root)
         for index, item in enumerate(requests):
             try:
                 if not isinstance(item, dict):
@@ -39,6 +41,11 @@ def dispatch(connection, request, *, checker=DEFAULT_CHECKER):
                         data = crud.read(connection, kind, **args)
                     change = None
                 elif action in WRITES:
+                    # 原始请求仍可显式保存 type；省略时从本次指定的配置补齐。
+                    payload = args.get("data")
+                    if kind == "layer" and action in {"create", "update"} and isinstance(payload, dict):
+                        if "type" not in payload and "config_ref" in payload:
+                            args["data"] = {**payload, "type": loader.load(payload["config_ref"], "layer")["type"]}
                     data, change = WRITES[action](
                         connection, kind, operation_id=operation_id, **args,
                     )
@@ -59,6 +66,11 @@ def dispatch(connection, request, *, checker=DEFAULT_CHECKER):
 
     static_requests = request if batch else [request]
     writing = dynamic or any(isinstance(item, dict) and item.get("action") in WRITES for item in static_requests)
+    if checker is DEFAULT_CHECKER:
+        def configured_checker(changes, read_record):
+            from .validation.runner import check_changes
+            return check_changes(changes, read_record, config_root=config_root)
+        checker = configured_checker
     result = run_operation(connection, work, writing=writing, checker=checker)
     if not result["ok"]:
         return result

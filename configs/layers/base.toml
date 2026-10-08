@@ -11,7 +11,6 @@ objects = "Object"                    # 基础对象配置名称；按 objects/ 
 when    = "组织上下文、层间关系，并装载对象"
 
 [layer.fields]
-type    = { type = "str", default = "Layer", note = "类属性，子类可指定自己的层名；不作为创建实例时的参数" }
 id      = { type = "int | None", note = "项目内层编号，初始为 None；与本项目对象共用编号，本类不分配编号；完整身份还需项目上下文" }
 name    = { type = "str", default = "", note = "创建时传入的名字，可以重名" }
 father  = { type = "int | None", note = "父层编号，初始为 None；为空表示根层，非空编号由数据库保证指向同项目实际父层" }

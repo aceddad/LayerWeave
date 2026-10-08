@@ -278,4 +278,4 @@ Python 工具实现放在 src/tools/<内容类型>/，通用功能放在 src/too
 
 生成新坐标时复用 [PositionMath/decimal_value](../src/tools/common/_precision.py)，共享十进制运算、轴来源查找与精度落点。纯读取工具继续使用原始存储数值，不调用取整逻辑。
 
-涉及删除的工具应明确调用 delete；不要用省略对象或清空局部列表来表达删除。纯查询工具不写数据。模型的 config_ref 留在数据库记录中，自定义用途创建时可明确指定。
+涉及删除的工具应明确调用 delete；不要用省略对象或清空局部列表来表达删除。纯查询工具不写数据。模型的 config_ref 留在数据库记录中；实例保存按实际 Python 类取得唯一配置。新增封装同时提供自己的类与 TOML，字典保存明确指定 config_ref。Title/Text 的继承与往返示例见 `src/examples/title.py`。

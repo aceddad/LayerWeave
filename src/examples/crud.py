@@ -19,7 +19,7 @@ def create_example():
         project_id = project["id"]
         layer = dispatch(connection, {
             "action": "create", "kind": "layer", "project_id": project_id,
-            "data": {"name": "主线", "type": "text", "config_ref": "layers/text.toml",
+            "data": {"name": "主线", "config_ref": "layers/text.toml",
                      "axis": {"unit": "秒", "precision": 0.001}},
         })
 

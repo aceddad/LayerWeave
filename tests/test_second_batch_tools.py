@@ -153,7 +153,7 @@ class SecondBatchToolsTests(unittest.TestCase):
     def test_instant_tail_and_alignment_report_overlap_without_guessing_gap(self):
         configs = Path(self.temp.name) / "configs"
         shutil.copytree(DEFAULT_ROOT, configs)
-        (configs / "layers/track.toml").write_text('[layer]\ntype="track"\nextends="base.toml"\n[layer.constraint]\noverlap=false\n', encoding="utf-8")
+        (configs / "layers/track.toml").write_text('[layer]\ntype="track"\nclass="fixture_types:TrackLayer"\nextends="base.toml"\n[layer.constraint]\noverlap=false\n', encoding="utf-8")
         checker = partial(check_changes, config_root=configs)
         track = self.layer(type="track", config_ref="layers/track.toml")
         self.obj(3, 3, layer_id=track)

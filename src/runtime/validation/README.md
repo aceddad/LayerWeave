@@ -10,7 +10,7 @@
 | [runner.py](runner.py) | 合并批次变化、查询最终记录、选择目标、逐项执行与去重 |
 | [registry.py](registry.py) | 规则名、函数路径、触发字段与检查范围 |
 | [rules/fields.py](rules/fields.py) | 共用类型判断与已声明字段检测 |
-| [rules/layers.py](rules/layers.py) | 父链、轴、装载对象兼容、重叠 |
+| [rules/layers.py](rules/layers.py) | 层类型与配置一致性、父链、轴、装载对象兼容、重叠 |
 | [rules/objects.py](rules/objects.py) | 起止顺序与时长 |
 | [rules/binds.py](rules/binds.py) | 关联两端统一检查 |
 | [配置读取器](../configuration/loader.py) | 检测需要配置时读取，检查继承并合并约定 |
@@ -25,6 +25,7 @@
 | 对象换层 | 旧层、新层的对象兼容与重叠 |
 | father | 父链无环、改变根/子身份后的轴约定 |
 | axis | 字段类型、轴的位置约定 |
+| 层 type | layer_type：存储值与配置标识一致 |
 | config_ref | 当前目标规则；对象类型变化或层配置变化也检查层的装载约定 |
 | 关联端点变化 | 关联两端存在性 |
 | 删除实体 | 保留关联的端点；删除对象也复查原层 |
@@ -38,6 +39,8 @@
 - 对象必须有所属层：Python 的 layer 是必传关键字参数，保存时由 NOT NULL 与复合外键保证非空、层存在和项目正确。类型注解本身不拦截显式传入 None；基础类不查询数据库。
 - 父层存在由外键保证，不再重复检测 father_exists/layer_exists。父链无环在结构变更后诊断；Python 类继承环由 Python 处理，配置继承环由读取器处理。
 - 根可以没有轴；默认仅根可设轴。配置 options.axis_only_on_root=false 后，子层可设自己的轴。
+- 层记录的 type 应等于 TOML 的 type；新建、type/config_ref 变化和主动复查时检查。不一致报告 error，原始写入不撤销。配置缺失时不拿基础配置的 type 代替实际类型进行比较。
+- 每份配置必须显式绑定自己的 Python 类，同一类不得绑定多份配置。解析配置时检查这些约定，基础类不添加赋值检测。
 - 层接受指定对象配置及其派生配置。拥有 text 字段的基础 Object 不自动成为 Text；类型兼容和内容有效性分别判断。
 - begin<=end，允许负位置。持续区间为 [begin,end)，瞬间 begin=end 占一个点。1～3 与 3～5 不冲突；瞬间 3 与 1～3 不冲突，与 3～5 冲突；同点瞬间冲突。
 - overlap=true 不执行冲突检查；duration=any 不增加时长限制。positive 要求正时长，zero 要求瞬间。
@@ -110,13 +113,14 @@ def text_nonempty(record, config, read_record):
 },
 ```
 
-第三步，新增 configs/objects/title.toml：
+第三步，在已有的 configs/objects/title.toml 示例中启用新规则。它已经有自己的 Python 类 `Title(Text)`；以下非空规则仅作为扩展教程，不是内置 Title 的约定：
 
 ```toml
 [object]
 type = "title"
+class = "models.objects.title:Title"
 extends = "text.toml"
-note = "标题用途，复用文字对象类"
+note = "标题封装，使用继承 Text 的独立 Title 类"
 
 [object.rules]
 text_nonempty = true

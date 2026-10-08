@@ -79,7 +79,7 @@ save 同样接受完整或部分记录字典。新记录没有 id；已有 id �
 
 ```python
 result = save_layer(connection, project_id, {
-    "type": "text", "config_ref": "layers/text.toml", "name": "新层",
+    "config_ref": "layers/text.toml", "name": "新层",
     "objects": [
         {"config_ref": "objects/text.toml", "information": {"text": "开场"}},
     ],
@@ -88,7 +88,7 @@ result = save_layer(connection, project_id, {
 
 整层保存先发放层编号，再用这个编号保存所传 objects；因此嵌套字典中的对象可以由容器补齐 layer。将已有对象显式放入另一层的保存请求，会更新其所属层。单独 save_object 则使用对象自身的 layer，数据库要求它非空且实际存在。
 
-字典按明确提供的字段更新；Python 实例保存其基础存储字段的当前值。缺少 objects/bind、空列表或列表中未带上的已有记录均不会触发删除。删除继续用 dispatch 的 delete。save 返回的 data 是保存后的完整记录，可能包含本次未修改的既有对象或关联。
+字典按明确提供的字段更新；Python 实例保存其基础存储字段的当前值，并从实际类确定配置。缺少 objects/bind、空列表或列表中未带上的已有记录均不会触发删除。删除继续用 dispatch 的 delete。save 返回的 data 是保存后的完整记录，可能包含本次未修改的既有对象或关联。
 
 整个保存只有一个 operation_id，数据与日志在同一个事务提交，检测在提交后执行一次。返回包含 ok、applied、operation_id、kind、project_id、data、checks。成功后回填输入的 id、对象 layer 和关联 id；失败不回填回滚掉的编号。检测异常不撤销成功的数据写入。
 
@@ -115,13 +115,15 @@ result = dispatch(connection, plan)
 
 ## 配置与自定义类型
 
-- 新 Python 实例可省略 config_ref：按实际 Python 类的模块路径查找唯一直接声明该 class 的配置。有多个或没有对应配置时，请明确传 config_ref。
-- 配置继承得到同一个 class 的用途别名不参与自动猜测。例如 title 继承 text 并复用 Text，创建 title 时显式传 `config_ref="objects/title.toml"`。
-- 已有对象保存默认保留数据库的原 config_ref，因此读取 title 为 Text 后再保存仍是 title。
-- 整层保存可传 `object_config_refs={0: "objects/title.toml"}`，按 objects 下标指定某个对象的配置。使用字典对象时也可直接带 config_ref。
-- save/load 接受 config_root；配置根目录与检测使用同一个目录。仅导入当前需要的类，不加载全部封装。
-- 同一次保存的类与配置匹配使用共享索引；下一次调用重新构建，配置编辑不会被长期缓存掩盖。
-- 模型仍不持有 project_id/config_ref；Python 工具保留明确的项目上下文。普通子类的数据扩展使用 information 或现有字段；本接口不会自动为新增 Python 属性创建数据库列。
+- 每份层/对象封装 TOML 必须明确声明自己的 type 和 class；一个 Python 类在同一配置根目录内只绑定一份配置。class 使用类定义处的“模块:类”，不继承父配置的类绑定。
+- Python 实例保存时根据实际类确定配置，新建与更新一致；不再接受 config_ref 参数覆盖或 object_config_refs 下标映射。已有 id 的实例换用其他类，表示将该记录改为对应封装。
+- 字典保存通过 config_ref 确定封装，已有字典省略引用则保留数据库原值。层的 type 从 TOML 读取；读回字典带有相同 type 可以直接再次保存，矛盾的 type 会使本次保存失败。
+- save 需要对应配置可解析；缺失/无效配置的原始记录仍可通过 dispatch/CRUD 写入、通过 read 读取，再由独立检测报告。原始层新建若无法读取配置，须保留原数据已有的 type，接口不猜测。
+- save/load/dispatch 接受 config_root；默认检测使用同一个目录。仅装载实际需要的 Python 类，不加载全部封装。
+- 同一次调用复用配置索引和文件内容，下次调用重新读取；编辑配置后不会被长期缓存掩盖。
+- 模型不持有 type 字符串、project_id/config_ref；Python 类是实例的类型，封装标识由 TOML 提供。自定义内容仍使用 information 或现有字段，不自动为新增 Python 属性创建数据库列。
+
+派生示例为 [Title](../models/objects/title.py) 与 [标题配置](../../configs/objects/title.toml)：Python 的 Title 继承 Text，配置的 title 继承 text，并明确绑定 Title。两者都不新增限制；TextLayer 接受 Title，文本汇集也会包含它。运行 `python -X utf8 -B -m examples.title` 可查看保存、重新装载和修改的过程。
 
 新增普通封装只需类和配置。若从具体模块导入，不必修改统一模型导出入口。继承约定见 [配置说明](configuration/README.md)。
 

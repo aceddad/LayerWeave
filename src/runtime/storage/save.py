@@ -53,22 +53,25 @@ def _save_bindings(connection, entries, kind, project_id, entity_id, operation_i
         updates.append((entry, row))
 
 
-def _save_entity(connection, kind, project_id, value, config_ref, loader, operation_id, changes, updates, *, layer_id=None):
+def _save_entity(connection, kind, project_id, value, loader, operation_id, changes, updates, *, layer_id=None):
     entity_id = _get(value, "id")
     data = _parts(value, kind, project_id)
     if kind == "object" and layer_id is not None:
         # 保存整层明确表达装载关系；只在提交成功后回填 Python 对象的归属。
         data["layer"] = layer_id
-    ref = config_ref if config_ref is not None else _get(value, "config_ref")
+    ref = value.get("config_ref") if isinstance(value, dict) else infer_config(value, kind, loader)
     if ref is None and entity_id is not None:
         previous = crud.read(connection, kind, project_id=project_id, id=entity_id)
         if previous is None:
             raise KeyError(f"{kind} ({project_id}, {entity_id}) 不存在")
         ref = previous["config_ref"]
     if ref is None:
-        if isinstance(value, dict):
-            raise ValueError("新记录必须提供 config_ref")
-        ref = infer_config(value, kind, loader)
+        raise ValueError("新字典记录必须提供 config_ref")
+    config = loader.load(ref, kind)
+    if kind == "layer":
+        if "type" in data and data["type"] != config["type"]:
+            raise ValueError(f"type 由配置提供：传入 {data['type']!r} 与 {ref} 的 {config['type']!r} 不一致")
+        data["type"] = config["type"]
     data["config_ref"] = ref
     row = _upsert(connection, kind, project_id, entity_id, data, operation_id, changes)
     saved = {"id": row["id"]}
@@ -76,23 +79,23 @@ def _save_entity(connection, kind, project_id, value, config_ref, loader, operat
         saved["layer"] = row["layer"]
     if isinstance(value, dict):
         saved.update(project_id=project_id, config_ref=ref)
+        if kind == "layer":
+            saved["type"] = row["type"]
     updates.append((value, saved))
     _save_bindings(connection, _get(value, "bind", []), kind, project_id, row["id"], operation_id, changes, updates)
     return row
 
 
-def _save(connection, kind, project_id, value, *, config_ref=None, object_config_refs=None,
-          config_root=DEFAULT_ROOT, checker=DEFAULT_CHECKER):
+def _save(connection, kind, project_id, value, *, config_root=DEFAULT_ROOT, checker=DEFAULT_CHECKER):
     updates = []
 
     def work(operation_id):
         changes = []
         loader = Loader(config_root)
-        row = _save_entity(connection, kind, project_id, value, config_ref, loader, operation_id, changes, updates)
+        row = _save_entity(connection, kind, project_id, value, loader, operation_id, changes, updates)
         if kind == "layer":
-            for index, obj in enumerate(_get(value, "objects", [])):
-                ref = (object_config_refs or {}).get(index)
-                _save_entity(connection, "object", project_id, obj, ref, loader, operation_id, changes, updates, layer_id=row["id"])
+            for obj in _get(value, "objects", []):
+                _save_entity(connection, "object", project_id, obj, loader, operation_id, changes, updates, layer_id=row["id"])
             data = read_layer(connection, project_id, row["id"])
         else:
             data = read_object(connection, project_id, row["id"])
@@ -115,13 +118,11 @@ def _save(connection, kind, project_id, value, *, config_ref=None, object_config
     return {**result, "kind": kind, "project_id": project_id}
 
 
-def save_object(connection, project_id, obj, *, config_ref=None, config_root=DEFAULT_ROOT, checker=DEFAULT_CHECKER):
-    """保存对象及传入的发出关联；已有对象默认保留原 config_ref。"""
-    return _save(connection, "object", project_id, obj, config_ref=config_ref, config_root=config_root, checker=checker)
+def save_object(connection, project_id, obj, *, config_root=DEFAULT_ROOT, checker=DEFAULT_CHECKER):
+    """保存对象及传入的发出关联；实例按实际类确定配置，字典按 config_ref。"""
+    return _save(connection, "object", project_id, obj, config_root=config_root, checker=checker)
 
 
-def save_layer(connection, project_id, layer, *, config_ref=None, object_config_refs=None,
-               config_root=DEFAULT_ROOT, checker=DEFAULT_CHECKER):
-    """同一事务保存层、传入 objects 和它们的 bind。object_config_refs 按对象列表下标覆盖配置。"""
-    return _save(connection, "layer", project_id, layer, config_ref=config_ref, object_config_refs=object_config_refs,
-                 config_root=config_root, checker=checker)
+def save_layer(connection, project_id, layer, *, config_root=DEFAULT_ROOT, checker=DEFAULT_CHECKER):
+    """同一事务保存层、传入 objects 和它们的 bind；type 来自层配置。"""
+    return _save(connection, "layer", project_id, layer, config_root=config_root, checker=checker)

@@ -20,7 +20,7 @@ class ChangeValueTests(unittest.TestCase):
         self.configs = Path(temp.name) / "configs"
         shutil.copytree(DEFAULT_ROOT, self.configs)
         (self.configs / "objects/typed.toml").write_text(
-            '[object]\ntype="typed"\nextends="base.toml"\n[object.information]\nflag={type="int"}\n', encoding="utf-8")
+            '[object]\ntype="typed"\nclass="fixture_types:TypedObject"\nextends="base.toml"\n[object.information]\nflag={type="int"}\n', encoding="utf-8")
         self.connection = open_database(":memory:")
         self.addCleanup(self.connection.close)
         self.connection.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
@@ -106,8 +106,8 @@ class ChangeValueTests(unittest.TestCase):
         self.assertFalse(any(sql.startswith("UPDATE") for sql in statements))
 
     def test_configuration_cannot_replace_bool_contract_with_number(self):
-        for text in ('[object]\ntype="bad"\nextends="base.toml"\nopen=1\n',
-                     '[object]\ntype="bad"\nextends="base.toml"\n[object.rules]\nbegin_le_end=1\n'):
+        for text in ('[object]\ntype="bad"\nclass="fixture_types:BadObject"\nextends="base.toml"\nopen=1\n',
+                     '[object]\ntype="bad"\nclass="fixture_types:BadObject"\nextends="base.toml"\n[object.rules]\nbegin_le_end=1\n'):
             (self.configs / "objects/bad.toml").write_text(text, encoding="utf-8")
             with self.assertRaises(ConfigError):
                 Loader(self.configs).load("objects/bad.toml", "object")

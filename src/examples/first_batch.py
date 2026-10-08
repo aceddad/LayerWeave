@@ -18,14 +18,14 @@ def create_example():
             "action": "create", "kind": "project", "data": {"name": "第一批工具示例"},
         })["id"]
         text = save_layer(connection, project_id, {
-            "type": "text", "config_ref": "layers/text.toml", "name": "台词",
+            "config_ref": "layers/text.toml", "name": "台词",
             "objects": [
                 {"config_ref": "objects/text.toml", "name": "开场", "begin": 0, "end": 2, "information": {"text": "开场白"}},
                 {"config_ref": "objects/text.toml", "name": "结尾", "begin": 2, "end": 4, "information": {"text": "结束语"}},
             ],
         })["data"]
         voice = save_layer(connection, project_id, {
-            "type": "audio", "config_ref": "layers/audio.toml", "name": "配音", "father": text["id"],
+            "config_ref": "layers/audio.toml", "name": "配音", "father": text["id"],
             "objects": [{"config_ref": "objects/audio.toml", "begin": 0, "end": 2,
                          "information": {"source": "assets/opening.wav"}}],
         })["data"]

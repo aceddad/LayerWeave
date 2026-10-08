@@ -12,14 +12,14 @@ def create_example():
     with closing(open_database(":memory:")) as connection:
         connection.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
         project_id = dispatch(connection, {"action": "create", "kind": "project", "data": {"name": "详细展开示例"}})["id"]
-        root = save_layer(connection, project_id, {"type": "text", "config_ref": "layers/text.toml", "name": "字幕",
+        root = save_layer(connection, project_id, {"config_ref": "layers/text.toml", "name": "字幕",
                                                   "axis": {"unit": "秒", "precision": 0.001}})["data"]
         for text in ("第一句", "第二句", "第三句"):
             append_object(connection, project_id, root["id"], {"config_ref": "objects/text.toml", "information": {"text": text}}, duration=0.1)
-        save_layer(connection, project_id, {"type": "audio", "config_ref": "layers/audio.toml", "name": "配音", "father": root["id"],
+        save_layer(connection, project_id, {"config_ref": "layers/audio.toml", "name": "配音", "father": root["id"],
                                             "objects": [{"config_ref": "objects/audio.toml", "begin": 0.1, "end": 0.4,
                                                          "information": {"source": "assets/voice.wav"}}]})
-        save_layer(connection, project_id, {"type": "image", "config_ref": "layers/image.toml", "name": "参考",
+        save_layer(connection, project_id, {"config_ref": "layers/image.toml", "name": "参考",
                                             "axis": {"unit": "帧", "precision": 1},
                                             "objects": [{"config_ref": "objects/image.toml", "begin": 1, "end": 2,
                                                          "information": {"source": "assets/reference.png"}}]})

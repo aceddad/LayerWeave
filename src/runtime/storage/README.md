@@ -25,7 +25,7 @@ python -X utf8 -B -m runtime.storage.database ../output/ai-production.sqlite3
 | changes | 内部 id、operation_id、UTC 时间、目标种类/项目/编号、动作和修改前后的 JSON 快照 |
 
 - `config_ref` 是两类实体的存储元数据，路径相对于项目的 `configs/`，例如 `objects/image.toml`。它给读取配置、恢复对应 Python 类提供依据，不添加到基础类中。
-- 层的 `type` 单独保存其类属性。写入方须显式提供实际的 type 和 config_ref，不能只依靠 asdict()。
+- 层的 `type` 保存 TOML 中的类型标识，Python 类不再声明同名字符串。save_layer 自动取得它；dispatch 在省略 type 且提供 config_ref 时也会补齐。低层 crud 不读配置，仍写入调用方提供的原始 type/config_ref，独立检测负责报告矛盾。
 - `axis` 和 `information` 使用 JSON 文本；无轴说明使用 SQL NULL，空 information 使用 `{}`。
 - 层的 objects 从对象表反查并装载，bind 从关联表反查当前实体发出的关联，不在实体行内再存副本。
 - 项目归属和层归属有外键；father 可为 NULL 表示根层，objects.layer 必须非空并指向同项目实际存在的层。没有级联更新或删除。

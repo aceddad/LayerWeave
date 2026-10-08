@@ -73,7 +73,7 @@ class MissingFieldsPrecisionTests(unittest.TestCase):
 
     def test_inherited_missing_fields_warn_once_without_requiring_values(self):
         (self.configs / "objects/dialogue.toml").write_text(
-            '[object]\ntype="dialogue"\nextends="text.toml"\n[object.information]\nspeaker={type="str"}\n', encoding="utf-8")
+            '[object]\ntype="dialogue"\nclass="fixture_types:DialogueObject"\nextends="text.toml"\n[object.information]\nspeaker={type="str"}\n', encoding="utf-8")
         result = self.obj(config_ref="objects/dialogue.toml", information={})
         warnings = [item for item in result["checks"]["issues"] if item["severity"] == "warn"]
         self.assertEqual({item["field"] for item in warnings}, {"information.text", "information.speaker"})

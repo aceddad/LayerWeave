@@ -1,5 +1,7 @@
 """一次请求或一批请求：统一事务、操作编号，提交后调用独立检测通道。"""
 
+from functools import partial
+
 from .storage import crud
 from .operation import DEFAULT_CHECKER, RequestError, run_operation
 
@@ -8,11 +10,15 @@ WRITES = {"create": crud.create, "update": crud.update, "delete": crud.delete}
 
 
 def dispatch(connection, request, *, checker=DEFAULT_CHECKER):
-    """接收一份请求字典或请求列表；列表按一个事务提交，检测在提交后统一运行。"""
+    """接收请求或 request(read_record) 工厂；工厂在写事务内计算请求，提交后统一检测。"""
     batch = isinstance(request, list)
-    requests = request if batch else [request]
+    dynamic = callable(request)
 
     def work(operation_id):
+        nonlocal batch
+        resolved = request(partial(crud.read, connection)) if dynamic else request
+        batch = isinstance(resolved, list)
+        requests = resolved if batch else [resolved]
         results, changes = [], []
         for index, item in enumerate(requests):
             try:
@@ -51,7 +57,8 @@ def dispatch(connection, request, *, checker=DEFAULT_CHECKER):
                 raise RequestError(error, index) from error
         return results, changes
 
-    writing = any(isinstance(item, dict) and item.get("action") in WRITES for item in requests)
+    static_requests = request if batch else [request]
+    writing = dynamic or any(isinstance(item, dict) and item.get("action") in WRITES for item in static_requests)
     result = run_operation(connection, work, writing=writing, checker=checker)
     if not result["ok"]:
         return result

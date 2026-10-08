@@ -2,6 +2,7 @@
 
 from .configuration.loader import Loader
 from .dispatch import dispatch
+from .operation import DEFAULT_CHECKER
 from .storage.assembly import read_layer, read_object, read_project_index
 from .storage.assembly import _snapshot as read_snapshot
 from .storage.crud import read as read_record
@@ -19,4 +20,4 @@ def validate(*args, **kwargs):
 
 __all__ = ["Loader", "dispatch", "initialize_database", "open_database", "read_layer", "read_object", "read_project_index",
            "load_layer", "load_object", "save_layer", "save_object", "validate",
-           "read_record", "read_snapshot", "query_objects", "read_bindings"]
+           "read_record", "read_snapshot", "query_objects", "read_bindings", "DEFAULT_CHECKER"]

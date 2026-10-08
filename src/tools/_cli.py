@@ -1,4 +1,4 @@
-"""只读工具共用的小型命令行入口，不负责注册或发现工具。"""
+"""内部工具共用的小型命令行入口，不负责注册或发现工具。"""
 
 import argparse
 from contextlib import closing
@@ -31,9 +31,9 @@ def run_cli(parser, query, *, formatter=None):
             result, ensure_ascii=False, indent=2, allow_nan=False,
         )
     except (OSError, sqlite3.Error, ValueError, TypeError) as error:
-        parser.exit(1, f"查询失败：{error}\n")
+        parser.exit(1, f"执行失败：{error}\n")
     print(output)
     if formatter is not None and not args.json and isinstance(result, dict):
         for issue in result.get("issues", []):
             print(f"{issue['severity']}: {issue.get('target', {})} {issue.get('field', '')}: {issue['message']}", file=sys.stderr)
-    return 0 if result is not None else 1
+    return 0 if result is not None and (not isinstance(result, dict) or result.get("ok", True)) else 1

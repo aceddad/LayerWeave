@@ -10,8 +10,16 @@
 | 对象检索 | [find_objects.py](../src/tools/common/find_objects.py) | 按层、名字、内容、位置范围查找对象；只读 |
 | 关联查询 | [relations.py](../src/tools/common/relations.py) | 查询直接引用与被引用，保留跨项目完整身份；只读 |
 | 文本汇集 | [collect.py](../src/tools/text/collect.py) | 按顺序提取文字，保留来源，逐项报告不可读取的内容；只读 |
+| 接续新增 | [objects.py](../src/tools/common/objects.py) | 自动从层尾或指定对象后新增；写入 |
+| 连续排列 | [positions.py](../src/tools/common/positions.py) | 同层对象首尾接续，保留各自时长；写入 |
+| 整体平移 | [positions.py](../src/tools/common/positions.py) | 同时移动所选对象的开始和结束位置；写入 |
+| 起终点对齐 | [positions.py](../src/tools/common/positions.py) | 共享开始位置或结束位置，保持各自时长；写入 |
+| 修改时长 | [positions.py](../src/tools/common/positions.py) | 保持起点，计算新的终点；写入 |
+| 复制对象 | [objects.py](../src/tools/common/objects.py) | 复制内容与配置、发放新编号，不复制关联；写入 |
 
 第一批四个工具已齐备，完整内存示例见 [first_batch.py](../src/examples/first_batch.py)。从 src/ 运行 `python -X utf8 -B -m examples.first_batch`，不改动真实项目数据库。
+
+第二批六个通用写入工具的完整内存示例见 [second_batch.py](../src/examples/second_batch.py)：`python -X utf8 -B -m examples.second_batch`。两批工具都不依赖可视化、Skill 或 MCP。
 
 ## 项目概览
 
@@ -127,13 +135,94 @@ python -X utf8 -B -m tools.text.collect ../output/ai-production.sqlite3 1 1 --js
 
 默认输出汇集文字；需要来源与诊断时用 --json。纯文本模式仍会把诊断写到标准错误，不静默隐藏未读取的内容。条目诊断不改成查询失败退出码；SQL/参数错误或目标层不存在时退出码非零。
 
+## 第二批：通用写入约定
+
+六个工具都是普通函数，使用同一项目内的明确编号，不改项目号或对象编号。位置只按存储数值计算，允许负位置，不自动换算轴单位、按精度取整、裁剪内容或留出间隔。
+
+读取当前位置、计算请求、写入数据与日志在一次 BEGIN IMMEDIATE 事务内完成；接续新增不会先在事务外读取旧的层尾。一个工具调用共用一个 operation_id，提交后检测一次。底层约定问题仍作为 checks 返回，已经提交的数据保留。
+
+输入不是可计算的有限数值、指定目标不存在或写入失败时，本次操作整体回滚。可计算的负时长不会被改成正数：begin<=end 等约定仍在提交后反馈。瞬间对象继续占一个点；它后面直接接续可能产生重叠提示，工具不猜一个微小间隔。
+
+以下函数都可传 checker，含义与 dispatch 一致：默认内置检测，None 关闭自动检测，或传入自定义检查器。单对象动作返回单次 dispatch 结果，批量动作返回 results 列表；无变化时 applied=false，不写日志。不得在调用方尚未提交的事务中再调用这些完整操作入口。
+
+### 接续新增
+
+```python
+from tools.common.objects import append_object
+
+result = append_object(connection, project_id, layer_id, {
+    "config_ref": "objects/text.toml", "name": "下一句",
+    "information": {"text": "正文"},
+}, duration=3)
+```
+
+默认 begin 为该层所有对象中最大的 end，end=begin+duration。空层从 0 开始，可用 empty_start 指定空层起点。after_id 可指定同层的某个对象，以它的 end 为起点；不会移动这个对象后面的其他内容。
+
+data 是原有 create 的对象字段字典，需要 config_ref；工具决定其中的 layer、begin、end，其他字段交给核心保存，不修改传入字典。新编号从结果 id 取得。关联仍使用明确的关联操作添加。
+
+### 连续排列、平移与对齐
+
+```python
+from tools.common.positions import arrange_objects, shift_objects, align_objects
+
+# 不传 object_ids：排列该层全部对象，默认保留首个对象的起点。
+result = arrange_objects(connection, project_id, layer_id)
+# 显式列表决定排列顺序；其余对象保持原状。
+result = arrange_objects(connection, project_id, layer_id, object_ids=[5, 2, 8], start=0)
+
+result = shift_objects(connection, project_id, [2, 5], offset=-3)
+result = shift_objects(connection, project_id, layer_id=layer_id, offset=5)
+
+result = align_objects(connection, project_id, [2, 5], position=10, edge="begin")
+result = align_objects(connection, project_id, [2, 5], position=10, edge="end")
+```
+
+连续排列限定在同一层。默认按当前 begin/end/id 排序，显式 object_ids 按给定顺序；每个对象保持 end-begin，依次首尾衔接。
+
+平移和对齐可选同项目不同层的对象，调用方负责选择轴含义一致的对象。也可通过 layer_id 明确选择整层；不会隐式修改整个项目。重复编号只处理一次，显式空列表表示不修改对象。
+
+起点对齐令 begin=position，终点按原时长计算；终点对齐令 end=position，起点按原时长倒推。对齐不会改变对象内容或时长；在同一层可能产生重叠，沿用提交后诊断。
+
+### 修改时长与复制
+
+```python
+from tools.common.positions import set_duration
+from tools.common.objects import copy_object
+
+result = set_duration(connection, project_id, object_id, 4)
+result = copy_object(connection, project_id, object_id)
+result = copy_object(connection, project_id, object_id, layer_id=target_layer_id, begin=10, name="副本")
+result = copy_object(connection, project_id, object_id, layer_id=target_layer_id, append=True)
+```
+
+修改时长保持 begin，设置 end=begin+duration，不自动后推其他对象。
+
+复制默认保留内容、配置、名字、备注、所属层与位置，新编号由核心发放。可另选同项目目标层、名字或起点；指定起点时保留原时长。append=True 将副本接到目标层末尾，空层从 0 开始，不能同时指定 begin。
+
+复制不修改原对象，不复制出向/入向关联，也不复制媒体文件；information 中的资源引用保持原样。整层复制、跨项目迁移和关联重映射留待后续批次。
+
+### 第二批命令行
+
+从 src/ 目录运行，返回标准操作与检测 JSON。成功和无变化操作退出码为 0，操作失败为 1；检测报告问题不会把已经成功写入的操作改成失败。
+
+```sh
+python -X utf8 -B -m tools.common.positions ../output/ai-production.sqlite3 1 arrange 1 --start 0
+python -X utf8 -B -m tools.common.positions ../output/ai-production.sqlite3 1 shift --ids 2 5 --offset -3
+python -X utf8 -B -m tools.common.positions ../output/ai-production.sqlite3 1 align --ids 2 5 --edge end --position 10
+python -X utf8 -B -m tools.common.positions ../output/ai-production.sqlite3 1 duration 2 4
+python -X utf8 -B -m tools.common.objects ../output/ai-production.sqlite3 1 append 1 3 --data-file object.json
+python -X utf8 -B -m tools.common.objects ../output/ai-production.sqlite3 1 copy 2 --append
+```
+
+object.json 为对象创建字段，例如 `{"config_ref":"objects/text.toml","information":{"text":"下一句"}}`。平移与对齐可用 --layer-id 选择整层；arrange 用 --ids 指定排列顺序；append 可用 --after-id 或 --empty-start。
+
 ## 开发下一个工具
 
 AI 开发工具时按这个顺序阅读：
 
 1. [公共读写 API](../src/runtime/API.md)：完整层/对象的读取、装载和保存。
 2. 对应的 [层配置](../configs/layers/README.md) 与 [对象配置](../configs/objects/README.md)：理解内容结构和约定。
-3. [第一批工具示例](../src/examples/first_batch.py)与[完整往返示例](../src/examples/read_write.py)：查询组合，以及关闭数据库后重开、修改、再保存。
+3. [第一批工具示例](../src/examples/first_batch.py)、[第二批工具示例](../src/examples/second_batch.py)与[完整往返示例](../src/examples/read_write.py)：查询组合、位置编辑，以及关闭数据库后重开再保存。
 4. 仅在新增约束时阅读 [规则扩充说明](../src/runtime/validation/README.md)。
 
 Python 工具实现放在 src/tools/<内容类型>/，通用功能放在 src/tools/common/；具体分类按需要创建。这里的 tools/README.md 作为说明入口，不提前增加工具注册框架。
@@ -143,5 +232,7 @@ Python 工具实现放在 src/tools/<内容类型>/，通用功能放在 src/too
 小工具采用普通函数，参数显式带 connection、project_id 和目标编号。需要哪些输入、会修改哪些内容、返回什么，写在函数说明和一个可运行示例中。新工具无需进入核心的 __init__ 批量导入，也不要求 MCP、Skill 或可视化依赖。
 
 命令行的打开数据库、JSON 输出和错误反馈由 [tools/_cli.py](../src/tools/_cli.py) 复用；它不注册或扫描工具。范围与关联 SQL 放在核心 [storage/queries.py](../src/runtime/storage/queries.py)，工具通过 runtime.api 调用。需要连续几次一致的读取，可使用 read_snapshot 复用现有读取事务。
+
+需要先读取再计算写入的工具，使用 `dispatch(connection, request_factory)`：工厂接收 read_record 查询函数，在写事务内返回一个请求字典或请求列表。不要在事务外先计算层尾再单独保存，也不要在工厂中自行写 SQL 或调用另一个完整事务入口。现有位置工具可作为例子。
 
 涉及删除的工具应明确调用 delete；不要用省略对象或清空局部列表来表达删除。纯查询工具不写数据。模型的 config_ref 留在数据库记录中，自定义用途创建时可明确指定。

@@ -48,6 +48,8 @@ update 只修改传入字段，JSON 字段整体替换。delete 只删除指定�
 
 批量请求使用已知的编号，不解释临时变量或结果引用表达式。若需要把刚创建的编号立即交给下一步，可以用 Python 组合低层 CRUD，在同一个显式事务和 operation_id 下执行。
 
+Python 的 dispatch 也接受 request_factory(read_record)，用于在写事务内读取最新状态并计算请求。工厂返回字典或列表，核心统一写入；JSON 输入协议不变。示例见 [公共 API](API.md) 的“在事务内计算写入请求”。
+
 ## Python 与命令入口
 
 从 src 目录运行完整内存示例：

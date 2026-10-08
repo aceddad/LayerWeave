@@ -92,6 +92,23 @@ result = save_layer(connection, project_id, {
 
 无变化的字段不会执行 UPDATE。JSON 内容按解码后的实际类型比较，`1`、`1.0`、`true` 互相变化会被记录；字典键顺序不影响结果。普通 SQL 数值列仍遵循存储的数值语义，例如 begin=1 与已有的 1.0 不产生额外修改。
 
+## 在事务内计算写入请求
+
+dispatch 除了接收字典/列表，也接受 Python 请求工厂。核心先开启 BEGIN IMMEDIATE，再把 read_record 查询函数交给工厂；工厂返回一个请求字典或列表，实际写入、日志和提交后检测仍由核心处理。
+
+```python
+def plan(read_record):
+    obj = read_record("object", project_id=project_id, id=object_id)
+    return {"action": "update", "kind": "object", "project_id": project_id,
+            "id": object_id, "data": {"begin": obj["begin"] + 3, "end": obj["end"] + 3}}
+
+result = dispatch(connection, plan)
+```
+
+这样读取和计算使用本次写事务的状态，适用于接续新增、批量平移等工具。工厂只读取并构建请求，不自行写入或开启嵌套事务。纯查询继续用只读 API。JSON CLI 的原有字典/列表协议保持不变。
+
+自定义工具可从 runtime.api 导入 DEFAULT_CHECKER 作为可选 checker 参数的默认值：省略时使用核心检测，显式 None 关闭检测。工厂失败、请求失败时整体回滚；检测失败不撤销已提交操作。
+
 ## 配置与自定义类型
 
 - 新 Python 实例可省略 config_ref：按实际 Python 类的模块路径查找唯一直接声明该 class 的配置。有多个或没有对应配置时，请明确传 config_ref。
@@ -139,4 +156,4 @@ result = save_object(connection, project_id, obj)
 - operation.py：CRUD 与组合保存共用事务、日志编号和检测入口。
 - configuration/ 与 validation/：继续负责配置与约束。
 
-业务小工具放在 src/tools/<内容类型>/，共用工具放在 src/tools/common/，具体目录按实际工具需要创建。它们调用上述 API；核心不反向导入工具。第一批四个只读工具与开发指南见 [工具说明](../../tools/README.md)。
+业务小工具放在 src/tools/<内容类型>/，共用工具放在 src/tools/common/，具体目录按实际工具需要创建。它们调用上述 API；核心不反向导入工具。两批内部工具与开发指南见 [工具说明](../../tools/README.md)。

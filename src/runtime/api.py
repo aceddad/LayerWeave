@@ -10,6 +10,7 @@ from .storage.database import initialize_database, open_database
 from .storage.models import load_layer, load_object
 from .storage.save import save_layer, save_object
 from .storage.queries import query_objects, read_bindings
+from .storage.details import read_project_details
 
 
 def validate(*args, **kwargs):
@@ -20,4 +21,4 @@ def validate(*args, **kwargs):
 
 __all__ = ["Loader", "dispatch", "initialize_database", "open_database", "read_layer", "read_object", "read_project_index",
            "load_layer", "load_object", "save_layer", "save_object", "validate",
-           "read_record", "read_snapshot", "query_objects", "read_bindings", "DEFAULT_CHECKER"]
+           "read_record", "read_snapshot", "query_objects", "read_bindings", "read_project_details", "DEFAULT_CHECKER"]

@@ -41,6 +41,8 @@
 - 层接受指定对象配置及其派生配置。拥有 text 字段的基础 Object 不自动成为 Text；类型兼容和内容有效性分别判断。
 - begin<=end，允许负位置。持续区间为 [begin,end)，瞬间 begin=end 占一个点。1～3 与 3～5 不冲突；瞬间 3 与 1～3 不冲突，与 3～5 冲突；同点瞬间冲突。
 - overlap=true 不执行冲突检查；duration=any 不增加时长限制。positive 要求正时长，zero 要求瞬间。
+- 配置声明过而未提供的字段逐条给出 warn，不阻止保存、不自动补默认值或改名；包括继承的 information 字段。open=true 仍允许附加键。例如只有 information.txt 时，提示缺少 information.text，保留 txt 原值。空字符串/空字典视为已提供，类型仍按声明检查。
+- 缺字段检查沿用现有增量范围：创建、修改 information、切换配置或主动复查时检查相关内容；仅修改 name/tips 不重复检查旧内容。行记录中未携带的 objects/bind 属于反查组合字段，不当作漏填。
 - 没有必填 text/source、文本长度、资源存在性、文件格式、树深度等附加限制。visibility 留给视图，不检查实例显隐。
 
 ## 反馈

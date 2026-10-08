@@ -15,8 +15,8 @@ def collect_text(connection, project_id, layer_id, *, separator="\n", begin=None
         return result
     loader = Loader() if config_root is None else Loader(config_root)
 
-    def issue(kind, id, field, message):
-        result["issues"].append({"severity": "error", "target": {"kind": kind, "project_id": project_id, "id": id},
+    def issue(kind, id, field, message, severity="error"):
+        result["issues"].append({"severity": severity, "target": {"kind": kind, "project_id": project_id, "id": id},
                                  "field": field, "message": message})
 
     try:
@@ -39,7 +39,8 @@ def collect_text(connection, project_id, layer_id, *, separator="\n", begin=None
             issue("object", record["id"], "information", "内容不是字典，无法提取文字")
             continue
         if "text" not in information:
-            continue  # text 当前并非必填字段。
+            issue("object", record["id"], "information.text", "未填写配置声明的文字字段，请检查是否漏填或字段名写错", severity="warn")
+            continue
         if not isinstance(information["text"], str):
             issue("object", record["id"], "information.text", "文字不是字符串，未将它自动转成文本")
             continue

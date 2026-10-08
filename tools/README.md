@@ -7,6 +7,7 @@
 | 工具 | 代码 | 用途 |
 |---|---|---|
 | 项目概览 | [project_overview.py](../src/tools/common/project_overview.py) | 项目层级、层类型、名字与对象数量；只读 |
+| 项目详细展开 | [project_details.py](../src/tools/common/project_details.py) | 展开项目/子树的层、对象内容和关联引用，可按数值范围筛选；只读 |
 | 对象检索 | [find_objects.py](../src/tools/common/find_objects.py) | 按层、名字、内容、位置范围查找对象；只读 |
 | 关联查询 | [relations.py](../src/tools/common/relations.py) | 查询直接引用与被引用，保留跨项目完整身份；只读 |
 | 文本汇集 | [collect.py](../src/tools/text/collect.py) | 按顺序提取文字，保留来源，逐项报告不可读取的内容；只读 |
@@ -68,6 +69,40 @@ python -X utf8 -B -m examples.project_overview
 - [6] '参考图' ('image') · 0 个对象
 ```
 
+## 项目详细展开
+
+```python
+from tools.common.project_details import project_details, format_details
+
+whole = project_details(connection, project_id)
+subtree = project_details(connection, project_id, layer_id=1)
+window = project_details(connection, project_id, begin=10, end=20)
+subtree_window = project_details(connection, project_id, layer_id=1, begin=10, end=20)
+```
+
+| 层范围 | 时间/位置范围 | 结果 |
+|---|---|---|
+| 未指定 | 未指定 | 项目全部层和对象，包括空层 |
+| 指定 layer_id | 未指定 | 该层自身及全部子孙层，所有对象 |
+| 未指定 | 指定 begin/end | 全项目中与数值范围相交的对象及必要父层路径 |
+| 指定 layer_id | 指定 begin/end | 指定子树内命中对象及必要父层路径 |
+
+位置条件与对象检索共用：[begin,end)，两端相等为点查询，可只提供一端。严格按已保存的数值比较，不按轴单位、precision 或 fps 换算、取整查询范围，也不裁剪命中对象的原位置或内容。
+
+返回 project、scope、counts、layers。layers 是按层级排列的扁平列表，每层保留原始字段（含 father、axis、config_ref、tips），增加 depth、objects 和发出的 bind。objects 包含完整对象记录、information 和发出的 bind。关联只保留完整引用，不递归目标或打开资源文件。
+
+指定层的 depth 从 0 开始，但原 father 不改写。时间筛选时未命中分支被省略，空的必要祖先层仍保留；没有命中时返回项目/范围及空 layers。项目或指定层不存在才返回 None。父链异常也不会无限展开或重复对象，原父编号始终保留。
+
+数据在一个读取快照中成批获取，不逐层、逐对象查询。普通非空展开为 4 次查询，指定起始层时为 5 次；不读取配置文件、不写日志、不自动执行约束检测。
+
+```sh
+python -X utf8 -B -m tools.common.project_details ../output/ai-production.sqlite3 1 --json
+python -X utf8 -B -m tools.common.project_details ../output/ai-production.sqlite3 1 --layer-id 1 --begin 10 --end 20
+python -X utf8 -B -m examples.project_details
+```
+
+默认输出包含对象正文的纯文本树，--json 输出同一份结构化数据。独立示例只使用内存数据库。
+
 ## 对象检索
 
 ```python
@@ -123,7 +158,7 @@ sources = result["items"]
 
 可传 begin/end 使用与对象检索相同的位置范围，也可传 config_root 指定配置目录。一次调用内共享配置读取结果。
 
-- 非文字对象、未填写可选 text 的对象会跳过，不作为错误。
+- 非文字对象会跳过。文字对象未填写配置声明的 text 时，返回一条 warn 后跳过；不会悄悄只增加 skipped_count。空字符串视为已填写，正常保留。
 - 配置缺失或文字类型错误逐条放入 issues，附 severity、target、field 和 message，其他对象继续。
 - status=completed 表示本次汇集完成；存在无法汇集的条目时为 partial。skipped_count 包含非文字、未填写文字及错误条目。
 - 文字基准配置本身不可用时返回 partial，明确说明未能汇集；层不存在返回 None。
@@ -137,7 +172,13 @@ python -X utf8 -B -m tools.text.collect ../output/ai-production.sqlite3 1 1 --js
 
 ## 第二批：通用写入约定
 
-六个工具都是普通函数，使用同一项目内的明确编号，不改项目号或对象编号。位置只按存储数值计算，允许负位置，不自动换算轴单位、按精度取整、裁剪内容或留出间隔。
+六个工具都是普通函数，使用同一项目内的明确编号，不改项目号或对象编号。位置只按数值计算，允许负位置，不自动换算轴单位、裁剪内容或留出间隔。
+
+工具生成的坐标使用十进制计算，再按当前轴的 precision（正数步长）落到最近刻度；正好半格时远离 0 取整。默认沿父链使用根轴，若子层显式提供自己的 axis，则它和后代使用该轴；自有轴未声明 precision 时不借用另一轴的精度。没有 precision 就不猜步长，fps 不用于换算。轴查找在同一次操作内复用，下一次操作重新读取。
+
+例如 precision=0.001 时三次追加 0.1 的终点为 0.1、0.2、0.3，不留下浮点尾差。连续排列先累计未量化的位置，再分别落点，避免每段取整后继续累计造成额外误差。独立追加使用实际已保存的层尾，不保存隐藏的时间残差。
+
+量化可能使实际位置或时长相对原请求产生精度范围内的差异，短区间也可能变成瞬间。修改时长仍保留原起点，只量化新计算的终点；未指定新位置的普通复制仍保留原值。直接 CRUD、普通保存和只读查询不自动取整，也不批量改写已有数据；未落在格点上的旧数据执行零偏移时仍可能被归一并记入日志。
 
 读取当前位置、计算请求、写入数据与日志在一次 BEGIN IMMEDIATE 事务内完成；接续新增不会先在事务外读取旧的层尾。一个工具调用共用一个 operation_id，提交后检测一次。底层约定问题仍作为 checks 返回，已经提交的数据保留。
 
@@ -156,7 +197,7 @@ result = append_object(connection, project_id, layer_id, {
 }, duration=3)
 ```
 
-默认 begin 为该层所有对象中最大的 end，end=begin+duration。空层从 0 开始，可用 empty_start 指定空层起点。after_id 可指定同层的某个对象，以它的 end 为起点；不会移动这个对象后面的其他内容。
+先用该层所有对象中最大的 end 计算 begin、end=begin+duration，再按当前轴精度落点。空层从 0 开始，可用 empty_start 指定空层起点。after_id 可指定同层的某个对象，以它的 end 为计算起点；不会移动这个对象后面的其他内容。
 
 data 是原有 create 的对象字段字典，需要 config_ref；工具决定其中的 layer、begin、end，其他字段交给核心保存，不修改传入字典。新编号从结果 id 取得。关联仍使用明确的关联操作添加。
 
@@ -177,11 +218,11 @@ result = align_objects(connection, project_id, [2, 5], position=10, edge="begin"
 result = align_objects(connection, project_id, [2, 5], position=10, edge="end")
 ```
 
-连续排列限定在同一层。默认按当前 begin/end/id 排序，显式 object_ids 按给定顺序；每个对象保持 end-begin，依次首尾衔接。
+连续排列限定在同一层。默认按当前 begin/end/id 排序，显式 object_ids 按给定顺序；以各对象原有 end-begin 累计位置，再按精度落点，依次首尾衔接。
 
 平移和对齐可选同项目不同层的对象，调用方负责选择轴含义一致的对象。也可通过 layer_id 明确选择整层；不会隐式修改整个项目。重复编号只处理一次，显式空列表表示不修改对象。
 
-起点对齐令 begin=position，终点按原时长计算；终点对齐令 end=position，起点按原时长倒推。对齐不会改变对象内容或时长；在同一层可能产生重叠，沿用提交后诊断。
+起点对齐以 position 为新起点、终点按原时长计算；终点对齐以 position 为终点、起点按原时长倒推，再将生成的端点按各自轴精度落点。内容不变；实际时长可能有量化差异。在同一层可能产生重叠，沿用提交后诊断。
 
 ### 修改时长与复制
 
@@ -234,5 +275,7 @@ Python 工具实现放在 src/tools/<内容类型>/，通用功能放在 src/too
 命令行的打开数据库、JSON 输出和错误反馈由 [tools/_cli.py](../src/tools/_cli.py) 复用；它不注册或扫描工具。范围与关联 SQL 放在核心 [storage/queries.py](../src/runtime/storage/queries.py)，工具通过 runtime.api 调用。需要连续几次一致的读取，可使用 read_snapshot 复用现有读取事务。
 
 需要先读取再计算写入的工具，使用 `dispatch(connection, request_factory)`：工厂接收 read_record 查询函数，在写事务内返回一个请求字典或请求列表。不要在事务外先计算层尾再单独保存，也不要在工厂中自行写 SQL 或调用另一个完整事务入口。现有位置工具可作为例子。
+
+生成新坐标时复用 [PositionMath/decimal_value](../src/tools/common/_precision.py)，共享十进制运算、轴来源查找与精度落点。纯读取工具继续使用原始存储数值，不调用取整逻辑。
 
 涉及删除的工具应明确调用 delete；不要用省略对象或清空局部列表来表达删除。纯查询工具不写数据。模型的 config_ref 留在数据库记录中，自定义用途创建时可明确指定。

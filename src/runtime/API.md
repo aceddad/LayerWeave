@@ -19,6 +19,8 @@ read 返回保留 project_id/config_ref 的普通字典，不需要配置文件�
 
 项目摘要使用 read_project_index(connection, project_id)：返回 project 与层摘要列表，每个层带直属 object_count，不读取正文或配置文件。它提供一次读取事务内的平面数据；层级排列与纯文本展示由 [项目概览工具](../tools/common/project_overview.py) 完成。
 
+完整范围读取使用 read_project_details(connection, project_id, layer_id=None, begin=None, end=None)，可选参数用关键字传入。未指定层表示全项目，指定层包含自身与全部子孙层；时间条件共用原始数值相交筛选，不转换轴或量化查询值。返回 project/scope/layers，层内带完整 objects 与发出关联。时间筛选保留必要父路径，未命中返回空 layers；不存在项目/指定层返回 None。层级排列和文本输出见 [详细展开工具](../tools/common/project_details.py)。
+
 ## 通用只读查询
 
 以下能力也经 runtime.api 提供，供各类型工具复用：
@@ -108,6 +110,8 @@ result = dispatch(connection, plan)
 这样读取和计算使用本次写事务的状态，适用于接续新增、批量平移等工具。工厂只读取并构建请求，不自行写入或开启嵌套事务。纯查询继续用只读 API。JSON CLI 的原有字典/列表协议保持不变。
 
 自定义工具可从 runtime.api 导入 DEFAULT_CHECKER 作为可选 checker 参数的默认值：省略时使用核心检测，显式 None 关闭检测。工厂失败、请求失败时整体回滚；检测失败不撤销已提交操作。
+
+位置工具在工厂内按最近声明的轴取得 precision，并对生成的坐标落点。直接 dispatch/save_layer/save_object 保存调用方原值，不自动归一坐标。配置声明字段缺失时，相关内容检测给 warn，保存仍然成功；文本汇集也会报告缺少 text 的条目。
 
 ## 配置与自定义类型
 

@@ -1,8 +1,7 @@
 """项目概览：只读层级和数量，Python 字典及纯文本输出共用同一结果。"""
 
-from collections import defaultdict
-
 from runtime.api import read_project_index
+from ._hierarchy import order_layers
 
 
 def project_overview(connection, project_id):
@@ -10,29 +9,14 @@ def project_overview(connection, project_id):
     index = read_project_index(connection, project_id)
     if index is None:
         return None
-    children = defaultdict(list)
-    for layer in index["layers"]:
-        children[layer["father"]].append(layer)
-
-    roots = children[None]
-    pending = [(layer, 0) for layer in reversed(roots)]
-    ordered, placed = [], set()
-    while pending:
-        layer, depth = pending.pop()
-        if layer["id"] in placed:
-            continue
-        placed.add(layer["id"])
-        ordered.append({**layer, "depth": depth})
-        pending.extend((child, depth + 1) for child in reversed(children[layer["id"]]))
-
-    # 存储允许父链问题先保存后诊断；概览保留未归入根的层，不伪造根或递归成环。
-    unplaced = [{**layer, "depth": None} for layer in index["layers"] if layer["id"] not in placed]
+    layers = order_layers(index["layers"])
     return {
         "project": index["project"],
         "counts": {"layers": len(index["layers"]),
                    "objects": sum(layer["object_count"] for layer in index["layers"]),
-                   "roots": len(roots), "unplaced_layers": len(unplaced)},
-        "layers": ordered + unplaced,
+                   "roots": sum(layer["father"] is None for layer in layers),
+                   "unplaced_layers": sum(layer["depth"] is None for layer in layers)},
+        "layers": layers,
     }
 
 

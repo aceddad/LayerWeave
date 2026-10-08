@@ -6,8 +6,7 @@ from . import crud
 from .assembly import _snapshot
 
 
-def query_objects(connection, project_id, *, layer_id=None, name=None, begin=None, end=None):
-    """对象记录，不装载关联。name 为字面子串；位置为相交范围，相等边界表示点查询。"""
+def _object_conditions(project_id, *, layer_id=None, name=None, begin=None, end=None):
     spec = crud.SPECS["object"]
     crud._scope(spec, project_id)
     for value in (begin, end):
@@ -36,11 +35,17 @@ def query_objects(connection, project_id, *, layer_id=None, name=None, begin=Non
             if end is not None:
                 terms.append('"begin" < ?')
                 values.append(end)
+    return ' AND '.join(terms), values
+
+
+def query_objects(connection, project_id, *, layer_id=None, name=None, begin=None, end=None):
+    """对象记录，不装载关联。name 为字面子串；位置为相交范围，相等边界表示点查询。"""
+    where, values = _object_conditions(project_id, layer_id=layer_id, name=name, begin=begin, end=end)
     with _snapshot(connection):
         rows = connection.execute(
-            'SELECT * FROM objects WHERE ' + ' AND '.join(terms) + ' ORDER BY layer, "begin", "end", id', values,
+            'SELECT * FROM objects WHERE ' + where + ' ORDER BY layer, "begin", "end", id', values,
         )
-        return [crud._decode(spec, row) for row in rows]
+        return [crud._decode(crud.SPECS["object"], row) for row in rows]
 
 
 def read_bindings(connection, kind, project_id, id, *, direction="both"):

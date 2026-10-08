@@ -5,3 +5,5 @@
 base.toml 说明字段、返回方法、固定规则、默认取值和可调选项。默认 overlap=true、visibility=true；具体封装的显式 constraint/display 成为固定父约定。axis_only_on_root 是明确可调选项，默认 true，根层不必填写轴。
 
 层的 objects 按对象配置 type 唯一定位，接受该类型及其派生配置。六种内置层分别为 text、image、audio、movie、model、active。
+
+axis.precision 是位置计算工具使用的正数步长。子层未声明轴时沿父链取得轴，默认来自根；显式自有轴覆盖上级轴。工具按精度落点，不换算单位或 fps；读取与原始保存仍保留数值。

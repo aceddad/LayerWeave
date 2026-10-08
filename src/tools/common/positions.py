@@ -3,6 +3,7 @@
 from math import isfinite
 
 from runtime.api import DEFAULT_CHECKER, dispatch
+from ._precision import PositionMath, decimal_value
 
 
 def _number(value, label):
@@ -16,7 +17,7 @@ def _position(record, field):
 
 
 def _duration(record):
-    return _position(record, "end") - _position(record, "begin")
+    return decimal_value(_position(record, "end")) - decimal_value(_position(record, "begin"))
 
 
 def _layer(read, project_id, layer_id):
@@ -68,54 +69,60 @@ def _update(project_id, record, begin, end):
 
 
 def arrange_objects(connection, project_id, layer_id, *, object_ids=None, start=None, checker=DEFAULT_CHECKER):
-    """同层对象首尾接续，保留 end-begin；显式编号按给定顺序，默认按现有位置顺序。"""
+    """按原时长累计再按轴精度落点；显式编号按给定顺序，默认按现有位置顺序。"""
     def plan(read):
         if layer_id is None:
             raise ValueError("连续排列需要指定 layer_id")
         records = _objects(read, project_id, object_ids, layer_id)
         if not records:
             return []
-        cursor = _number(records[0]["begin"] if start is None else start, "排列起点")
+        math = PositionMath(read, project_id)
+        cursor = decimal_value(_number(records[0]["begin"] if start is None else start, "排列起点"))
         requests = []
         for record in records:
             end = cursor + _duration(record)
-            requests.append(_update(project_id, record, cursor, end))
+            requests.append(_update(project_id, record, math.snap(record["layer"], cursor), math.snap(record["layer"], end)))
             cursor = end
         return requests
     return dispatch(connection, plan, checker=checker)
 
 
 def shift_objects(connection, project_id, object_ids=None, *, offset, layer_id=None, checker=DEFAULT_CHECKER):
-    """选择对象或整层，将 begin/end 同时加上 offset，其他字段不变。"""
+    """选择对象或整层，begin/end 同时偏移并按轴精度落点，其他字段不变。"""
     def plan(read):
-        delta = _number(offset, "偏移量")
-        return [_update(project_id, record, _position(record, "begin") + delta, _position(record, "end") + delta)
+        delta = decimal_value(_number(offset, "偏移量"))
+        math = PositionMath(read, project_id)
+        return [_update(project_id, record,
+                        math.snap(record["layer"], decimal_value(_position(record, "begin")) + delta),
+                        math.snap(record["layer"], decimal_value(_position(record, "end")) + delta))
                 for record in _objects(read, project_id, object_ids, layer_id)]
     return dispatch(connection, plan, checker=checker)
 
 
 def align_objects(connection, project_id, object_ids=None, *, position, edge="begin", layer_id=None, checker=DEFAULT_CHECKER):
-    """将起点或终点移到 position，保留各自时长；可显式选择同项目多个层的对象。"""
+    """以原时长计算对齐后的端点，再按各自轴精度落点；可选择同项目多个层的对象。"""
     def plan(read):
-        target = _number(position, "对齐位置")
+        target = decimal_value(_number(position, "对齐位置"))
         if edge not in {"begin", "end"}:
             raise ValueError("edge 应为 begin 或 end")
         requests = []
+        math = PositionMath(read, project_id)
         for record in _objects(read, project_id, object_ids, layer_id):
             duration = _duration(record)
             begin, end = (target, target + duration) if edge == "begin" else (target - duration, target)
-            requests.append(_update(project_id, record, begin, end))
+            requests.append(_update(project_id, record, math.snap(record["layer"], begin), math.snap(record["layer"], end)))
         return requests
     return dispatch(connection, plan, checker=checker)
 
 
 def set_duration(connection, project_id, object_id, duration, *, checker=DEFAULT_CHECKER):
-    """保持起点，按给定时长计算终点；不会移动其他对象。"""
+    """保持起点，计算并量化新终点；不会移动其他对象。"""
     def plan(read):
-        value = _number(duration, "时长")
+        value = decimal_value(_number(duration, "时长"))
         record = _objects(read, project_id, [object_id])[0]
         begin = _position(record, "begin")
-        return _update(project_id, record, begin, begin + value)
+        end = PositionMath(read, project_id).snap(record["layer"], decimal_value(begin) + value)
+        return _update(project_id, record, begin, end)
     return dispatch(connection, plan, checker=checker)
 
 

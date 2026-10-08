@@ -61,10 +61,12 @@ class ValidationTests(unittest.TestCase):
             self.assertFalse(result["ok"])
         self.assertEqual(crud.read(self.connection, "project", id=self.project)["max_id"], before)
 
-    def test_empty_content_negative_position_and_optional_root_axis(self):
+    def test_missing_content_warns_but_negative_position_and_optional_root_axis_are_allowed(self):
         result = self.obj(begin=-3, end=-1, information={"extra": [1, 2]})
         self.assertTrue(result["ok"])
-        self.assertEqual(result["checks"], {"status": "completed", "issues": []})
+        self.assertEqual(result["checks"]["status"], "completed")
+        self.assertEqual([item["field"] for item in result["checks"]["issues"]], ["information.text"])
+        self.assertEqual(result["checks"]["issues"][0]["severity"], "warn")
 
     def test_content_error_is_saved_and_names_do_not_recheck_it(self):
         obj = self.obj(information={"text": 123})
@@ -166,7 +168,7 @@ class ValidationTests(unittest.TestCase):
         layer = self.layer(type="Layer", config_ref="layers/base.toml")["id"]
         result = self.obj(layer=layer, config_ref="objects/positive.toml")
         self.assertEqual(len(self.issues(result, "duration")), 1)
-        invalid = self.obj(begin="bad", end=2)
+        invalid = self.obj(begin="bad", end=2, information={"text": ""})
         self.assertTrue(invalid["applied"])
         self.assertEqual(invalid["checks"]["status"], "partial")
         self.assertEqual(len(self.issues(invalid, "fields")), 1)

@@ -1,6 +1,6 @@
 # LayerWeave
 
-创建日期：2026-10-08。当前状态：六类封装、SQLite 存储与日志、完整读写、配置继承与检测已实现。第一批只读工具与第二批位置编辑、接续新增和对象复制工具已可用；可视化尚未开始。
+创建日期：2026-10-08。当前状态：六类封装、SQLite 存储与日志、完整读写、配置继承与检测已实现。已提供概览/详细展开、对象检索、文本汇集及位置编辑工具；缺字段给 warn，工具生成位置按轴精度落点。可视化尚未开始。
 
 ## 快速开始
 
@@ -20,6 +20,8 @@ python -X utf8 -B -m examples.read_write
 查看第一批四个工具的完整演示：`python -X utf8 -B -m examples.first_batch`。只查看项目概览可运行 `python -X utf8 -B -m examples.project_overview`。真实数据库的用法和结果格式见 [内部工具说明](tools/README.md)。
 
 第二批六个写入工具的内存演示：`python -X utf8 -B -m examples.second_batch`，涵盖接续新增、连续排列、平移、对齐、修改时长和复制。
+
+详细展开的内存演示：`python -X utf8 -B -m examples.project_details`，展示指定层及子层按数值范围筛选后的完整对象内容；不做单位换算。
 
 初始化数据库（同样从 src 目录执行）：
 
@@ -49,6 +51,7 @@ python -X utf8 -B -m runtime.console ../output/ai-production.sqlite3 --request e
 | 看六类模型的创建装载 | [六类组合示例](src/examples/all_layers.py) |
 | 修改配置读取与继承 | [配置读取器](src/runtime/configuration/loader.py)、[合并约定](src/runtime/configuration/README.md) |
 | 查看项目层级与数量 | [项目概览工具](src/tools/common/project_overview.py)、[用法与示例](tools/README.md) |
+| 按项目/子树/时间范围详细展开 | [详细展开工具](src/tools/common/project_details.py)、[完整示例](src/examples/project_details.py) |
 | 检索对象、查询关联、汇集文字 | [第一批工具说明](tools/README.md)、[完整组合示例](src/examples/first_batch.py) |
 | 接续新增、位置编辑、对象复制 | [第二批工具说明](tools/README.md)、[完整组合示例](src/examples/second_batch.py) |
 | 开发内部工具 | [工具开发说明](tools/README.md) |
@@ -129,7 +132,7 @@ python -X utf8 -B -m unittest discover -s ../tests -v
 
 测试覆盖配置继承、父约定保护、字段类型、区间边界、类型兼容、检测触发范围、逐项继续、批次最终状态、按需导入，以及存储、日志、迁移、完整记录/实例往返、关闭重开和 CLI。使用内存库和专用临时文件，不写入输出数据库。
 
-当前包含两批内部工具在内的 121 项测试通过。JSON 内容变化会区分 `1`、`1.0` 与 `true`，日志、批次最终状态和检测字段选择使用同一比较方式；字典键顺序不产生变化。无变化的字段在 SQL UPDATE 前跳过。
+当前包含详细展开、缺字段提醒和轴精度回归在内的 142 项测试通过。JSON 内容变化会区分 `1`、`1.0` 与 `true`，日志、批次最终状态和检测字段选择使用同一比较方式；字典键顺序不产生变化。无变化的字段在 SQL UPDATE 前跳过。
 
 相同的本地 100 对象场景复测（现有层、新 Text 实例自动匹配配置、内置检测开启）：
 
@@ -185,6 +188,8 @@ API 参数、保存范围与错误反馈见 [公共 API](src/runtime/API.md)。�
 - 规则是普通函数，登记表集中记录触发字段、函数路径和检查范围；实际执行才导入模块。新增规则的完整示例见 [检测说明](src/runtime/validation/README.md)。
 - 可调选项与固定约定分开；默认仅根层可设轴，根不必填轴。持续区间采用 [begin,end)，瞬间占一个点，允许首尾衔接。
 - 配置缺失、未知规则、规则异常逐项报告，其他检查继续。主动复查直接使用 validate，不制造修改或日志。
+- 已声明但未填的字段逐条 warn，open=true 不会掩盖漏填；保留附加内容，不自动改拼写。文本汇集遇到缺 text 也会提示。
+- 位置工具用十进制计算并按 axis.precision 落点，默认继承根轴、自有轴优先；原始数据读写和时间筛选不做换算或自动取整。
 - 按需导入已解决旧版包入口一次加载全部封装的耦合，保持 from models import Text 等用法。
 - 后续推进项目内部工具、视图和明确提出的新用途；不预先增加资源检查或更多字段限制。
 - 当前是源码和本地运行验证，尚未做独立 AI 的使用评测。

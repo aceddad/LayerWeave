@@ -2,15 +2,17 @@
 
 from runtime.api import DEFAULT_CHECKER, dispatch
 from .positions import _duration, _number, _objects, _tail
+from ._precision import PositionMath, decimal_value
 
 
 def append_object(connection, project_id, layer_id, data, *, duration, after_id=None, empty_start=0, checker=DEFAULT_CHECKER):
     """从层内最大 end（或指定同层对象的 end）新增；空层使用 empty_start。"""
     def plan(read):
-        length = _number(duration, "时长")
-        begin = _tail(read, project_id, layer_id, after_id=after_id, empty_start=empty_start)
+        length = decimal_value(_number(duration, "时长"))
+        begin = decimal_value(_tail(read, project_id, layer_id, after_id=after_id, empty_start=empty_start))
+        math = PositionMath(read, project_id)
         return {"action": "create", "kind": "object", "project_id": project_id,
-                "data": {**data, "layer": layer_id, "begin": begin, "end": begin + length}}
+                "data": {**data, "layer": layer_id, "begin": math.snap(layer_id, begin), "end": math.snap(layer_id, begin + length)}}
     return dispatch(connection, plan, checker=checker)
 
 
@@ -27,8 +29,9 @@ def copy_object(connection, project_id, object_id, *, layer_id=None, begin=None,
             data["name"] = name
         start = _tail(read, project_id, destination) if append else begin
         if start is not None:
-            start = _number(start, "复制起点")
-            data.update(begin=start, end=start + _duration(source))
+            start = decimal_value(_number(start, "复制起点"))
+            math = PositionMath(read, project_id)
+            data.update(begin=math.snap(destination, start), end=math.snap(destination, start + _duration(source)))
         return {"action": "create", "kind": "object", "project_id": project_id, "data": data}
     return dispatch(connection, plan, checker=checker)
 

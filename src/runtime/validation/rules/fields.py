@@ -1,4 +1,4 @@
-"""共用类型判断；只检查声明过且提供了的内容，不补默认值。"""
+"""共用字段检查：已填字段检查类型，未填声明字段给出 warn，不补默认值。"""
 
 
 TYPES = {"str": str, "int": int, "float": (int, float), "dict": dict,
@@ -39,13 +39,20 @@ def check(record, config, read_record):
             issues.append(problem(f"无法检查字段类型：{error}", field=name, skipped=True))
 
     for name, spec in config.get("fields", {}).items():
-        if name in record and (changed is None or name in changed):
-            field(record[name], spec, name)
+        if changed is None or name in changed:
+            if name in record:
+                field(record[name], spec, name)
+            elif name not in {"objects", "bind"}:
+                # objects/bind 是反查装载的组合字段，不是数据库记录缺失。
+                issues.append(problem("未提供配置声明的字段，请检查是否漏填或字段名写错", field=name, severity="warn"))
     information = record.get("information")
     if isinstance(information, dict) and (changed is None or "information" in changed):
         for name, spec in config.get("information", {}).items():
             if name in information:
                 field(information[name], spec, f"information.{name}")
+            else:
+                issues.append(problem("未提供配置声明的字段，请检查是否漏填或字段名写错",
+                                      field=f"information.{name}", severity="warn"))
         if config.get("open", True) is False:
             for name in information.keys() - config.get("information", {}).keys():
                 issues.append(problem("此配置不接受未声明的内容字段", field=f"information.{name}"))

@@ -13,6 +13,9 @@ from ..operation import DEFAULT_CHECKER, run_operation
 from ..positions import PositionMath, decimal_value, numeric_position, shifted_positions
 
 
+CROSSING_ACTIONS = ("split", "keep", "stretch", "move")
+
+
 def _number(value, field):
     if not numeric_position(value):
         raise InputError(f"{field} 应为有限数值", field=field)
@@ -162,8 +165,8 @@ def insert_gap(connection, project_id, *, at, length, layer_id=None, layer_ids=N
                 raise InputError("同一对象的跨界处理只能提供一次", field="crossing_actions")
             # 旧文件明确给出两段内容时仍表示 split；不根据对象类型推断处理方式。
             action = item.get("action", "split" if "first_information" in item and "second_information" in item else None)
-            if action not in {"split", "keep"}:
-                raise InputError("跨界对象需要明确选择 split 或 keep", field="action", allowed=["split", "keep"],
+            if action not in CROSSING_ACTIONS:
+                raise InputError("跨界对象需要明确选择 split、keep、stretch 或 move", field="action", allowed=list(CROSSING_ACTIONS),
                                  target=target("object", owner, item["object_id"]))
             supplied[item["object_id"]] = {**item, "action": action}
         shifts, crossings = [], []
@@ -181,30 +184,41 @@ def insert_gap(connection, project_id, *, at, length, layer_id=None, layer_ids=N
                     "at": gaps[row["layer"]]["begin"]} for row in crossings if row["id"] not in supplied]
         if missing or supplied.keys() - crossing_ids:
             raise InputError("跨界处理与当前对象不对应；本批未写入", code="crossing_actions_required", field="crossing_actions",
-                             target=target("project", None, owner), allowed=["split", "keep"],
+                             target=target("project", None, owner), allowed=list(CROSSING_ACTIONS),
                              required_crossings=missing, required_splits=missing,
                              unused_object_ids=sorted(supplied.keys() - crossing_ids))
-        planned, kept = [], []
+        planned, kept, adjustments = [], [], []
         for row in crossings:
             gap, info = gaps[row["layer"]], supplied[row["id"]]
             if info["action"] == "keep":
                 kept.append({"id": row["id"], "layer_id": row["layer"], "begin": row["begin"], "end": row["end"]})
                 continue
+            if info["action"] == "stretch":
+                values = {"end": math.snap(row["layer"], decimal_value(row["end"]) + decimal_value(gap["length"]))}
+                adjustments.append((row, values, "stretched"))
+                continue
+            if info["action"] == "move":
+                adjustments.append((row, shifted_positions(row, gap["length"], math), "moved"))
+                continue
             parts, _ = _prepare_split(row, math, info.get("first_information"),
                                      [{"at": gap["begin"], "information": info.get("second_information")}])
             parts[1].update(shifted_positions({**row, **parts[1]}, gap["length"], math))
             planned.append((row, parts))
-        changes, splits, shifted = [], [], []
+        changes, splits = [], []
+        updates = {"shifted": [], "stretched": [], "moved": []}
         for row, parts in planned:
             segments = _apply_split(connection, row, parts, math, operation_id, changes)
             splits.append({"object_id": row["id"], "segments": segments})
-        for row, values in shifts:
+        for row, values, action in [*adjustments, *((row, values, "shifted") for row, values in shifts)]:
             updated, change = crud.update(connection, "object", row["id"], values, project_id=owner,
                                            operation_id=operation_id, position_math=math)
             if change is not None:
                 changes.append(change)
-            shifted.append({"id": updated["id"], "begin": updated["begin"], "end": updated["end"]})
+            summary = {"id": updated["id"], "begin": updated["begin"], "end": updated["end"]}
+            if action != "shifted":
+                summary.update(layer_id=row["layer"], previous_begin=row["begin"], previous_end=row["end"])
+            updates[action].append(summary)
         scope = {"mode": "project" if whole_project else "layer" if layer_id is not None else "subtrees", "layer_ids": layers}
         return {"project_id": owner, "scope": scope, "requested_at": at, "requested_length": length,
-                "gaps": list(gaps.values()), "splits": splits, "kept": kept, "shifted": shifted}, changes
+                "gaps": list(gaps.values()), "splits": splits, "kept": kept, **updates}, changes
     return {**run_operation(connection, work, checker=_checker(checker, config_root)), "tool": "insert_gap"}

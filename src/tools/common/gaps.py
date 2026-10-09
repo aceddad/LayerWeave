@@ -14,10 +14,15 @@ def format_gap(result):
             lines.append(f"对象 {split['object_id']} 分为：" + ", ".join(str(row["id"]) for row in split["segments"]))
         for item in result["data"].get("kept", []):
             lines.append(f"对象 {item['id']} 保持原样：[{item['begin']}, {item['end']})，仍可能覆盖插入时段。")
+        for item in result["data"].get("stretched", []):
+            lines.append(f"对象 {item['id']} 延长终点：{item['previous_end']} → {item['end']}，起点 {item['begin']} 保持。")
+        for item in result["data"].get("moved", []):
+            lines.append(f"对象 {item['id']} 整体后移：[{item['previous_begin']}, {item['previous_end']}) → [{item['begin']}, {item['end']})")
         lines.append(f"另外平移 {len(result['data']['shifted'])} 个对象。")
     else:
         for item in result.get("error", {}).get("required_crossings", result.get("error", {}).get("required_splits", [])):
-            lines.append(f"需为对象 {item['object_id']} 选择 split 或 keep：层 {item['layer_id']}，[{item['begin']}, {item['end']})，切点 {item['at']}")
+            choices = " / ".join(result.get("error", {}).get("allowed", ["split", "keep", "stretch", "move"]))
+            lines.append(f"需为对象 {item['object_id']} 选择 {choices}：层 {item['layer_id']}，[{item['begin']}, {item['end']})，切点 {item['at']}")
         if result.get("error", {}).get("unused_object_ids"):
             lines.append("这些对象当前不跨界：" + str(result["error"]["unused_object_ids"]))
     return "\n".join(lines)
@@ -45,7 +50,7 @@ def main():
 
 # 命令目录和 --help 共用的只读接口说明。
 COMMANDS = [{'name': 'insert_gap',
-  'summary': '明确选范围并插入时间；跨界对象逐个选择 split 或 keep',
+  'summary': '明确选范围并插入时间；跨界对象逐个选择 split、keep、stretch 或 move',
   'entrypoint': 'runtime.api:insert_gap',
   'cli': 'python -m tools.common.gaps',
   'read_only': False,
@@ -56,22 +61,25 @@ COMMANDS = [{'name': 'insert_gap',
                  'layer_ids': {'type': 'array', 'description': '子树起始层编号列表，包含全部后代；空列表为空选择'},
                  'whole_project': {'type': 'boolean', 'description': '显式选择整个项目；CLI 使用 --project', 'default': False},
                  'crossing_actions': {'type': 'array',
-                                      'description': 'object_id/action 项列表；action 为 split 或 keep；split 另需 '
+                                      'description': 'object_id/action 项列表；action 为 split、keep、stretch 或 move；split 另需 '
                                                      'first_information/second_information'},
                  'split_contents': {'type': 'array', 'description': '旧版分段内容参数，仅作兼容，不能与 crossing_actions 同传'},
                  'config_root': {'type': 'string', 'description': '检查或配置查询采用的配置根目录；省略使用项目 configs'}},
-  'returns': '标准操作结果；data 含 scope、插入时段 gaps、splits、kept、shifted；keep 可覆盖该时段。',
+  'returns': '标准操作结果；data 含 scope、插入时段 gaps、splits、kept、stretched、moved、shifted；不保证该时段完全空白。',
   'examples': [{'cli': 'python -m tools.common.gaps DATABASE 1 10 2 --layer-ids 4 --contents-file actions.json --json',
                 'files': {'actions.json': [{'object_id': 8,
                                             'action': 'split',
                                             'first_information': {'text': '前段'},
                                             'second_information': {'text': '后段'}},
-                                           {'object_id': 9, 'action': 'keep'}]}},
+                                           {'object_id': 9, 'action': 'keep'},
+                                           {'object_id': 10, 'action': 'stretch'},
+                                           {'object_id': 11, 'action': 'move'}]}},
                {'cli': 'python -m tools.common.gaps DATABASE 1 10 2 --project --json'}],
   'aliases': ['gaps', 'gap'],
   'notes': ['必须明确选择 --layer-id、--layer-ids、--project 之一；子树包含后代，直属层不包含子层。',
             '文件最外层是 JSON 列表，列出的对象必须实际跨界；缺少处理方式时本批不写。',
-            'keep 完全保留该跨界对象，它可能覆盖插入时段；不支持 stretch，不推断媒体行为。',
+            'keep 保持原样；stretch 仅将终点后移实际插入长度；move 将起终点一起后移该长度。',
+            '这三种动作都可能覆盖插入时段；内容和关联不变，不做音视频变速、补帧或资源裁切。',
             '没有跨界对象时可以省略内容文件。旧文件含完整的两段内容但未写 action 时按 split 兼容。']}]
 
 

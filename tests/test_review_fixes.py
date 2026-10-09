@@ -7,7 +7,7 @@ import sys
 import tempfile
 import unittest
 
-from runtime.api import dispatch, insert_gap, open_database, read_record, undo_operation
+from runtime.api import command_help, dispatch, insert_gap, open_database, query_objects, read_record, undo_operation
 from runtime.storage.database import SCHEMA_PATH
 from tools.common.gaps import format_gap
 
@@ -93,7 +93,7 @@ class ReviewFixTests(unittest.TestCase):
         result = insert_gap(self.c, self.p, at=10, length=2, whole_project=True)
         self.assertFalse(result["ok"])
         self.assertEqual({r["object_id"] for r in result["error"]["required_crossings"]}, {self.a,self.b,self.c_image})
-        self.assertEqual(result["error"]["allowed"], ["split","keep"])
+        self.assertEqual(result["error"]["allowed"], ["split","keep","stretch","move"])
         self.assertEqual(self.snapshot(), before)
 
     def test_keep_only_does_not_write_or_require_replacement_contents(self):
@@ -104,12 +104,12 @@ class ReviewFixTests(unittest.TestCase):
         self.assertFalse(result["applied"])
         self.assertEqual(self.snapshot(), before)
 
-    def test_unsupported_stretch_and_missing_action_are_explicit_errors(self):
-        for action in ({"object_id":self.b,"action":"stretch"}, {"object_id":self.b}):
+    def test_unsupported_action_and_missing_action_are_explicit_errors(self):
+        for action in ({"object_id":self.b,"action":"auto"}, {"object_id":self.b}):
             before = self.snapshot()
             result = insert_gap(self.c, self.p, at=10, length=2, layer_id=self.description, crossing_actions=[action])
             self.assertFalse(result["ok"])
-            self.assertEqual(result["error"]["allowed"], ["split","keep"])
+            self.assertEqual(result["error"]["allowed"], ["split","keep","stretch","move"])
             self.assertEqual(self.snapshot(), before)
 
     def test_legacy_split_contents_still_works_with_explicit_scope(self):
@@ -120,6 +120,110 @@ class ReviewFixTests(unittest.TestCase):
         invalid = insert_gap(self.c, self.p, at=9, length=2, layer_id=self.lyrics, split_contents=[], crossing_actions=[])
         self.assertFalse(invalid["ok"])
         self.assertEqual(self.snapshot(), before)
+
+    def test_stretch_keeps_description_and_background_aligned_with_later_content(self):
+        final_line = self.obj(self.lyrics, 28, 30, {"text": "丙句"})
+        middle_line = self.obj(self.lyrics, 13, 16, {"text": "乙句"})
+        original = {id:self.row(id) for id in (self.b, self.c_image)}
+        actions = self.actions()
+        actions[1]["action"] = actions[2]["action"] = "stretch"
+        result = insert_gap(self.c, self.p, at=10, length=2, layer_ids=[self.root], crossing_actions=actions)
+        self.assertTrue(result["ok"], result)
+        self.assertEqual(self.row(self.b)["end"], 32)
+        self.assertEqual(self.row(self.c_image)["end"], 17)
+        self.assertEqual((self.row(final_line)["begin"], self.row(final_line)["end"]), (30,32))
+        self.assertEqual((self.row(middle_line)["begin"], self.row(middle_line)["end"]), (15,18))
+        self.assertEqual([r["id"] for r in query_objects(self.c,self.p,layer_id=self.description,begin=30,end=31)], [self.b])
+        self.assertEqual([r["id"] for r in query_objects(self.c,self.p,layer_id=self.background,begin=15,end=16)], [self.c_image])
+        for id, before in original.items():
+            self.assertEqual({k:v for k,v in self.row(id).items() if k!="end"}, {k:v for k,v in before.items() if k!="end"})
+        self.assertEqual({r["id"] for r in result["data"]["stretched"]}, set(original))
+
+    def test_move_adds_length_to_both_edges_without_repositioning_to_gap_end(self):
+        bind = self.call("create","bind",data={"source_kind":"object","source_project_id":self.p,"source_id":self.a,
+                         "target_kind":"object","target_project_id":self.p,"target_id":self.b})["data"]
+        before = self.row(self.a)
+        result = insert_gap(self.c,self.p,at=10,length=2,layer_id=self.lyrics,
+                            crossing_actions=[{"object_id":self.a,"action":"move"}])
+        self.assertTrue(result["ok"],result)
+        self.assertEqual((self.row(self.a)["begin"],self.row(self.a)["end"]),(10,14))
+        self.assertEqual({k:v for k,v in self.row(self.a).items() if k not in {"begin","end"}},
+                         {k:v for k,v in before.items() if k not in {"begin","end"}})
+        self.assertEqual(read_record(self.c,"bind"),[bind])
+        self.assertEqual(result["data"]["shifted"],[])
+        self.assertEqual(result["data"]["moved"][0]["previous_begin"],8)
+        self.assertIn("整体后移",format_gap(result))
+
+    def test_stretch_only_writes_end_and_keeps_original_begin_even_off_grid(self):
+        self.call("update","layer",id=self.root,data={"axis":{"precision":0.001}})
+        self.c.execute('UPDATE objects SET "begin"=?, "end"=? WHERE project_id=? AND id=?',
+                       (0.0001234,30.0001,self.p,self.b))
+        self.c.commit()
+        self.c.execute("CREATE TRIGGER protect_unchanged BEFORE UPDATE OF begin,information ON objects BEGIN SELECT RAISE(ABORT,'only end may change'); END")
+        result = insert_gap(self.c,self.p,at=10,length=2,layer_id=self.description,
+                            crossing_actions=[{"object_id":self.b,"action":"stretch"}])
+        self.assertTrue(result["ok"],result)
+        self.assertEqual((self.row(self.b)["begin"],self.row(self.b)["end"]),(0.0001234,32))
+        self.assertIn("延长终点",format_gap(result))
+
+    def test_stretch_and_move_use_actual_quantized_insertion_length(self):
+        self.call("update","layer",id=self.root,data={"axis":{"unit":"秒","precision":0.1}})
+        actions = [{"object_id":self.a,"action":"keep"}, {"object_id":self.b,"action":"stretch"},
+                   {"object_id":self.c_image,"action":"move"}]
+        result = insert_gap(self.c,self.p,at=10.25,length=0.24,layer_ids=[self.root],crossing_actions=actions)
+        self.assertTrue(result["ok"],result)
+        self.assertTrue(all(item["length"]==0.2 for item in result["data"]["gaps"]))
+        self.assertEqual(self.row(self.b)["end"],30.2)
+        self.assertEqual((self.row(self.c_image)["begin"],self.row(self.c_image)["end"]),(5.2,15.2))
+
+    def test_all_four_crossing_actions_share_one_undoable_operation(self):
+        moving = self.obj(self.lyrics,9,16,{"text":"移动"})
+        later = self.obj(self.lyrics,28,30,{"text":"后续"})
+        ids = [self.a,self.b,self.c_image,moving,later]
+        original = [self.row(id) for id in ids]
+        actions = self.actions()
+        actions[1]["action"] = "stretch"
+        actions.append({"object_id":moving,"action":"move"})
+        result = insert_gap(self.c,self.p,at=10,length=2,layer_ids=[self.root],crossing_actions=actions)
+        self.assertTrue(result["ok"],result)
+        self.assertEqual([len(result["data"][key]) for key in ("splits","kept","stretched","moved","shifted")], [1,1,1,1,1])
+        after = [self.row(id) for id in ids]
+        logs = read_record(self.c,"change",filters={"operation_id":result["operation_id"]})
+        self.assertEqual(len(logs),5)
+        undone = self.undo(result)
+        self.assertEqual([self.row(id) for id in ids],original)
+        self.undo(undone)
+        self.assertEqual([self.row(id) for id in ids],after)
+
+    def test_failed_move_rolls_back_preceding_split_and_stretch(self):
+        self.c.execute(f"CREATE TRIGGER block_move BEFORE UPDATE OF begin ON objects WHEN old.id={self.c_image} BEGIN SELECT RAISE(ABORT,'move blocked'); END")
+        before = self.snapshot()
+        actions = self.actions()
+        actions[1]["action"] = "stretch"
+        actions[2]["action"] = "move"
+        result = insert_gap(self.c,self.p,at=10,length=2,layer_ids=[self.root],crossing_actions=actions)
+        self.assertFalse(result["ok"])
+        self.assertEqual(self.snapshot(),before)
+
+    def test_stretch_move_cli_and_command_help_explain_the_same_choices(self):
+        description = command_help("insert_gap")["items"][0]
+        self.assertIn("stretch",description["parameters"]["crossing_actions"]["description"])
+        self.assertIn("move",description["parameters"]["crossing_actions"]["description"])
+        with tempfile.TemporaryDirectory() as folder:
+            db = Path(folder)/"test.sqlite3"
+            c = open_database(db)
+            self.c.backup(c)
+            c.close()
+            payload = Path(folder)/"actions.json"
+            payload.write_text(json.dumps([{"object_id":self.a,"action":"move"}, {"object_id":self.b,"action":"stretch"},
+                                           {"object_id":self.c_image,"action":"keep"}]),encoding="utf-8")
+            command = [sys.executable,"-X","utf8","-B","-m","tools.common.gaps",str(db),str(self.p),"10","2",
+                       "--layer-ids",str(self.root),"--contents-file",str(payload),"--json"]
+            run = subprocess.run(command,capture_output=True,text=True,encoding="utf-8")
+            self.assertEqual(run.returncode,0,run.stderr)
+            data = json.loads(run.stdout)["data"]
+            self.assertEqual(data["moved"][0]["id"],self.a)
+            self.assertEqual(data["stretched"][0]["end"],32)
 
     def test_undo_end_preserves_later_information_and_does_not_issue_update_of_it(self):
         end = self.call("update", "object", id=self.a, data={"end": 14})

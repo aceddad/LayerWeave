@@ -58,10 +58,12 @@ COMMANDS = [{
 ```json
 [
   {"object_id": 8, "action": "split", "first_information": {"text": "前段"}, "second_information": {"text": "后段"}},
-  {"object_id": 9, "action": "keep"}
+  {"object_id": 9, "action": "keep"},
+  {"object_id": 10, "action": "stretch"},
+  {"object_id": 11, "action": "move"}
 ]
 ```
 
-这是 --contents-file 的完整列表格式，Python 参数为 crossing_actions。split 需要两段内容，keep 保留区间、内容、编号与关联，不延长媒体。未写 action、但明确给出两段内容的旧文件仍按 split 兼容。旧 split_contents 参数仍可用，但不能与 crossing_actions 同传。
+这是 --contents-file 的完整列表格式，Python 参数为 crossing_actions。split 需要两段内容；keep 原样保留；stretch 只让终点后移；move 让起终点一起后移，使用本层实际插入长度。这三项不需要重新提供 information，不改编号或关联，不处理媒体内容。未写 action、但明确给出两段内容的旧文件仍按 split 兼容。旧 split_contents 参数仍可用，但不能与 crossing_actions 同传。
 
-缺少跨界处理时，required_crossings 列出需要决定的对象，allowed 为 split/keep；required_splits 暂保留为同一列表的兼容别名。未命中的处理项列入 unused_object_ids。data.kept 明确列出保留对象，data.gaps 描述插入位置和长度；keep 可以覆盖该时段，因此不承诺整个区间无对象。
+缺少跨界处理时，required_crossings 列出需要决定的对象，allowed 为 split/keep/stretch/move；required_splits 暂保留为同一列表的兼容别名。未命中的处理项列入 unused_object_ids。data.kept/stretched/moved 分别列出三种跨界处理结果，data.shifted 仍为自动后移对象；data.gaps 描述插入位置和长度，不承诺整个区间无对象。

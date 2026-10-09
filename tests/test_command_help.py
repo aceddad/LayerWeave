@@ -120,7 +120,7 @@ class CommandHelpTests(unittest.TestCase):
         gap=command_help("insert_gap")["items"][0]
         actions=next(iter(gap["examples"][0]["files"].values()))
         # 示例编号由真实上下文替换，JSON 结构与字段保持一致。
-        ids=[obj(),obj()]
+        ids=[obj() for _ in actions]
         actions=[{**item,"object_id":id} for item,id in zip(actions,ids)]
         # 另建直属层，避免其他示例对象也跨界。
         other=dispatch(c,{"action":"create","kind":"layer","project_id":p,"data":{"config_ref":"layers/text.toml"}},checker=None)["id"]
@@ -129,6 +129,8 @@ class CommandHelpTests(unittest.TestCase):
         result=insert_gap(c,p,layer_id=other,at=14,length=2,crossing_actions=actions)
         self.assertTrue(result["ok"],result)
         self.assertEqual(len(result["data"]["kept"]),1)
+        self.assertEqual(len(result["data"]["stretched"]),1)
+        self.assertEqual(len(result["data"]["moved"]),1)
 
     def test_command_help_cli_json_and_invalid_root(self):
         base=[sys.executable,"-X","utf8","-B","-m","tools.common.command_help"]

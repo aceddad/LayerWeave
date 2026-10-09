@@ -14,7 +14,7 @@
 | 删除子树 | [subtrees.py](../src/tools/common/subtrees.py) | 删除起始层、子孙层、对象及出向关联；保留外部入向关联 |
 | 整层复制 | [subtrees.py](../src/tools/common/subtrees.py) | 同项目同父层复制完整子树，重映射内部引用，返回编号映射 |
 | 对象分割 | [split.py](../src/tools/common/split.py) | 按单点/多点与明确的各段 information 分割，第一段保留编号和关联 |
-| 插空档 | [gaps.py](../src/tools/common/gaps.py) | 明确选范围、位置和长度，跨界对象逐个 split/keep，分割与后移原子执行 |
+| 插空档 | [gaps.py](../src/tools/common/gaps.py) | 明确选范围、位置和长度，跨界对象逐个 split/keep/stretch/move，整批原子执行 |
 | 跨项目复制/剪切 | [transfer.py](../src/tools/common/transfer.py) | 目标重新发号、原数值保留；剪切时外部入向引用跟随新地址 |
 | 项目概览 | [project_overview.py](../src/tools/common/project_overview.py) | 项目层级、层类型、名字与对象数量；只读 |
 | 项目详细展开 | [project_details.py](../src/tools/common/project_details.py) | 展开项目/子树的层、对象内容和关联引用，可按数值范围筛选；只读 |
@@ -44,7 +44,7 @@
 
 各工具在自身模块的 COMMANDS 字面量中声明用途、参数、返回和示例。统一目录自动发现，根级 CLI --help 共用其中的示例；新增工具不必改中央名单。它仅提供只读说明，未来 MCP 可以复用这些数据。完整规则见 [命令目录说明](../src/tools/COMMANDS.md)。
 
-插空档现在必须明确选择 --layer-id、--layer-ids 或 --project。--contents-file 是 object_id/action 列表；split 带两段 information，keep 保持原样。漏传范围不会默认扩大到整个项目，未选择的对象不被修改，keep 对象可以覆盖插入时段。
+插空档必须明确选择 --layer-id、--layer-ids 或 --project。--contents-file 是 object_id/action 列表；split 带两段 information，keep 保持原样，stretch 只延长终点，move 将起终点一起后移本层实际插入长度。后两者不处理媒体内容，数据与关联保持。漏传范围不会默认扩大到整个项目，未选择的对象不被修改；这些跨界动作可能覆盖插入时段。
 
 ## 配置 help
 

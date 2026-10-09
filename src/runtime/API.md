@@ -66,6 +66,21 @@ copy_subtree(connection, project_id, layer_id, name=None, config_root=DEFAULT_RO
 
 两项操作都在同一写事务内读取范围并执行，返回标准操作结果、operation_id 和提交后 checks。成功 data 含 project_id、layer_id、counts；复制另含 source_layer_id、id_map（layer/object/bind 三组 old_id/new_id 数值对）。复制时 layer_id 是新根层，删除时是已删除的起始层。可通过 undo_operation 撤销整个批次；config_root 和 checker 语义与既有入口一致。完整说明见 [子树工具](storage/SUBTREES.md)。
 
+## 分割、范围平移、插空档与跨项目迁移
+
+| 调用 | 行为 |
+|---|---|
+| split_object(connection, project_id, object_id, cuts=..., first_information=...) | cuts 为 at/information 列表；切点落点后严格递增且位于内部。第一段保留编号和关联，其余段重新发号；返回实际 cuts 与 segments |
+| shift_objects(connection, project_id, object_ids=None, offset=..., layer_id=None, layer_ids=None, from_position=None) | 保留现有批次 results；可选择对象、直属层或多棵子树，再用 begin 下限筛选，正负偏移均支持 |
+| insert_gap(connection, project_id, at=..., length=..., layer_id=None, layer_ids=None, split_contents=None) | 默认整个项目；跨界对象明确提供两段内容，分割与后移在一个操作内完成；返回各层实际 gaps、splits 与 shifted |
+| transfer_subtree(connection, project_id, layer_id, target_project_id, mode="copy", name=None) | 同库跨项目复制或剪切到目标根部，重新发号、映射结构引用、精确保留位置数值；cut 让外部入向关联跟随新地址 |
+
+可选参数使用关键字，均接受 config_root 与 checker。新工具返回标准操作结果和提交后 checks，能按 operation_id 整批撤销/重做。分割内容为完整 information 字典，工具不推测文本切分、媒体范围或自由内容里的编号。空 cuts 不写入；非空 cuts 需要 first_information。
+
+insert_gap 的 split_contents 是 object_id/first_information/second_information 项列表，缺项或过期项整批不写并列出所需目标。from_position 只控制平移的 begin 选择，不表示插空档，也不自动分割跨界对象。重叠冲突仍依据层配置在写入后报告。
+
+迁移的显式 axis 保留，祖先提供的轴不补造，不做单位换算或重新落点。复制保留源地址，剪切将入向引用的 target_project_id/target_id 改为新身份并保留关联自身 id；源删除与目标创建同事务。具体格式、命令行、编号对应表见 [编辑工具说明](storage/EDITING.md)。
+
 ## Python 实例的完整往返
 
 ```python

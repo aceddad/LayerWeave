@@ -80,6 +80,8 @@ with closing(open_database("../output/ai-production.sqlite3")) as connection:
 
 storage/subtrees.py 提供子树删除与整层复制，复用既有范围读取、CRUD 和 run_operation；新编号取实际创建结果。删除范围包含树内实体发出的关联，外部入向关联保留；复制仅重映射明确的结构引用。两者都记录为一个可撤销操作，详见 [子树工具](SUBTREES.md)。
 
+跨项目复制/剪切在同模块中复用上述内部步骤；目标项目重新发号并在根部落位，原 begin/end 数值精确保留。剪切还把外部入向关联的目标改为新身份，和源删除、目标创建一起记录。对象分割与插空档的共同计算和写入在 storage/timeline.py，普通平移仍通过 dispatch 工厂执行。详见 [编辑工具](EDITING.md)。
+
 ## 范围与验证
 
 目前已实现表结构、初始化与所属层迁移、发号、记录 CRUD、事务日志、分流、配置加载、模块化检测和完整读写。assembly.py 组合层/对象及关联的记录字典；models.py 按配置还原派生实例；save.py 原子保存模型或记录字典。三者经 runtime.api 对外提供稳定入口，底层 CRUD 仍返回单表记录。

@@ -43,6 +43,8 @@ python -X utf8 -B -m examples.read_write
 
 子树工具演示：`python -X utf8 -B -m examples.subtrees`。一次删除完整子树及其出向关联，或在同项目、同父层复制一个新版本，自动重映射内部引用并返回编号对应表。两项操作均可整批撤销，用法见 [子树工具说明](src/runtime/storage/SUBTREES.md)。
 
+编辑工具演示：`python -X utf8 -B -m examples.editing`。分割由调用者提供切点和各段内容；平移支持按子树与起点选择；插空档可原子组合分割和后移；跨项目复制/剪切保留原数值，剪切使外部入向关联跟随新地址。全部使用已有事务和撤销，详见 [编辑工具说明](src/runtime/storage/EDITING.md)。
+
 初始化数据库（同样从 src 目录执行）：
 
 ```sh
@@ -66,6 +68,7 @@ python -X utf8 -B -m runtime.console ../output/ai-production.sqlite3 --request e
 | 查看可用层、兼容对象类和封装说明 | [配置 help](src/runtime/configuration/HELP.md)、[查询入口](src/tools/common/config_help.py) |
 | 复查项目/子树、查看历史、撤销与重做 | [完整说明](src/runtime/storage/HISTORY.md)、[内存示例](src/examples/review_history.py) |
 | 删除子树、复制整层及内部关联 | [工具说明](src/runtime/storage/SUBTREES.md)、[内存示例](src/examples/subtrees.py) |
+| 分割、范围平移、插空档、跨项目复制/剪切 | [工具说明](src/runtime/storage/EDITING.md)、[内存示例](src/examples/editing.py) |
 | 读写完整层/对象、开发内部工具 | [公共 API](src/runtime/API.md)、[统一入口](src/runtime/api.py)、[往返示例](src/examples/read_write.py) |
 | 理解层的基础结构 | [层基础类](src/models/layers/base.py)、[层基础配置](configs/layers/base.toml) |
 | 理解对象的基础结构 | [对象基础类](src/models/objects/base.py)、[对象基础配置](configs/objects/base.toml) |
@@ -129,7 +132,7 @@ source 目前原样保存，由使用方解释。封装不读取资源，也不�
 | layers | project_id、id、name、type、config_ref、father、axis、tips |
 | objects | project_id、id、name、config_ref、layer、begin、end、information、tips |
 | binds | 内部 id，来源和目标各自的 kind、project_id、id，以及 tips |
-| changes | id、operation_id、created_at、kind、project_id、target_id、action、before_data、after_data |
+| changes | id、operation_id、created_at、kind、project_id、target_id、action、before_data、after_data、undo_of |
 
 编号与归属：
 
@@ -141,13 +144,13 @@ source 目前原样保存，由使用方解释。封装不读取资源，也不�
 - binds 的两端是普通引用，可由检测通道报告失效目标。关联记录有自己的全库递增编号，删除后不复用，不参与项目内实体计数。
 - allocate_id() 统一给本项目的层和对象发号，不自行提交。调用方将发号与记录写入放在同一个事务中，整个事务回滚时计数也回滚。
 - 两个实体表的主键各自限制同表重号，跨表共享编号由统一发号方法保证；没有额外触发器追踪任意直接 SQL 写入。
-- 整项目换号与向已有项目迁入内容的操作接口尚未实现；后者可能需要编号映射。
+- 向已有项目复制/剪切子树使用 transfer_subtree，按目标项目重新发号并返回映射；整项目换号尚未实现。
 - 同项目 father、layer 引用可利用项目上下文解释。跨项目 bind 必须明确两端的项目和种类。
 - 可视状态暂不持久化。轻量修改历史已使用独立 changes 表，日志不占项目内实体编号，也不对被记录的实体加外键。
 
 存储方式：config_ref 保存相对于 configs/ 的配置路径，给按需装载正确的类提供依据；它是存储元数据，不加进基础类。axis、information 保存为 JSON 文本。层的 objects 和两类的 bind 分别从对象表、关联表反查，不重复保存在实体行里。
 
-已启用项目归属、同项目父层和对象所属层的外键；father 可为 NULL，objects.layer 必须非空。没有级联删除或更新，也没有把时间、环、轴、资源或封装规则写成数据库检测。普通删除不级联，项目搬移接口仍待实现。
+已启用项目归属、同项目父层和对象所属层的外键；father 可为 NULL，objects.layer 必须非空。没有级联删除或更新，也没有把时间、环、轴、资源或封装规则写成数据库检测。普通删除不级联；子树删除和跨项目剪切由工具显式编排成一个事务。
 
 存储检查命令（从 src 执行）：
 
@@ -157,7 +160,7 @@ python -X utf8 -B -m unittest discover -s ../tests -v
 
 测试覆盖配置继承、父约定保护、字段类型、区间边界、类型兼容、检测触发范围、逐项继续、批次最终状态、按需导入，以及存储、日志、迁移、完整记录/实例往返、关闭重开和 CLI。使用内存库和专用临时文件，不写入输出数据库。
 
-当前包含子树删除/复制及关联映射、复查、历史、整批撤销/重做、关联发号迁移、可选字段收紧与轴精度回归在内的 268 项测试通过。JSON 内容变化会区分 `1`、`1.0` 与 `true`，日志、批次最终状态和检测字段选择使用同一比较方式；字典键顺序不产生变化。无变化的字段在 SQL UPDATE 前跳过。
+当前包含分割、插空档、范围平移、跨项目复制/剪切、子树关联映射与撤销等回归在内的 292 项测试通过。JSON 内容变化会区分 `1`、`1.0` 与 `true`，日志、批次最终状态和检测字段选择使用同一比较方式；字典键顺序不产生变化。无变化的字段在 SQL UPDATE 前跳过。
 
 此前读写优化时的本地 100 对象场景记录（现有层、新 Text 实例自动匹配配置、内置检测开启；以下文件读取数是加入 Title 与配置唯一性检查前的基线）：
 
@@ -192,7 +195,7 @@ python -X utf8 -B -m unittest discover -s ../tests -v
 
 API 参数、保存范围与错误反馈见 [公共 API](src/runtime/API.md)。源码位置与后续工具开发说明见 [工具指南](tools/README.md)。
 
-第一批四个内部工具为只读功能。第二批六个写入工具复用事务内请求工厂、日志和提交后检测，位置计算与写入使用同一事务。后续已加入复查、历史、撤销、子树删除和同项目整层复制（含内部关联重映射）。跨项目搬移、视图、Skill／MCP 尚未实现。
+第一批四个内部工具为只读功能。第二批六个写入工具复用事务内请求工厂、日志和提交后检测，位置计算与写入使用同一事务。后续已加入复查、历史、撤销、子树删除/复制、分割、插空档，以及同库跨项目子树复制/剪切。视图、Skill／MCP 尚未实现。
 
 ## 目录职责
 
@@ -217,7 +220,7 @@ API 参数、保存范围与错误反馈见 [公共 API](src/runtime/API.md)。�
 - 可调选项与固定约定分开；默认仅根层可设轴，根不必填轴。持续区间采用 [begin,end)，瞬间占一个点，允许首尾衔接。
 - 配置缺失、未知规则、规则异常逐项报告，其他检查继续。主动复查直接使用 validate，不制造修改或日志。
 - 约束与汇报等级分开；optional=true 是允许字段缺省的可继承约定，检查仍执行，填入后仍检查类型。模型/动作的 source/data 均可选。configs/logging/diagnostics.toml 设置 error/warn/none，路径覆盖不继承，未配置默认 warn；疑似拼写只建议，不自动改键名。相同配置失败按目标合并，保留受影响检查。
-- 所有对象位置写入共用 runtime.positions，按 axis.precision 落点，无精度时默认 1e-6；起止、时长与重叠按同一整数刻度比较。修改轴或父层后复查受影响子树的位置关系，不批量重写旧坐标。原始读取与范围筛选不换算单位、不自动取整。
+- 常规对象位置写入共用 runtime.positions，按 axis.precision 落点，无精度时默认 1e-6；跨项目迁移和撤销精确保留已有数值。起止、时长与重叠按同一整数刻度比较。修改轴或父层后复查受影响子树的位置关系，不批量重写旧坐标。原始读取与范围筛选不换算单位、不自动取整。
 - 按需导入已解决旧版包入口一次加载全部封装的耦合，保持 from models import Text 等用法。
 - 后续推进项目内部工具、视图和明确提出的新用途；不预先增加资源检查或更多字段限制。
 - 详细展开保留范围内所有层，支持多棵子树去重和 compact 精简视图；缺失编号逐条提示，正文与关联引用保留。

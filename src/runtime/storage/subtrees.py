@@ -53,69 +53,131 @@ def _payload(kind, row):
     return {key: deepcopy(row[key]) for key in crud.SPECS[kind]["fields"]}
 
 
-def delete_subtree(connection, project_id, layer_id, *, config_root=DEFAULT_ROOT, checker=DEFAULT_CHECKER):
-    """删除整棵子树及其出向关联；外部入向关联保留并由提交后检查诊断。"""
-    def work(operation_id):
-        owner_id, root_id, layers, objects, bindings = _source(connection, project_id, layer_id)
-        ordered = _ordered_layers(layers, root_id)
-        # 正常树按子层在前删除；既有环在事务最终状态统一验证外键。
-        connection.execute("PRAGMA defer_foreign_keys = ON")
-        changes = []
-        for kind, rows in (("bind", bindings), ("object", objects), ("layer", reversed(ordered))):
-            for row in rows:
-                _, change = crud.delete(connection, kind, row["id"], operation_id=operation_id,
-                                        project_id=owner_id if kind != "bind" else None)
-                if change is not None:
-                    changes.append(change)
-        return {"project_id": owner_id, "layer_id": root_id,
-                "counts": {"layers": len(layers), "objects": len(objects), "binds": len(bindings)}}, changes
+def _delete_records(connection, source, operation_id):
+    owner_id, root_id, layers, objects, bindings = source
+    ordered = _ordered_layers(layers, root_id)
+    connection.execute("PRAGMA defer_foreign_keys = ON")
+    changes = []
+    for kind, rows in (("bind", bindings), ("object", objects), ("layer", reversed(ordered))):
+        for row in rows:
+            _, change = crud.delete(connection, kind, row["id"], operation_id=operation_id,
+                                    project_id=owner_id if kind != "bind" else None)
+            if change is not None:
+                changes.append(change)
+    return changes
 
+
+def _counts(source):
+    return {"layers": len(source[2]), "objects": len(source[3]), "binds": len(source[4])}
+
+
+def _mapping_result(mapping):
+    return {kind: [{"old_id": old, "new_id": new} for old, new in ids.items()] for kind, ids in mapping.items()}
+
+
+def _copy_records(connection, source, destination, operation_id, *, name=None, cross_project=False):
+    owner, root, layers, objects, bindings = source
+    ordered = _ordered_layers(layers, root)
+    mapping = {kind: {} for kind in ("layer", "object", "bind")}
+    changes, created_layers = [], {}
+
+    def create(kind, old, data, **extra):
+        if kind == "object" and cross_project:
+            spec = crud.SPECS[kind]
+            row, change = crud._insert(connection, kind, spec, crud._encode(spec, data),
+                                       operation_id=operation_id, project_id=destination)
+        else:
+            row, change = crud.create(connection, kind, data, operation_id=operation_id,
+                                      project_id=destination if kind != "bind" else None, **extra)
+        mapping[kind][old["id"]] = row["id"]
+        changes.append(change)
+        return row
+
+    def parent(old):
+        if cross_project and old["id"] == root:
+            return None  # 目标根层不继续引用源项目的父层，也不补造继承的轴。
+        return mapping["layer"].get(old["father"], None if cross_project else old["father"])
+
+    for old in ordered:
+        data = _payload("layer", old)
+        data["father"] = parent(old)
+        if old["id"] == root and name is not None:
+            data["name"] = name
+        created_layers[old["id"]] = create("layer", old, data)
+    for old in ordered:
+        father, row = parent(old), created_layers[old["id"]]
+        if row["father"] != father:
+            _, change = crud.update(connection, "layer", row["id"], {"father": father},
+                                    project_id=destination, operation_id=operation_id)
+            changes.append(change)
+    positions = PositionMath(partial(crud.read, connection), destination)
+    for old in objects:
+        data = _payload("object", old)
+        data["layer"] = mapping["layer"][old["layer"]]
+        create("object", old, data, position_math=positions)
+    for old in bindings:
+        data = _payload("bind", old)
+        data.update(source_project_id=destination, source_id=mapping[old["source_kind"]][old["source_id"]])
+        if old["target_project_id"] == owner and old["target_kind"] in {"layer", "object"}:
+            id = mapping[old["target_kind"]].get(old["target_id"])
+            if id is not None:
+                data.update(target_project_id=destination, target_id=id)
+        create("bind", old, data)
+    return mapping, changes
+
+
+def delete_subtree(connection, project_id, layer_id, *, config_root=DEFAULT_ROOT, checker=DEFAULT_CHECKER):
+    """删除子树及出向关联；外部入向关联保留，由提交后检查诊断。"""
+    def work(operation_id):
+        source = _source(connection, project_id, layer_id)
+        changes = _delete_records(connection, source, operation_id)
+        return {"project_id": source[0], "layer_id": source[1], "counts": _counts(source)}, changes
     return {**run_operation(connection, work, checker=_checker(checker, config_root)), "tool": "delete_subtree"}
 
 
 def copy_subtree(connection, project_id, layer_id, *, name=None, config_root=DEFAULT_ROOT, checker=DEFAULT_CHECKER):
-    """在同项目、同父层复制子树，重映射明确的结构引用，保持自由内容与外部引用。"""
+    """同项目、同父层复制子树，保留原有普通写入刻度规则。"""
     def work(operation_id):
-        owner_id, root_id, layers, objects, bindings = _source(connection, project_id, layer_id)
-        ordered = _ordered_layers(layers, root_id)
-        mapping = {kind: {} for kind in ("layer", "object", "bind")}
-        changes, created_layers = [], {}
-
-        def create(kind, old, data, **extra):
-            row, change = crud.create(connection, kind, data, operation_id=operation_id,
-                                      project_id=owner_id if kind != "bind" else None, **extra)
-            mapping[kind][old["id"]] = row["id"]
-            changes.append(change)
-            return row
-
-        for old in ordered:
-            data = _payload("layer", old)
-            data["father"] = mapping["layer"].get(old["father"], old["father"])
-            if old["id"] == root_id and name is not None:
-                data["name"] = name
-            created_layers[old["id"]] = create("layer", old, data)
-        # 正常树的父层已先创建；已有父链环的内部引用在所有新编号可用后补齐。
-        for old in ordered:
-            father = mapping["layer"].get(old["father"], old["father"])
-            row = created_layers[old["id"]]
-            if row["father"] != father:
-                _, change = crud.update(connection, "layer", row["id"], {"father": father},
-                                        project_id=owner_id, operation_id=operation_id)
-                changes.append(change)
-        positions = PositionMath(partial(crud.read, connection), owner_id)
-        for old in objects:
-            data = _payload("object", old)
-            data["layer"] = mapping["layer"][old["layer"]]
-            create("object", old, data, position_math=positions)
-        for old in bindings:
-            data = _payload("bind", old)
-            data["source_id"] = mapping[old["source_kind"]][old["source_id"]]
-            if old["target_project_id"] == owner_id and old["target_kind"] in {"layer", "object"}:
-                data["target_id"] = mapping.get(old["target_kind"], {}).get(old["target_id"], old["target_id"])
-            create("bind", old, data)
-        return {"project_id": owner_id, "source_layer_id": root_id, "layer_id": mapping["layer"][root_id],
-                "counts": {"layers": len(layers), "objects": len(objects), "binds": len(bindings)},
-                "id_map": {kind: [{"old_id": old, "new_id": new} for old, new in ids.items()]
-                           for kind, ids in mapping.items()}}, changes
-
+        source = _source(connection, project_id, layer_id)
+        mapping, changes = _copy_records(connection, source, source[0], operation_id, name=name)
+        return {"project_id": source[0], "source_layer_id": source[1], "layer_id": mapping["layer"][source[1]],
+                "counts": _counts(source), "id_map": _mapping_result(mapping)}, changes
     return {**run_operation(connection, work, checker=_checker(checker, config_root)), "tool": "copy_subtree"}
+
+
+def transfer_subtree(connection, project_id, layer_id, target_project_id, *, mode="copy", name=None,
+                     config_root=DEFAULT_ROOT, checker=DEFAULT_CHECKER):
+    """同库跨项目复制或剪切；剪切的外部入向引用跟随新身份，整个过程可撤销。"""
+    def work(operation_id):
+        if mode not in {"copy", "cut"}:
+            raise InputError("迁移模式应为 copy 或 cut", field="mode", allowed=["copy", "cut"])
+        source = _source(connection, project_id, layer_id)
+        destination = crud.read(connection, "project", id=target_project_id) if target_project_id is not None else None
+        if destination is None:
+            raise InputError("目标项目不存在", code="missing_reference", field="target_project_id",
+                             target=target("project", None, target_project_id))
+        destination = destination["id"]
+        if destination == source[0]:
+            raise InputError("跨项目操作需要不同的目标项目；同项目复制使用 copy_subtree", field="target_project_id")
+        incoming = {}
+        if mode == "cut":
+            from .queries import read_bindings
+            owned = {row["id"] for row in source[4]}
+            for kind, rows in (("layer", source[2]), ("object", source[3])):
+                for row in rows:
+                    for bind in read_bindings(connection, kind, source[0], row["id"], direction="incoming"):
+                        if bind["id"] not in owned:
+                            incoming[bind["id"]] = bind
+        mapping, changes = _copy_records(connection, source, destination, operation_id, name=name, cross_project=True)
+        for bind in incoming.values():
+            _, change = crud.update(connection, "bind", bind["id"], {
+                "target_project_id": destination, "target_id": mapping[bind["target_kind"]][bind["target_id"]]},
+                operation_id=operation_id)
+            changes.append(change)
+        if mode == "cut":
+            changes.extend(_delete_records(connection, source, operation_id))
+        return {"mode": mode, "source_project_id": source[0], "project_id": destination,
+                "source_layer_id": source[1], "layer_id": mapping["layer"][source[1]],
+                "counts": _counts(source), "id_map": _mapping_result(mapping),
+                "redirected_bind_ids": list(incoming)}, changes
+    return {**run_operation(connection, work, checker=_checker(checker, config_root)), "tool": "transfer_subtree"}

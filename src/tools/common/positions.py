@@ -87,16 +87,13 @@ def arrange_objects(connection, project_id, layer_id, *, object_ids=None, start=
     return dispatch(connection, plan, checker=checker)
 
 
-def shift_objects(connection, project_id, object_ids=None, *, offset, layer_id=None, checker=DEFAULT_CHECKER):
-    """选择对象或整层，begin/end 同时偏移并按轴精度落点，其他字段不变。"""
-    def plan(read):
-        delta = decimal_value(_number(offset, "偏移量"))
-        math = PositionMath(read, project_id)
-        return [_update(project_id, record,
-                        math.snap(record["layer"], decimal_value(_position(record, "begin")) + delta),
-                        math.snap(record["layer"], decimal_value(_position(record, "end")) + delta))
-                for record in _objects(read, project_id, object_ids, layer_id)]
-    return dispatch(connection, plan, checker=checker)
+def shift_objects(connection, project_id, object_ids=None, *, offset, layer_id=None, layer_ids=None,
+                  from_position=None, config_root=None, checker=DEFAULT_CHECKER):
+    """对象/直属层/子树范围，按 begin 下限筛选；保留原批次返回协议。"""
+    from runtime.api import shift_objects as shift
+    return shift(connection, project_id, object_ids, offset=offset, layer_id=layer_id, layer_ids=layer_ids,
+                 from_position=from_position, checker=checker,
+                 **({"config_root": config_root} if config_root is not None else {}))
 
 
 def align_objects(connection, project_id, object_ids=None, *, position, edge="begin", layer_id=None, checker=DEFAULT_CHECKER):
@@ -141,7 +138,11 @@ def main():
         selection = command.add_mutually_exclusive_group(required=True)
         selection.add_argument("--ids", nargs="+", type=int)
         selection.add_argument("--layer-id", type=int)
+        if command is shift:
+            selection.add_argument("--layer-ids", nargs="*", type=int, help="子树范围，包含后代")
     shift.add_argument("--offset", type=float, required=True)
+    shift.add_argument("--from-position", type=float, help="仅选择 begin 不早于此数值的对象")
+    shift.add_argument("--config-root")
     align.add_argument("--position", type=float, required=True)
     align.add_argument("--edge", choices=("begin", "end"), default="begin")
     duration = commands.add_parser("duration", help="保持起点修改时长")
@@ -152,7 +153,8 @@ def main():
         if args.command == "arrange":
             return arrange_objects(connection, args.project_id, args.layer_id, object_ids=args.ids, start=args.start)
         if args.command == "shift":
-            return shift_objects(connection, args.project_id, args.ids, offset=args.offset, layer_id=args.layer_id)
+            return shift_objects(connection, args.project_id, args.ids, offset=args.offset, layer_id=args.layer_id,
+                                 layer_ids=args.layer_ids, from_position=args.from_position, config_root=args.config_root)
         if args.command == "align":
             return align_objects(connection, args.project_id, args.ids, position=args.position, edge=args.edge, layer_id=args.layer_id)
         return set_duration(connection, args.project_id, args.object_id, args.duration)

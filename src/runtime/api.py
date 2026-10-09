@@ -64,8 +64,33 @@ def copy_subtree(*args, **kwargs):
     return copy(*args, **kwargs)
 
 
+def split_object(*args, **kwargs):
+    """显式切点和内容分割；第一段保留编号与关联。"""
+    from .storage.timeline import split_object as split
+    return split(*args, **kwargs)
+
+
+def shift_objects(*args, **kwargs):
+    """批量平移，支持对象/层/子树选择与 begin 下限。"""
+    from .storage.timeline import shift_objects as shift
+    return shift(*args, **kwargs)
+
+
+def insert_gap(*args, **kwargs):
+    """跨界分割与后移共用一个事务。"""
+    from .storage.timeline import insert_gap as insert
+    return insert(*args, **kwargs)
+
+
+def transfer_subtree(*args, **kwargs):
+    """跨项目复制或剪切；剪切让外部入向关联跟随新身份。"""
+    from .storage.subtrees import transfer_subtree as transfer
+    return transfer(*args, **kwargs)
+
+
 __all__ = ["Loader", "dispatch", "initialize_database", "open_database", "read_layer", "read_object", "read_project_index",
            "load_layer", "load_object", "save_layer", "save_object", "validate",
            "read_record", "read_snapshot", "query_objects", "read_bindings", "read_project_details", "DEFAULT_CHECKER",
            "format_feedback", "format_issue", "diagnostic_report", "PositionMath", "decimal_value", "read_support",
-           "recheck", "read_history", "undo_operation", "delete_subtree", "copy_subtree"]
+           "recheck", "read_history", "undo_operation", "delete_subtree", "copy_subtree",
+           "split_object", "shift_objects", "insert_gap", "transfer_subtree"]

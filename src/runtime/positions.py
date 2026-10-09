@@ -16,6 +16,14 @@ def decimal_value(value):
     return value if isinstance(value, Decimal) else Decimal(str(value))
 
 
+def shifted_positions(record, offset, math):
+    """平移和插空档共用位置计算，调用方负责选范围和事务。"""
+    if not all(numeric_position(record[field]) for field in ("begin", "end")):
+        raise ValueError(f"对象 {record['id']} 的起终点必须是有限数值")
+    delta = decimal_value(offset)
+    return {field: math.snap(record["layer"], decimal_value(record[field]) + delta) for field in ("begin", "end")}
+
+
 class PositionMath:
     """一次操作内复用轴查找；最近的显式 axis 定义当前轴，默认沿父链到根。"""
 

@@ -1,0 +1,47 @@
+"""python -m examples.editing：分割、范围平移、插空档与跨项目剪切的内存示例。"""
+
+from contextlib import closing
+
+from runtime.api import (dispatch, insert_gap, open_database, save_layer, save_object,
+                         shift_objects, split_object, transfer_subtree, undo_operation)
+from runtime.storage.database import SCHEMA_PATH
+from tools.common.gaps import format_gap
+from tools.common.split import format_split
+from tools.common.transfer import format_transfer
+from tools.common.undo import format_undo
+
+
+def create_example():
+    with closing(open_database(":memory:")) as connection:
+        connection.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
+        source = dispatch(connection, {"action": "create", "kind": "project", "data": {"name": "原项目"}})["id"]
+        destination = dispatch(connection, {"action": "create", "kind": "project", "data": {"name": "目标项目"}})["id"]
+        layer = save_layer(connection, source, {"config_ref": "layers/text.toml", "name": "歌词"})["data"]["id"]
+        obj = save_object(connection, source, {"config_ref": "objects/text.toml", "layer": layer, "begin": 10, "end": 20,
+                                             "information": {"text": "原文"}})["data"]["id"]
+        split = split_object(connection, source, obj, first_information={"text": "第一段"},
+                             cuts=[{"at": 14, "information": {"text": "第二段"}}])
+        assert split["ok"], split
+        shift = shift_objects(connection, source, layer_ids=[layer], from_position=14, offset=1)
+        assert shift["ok"], shift
+        gap = insert_gap(connection, source, layer_id=layer, at=12, length=2,
+                         split_contents=[{"object_id": obj, "first_information": {"text": "第一段前半"},
+                                          "second_information": {"text": "第一段后半"}}])
+        assert gap["ok"], gap
+        other = save_layer(connection, destination, {"config_ref": "layers/text.toml", "name": "引用方"})["data"]["id"]
+        dispatch(connection, {"action": "create", "kind": "bind", "data": {
+            "source_kind": "layer", "source_project_id": destination, "source_id": other,
+            "target_kind": "object", "target_project_id": source, "target_id": obj}})
+        cut = transfer_subtree(connection, source, layer, destination, mode="cut")
+        assert cut["ok"], cut
+        restored = undo_operation(connection, cut["operation_id"])
+        assert restored["ok"], restored
+        return {"split": split, "shift": shift, "gap": gap, "cut": cut, "restored": restored}
+
+
+if __name__ == "__main__":
+    result = create_example()
+    print(format_split(result["split"]))
+    print(format_gap(result["gap"]))
+    print(format_transfer(result["cut"]))
+    print(format_undo(result["restored"]))

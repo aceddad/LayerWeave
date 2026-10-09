@@ -64,4 +64,4 @@ python -X utf8 -B -m tools.common.undo DATABASE OPERATION_ID
 
 默认文字输出显示数量、复制编号映射、操作结果和逐条诊断；--json 返回完整结构。失败退出码 1，已提交但存在诊断仍为 0。--name 仅用于 copy。
 
-运行 `python -X utf8 -B -m examples.subtrees` 查看歌词、段落标记与外部伴奏之间的内部/外部引用示例；它使用自己的内存数据库，不修改真实项目。跨项目复制、另选父层、时间平移和资源复制不属于这两个入口的当前参数。
+运行 `python -X utf8 -B -m examples.subtrees` 查看歌词、段落标记与外部伴奏之间的内部/外部引用示例；它使用自己的内存数据库，不修改真实项目。跨项目复制/剪切由同模块的 transfer_subtree 提供，复用创建与删除逻辑，见 [编辑工具](EDITING.md)。另选父层和资源文件复制不属于当前入口；位置调整使用独立平移工具。

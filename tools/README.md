@@ -12,6 +12,9 @@
 | 撤销/重做 | [undo.py](../src/tools/common/undo.py) | 按 operation_id 原子恢复完整批次，冲突逐条报告 |
 | 删除子树 | [subtrees.py](../src/tools/common/subtrees.py) | 删除起始层、子孙层、对象及出向关联；保留外部入向关联 |
 | 整层复制 | [subtrees.py](../src/tools/common/subtrees.py) | 同项目同父层复制完整子树，重映射内部引用，返回编号映射 |
+| 对象分割 | [split.py](../src/tools/common/split.py) | 按单点/多点与明确的各段 information 分割，第一段保留编号和关联 |
+| 插空档 | [gaps.py](../src/tools/common/gaps.py) | 选范围、位置和长度，跨界分割与后移原子执行，共用平移计算 |
+| 跨项目复制/剪切 | [transfer.py](../src/tools/common/transfer.py) | 目标重新发号、原数值保留；剪切时外部入向引用跟随新地址 |
 | 项目概览 | [project_overview.py](../src/tools/common/project_overview.py) | 项目层级、层类型、名字与对象数量；只读 |
 | 项目详细展开 | [project_details.py](../src/tools/common/project_details.py) | 展开项目/子树的层、对象内容和关联引用，可按数值范围筛选；只读 |
 | 对象检索 | [find_objects.py](../src/tools/common/find_objects.py) | 按层、名字、内容、位置范围查找对象；只读 |
@@ -31,6 +34,8 @@
 复查、历史与撤销的 Python/CLI 参数和恢复语义见 [完整说明](../src/runtime/storage/HISTORY.md)。从 src 运行 `python -X utf8 -B -m examples.review_history` 可查看独立内存数据库示例。新工具继续使用 runtime.api，数据库查询与恢复代码在存储层；它们不需要 Skill 或 MCP。
 
 子树删除与整层复制也已提供，范围包含起始层及全部后代；每次操作可整批撤销。用法、关联边界和 id_map 格式见 [子树工具说明](../src/runtime/storage/SUBTREES.md)，内存演示为 `python -X utf8 -B -m examples.subtrees`。
+
+分割、按起点筛选平移、插空档和跨项目复制/剪切的参数与完整示例见 [编辑工具说明](../src/runtime/storage/EDITING.md)。内存演示为 `python -X utf8 -B -m examples.editing`。位置工具的 shift 入口保持兼容，新增 --layer-ids、--from-position 和 --config-root；其与插空档共用底层数值计算。
 
 ## 配置 help
 
@@ -296,7 +301,7 @@ result = copy_object(connection, project_id, object_id, layer_id=target_layer_id
 
 复制默认保留内容、配置、名字、备注、所属层与位置，新编号由核心发放。可另选同项目目标层、名字或起点；指定起点时保留原时长。append=True 将副本接到目标层末尾，空层从 0 开始，不能同时指定 begin。
 
-单对象复制不修改原对象，不复制出向/入向关联，也不复制媒体文件；information 中的资源引用保持原样。需要连同内部关联复制完整子树时，使用 [copy_subtree](../src/runtime/storage/SUBTREES.md)。跨项目迁移仍留待后续批次。
+单对象复制不修改原对象，不复制出向/入向关联，也不复制媒体文件；information 中的资源引用保持原样。需要连同内部关联复制完整子树时，使用 [copy_subtree](../src/runtime/storage/SUBTREES.md)。跨项目的子树复制/剪切使用 [transfer_subtree](../src/runtime/storage/EDITING.md)，单独对象的跨项目入口暂未提供。
 
 ### 第二批命令行
 

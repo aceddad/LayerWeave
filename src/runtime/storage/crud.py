@@ -156,6 +156,11 @@ def create(connection, kind, data, *, operation_id, project_id=None, position_ma
     values = _encode(spec, data)
     if kind == "object":
         values = _positions(connection, values, project_id, math=position_math)
+    return _insert(connection, kind, spec, values, operation_id=operation_id, project_id=project_id)
+
+
+def _insert(connection, kind, spec, values, *, operation_id, project_id=None):
+    """插入已编码字段并统一发号/记日志；迁移复用此处保留已有坐标数值。"""
     if spec["scoped"]:
         values = {"project_id": project_id, "id": allocate_id(connection, project_id), **values}
     if values:

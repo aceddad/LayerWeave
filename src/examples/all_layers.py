@@ -4,14 +4,7 @@
 示例直接使用 Python 类，不加载配置或执行配置中的检查。
 """
 
-from models import (
-    TextLayer, Text,
-    ImageLayer, Image,
-    AudioLayer, Audio,
-    MovieLayer, Movie,
-    ModelLayer, Model,
-    ActiveLayer, Active,
-)
+from models import TextLayer, Text, ImageLayer, Image, AudioLayer, Audio, MovieLayer, Movie, ModelLayer, Model, ActiveLayer, Active
 
 
 def create_example():

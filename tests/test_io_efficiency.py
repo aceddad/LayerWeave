@@ -8,9 +8,11 @@ import unittest
 from unittest.mock import patch
 
 from models import Text, TextLayer
-from runtime.api import dispatch, open_database, read_layer, save_layer, save_object
-from runtime.configuration.loader import DEFAULT_ROOT
-from runtime.storage.database import SCHEMA_PATH
+from tool.builtin.usage.records.dispatch import dispatch
+from support.api import open_database, read_layer
+from tool.builtin.usage.records.save import save_layer, save_object
+from support.configuration.loader import DEFAULT_ROOT
+from support.storage.database import SCHEMA_PATH
 
 
 class IOEfficiencyTests(unittest.TestCase):

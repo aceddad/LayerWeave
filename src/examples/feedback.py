@@ -2,8 +2,9 @@
 
 from contextlib import closing
 
-from runtime.api import dispatch, format_feedback, open_database
-from runtime.storage.database import SCHEMA_PATH
+from tool.builtin.usage.records.dispatch import dispatch
+from support.api import format_feedback, open_database
+from support.storage.database import SCHEMA_PATH
 
 
 def main():

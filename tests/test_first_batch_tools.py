@@ -10,13 +10,14 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from runtime.api import dispatch, open_database, read_record
-from runtime.configuration.loader import DEFAULT_ROOT
-from runtime.storage.database import SCHEMA_PATH
-from tools.usage.common.find_objects import find_objects
-from tools.usage.common.project_overview import project_overview
-from tools.usage.common.relations import query_relations
-from tools.usage.text.collect import collect_text
+from tool.builtin.usage.records.dispatch import dispatch
+from support.api import open_database, read_record
+from support.configuration.loader import DEFAULT_ROOT
+from support.storage.database import SCHEMA_PATH
+from tool.builtin.usage.query.find_objects import find_objects
+from tool.builtin.usage.query.project_overview import project_overview
+from tool.builtin.usage.query.relations import query_relations
+from tool.builtin.usage.text.collect import collect_text
 
 
 class FirstBatchToolsTests(unittest.TestCase):
@@ -235,17 +236,17 @@ class FirstBatchToolsTests(unittest.TestCase):
                                    str(database), str(self.project_id), *map(str, args)],
                                   capture_output=True, text=True, encoding="utf-8")
 
-        found = run("tools.usage.common.find_objects", "--name", "hello", "--begin", 1, "--end", 3)
+        found = run("tool.builtin.usage.query.find_objects", "--name", "hello", "--begin", 1, "--end", 3)
         self.assertEqual(found.returncode, 0, found.stderr)
         self.assertEqual(json.loads(found.stdout)[0]["id"], good)
-        relations = run("tools.usage.common.relations", "object", good)
+        relations = run("tool.builtin.usage.query.relations", "object", good)
         self.assertEqual(relations.returncode, 0, relations.stderr)
         self.assertEqual(json.loads(relations.stdout)["outgoing"][0]["id"], bind_id)
-        collected = run("tools.usage.text.collect", self.layer_id, "--json")
+        collected = run("tool.builtin.usage.text.collect", self.layer_id, "--json")
         self.assertEqual(collected.returncode, 0, collected.stderr)
         self.assertEqual(json.loads(collected.stdout)["status"], "partial")
-        plain = run("tools.usage.text.collect", self.layer_id)
+        plain = run("tool.builtin.usage.text.collect", self.layer_id)
         self.assertEqual(plain.stdout.strip(), "你好")
         self.assertIn("information.text", plain.stderr)
-        invalid = run("tools.usage.common.find_objects", "--begin", 3, "--end", 1)
+        invalid = run("tool.builtin.usage.query.find_objects", "--begin", 3, "--end", 1)
         self.assertEqual(invalid.returncode, 1)

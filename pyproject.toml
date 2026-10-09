@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "layerweave"
+version = "0.1.0"
+description = "Layers, objects and composable tools for AI workflows"
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.setuptools]
+package-dir = {"" = "src", "tool" = "tool"}
+
+[tool.setuptools.packages.find]
+where = ["src", "."]
+include = ["core*", "models*", "support*", "examples*", "tool", "tool.builtin*"]
+namespaces = false
+
+[tool.setuptools.package-data]
+"support.storage" = ["schema.sql"]

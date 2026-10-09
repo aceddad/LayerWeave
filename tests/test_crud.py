@@ -10,9 +10,9 @@ import tempfile
 import unittest
 from uuid import UUID, uuid4
 
-from runtime.dispatch import dispatch
-from runtime.storage import crud
-from runtime.storage.database import SCHEMA_PATH, initialize_database, open_database
+from tool.builtin.usage.records.dispatch import dispatch
+from support.storage import crud
+from support.storage.database import SCHEMA_PATH, initialize_database, open_database
 
 
 class CrudTests(unittest.TestCase):
@@ -289,17 +289,15 @@ class CrudTests(unittest.TestCase):
         self.assertEqual(crud.read(self.connection, "project"), [])
 
     def test_low_level_functions_share_caller_transaction_and_operation_id(self):
-        operation_id = uuid4().hex
-        self.connection.execute("BEGIN IMMEDIATE")
-        project, _ = crud.create(self.connection, "project", {"name": "composed"}, operation_id=operation_id)
-        layer, _ = crud.create(self.connection, "layer", {
-            "type": "text", "config_ref": "layers/text.toml",
-        }, project_id=project["id"], operation_id=operation_id)
-        crud.create(self.connection, "object", {"config_ref": "objects/text.toml", "layer": layer["id"]},
-                    project_id=project["id"], operation_id=operation_id)
-        self.assertTrue(self.connection.in_transaction)
-        self.assertEqual(len(crud.read(self.connection, "change", filters={"operation_id": operation_id})), 3)
-        self.connection.rollback()
+        from support.api import transaction
+        with self.assertRaisesRegex(ValueError, "cancel batch"):
+            with transaction(self.connection) as write:
+                project = write.create("project", {"name": "composed"})
+                layer = write.create("layer", {"type": "text", "config_ref": "layers/text.toml"}, project_id=project["id"])
+                write.create("object", {"config_ref": "objects/text.toml", "layer": layer["id"]}, project_id=project["id"])
+                self.assertTrue(self.connection.in_transaction)
+                self.assertEqual(len(crud.read(self.connection, "change", filters={"operation_id": write.operation_id})), 3)
+                raise ValueError("cancel batch")
         self.assertEqual(crud.read(self.connection, "project"), [])
         self.assertEqual(self.journal_count(), 0)
 
@@ -308,7 +306,7 @@ class CrudTests(unittest.TestCase):
             path = Path(file.name)
         self.addCleanup(path.unlink)
         initialize_database(path)
-        command = [sys.executable, "-X", "utf8", "-B", "-m", "tools.usage.crud", str(path)]
+        command = [sys.executable, "-X", "utf8", "-B", "-m", "tool.builtin.usage.records.cli", str(path)]
         cwd = Path(__file__).resolve().parents[1] / "src"
         result = subprocess.run(command, input=json.dumps({
             "action": "create", "kind": "project", "data": {"name": "CLI 项目"},

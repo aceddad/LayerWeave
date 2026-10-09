@@ -10,12 +10,12 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from runtime.configuration.loader import DEFAULT_ROOT
-from runtime.dispatch import dispatch
-from runtime.storage import crud
-from runtime.storage.database import SCHEMA_PATH, open_database
-from runtime.validation.registry import RULES
-from runtime.validation.runner import check_changes, validate
+from support.configuration.loader import DEFAULT_ROOT
+from tool.builtin.usage.records.dispatch import dispatch
+from support.storage import crud
+from support.storage.database import SCHEMA_PATH, open_database
+from tool.builtin.usage.validation.registry import RULES
+from tool.builtin.usage.validation.runner import check_changes, validate
 
 
 class ValidationTests(unittest.TestCase):
@@ -108,12 +108,13 @@ class ValidationTests(unittest.TestCase):
         changed = self.call("update", "layer", id=root["id"], data={"father": self.layer_id})
         self.assertEqual(len(self.issues(changed, "axis_only_on_root")), 1)
 
-    def test_father_cycle_is_reported_but_saved_and_notes_do_not_traverse(self):
+    def test_father_cycle_is_rejected_and_notes_do_not_traverse(self):
         child = self.layer(father=self.layer_id)
         result = self.call("update", "layer", id=self.layer_id, data={"father": child["id"]})
-        self.assertTrue(result["applied"])
-        self.assertEqual(len(self.issues(result, "no_cycle")), 1)
-        with patch("runtime.validation.rules.layers.no_cycle", side_effect=AssertionError("must not traverse")):
+        self.assertFalse(result["applied"])
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["error"]["code"], "father_cycle")
+        with patch("tool.builtin.usage.validation.rules.layers.no_cycle", side_effect=AssertionError("must not traverse")):
             result = self.call("update", "layer", id=self.layer_id, data={"tips": "note"})
             self.assertEqual(result["checks"]["issues"], [])
 
@@ -131,7 +132,7 @@ class ValidationTests(unittest.TestCase):
 
     def test_overlap_batch_deduplicates_rule_but_preserves_distinct_pairs(self):
         layer_id = self.track()
-        with patch("runtime.validation.rules.layers.overlap", wraps=__import__("runtime.validation.rules.layers", fromlist=["overlap"]).overlap) as check:
+        with patch("tool.builtin.usage.validation.rules.layers.overlap", wraps=__import__("tool.builtin.usage.validation.rules.layers", fromlist=["overlap"]).overlap) as check:
             result = dispatch(self.connection, [
                 {"action": "create", "kind": "object", "project_id": self.project,
                  "data": {"layer": layer_id, "config_ref": "objects/text.toml", "begin": 1, "end": 4}}
@@ -193,7 +194,7 @@ class ValidationTests(unittest.TestCase):
         self.assertEqual(result["checks"]["status"], "partial")
         self.assertTrue(self.issues(result, "begin_le_end"))
         self.assertTrue(self.issues(result, "configuration"))
-        with patch("runtime.validation.rules.fields.check", side_effect=RuntimeError("broken rule")):
+        with patch("tool.builtin.usage.validation.rules.fields.check", side_effect=RuntimeError("broken rule")):
             result = self.obj(begin=5, end=1)
         self.assertEqual(result["checks"]["status"], "partial")
         self.assertTrue(self.issues(result, "begin_le_end"))
@@ -216,7 +217,7 @@ assert "models.objects.active" not in sys.modules
 from models import Text, Layer
 assert "models.objects.active" not in sys.modules
 assert "models.layers.active" not in sys.modules
-assert "runtime.validation.rules.layers" not in sys.modules
+assert "tool.builtin.usage.validation.rules.layers" not in sys.modules
 obj = Text(layer=1)
 assert obj.return_self() is obj
 try:
@@ -246,7 +247,7 @@ else:
                 self.assertEqual(result["checks"]["issues"], [])
 
     def test_default_checker_import_failure_preserves_operation_result(self):
-        with patch.dict(sys.modules, {"runtime.validation.runner": None}):
+        with patch.dict(sys.modules, {"tool.builtin.usage.validation.runner": None}):
             result = dispatch(self.connection, {"action": "create", "kind": "object", "project_id": self.project,
                                                "data": {"layer": self.layer_id, "config_ref": "objects/text.toml"}})
         self.assertTrue(result["ok"])

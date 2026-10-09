@@ -11,11 +11,12 @@ import tempfile
 import unittest
 
 from models import Text, TextLayer, Title
-from runtime.api import (dispatch, initialize_database, load_layer, load_object, open_database,
-                         read_layer, read_object, save_layer, save_object)
-from runtime.configuration.loader import DEFAULT_ROOT
-from runtime.storage import crud
-from runtime.storage.database import SCHEMA_PATH
+from tool.builtin.usage.records.dispatch import dispatch
+from support.api import initialize_database, load_layer, load_object, open_database, read_layer, read_object
+from tool.builtin.usage.records.save import save_layer, save_object
+from support.configuration.loader import DEFAULT_ROOT
+from support.storage import crud
+from support.storage.database import SCHEMA_PATH
 
 
 class IOTests(unittest.TestCase):
@@ -249,7 +250,7 @@ class IOTests(unittest.TestCase):
                 self.assertIsInstance(loaded, getattr(models, prefix + "Layer"))
                 self.assertIsInstance(loaded.objects[0], getattr(models, prefix))
                 self.assertEqual(loaded.objects[0].information["arbitrary"]["unicode"], "中文")
-        result = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", "tools.usage.crud", str(path)],
+        result = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", "tool.builtin.usage.records.cli", str(path)],
                                 input=json.dumps({"action": "read", "kind": "layer", "project_id": project_id, "id": ids[0][0], "full": True}),
                                 text=True, encoding="utf-8", capture_output=True)
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -259,6 +260,6 @@ class IOTests(unittest.TestCase):
 
     def test_api_import_does_not_load_all_models_or_rules(self):
         result = subprocess.run([sys.executable, "-X", "utf8", "-B", "-c",
-            'import sys; import runtime.api; assert "models.objects.active" not in sys.modules; assert "runtime.validation.runner" not in sys.modules'],
+            'import sys; import support.api; assert "models.objects.active" not in sys.modules; assert "tool.builtin.usage.validation.runner" not in sys.modules'],
             text=True, capture_output=True)
         self.assertEqual(result.returncode, 0, result.stderr)

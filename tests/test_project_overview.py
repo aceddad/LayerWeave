@@ -9,10 +9,11 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from runtime.api import dispatch, open_database
-from runtime.storage import crud
-from runtime.storage.database import SCHEMA_PATH
-from tools.usage.common.project_overview import format_overview, project_overview
+from tool.builtin.usage.records.dispatch import dispatch
+from support.api import open_database
+from support.storage import crud
+from support.storage.database import SCHEMA_PATH
+from tool.builtin.usage.query.project_overview import format_overview, project_overview
 
 
 class ProjectOverviewTests(unittest.TestCase):
@@ -101,7 +102,9 @@ class ProjectOverviewTests(unittest.TestCase):
         first = self.layer("A")
         second = self.layer("B", father=first)
         child = self.layer("C", father=second)
-        self.request("update", "layer", project_id=self.project_id, id=first, data={"father": second})
+        # 旧库仍可读取，不通过正式写入口制造环。
+        with self.connection:
+            self.connection.execute("UPDATE layers SET father=? WHERE project_id=? AND id=?", (second, self.project_id, first))
         result = project_overview(self.connection, self.project_id)
         self.assertEqual(result["counts"]["roots"], 1)
         self.assertEqual(result["counts"]["unplaced_layers"], 3)
@@ -134,7 +137,7 @@ class ProjectOverviewTests(unittest.TestCase):
                 self.connection.backup(copy)
             finally:
                 copy.close()
-            command = [sys.executable, "-X", "utf8", "-B", "-m", "tools.usage.common.project_overview"]
+            command = [sys.executable, "-X", "utf8", "-B", "-m", "tool.builtin.usage.query.project_overview"]
             result = subprocess.run([*command, str(database), str(self.project_id), "--json"],
                                     capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(result.returncode, 0, result.stderr)

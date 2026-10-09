@@ -8,9 +8,11 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from runtime.api import dispatch, find_gaps, open_database
-from runtime.storage.database import SCHEMA_PATH
-from tools.usage.common.free_ranges import format_gaps
+from tool.builtin.usage.records.dispatch import dispatch
+from tool.builtin.usage.query.free_ranges import find_gaps
+from support.api import open_database
+from support.storage.database import SCHEMA_PATH
+from tool.builtin.usage.query.free_ranges import format_gaps
 
 
 class FreeRangesTests(unittest.TestCase):
@@ -77,7 +79,7 @@ class FreeRangesTests(unittest.TestCase):
                        (0.123456789, "not JSON", self.p, obj))
         self.c.commit()
         count = self.c.total_changes
-        with patch("runtime.configuration.loader.Loader.load", side_effect=AssertionError("no configs")):
+        with patch("support.configuration.loader.Loader.load", side_effect=AssertionError("no configs")):
             result = self.gaps(end=0.3)
         self.assertEqual(result[0]["begin"], 0.123456789)
         self.assertEqual(result[0]["length"], 0.176543211)
@@ -110,7 +112,7 @@ class FreeRangesTests(unittest.TestCase):
             destination = open_database(path)
             self.c.backup(destination)
             destination.close()
-            command = [sys.executable, "-X", "utf8", "-B", "-m", "tools.usage.common.free_ranges", str(path),
+            command = [sys.executable, "-X", "utf8", "-B", "-m", "tool.builtin.usage.query.free_ranges", str(path),
                        str(self.p), str(self.layer), "0", "20", "--min-length", "4"]
             result = subprocess.run([*command, "--json"], capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(result.returncode, 0, result.stderr)

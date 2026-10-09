@@ -11,10 +11,13 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from runtime.api import command_help, dispatch, insert_gap, open_database, split_object
-from runtime.storage.database import SCHEMA_PATH
-from tools.shared.catalog import DEFAULT_SOURCE_ROOT, help_examples
-from tools.shared.command_help import format_commands
+from support.commands import command_help
+from tool.builtin.usage.records.dispatch import dispatch
+from tool.builtin.usage.editing.timeline import insert_gap, split_object
+from support.api import open_database
+from support.storage.database import SCHEMA_PATH
+from support.commands import DEFAULT_SOURCE_ROOT, help_examples
+from tool.builtin.shared.help.command_help import format_commands
 
 
 class CommandHelpTests(unittest.TestCase):
@@ -26,13 +29,13 @@ class CommandHelpTests(unittest.TestCase):
         self.assertTrue(all("parameters" not in item for item in result["items"]))
         details = command_help(list(names))
         covered = {item["source"] for item in details["items"]}
-        for path in (DEFAULT_SOURCE_ROOT/"tools").rglob("*.py"):
+        for path in DEFAULT_SOURCE_ROOT.rglob("*.py"):
             tree = ast.parse(path.read_text(encoding="utf-8"))
             if any(isinstance(n,ast.FunctionDef) and n.name=="main" for n in tree.body):
                 self.assertIn(path.relative_to(DEFAULT_SOURCE_ROOT).as_posix(), covered)
 
     def test_details_resolve_aliases_and_include_inputs_outputs_examples(self):
-        result = command_help(["split","split_object","runtime.api:split_object","insert_gap"])
+        result = command_help(["split","split_object","tool.builtin.usage.editing.timeline:split_object","insert_gap"])
         self.assertEqual(len(result["items"]),2)
         split,gap = result["items"]
         self.assertIn("object_id", split["parameters"])
@@ -84,7 +87,7 @@ class CommandHelpTests(unittest.TestCase):
             function=getattr(importlib.import_module(module),name)
             signature=inspect.signature(function)
             if any(p.kind==p.VAR_KEYWORD for p in signature.parameters.values()):
-                continue  # runtime.api 的延迟包装；行为由对应工具测试覆盖。
+                continue  # support.api 的延迟包装；行为由对应工具测试覆盖。
             for parameter in command["parameters"]:
                 if parameter=="database":
                     self.assertTrue("connection" in signature.parameters or command["name"]=="initialize_database")
@@ -133,7 +136,7 @@ class CommandHelpTests(unittest.TestCase):
         self.assertEqual(len(result["data"]["moved"]),1)
 
     def test_command_help_cli_json_and_invalid_root(self):
-        base=[sys.executable,"-X","utf8","-B","-m","tools.shared.command_help"]
+        base=[sys.executable,"-X","utf8","-B","-m","tool.builtin.shared.help.command_help"]
         run=subprocess.run([*base,"split","gaps","--json"],capture_output=True,text=True,encoding="utf-8")
         self.assertEqual(run.returncode,0,run.stderr)
         self.assertEqual(len(json.loads(run.stdout)["items"]),2)

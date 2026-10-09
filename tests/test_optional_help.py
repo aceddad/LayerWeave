@@ -10,12 +10,14 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from runtime.api import dispatch, open_database, save_layer, save_object
-from runtime.configuration.loader import ConfigError, DEFAULT_ROOT, Loader
-from runtime.storage.database import SCHEMA_PATH
-from runtime.validation.rules import fields
-from tools.shared.config_help import config_help, format_help
-from tools.usage.text.collect import collect_text
+from tool.builtin.usage.records.dispatch import dispatch
+from support.api import open_database
+from tool.builtin.usage.records.save import save_layer, save_object
+from support.configuration.loader import ConfigError, DEFAULT_ROOT, Loader
+from support.storage.database import SCHEMA_PATH
+from tool.builtin.usage.validation.rules import fields
+from tool.builtin.shared.help.config_help import config_help, format_help
+from tool.builtin.usage.text.collect import collect_text
 
 
 class OptionalHelpTests(unittest.TestCase):
@@ -64,7 +66,7 @@ class OptionalHelpTests(unittest.TestCase):
             self.derive(name, parent)
             layer = self.layer(parent)
             obj = getattr(module, name)(layer=layer, information={"source": "resource"})
-            with patch("runtime.validation.rules.fields.check", wraps=fields.check) as check:
+            with patch("tool.builtin.usage.validation.rules.fields.check", wraps=fields.check) as check:
                 result = save_object(self.c, self.project, obj, config_root=self.configs)
             self.assertTrue(check.called)
             self.assertEqual(result["checks"], {"status": "completed", "issues": []})
@@ -226,7 +228,7 @@ information={text="你好",speaker="A"}
             self.query("objects", "model", audience="other")
 
     def test_cli_developer_mode_and_usage_raw_are_distinct(self):
-        command = [sys.executable, "-X", "utf8", "-B", "-m", "tools.shared.config_help", "objects", "model", "--json", "--config-root", str(self.configs)]
+        command = [sys.executable, "-X", "utf8", "-B", "-m", "tool.builtin.shared.help.config_help", "objects", "model", "--json", "--config-root", str(self.configs)]
         for flags, audience in ((["--dev"], "developer"), (["--raw"], "usage")):
             run = subprocess.run([*command, *flags], capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(run.returncode, 0, run.stderr)

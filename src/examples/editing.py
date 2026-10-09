@@ -2,14 +2,19 @@
 
 from contextlib import closing
 
-from runtime.api import (dispatch, find_gaps, insert_gap, open_database, save_layer, save_object,
-                         shift_objects, split_object, transfer_objects, transfer_subtree, undo_operation)
-from tools.usage.common.free_ranges import format_gaps
-from runtime.storage.database import SCHEMA_PATH
-from tools.usage.common.gaps import format_gap
-from tools.usage.common.split import format_split
-from tools.usage.common.transfer import format_transfer
-from tools.usage.common.undo import format_undo
+from tool.builtin.usage.records.dispatch import dispatch
+from tool.builtin.usage.query.free_ranges import find_gaps
+from tool.builtin.usage.editing.timeline import insert_gap, shift_objects, split_object
+from support.api import open_database
+from tool.builtin.usage.records.save import save_layer, save_object
+from tool.builtin.usage.editing.tree_service import transfer_objects, transfer_subtree
+from tool.builtin.usage.undo.service import undo_operation
+from tool.builtin.usage.query.free_ranges import format_gaps
+from support.storage.database import SCHEMA_PATH
+from tool.builtin.usage.editing.gaps import format_gap
+from tool.builtin.usage.editing.split import format_split
+from tool.builtin.usage.editing.transfer import format_transfer
+from tool.builtin.usage.undo.cli import format_undo
 
 
 def create_example():

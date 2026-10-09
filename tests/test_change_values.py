@@ -6,11 +6,12 @@ import shutil
 import tempfile
 import unittest
 
-from runtime.api import dispatch, open_database
-from runtime.configuration.loader import ConfigError, DEFAULT_ROOT, Loader
-from runtime.storage import crud
-from runtime.storage.database import SCHEMA_PATH
-from runtime.validation.runner import check_changes
+from tool.builtin.usage.records.dispatch import dispatch
+from support.api import open_database
+from support.configuration.loader import ConfigError, DEFAULT_ROOT, Loader
+from support.storage import crud
+from support.storage.database import SCHEMA_PATH
+from tool.builtin.usage.validation.runner import check_changes
 
 
 class ChangeValueTests(unittest.TestCase):

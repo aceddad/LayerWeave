@@ -8,12 +8,14 @@ import tempfile
 import unittest
 
 from models import Text, TextLayer, Title
-from runtime.api import (dispatch, load_layer, load_object, open_database, read_layer,
-                         save_layer, save_object, validate)
-from runtime.configuration.loader import ConfigError, DEFAULT_ROOT, Loader
-from runtime.storage import crud
-from runtime.storage.database import SCHEMA_PATH
-from tools.usage.text.collect import collect_text
+from tool.builtin.usage.records.dispatch import dispatch
+from support.api import load_layer, load_object, open_database, read_layer
+from tool.builtin.usage.records.save import save_layer, save_object
+from tool.builtin.usage.validation.runner import validate
+from support.configuration.loader import ConfigError, DEFAULT_ROOT, Loader
+from support.storage import crud
+from support.storage.database import SCHEMA_PATH
+from tool.builtin.usage.text.collect import collect_text
 
 
 class EncapsulationIdentityTests(unittest.TestCase):

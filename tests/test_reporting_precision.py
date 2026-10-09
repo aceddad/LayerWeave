@@ -8,12 +8,14 @@ import unittest
 from unittest.mock import patch
 
 from models import Text, TextLayer
-from runtime.api import (diagnostic_report, dispatch, format_feedback, load_object, open_database,
-                         read_object, save_layer, save_object, validate)
-from runtime.configuration.loader import DEFAULT_ROOT
-from runtime.storage import crud
-from runtime.storage.database import SCHEMA_PATH
-from tools.usage.text.collect import collect_text
+from support.api import diagnostic_report, format_feedback, load_object, open_database, read_object
+from tool.builtin.usage.records.dispatch import dispatch
+from tool.builtin.usage.records.save import save_layer, save_object
+from tool.builtin.usage.validation.runner import validate
+from support.configuration.loader import DEFAULT_ROOT
+from support.storage import crud
+from support.storage.database import SCHEMA_PATH
+from tool.builtin.usage.text.collect import collect_text
 
 
 class ReportingPrecisionTests(unittest.TestCase):
@@ -74,8 +76,8 @@ class ReportingPrecisionTests(unittest.TestCase):
 
     def test_rule_switch_and_reporting_level_are_independent(self):
         self.policy.write_text('[levels]\nbegin_le_end="none"\n', encoding="utf-8")
-        from runtime.validation.rules.objects import begin_le_end
-        with patch("runtime.validation.rules.objects.begin_le_end", wraps=begin_le_end) as check:
+        from tool.builtin.usage.validation.rules.objects import begin_le_end
+        with patch("tool.builtin.usage.validation.rules.objects.begin_le_end", wraps=begin_le_end) as check:
             result = self.obj(begin=3, end=1)
         self.assertTrue(check.called)
         self.assertFalse(any(i["rule"] == "begin_le_end" for i in result["checks"]["issues"]))
@@ -83,7 +85,7 @@ class ReportingPrecisionTests(unittest.TestCase):
         base = self.configs / "objects/base.toml"
         base.write_text(base.read_text(encoding="utf-8").replace("begin_le_end       = true", "begin_le_end       = false"), encoding="utf-8")
         self.policy.write_text('[levels]\nbegin_le_end="error"\n', encoding="utf-8")
-        with patch("runtime.validation.rules.objects.begin_le_end", wraps=begin_le_end) as check:
+        with patch("tool.builtin.usage.validation.rules.objects.begin_le_end", wraps=begin_le_end) as check:
             self.obj(begin=5, end=4)
         self.assertFalse(check.called)
 
@@ -155,10 +157,10 @@ class ReportingPrecisionTests(unittest.TestCase):
         self.assertEqual(self.obj(frame, end=0.1+0.2)["data"]["end"], 0.3)
 
     def test_core_crud_and_model_backfill_use_actual_coordinates(self):
-        with self.c:
-            self.c.execute("BEGIN IMMEDIATE")
+        from support.api import transaction
+        with transaction(self.c) as write:
             row, change = crud.create(self.c, "object", {"layer": self.layer, "config_ref": "objects/text.toml",
-                                      "begin": 0.0004, "end": 0.1+0.2}, project_id=self.p, operation_id="direct-core")
+                                      "begin": 0.0004, "end": 0.1+0.2}, project_id=self.p, operation_id=write.operation_id)
         self.assertEqual((row["begin"], change["after"]["end"]), (0, 0.3))
         obj = Text(layer=self.layer, begin=1.0004, end=2.0004, information={"text": "正文"})
         result = save_object(self.c, self.p, obj, config_root=self.configs)

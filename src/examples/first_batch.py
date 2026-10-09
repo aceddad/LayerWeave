@@ -3,12 +3,14 @@
 from contextlib import closing
 import json
 
-from runtime.api import dispatch, open_database, save_layer
-from runtime.storage.database import SCHEMA_PATH
-from tools.usage.common.find_objects import find_objects
-from tools.usage.common.project_overview import project_overview
-from tools.usage.common.relations import query_relations
-from tools.usage.text.collect import collect_text
+from tool.builtin.usage.records.dispatch import dispatch
+from support.api import open_database
+from tool.builtin.usage.records.save import save_layer
+from support.storage.database import SCHEMA_PATH
+from tool.builtin.usage.query.find_objects import find_objects
+from tool.builtin.usage.query.project_overview import project_overview
+from tool.builtin.usage.query.relations import query_relations
+from tool.builtin.usage.text.collect import collect_text
 
 
 def create_example():

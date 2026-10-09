@@ -1,20 +1,20 @@
 # LayerWeave 工作导引
 
-src/tools 中的软件执行能力统称为“内部工具”；tool/skills 存放供层原型 tools 引用的外置技能。按当前任务选择阅读范围：
+软件自身的执行能力统称为“内部工具”，放在 tool/builtin；供层原型 tools 引用的外置技能放在 tool/skills。
 
-- 操作项目内容：从[内部工具](src/tools/README.md)进入[使用工具](src/tools/usage/README.md)。
-- 修改代码或增加封装：先读[开发指南](docs/developer-conventions.md)，再读对应 API、实现专题和配置。
-- 修改文档或示例：读取[文档约定](docs/documentation.md)，确认受众和主要维护位置。
-- 新增或整理外置技能：读取[外置工具](tool/README.md)；技能独立成包，实际绑定由 AI 按任务填写层配置。
-- 视图工作：先读[视图边界](src/tools/view/README.md)。当前 main 保持不依赖 GUI。
+- 操作项目内容：从[使用工具](tool/builtin/usage/README.md)选择操作，参数和示例由各工具 help 提供。
+- 修改代码或增加封装：先读[开发指南](docs/developer-conventions.md)，再读对应配置、API 和实现专题。
+- 修改文档：读取[文档约定](docs/documentation.md)，保持主题有明确的主要维护位置。
+- 新增外置技能：读[工具区](tool/README.md)，技能自带 SKILL.md；实际绑定由 AI 按任务填写。
+- 视图工作：读[视图边界](tool/builtin/view/README.md)，开始实现时再建独立分支。
 
 ## 工作要求
 
-- 保持基础模型简单，工具复用 runtime.api；存储、发号、事务、日志与检测留在 runtime，不在工具中复制实现。
-- 使用工具放 src/tools/usage，开发入口放 developer，共用支持放 shared；view 当前仅有说明。当前未发布阶段只维护现有模块路径。
-- 一份封装 TOML 对应一个 Python 类。更改内容、位置、编号或撤销行为前，阅读对应主要说明与测试。
-- 文档按用途组织；写法、同步和验证遵循文档约定。根 README 面向项目介绍与上手，agent 工作导引留在本文件。
-- help 的进一步编排留到 MCP 阶段，不借文档整理增加分组参数、权限限制或注册框架。
-- 保留用户数据和无关改动；测试、示例使用内存或专用临时数据库，不写 output 中的真实项目数据。
-- 修改持久化、共享执行或模块路径后，执行开发指南中的完整测试，并核对受影响示例。
-- 非可视化核心留在 main；用户要求开始可视化时再建立独立分支。
+- 核心与模型保持简单。core 表达抽象结构与封装语义，support 提供存储和配置适配，tool/builtin 提供可替换能力；依赖方向见[架构](docs/architecture.md)。
+- 所有受支持的写入走 support.api.transaction 或 run_operation，包括恢复。工具不执行 SQL 写入，不自行发号、提交或拼装日志。
+- 一个完整工具包是增减单位；业务辅助代码留在包内。不引用另一个可卸载包的私有实现。共用 CLI 和声明发现来自 support。
+- 一份封装 TOML 对应一个 Python 类，保留 layers/objects 分区及 config_ref。不要为抽象而加入其他后端或新注册框架。
+- 默认工具通过可选提供者接入内容检测。未安装检测包应返回未检查；父链无环和其他结构保证不能依赖检测包。
+- 保留用户数据和无关改动；测试、示例用内存或专用临时数据库，不写 output 的实际数据库。
+- 修改持久化、执行入口或模块路径后运行完整回归和隔离验收，方法见开发指南。当前未发布，不保留旧路径转接。
+- 文档和 help 不在本轮加入 MCP 编排；main 保持无 GUI 依赖。

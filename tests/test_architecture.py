@@ -1,0 +1,308 @@
+"""真实目录隔离、统一写门及跨工作目录调用的架构验收。"""
+import ast
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+import tempfile
+import textwrap
+import unittest
+
+from support.api import open_database, run_operation, transaction
+from support.feedback import InputError
+from support.storage.database import SCHEMA_PATH
+
+
+ROOT = Path(__file__).resolve().parents[1]
+PACKAGES = ("usage/records", "usage/query", "usage/editing", "usage/history", "usage/undo",
+            "usage/validation", "usage/text", "shared/help", "developer/database", "developer/skills")
+
+FIXTURE = '''
+from support.api import open_database, save_layer, save_object, transaction, read_record
+from support.storage.database import SCHEMA_PATH
+from models import TextLayer, Title
+c = open_database(":memory:")
+c.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
+with transaction(c) as write:
+    p = write.create("project", {"name": "isolation"})["id"]
+layer = TextLayer(name="text")
+saved = save_layer(c, p, layer)
+assert saved["ok"] and saved["checks"]["status"] == "not_run", saved
+obj = Title(layer=layer.id, begin=0, end=2, information={"text": "hello"})
+saved_object = save_object(c, p, obj)
+assert saved_object["ok"], saved_object
+'''
+
+
+class IsolationTests(unittest.TestCase):
+    def isolated(self, code, *, package=None, core_only=False):
+        with tempfile.TemporaryDirectory(prefix="layerweave-isolated-") as folder:
+            root = Path(folder)
+            for name in ("core", "models") if core_only else ("core", "models", "support"):
+                shutil.copytree(ROOT / "src" / name, root / "src" / name,
+                                ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+            if not core_only:
+                shutil.copytree(ROOT / "configs", root / "configs")
+            if package is not None:
+                dest = root / "tool/builtin" / package
+                shutil.copytree(ROOT / "tool/builtin" / package, dest,
+                                ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+                for parent in dest.parents:
+                    if parent == root:
+                        break
+                    (parent / "__init__.py").touch()
+            outside = root / "unrelated-cwd"
+            outside.mkdir()
+            env = {**os.environ, "PYTHONPATH": os.pathsep.join((str(root / "src"), str(root)))}
+            # -S 排除可编辑安装及 site-packages，无法回退到完整仓库中的工具。
+            result = subprocess.run([sys.executable, "-X", "utf8", "-B", "-S", "-c", textwrap.dedent(code)],
+                                    cwd=outside, env=env, capture_output=True, text=True, encoding="utf-8", timeout=40)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_core_and_models_without_support_configs_or_tools(self):
+        self.isolated('''
+            import sys
+            from core import Layer, Object, DefinitionError, merge_definition, identity_key, reference
+            from models import Text, Title
+            layer = Layer(id=1, objects=[Title(layer=1, information={"text": "hello"})])
+            assert layer.return_self() is layer
+            assert isinstance(layer.objects[0], Text)
+            assert isinstance(layer.objects[0], Object)
+            assert identity_key("bind", 7, 9) == ("bind", None, 9)
+            assert reference("object", 7, 9) == {"kind": "object", "project_id": 7, "id": 9}
+            parent = merge_definition(None, {"information": {"source": {"type": "str", "optional": True}}})
+            child = merge_definition(parent, {"information": {"source": {"optional": False}}})
+            assert child["information"]["source"]["optional"] is False
+            try:
+                merge_definition(child, {"information": {"source": {"optional": True}}})
+            except DefinitionError:
+                pass
+            else:
+                raise AssertionError("must not weaken inherited contract")
+            assert not any(n.split(".")[0] in {"sqlite3", "tomllib", "support", "tool"} for n in sys.modules)
+        ''', core_only=True)
+
+    def test_foundation_roundtrip_and_raw_reads_without_any_tools(self):
+        self.isolated(FIXTURE + '''
+from support.api import load_object, load_layer
+from support.commands import command_help
+import sys
+assert command_help() == {"view":"overview", "status":"completed", "items":[], "issues":[]}
+assert type(load_object(c, p, obj.id)) is Title
+assert type(load_layer(c, p, layer.id).objects[0]) is Title
+assert read_record(c, "project", id=p)["max_id"] == obj.id
+assert len(read_record(c, "change")) == 3
+with transaction(c) as write:
+    write.update("object", obj.id, {"config_ref": "objects/missing.toml"}, project_id=p)
+assert read_record(c, "object", project_id=p, id=obj.id)["config_ref"] == "objects/missing.toml"
+try:
+    load_object(c, p, obj.id)
+except ValueError:
+    pass
+else:
+    raise AssertionError("class restoration must report missing config")
+assert not any(n == "tool" or n.startswith("tool.") for n in sys.modules)
+''')
+
+    def test_each_complete_package_works_alone(self):
+        actions = {
+            "usage/records": '''
+from tool.builtin.usage.records.dispatch import dispatch
+from tool.builtin.usage.records.save import save_object
+r = dispatch(c, {"action": "update", "kind": "object", "project_id": p, "id": obj.id, "data": {"tips": "ok"}})
+assert r["ok"] and r["checks"]["status"] == "not_run", r
+assert save_object(c, p, Title(layer=layer.id, information={"text": "second"}))["ok"]
+''',
+            "usage/query": '''
+from tool.builtin.usage.query.project_overview import project_overview
+from tool.builtin.usage.query.project_details import project_details
+from tool.builtin.usage.query.free_ranges import find_gaps
+assert project_overview(c,p)["counts"]["objects"] == 1
+assert project_details(c,p)["layers"][0]["objects"][0]["id"] == obj.id
+assert find_gaps(c,p,layer.id,begin=0,end=4) is not None
+''',
+            "usage/editing": '''
+from tool.builtin.usage.editing.timeline import split_object
+from tool.builtin.usage.editing.objects import append_object
+from tool.builtin.usage.editing.tree_service import copy_subtree
+r = split_object(c,p,obj.id,first_information={"text":"one"},cuts=[{"at":1,"information":{"text":"two"}}])
+assert r["ok"] and r["checks"]["status"] == "not_run", r
+assert append_object(c,p,layer.id,{"config_ref":"objects/text.toml","information":{"text":"three"}},duration=1)["ok"]
+assert copy_subtree(c,p,layer.id)["ok"]
+''',
+            "usage/history": '''
+from tool.builtin.usage.history.service import read_history
+r = read_history(c,p)
+assert r["operation_count"] == 3, r
+assert read_history(c,operation_id=saved_object["operation_id"])["items"][0]["changes"][0]["after"]["id"] == obj.id
+''',
+            "usage/undo": '''
+from tool.builtin.usage.undo.service import undo_operation
+r = undo_operation(c,saved_object["operation_id"])
+assert r["ok"] and r["checks"]["status"] == "not_run", r
+assert read_record(c,"object",project_id=p,id=obj.id) is None
+assert undo_operation(c,r["operation_id"])["ok"]
+assert read_record(c,"object",project_id=p,id=obj.id)["id"] == obj.id
+''',
+            "usage/validation": '''
+from tool.builtin.usage.validation.recheck import recheck
+r = recheck(c,p)
+assert r["status"] == "completed", r
+from support.providers import optional_checker
+from support.api import run_operation
+r = run_operation(c,lambda write: write.update("object",obj.id,{"information":{"text":1}},project_id=p),checker=optional_checker())
+assert r["ok"] and r["checks"]["issues"], r
+''',
+            "usage/text": '''
+from tool.builtin.usage.text.collect import collect_text
+assert collect_text(c,p,layer.id)["text"] == "hello"
+''',
+            "shared/help": '''
+from tool.builtin.shared.help.catalog import read_support
+from tool.builtin.shared.help.config_help import format_help
+r = read_support("combined", "text")
+assert r["status"] == "completed" and "objects/title.toml" in format_help(r), r
+''',
+            "developer/database": '''
+from tool.builtin.developer.database.cli import main
+import sys
+from pathlib import Path
+sys.argv = ["database", "new.sqlite3"]
+main()
+assert Path("new.sqlite3").is_file()
+''',
+            "developer/skills": '''
+from pathlib import Path
+from zipfile import ZipFile
+from tool.builtin.developer.skills.cli import install_skill
+with ZipFile("demo.zip","w") as archive:
+    archive.writestr("demo/SKILL.md", "example")
+r = install_skill("demo.zip",layer="text")
+assert r["ok"], r
+assert Path(r["path"]).is_dir()
+''',
+        }
+        for package in PACKAGES:
+            with self.subTest(package=package):
+                # CLI wrappers and shared examples must also load with every other package absent.
+                code = FIXTURE + actions[package] + '''
+from support.commands import command_help
+from importlib import import_module
+import shlex
+import sys
+overview = command_help()
+assert overview["status"] == "completed", overview
+assert overview["items"], overview
+for item in overview["items"]:
+    parts = shlex.split(item["cli"])
+    module = parts[parts.index("-m")+1]
+    command = import_module(module)
+    try:
+        sys.argv = [module, "--help"]
+        command.main()
+    except SystemExit as done:
+        assert done.code == 0
+'''
+                self.isolated(code, package=package)
+
+    def test_installed_imports_and_cli_from_outside_repository(self):
+        with tempfile.TemporaryDirectory() as folder:
+            result = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", "tool.builtin.shared.help.command_help", "--json"],
+                                    cwd=folder, capture_output=True, text=True, encoding="utf-8", timeout=30)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("split_object", result.stdout)
+
+    def test_foundation_has_no_import_dependency_on_builtin_tools(self):
+        for path in (ROOT / "src/support").rglob("*.py"):
+            tree = ast.parse(path.read_text(encoding="utf-8-sig"))
+            for node in ast.walk(tree):
+                names = [node.module or ""] if isinstance(node, ast.ImportFrom) else [n.name for n in node.names] if isinstance(node, ast.Import) else []
+                self.assertFalse(any(n == "tool" or n.startswith("tool.") for n in names), str(path))
+
+
+class WriteGateTests(unittest.TestCase):
+    def setUp(self):
+        self.c = open_database(":memory:")
+        self.addCleanup(self.c.close)
+        self.c.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
+        with transaction(self.c) as write:
+            self.p = write.create("project", {})["id"]
+            self.layer = write.create("layer", {"type":"text", "config_ref":"layers/text.toml", "axis":{"precision":0.001}}, project_id=self.p)["id"]
+
+    def test_callback_result_cannot_forge_or_hide_real_changes(self):
+        def work(write):
+            row = write.create("object", {"layer": self.layer, "config_ref":"objects/text.toml", "end":0.1+0.2}, project_id=self.p)
+            changes = write.changes
+            changes.clear()
+            return {"claimed_changes": [], "id": row["id"]}
+        result = run_operation(self.c, work)
+        self.assertEqual(result["operation"]["status"], "committed")
+        self.assertEqual(len(result["operation"]["changes"]), 1)
+        self.assertEqual(result["checks"]["status"], "not_run")
+        self.assertEqual(self.c.execute('SELECT "end" FROM objects').fetchone()[0], 0.3)
+
+    def test_invalid_custom_checker_result_is_not_silently_treated_as_absent(self):
+        result = run_operation(self.c, lambda write: write.update("project", self.p, {"name": "changed"}),
+                               checker=lambda changes, read: None)
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["checks"]["status"], "failed")
+
+    def test_cycles_reject_and_rollback_even_without_checker(self):
+        before = self.c.total_changes
+        def work(write):
+            child = write.create("layer", {"type":"text", "config_ref":"layers/text.toml", "father":self.layer}, project_id=self.p)
+            write.update("layer", self.layer, {"father":child["id"]}, project_id=self.p)
+            return child
+        result = run_operation(self.c, work)
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["error"]["code"], "father_cycle")
+        self.assertEqual(self.c.execute("SELECT max_id FROM projects").fetchone()[0], self.layer)
+        self.assertEqual(self.c.execute("SELECT COUNT(*) FROM changes").fetchone()[0], 2)
+        self.assertGreater(self.c.total_changes, before)  # 确实经过写入，并共同回滚。
+
+    def test_only_final_parent_state_is_rejected(self):
+        def work(write):
+            child = write.create("layer", {"type":"text", "config_ref":"layers/text.toml", "father":self.layer}, project_id=self.p)
+            write.update("layer", self.layer, {"father":child["id"]}, project_id=self.p)
+            write.update("layer", child["id"], {"father":None}, project_id=self.p)
+            return child
+        self.assertTrue(run_operation(self.c, work)["ok"])
+
+    def test_raw_mutation_requires_gate_and_same_operation(self):
+        from support import records
+        with self.assertRaises(RuntimeError):
+            records.create(self.c,"project",{},operation_id="invented")
+        with transaction(self.c) as write:
+            with self.assertRaises(ValueError):
+                records.create(self.c,"project",{},operation_id="other")
+        self.assertEqual(self.c.execute("SELECT COUNT(*) FROM projects").fetchone()[0],1)
+
+    def test_restore_preserves_raw_values_and_never_reuses_ids(self):
+        with transaction(self.c) as write:
+            record=write.create("object",{"layer":self.layer,"config_ref":"objects/text.toml"},project_id=self.p)
+            write.delete("object",record["id"],project_id=self.p)
+        record["end"]=0.123456789
+        with transaction(self.c) as write:
+            restored=write.restore("object",record["id"],record,project_id=self.p)
+            self.assertEqual(restored["end"],0.123456789)
+            other=write.create("object",{"layer":self.layer,"config_ref":"objects/text.toml"},project_id=self.p)
+            self.assertGreater(other["id"],record["id"])
+
+    def test_restore_cannot_overlap_layer_and_object_identity(self):
+        record={"project_id":self.p,"id":self.layer,"name":"","layer":self.layer,"config_ref":"objects/text.toml","begin":0,"end":0,"information":{},"tips":""}
+        result=run_operation(self.c,lambda write:write.restore("object",self.layer,record,project_id=self.p))
+        self.assertFalse(result["ok"])
+        self.assertEqual(self.c.execute("SELECT COUNT(*) FROM objects").fetchone()[0],0)
+
+    def test_empty_restore_field_selection_is_a_noop(self):
+        with transaction(self.c) as write:
+            record = write.read("project", id=self.p)
+            record["name"] = "not selected"
+            current = write.restore("project", self.p, record, fields=[])
+            self.assertEqual(current["name"], "")
+            self.assertEqual(write.changes, [])
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -6,13 +6,15 @@ import shutil
 import tempfile
 import unittest
 
-from runtime.api import dispatch, open_database, read_record, validate
-from runtime.configuration.loader import DEFAULT_ROOT
-from runtime.storage.database import SCHEMA_PATH
-from runtime.validation.runner import check_changes
-from tools.usage.common.objects import append_object, copy_object
-from tools.usage.common.positions import align_objects, arrange_objects, set_duration, shift_objects
-from tools.usage.text.collect import collect_text
+from tool.builtin.usage.records.dispatch import dispatch
+from support.api import open_database, read_record
+from tool.builtin.usage.validation.runner import validate
+from support.configuration.loader import DEFAULT_ROOT
+from support.storage.database import SCHEMA_PATH
+from tool.builtin.usage.validation.runner import check_changes
+from tool.builtin.usage.editing.objects import append_object, copy_object
+from tool.builtin.usage.editing.positions import align_objects, arrange_objects, set_duration, shift_objects
+from tool.builtin.usage.text.collect import collect_text
 
 
 class MissingFieldsPrecisionTests(unittest.TestCase):

@@ -7,8 +7,11 @@ import sys
 import tempfile
 import unittest
 
-from runtime.api import dispatch, open_database, read_record, transfer_objects, undo_operation
-from runtime.storage.database import SCHEMA_PATH
+from tool.builtin.usage.records.dispatch import dispatch
+from support.api import open_database, read_record
+from tool.builtin.usage.editing.tree_service import transfer_objects
+from tool.builtin.usage.undo.service import undo_operation
+from support.storage.database import SCHEMA_PATH
 
 
 class ObjectTransferTests(unittest.TestCase):
@@ -177,7 +180,7 @@ class ObjectTransferTests(unittest.TestCase):
             self.c.backup(c)
             c.close()
             for mode in ("copy", "cut"):
-                result = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", "tools.usage.common.transfer_objects", str(path),
+                result = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", "tool.builtin.usage.editing.transfer_objects", str(path),
                                          str(self.p), mode, str(self.q), str(self.dst), "--ids", str(self.first), "--json"],
                                         capture_output=True, text=True, encoding="utf-8")
                 self.assertEqual(result.returncode, 0, result.stderr)

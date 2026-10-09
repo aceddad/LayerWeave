@@ -10,9 +10,10 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from runtime.api import diagnostic_report, read_support
-from runtime.configuration.loader import DEFAULT_ROOT, Loader
-from tools.shared.config_help import config_help, format_help
+from support.api import diagnostic_report
+from tool.builtin.shared.help.catalog import read_support
+from support.configuration.loader import DEFAULT_ROOT, Loader
+from tool.builtin.shared.help.config_help import config_help, format_help
 
 
 class ConfigHelpTests(unittest.TestCase):
@@ -252,7 +253,7 @@ objects="dialogue"
         self.assertNotIn("source", result["items"][0])
 
     def test_cli_four_modes_json_raw_and_no_database_argument(self):
-        command = [sys.executable, "-X", "utf8", "-B", "-m", "tools.shared.config_help"]
+        command = [sys.executable, "-X", "utf8", "-B", "-m", "tool.builtin.shared.help.config_help"]
         for args in ([], ["layers", "text", "image"], ["objects", "Text", "Title", "--raw"], ["combined", "text", "audio"]):
             result = subprocess.run([*command, *args, "--config-root", str(self.configs), "--json"], capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(result.returncode, 0, result.stderr)
@@ -267,6 +268,6 @@ objects="dialogue"
         self.assertEqual(json.loads(failed.stdout)["status"], "failed")
 
     def test_api_and_help_do_not_import_encapsulation_modules(self):
-        script = 'import sys\nfrom runtime.api import read_support\nr=read_support("combined", ["text", "image"])\nassert r["status"]=="completed"\nassert not any(n.startswith("models.") for n in sys.modules)\n'
+        script = 'import sys\nfrom tool.builtin.shared.help.catalog import read_support\nr=read_support("combined", ["text", "image"])\nassert r["status"]=="completed"\nassert not any(n.startswith("models.") for n in sys.modules)\n'
         result = subprocess.run([sys.executable, "-X", "utf8", "-B", "-c", script], capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)

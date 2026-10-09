@@ -2,10 +2,12 @@
 
 from contextlib import closing
 
-from runtime.api import dispatch, open_database, save_layer
-from runtime.storage.database import SCHEMA_PATH
-from tools.usage.common.objects import append_object
-from tools.usage.common.project_details import format_details, project_details
+from tool.builtin.usage.records.dispatch import dispatch
+from support.api import open_database
+from tool.builtin.usage.records.save import save_layer
+from support.storage.database import SCHEMA_PATH
+from tool.builtin.usage.editing.objects import append_object
+from tool.builtin.usage.query.project_details import format_details, project_details
 
 
 def create_example():

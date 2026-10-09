@@ -9,9 +9,10 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from runtime.api import dispatch, open_database, read_record, read_project_details
-from runtime.storage.database import SCHEMA_PATH
-from tools.usage.common.project_details import format_details, project_details
+from tool.builtin.usage.records.dispatch import dispatch
+from support.api import open_database, read_record, read_project_details
+from support.storage.database import SCHEMA_PATH
+from tool.builtin.usage.query.project_details import format_details, project_details
 
 
 class ProjectDetailsTests(unittest.TestCase):
@@ -122,7 +123,9 @@ class ProjectDetailsTests(unittest.TestCase):
     def test_cycles_do_not_loop_or_duplicate_records(self):
         a = self.layer()
         b = self.layer(father=a)
-        dispatch(self.connection, {"action": "update", "kind": "layer", "project_id": self.project_id, "id": a, "data": {"father": b}}, checker=None)
+        # 原始 SQL 仅用于构造旧库损坏数据；正式入口现在拒绝成环。
+        with self.connection:
+            self.connection.execute("UPDATE layers SET father=? WHERE project_id=? AND id=?", (b, self.project_id, a))
         self.obj(b, 1, 2)
         full = project_details(self.connection, self.project_id)
         self.assertEqual(full["counts"]["unplaced_layers"], 2)
@@ -320,13 +323,13 @@ class ProjectDetailsTests(unittest.TestCase):
                 self.connection.backup(copy)
             finally:
                 copy.close()
-            result = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", "tools.usage.common.project_details", str(path),
+            result = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", "tool.builtin.usage.query.project_details", str(path),
                                      str(self.project_id), "--begin", "3", "--end", "4", "--json"], capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(result.returncode, 0, result.stderr)
             data = json.loads(result.stdout)
             self.assertEqual(data["counts"]["objects"], 2)
             self.assertIn("完整正文", format_details(data))
-            command = [sys.executable, "-X", "utf8", "-B", "-m", "tools.usage.common.project_details", str(path), str(self.project_id)]
+            command = [sys.executable, "-X", "utf8", "-B", "-m", "tool.builtin.usage.query.project_details", str(path), str(self.project_id)]
             multi = subprocess.run([*command, "--layer-ids", "1", "4", "999", "--begin", "3", "--end", "4", "--compact", "--json"],
                                    capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(multi.returncode, 0, multi.stderr)

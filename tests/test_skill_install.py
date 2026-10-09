@@ -11,8 +11,8 @@ import unittest
 from unittest.mock import patch
 import zipfile
 
-from runtime.feedback import InputError
-from tools.developer.skills import install_skill
+from support.feedback import InputError
+from tool.builtin.developer.skills.cli import install_skill
 
 
 class SkillInstallTests(unittest.TestCase):
@@ -40,7 +40,7 @@ class SkillInstallTests(unittest.TestCase):
             ("release/demo/assets/raw.bin", bytes(range(256))),
             ("release/README.md", "outside"),
         ])
-        with patch("tools.developer.skills.PROJECT_ROOT", self.base):
+        with patch("tool.builtin.developer.skills.cli.PROJECT_ROOT", self.base):
             result = self.install(archive, layer="text")
         destination = self.skills / "layers/text/demo"
         self.assertEqual(result, {"ok": True, "name": "demo", "path": str(destination),
@@ -165,7 +165,7 @@ class SkillInstallTests(unittest.TestCase):
 
     def test_cli_json_success_and_conflict_do_not_touch_database_or_bindings(self):
         archive = self.archive([("demo/SKILL.md", "plain text")])
-        command = [sys.executable, "-X", "utf8", "-B", "-m", "tools.developer.skills", str(archive),
+        command = [sys.executable, "-X", "utf8", "-B", "-m", "tool.builtin.developer.skills.cli", str(archive),
                    "--scenario", "--skills-root", str(self.skills), "--json"]
         installed = subprocess.run(command, capture_output=True, text=True, encoding="utf-8")
         self.assertEqual(installed.returncode, 0, installed.stderr)

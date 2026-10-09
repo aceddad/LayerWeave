@@ -14,12 +14,12 @@ LayerWeave 是一个用层、对象、关联和轴位置组织内容的 Python �
 
 ## 开始使用
 
-当前处于开发阶段，直接从源码运行。需要 Python 3.11+、SQLite 3.35+，只使用 Python 标准库。
+当前处于开发阶段，使用源码的本地可编辑安装。需要 Python 3.11+、SQLite 3.35+；运行时只使用标准库。建议先启用自己的 Python 虚拟环境，具体准备见[开发指南](docs/developer-conventions.md#准备环境)。
 
 取得源码后，在项目目录执行：
 
 ```sh
-cd src
+python -m pip install -e .
 python -X utf8 -B -m examples.read_write
 ```
 
@@ -28,13 +28,13 @@ python -X utf8 -B -m examples.read_write
 也可以直接查询命令和可用封装，这两个入口无需数据库：
 
 ```sh
-python -X utf8 -B -m tools.shared.command_help
-python -X utf8 -B -m tools.shared.config_help combined text
+python -X utf8 -B -m tool.builtin.shared.help.command_help
+python -X utf8 -B -m tool.builtin.shared.help.config_help combined text
 ```
 
 ## 示例：连续追加两句字幕
 
-在 src 目录运行下面的 Python 代码。它创建一个临时项目，每句占 2 个位置单位，第二句自动接在第一句后面。
+在已安装本项目的 Python 环境中运行下面的 Python 代码。它创建一个临时项目，每句占 2 个位置单位，第二句自动接在第一句后面。
 
 ```python
 from contextlib import closing
@@ -42,8 +42,10 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from models import TextLayer
-from runtime.api import dispatch, initialize_database, open_database, read_layer, save_layer
-from tools.usage.common.objects import append_object
+from tool.builtin.usage.records.dispatch import dispatch
+from support.api import initialize_database, open_database, read_layer
+from tool.builtin.usage.records.save import save_layer
+from tool.builtin.usage.editing.objects import append_object
 
 with TemporaryDirectory() as directory:
     database = initialize_database(Path(directory) / "demo.sqlite3")
@@ -71,7 +73,7 @@ with TemporaryDirectory() as directory:
 [2, 4) 世界
 ```
 
-编号由接口返回，追加工具计算位置。示例结束后临时数据会清理；实际项目使用自己的数据库路径。更多调用见[使用说明](src/tools/usage/README.md)。
+编号由接口返回，追加工具计算位置。示例结束后临时数据会清理；实际项目使用自己的数据库路径。更多调用见[使用说明](tool/builtin/usage/README.md)。
 
 ## 当前状态
 
@@ -81,7 +83,7 @@ with TemporaryDirectory() as directory:
 
 ## 更多资料
 
-- [使用说明](src/tools/usage/README.md)：各类操作、参数与返回。
+- [使用说明](tool/builtin/usage/README.md)：各类操作、参数与返回。
 - [开发指南](docs/developer-conventions.md)：开发准备、源码位置、扩充与验证。
 - [架构说明](docs/architecture.md)：概念、模块关系与设计边界。
 - [示例索引](docs/examples.md)：可运行的完整场景。

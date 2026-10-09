@@ -6,8 +6,9 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from models import Text, TextLayer
-from runtime.api import (dispatch, initialize_database, load_layer, open_database,
-                         read_layer, save_layer)
+from tool.builtin.usage.records.dispatch import dispatch
+from support.api import initialize_database, load_layer, open_database, read_layer
+from tool.builtin.usage.records.save import save_layer
 
 
 def _saved(result):

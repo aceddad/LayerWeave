@@ -8,11 +8,13 @@ import sys
 import tempfile
 import unittest
 
-from runtime.api import (dispatch, insert_gap, open_database, read_record, shift_objects,
-                         split_object, undo_operation)
-from runtime.configuration.loader import DEFAULT_ROOT
-from runtime.storage.database import SCHEMA_PATH
-from tools.usage.common.gaps import format_gap
+from tool.builtin.usage.records.dispatch import dispatch
+from tool.builtin.usage.editing.timeline import insert_gap, shift_objects, split_object
+from support.api import open_database, read_record
+from tool.builtin.usage.undo.service import undo_operation
+from support.configuration.loader import DEFAULT_ROOT
+from support.storage.database import SCHEMA_PATH
+from tool.builtin.usage.editing.gaps import format_gap
 
 
 class TimelineToolsTests(unittest.TestCase):
@@ -233,7 +235,7 @@ class TimelineToolsTests(unittest.TestCase):
                         ("gaps", ["14", "2", "--project", "--json"]),
                         ("positions", ["shift", "--layer-ids", str(self.l), "--from-position", "16", "--offset", "1"])]
             for module, args in commands:
-                run = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", f"tools.usage.common.{module}", str(db), str(self.p), *args], capture_output=True, text=True, encoding="utf-8")
+                run = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", f"tool.builtin.usage.editing.{module}", str(db), str(self.p), *args], capture_output=True, text=True, encoding="utf-8")
                 self.assertEqual(run.returncode, 0, run.stderr)
                 self.assertTrue(json.loads(run.stdout)["ok"])
 

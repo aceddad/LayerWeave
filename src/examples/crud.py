@@ -4,10 +4,10 @@ from contextlib import closing
 import json
 from functools import partial
 
-from runtime.dispatch import dispatch
-from runtime.storage.database import SCHEMA_PATH, open_database
-from runtime.storage import crud
-from runtime.validation.runner import validate
+from tool.builtin.usage.records.dispatch import dispatch
+from support.storage.database import SCHEMA_PATH, open_database
+from support.storage import crud
+from tool.builtin.usage.validation.runner import validate
 
 
 def create_example():

@@ -2,11 +2,16 @@
 
 from contextlib import closing
 
-from runtime.api import dispatch, open_database, save_layer, save_object, recheck, read_history, undo_operation
-from runtime.storage.database import SCHEMA_PATH
-from tools.usage.common.history import format_history
-from tools.usage.common.recheck import format_recheck
-from tools.usage.common.undo import format_undo
+from tool.builtin.usage.records.dispatch import dispatch
+from support.api import open_database
+from tool.builtin.usage.records.save import save_layer, save_object
+from tool.builtin.usage.validation.recheck import recheck
+from tool.builtin.usage.history.service import read_history
+from tool.builtin.usage.undo.service import undo_operation
+from support.storage.database import SCHEMA_PATH
+from tool.builtin.usage.history.cli import format_history
+from tool.builtin.usage.validation.cli import format_recheck
+from tool.builtin.usage.undo.cli import format_undo
 
 
 def create_example():

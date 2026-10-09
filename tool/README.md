@@ -1,13 +1,18 @@
-# 层原型的外置工具
+# 工具区：内置工具与外置技能
 
-这里存放供层原型 `tools` 引用的技能包。技能内容可以独立编写和使用，AI 再按实际需要将其引用填入层 TOML。[返回项目介绍](../README.md)。
+builtin 存放 LayerWeave 自身的内部工具，skills 存放供层原型 `tools` 引用的技能包。技能内容可以独立编写和使用，AI 再按实际需要将其引用填入层 TOML。[返回项目介绍](../README.md)。
 
-软件自身的读写、编辑与撤销能力仍在 [src/tools](../src/tools/README.md)。本目录中的技能可以使用自己的脚本、外部软件或服务。
+软件自身的读写、编辑与撤销能力在 [builtin](builtin/README.md)，按完整包增减。本目录中的技能可以使用自己的脚本、外部软件或服务。
 
 ## 存放方式
 
 ```text
 tool/
+  builtin/                          软件自身的内部工具
+    usage/                          records/query/editing/history/undo/validation/text
+    developer/                      database/skills 等开发工具包
+    shared/help/                    命令与封装帮助
+    view/                           未来视图，当前仅说明
   skills/
     layers/                         按层原型归类的常规技能
       text/
@@ -25,11 +30,11 @@ tool/
 
 ## 绑定示例
 
-下载的技能 ZIP 可以先通过[安装工具](../src/tools/developer/SKILLS.md)放到这里。从项目 src 运行：
+下载的技能 ZIP 可以先通过[安装工具](builtin/developer/SKILLS.md)放到这里。完成可编辑安装后运行：
 
 ```sh
-python -m tools.developer.skills SKILL.zip --layer text --json
-python -m tools.developer.skills SKILL.zip --scenario --json
+python -m tool.builtin.developer.skills.cli SKILL.zip --layer text --json
+python -m tool.builtin.developer.skills.cli SKILL.zip --scenario --json
 ```
 
 工具返回实际 route，保留包内文件和已有同名目录；技能内容由 AI 按任务阅读，安装不会自动绑定。

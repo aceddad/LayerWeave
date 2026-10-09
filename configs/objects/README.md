@@ -2,7 +2,7 @@
 
 [返回配置入口](../README.md)。
 
-基础约定、六种封装及 Title 派生示例放在这里，可按需继续分子目录。对应 Python 类在 src/models/objects/，读取与继承见 [配置说明](../../src/runtime/configuration/README.md)。
+基础约定、六种封装及 Title 派生示例放在这里，可按需继续分子目录。对应 Python 类在 src/models/objects/，读取与继承见 [配置说明](../../src/support/configuration/README.md)。
 
 每份封装明确声明自己的 type 与 class，一个类只绑定一份配置。title.toml 继承 text.toml，绑定继承 Text 的独立 Title 类；沿用文字约定，不添加限制，也不需要新建标题层。
 

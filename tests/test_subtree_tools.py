@@ -8,13 +8,15 @@ import sys
 import tempfile
 import unittest
 
-from runtime.api import (copy_subtree, delete_subtree, dispatch, initialize_database, open_database,
-                         read_record, undo_operation)
-from runtime.configuration.loader import DEFAULT_ROOT
-from runtime.storage import crud
-from runtime.storage.database import SCHEMA_PATH
-from runtime.validation.runner import check_changes
-from tools.usage.common.subtrees import format_subtree
+from tool.builtin.usage.editing.tree_service import copy_subtree, delete_subtree
+from tool.builtin.usage.records.dispatch import dispatch
+from support.api import initialize_database, open_database, read_record
+from tool.builtin.usage.undo.service import undo_operation
+from support.configuration.loader import DEFAULT_ROOT
+from support.storage import crud
+from support.storage.database import SCHEMA_PATH
+from tool.builtin.usage.validation.runner import check_changes
+from tool.builtin.usage.editing.subtrees import format_subtree
 
 
 class SubtreeToolTests(unittest.TestCase):
@@ -281,23 +283,28 @@ class SubtreeToolTests(unittest.TestCase):
             self.assertTrue(deleted["ok"], deleted)
             self.assertTrue(all(i["severity"] == "error" for i in deleted["checks"]["issues"]))
 
-    def test_parent_cycle_does_not_loop_and_is_preserved_or_deleted_as_a_batch(self):
-        self.call("update", "layer", id=self.root, data={"father": self.child})
+    def test_legacy_cycle_can_be_deleted_but_not_copied_or_restored(self):
+        with self.c:
+            self.c.execute("UPDATE layers SET father=? WHERE project_id=? AND id=?", (self.child, self.p, self.root))
+        before = self.snapshot()
         copied = copy_subtree(self.c, self.p, self.root)
-        maps = self.maps(copied)
-        self.assertEqual(self.row("layer", maps["layer"][self.root])["father"], maps["layer"][self.child])
-        self.assertTrue(any(i["rule"] == "no_cycle" for i in copied["checks"]["issues"]))
-        deleted = delete_subtree(self.c, self.p, maps["layer"][self.root])
+        self.assertFalse(copied["ok"])
+        self.assertEqual(copied["error"]["code"], "father_cycle")
+        self.assertEqual(self.snapshot(), before)
+        deleted = delete_subtree(self.c, self.p, self.root)
         self.assertTrue(deleted["ok"], deleted)
-        self.undo(deleted)
+        restored = undo_operation(self.c, deleted["operation_id"])
+        self.assertFalse(restored["ok"])
+        self.assertEqual(restored["error"]["code"], "father_cycle")
         self.assertEqual(self.c.execute("PRAGMA foreign_key_check").fetchall(), [])
 
     def test_deep_tree_uses_iterative_traversal(self):
+        from support.api import transaction
         parent = self.root
-        with self.c:
+        with transaction(self.c) as write:
             for _ in range(1100):
                 row, _ = crud.create(self.c, "layer", {"config_ref": "layers/text.toml", "type": "text", "father": parent},
-                                     project_id=self.p, operation_id="deep-fixture")
+                                     project_id=self.p, operation_id=write.operation_id)
                 parent = row["id"]
         result = copy_subtree(self.c, self.p, self.root, checker=None)
         self.assertTrue(result["ok"], result)
@@ -312,7 +319,7 @@ class SubtreeToolTests(unittest.TestCase):
             c = open_database(path)
             self.c.backup(c)
             c.close()
-            command = [sys.executable, "-X", "utf8", "-B", "-m", "tools.usage.common.subtrees", str(path), str(self.p)]
+            command = [sys.executable, "-X", "utf8", "-B", "-m", "tool.builtin.usage.editing.subtrees", str(path), str(self.p)]
             copied = subprocess.run([*command, "copy", str(self.root), "--name", "歌词副本", "--json"], capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(copied.returncode, 0, copied.stderr)
             result = json.loads(copied.stdout)

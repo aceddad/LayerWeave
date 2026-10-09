@@ -8,7 +8,7 @@
 | [objects/base.py](objects/base.py) | Object 的字段、所属层、位置、information 和 return_self |
 | layers/、objects/ 的其他模块 | 具体内容类型的派生类 |
 
-模型保存数据，return_self 返回同一个实例。构造、赋值和返回自身不负责数据库查询或语义检查；完整读写通过[公共 API](../runtime/API.md)完成。
+模型保存数据，return_self 返回同一个实例。构造、赋值和返回自身不负责数据库查询或语义检查；完整读写通过[公共 API](../support/API.md)完成。
 
 ## 当前封装
 
@@ -25,6 +25,6 @@
 
 ## 扩充入口
 
-新增封装同时添加类与 TOML，类和配置的对应约定由[配置模块](../runtime/configuration/README.md)维护。参考 [Title 往返示例](../examples/title.py)或[文字示例](../examples/text.py)。
+新增封装同时添加类与 TOML，类和配置的对应约定由[配置模块](../support/configuration/README.md)维护。参考 [Title 往返示例](../examples/title.py)或[文字示例](../examples/text.py)。
 
 可直接从具体模块导入新类；若需要统一的 `from models import ...` 入口，同步 models、layers、objects 对应的 __init__.py 导出。统一入口继续按需加载，模型字段不自动映射成新数据库列。

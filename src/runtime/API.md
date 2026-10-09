@@ -44,6 +44,20 @@ read 返回保留 project_id/config_ref 的普通字典，不需要配置文件�
 
 对象检索、关联分组和文字提取的业务整理放在对应工具中，完整用法见 [第一批工具](../../tools/README.md)。SQL 只在存储层维护，工具不复制查询实现。
 
+## 复查、历史与撤销
+
+| 调用 | 用途 |
+|---|---|
+| recheck(connection, project_id, layer_ids=None, object_ids=None, config_root=DEFAULT_ROOT) | 只读复查；两种列表互斥，省略时全项目，层列表包含子树；返回范围、数量、执行状态与逐条诊断 |
+| read_history(connection, project_id=None, kind=None, id=None, operation_id=None, limit=20, before=None, detail=False) | 按完整操作分页查看历史；实体可已删除，字段差异保留 JSON 类型与缺失状态 |
+| undo_operation(connection, operation_id, config_root=DEFAULT_ROOT, checker=DEFAULT_CHECKER) | 原子撤销完整操作，冲突时整批不写；对返回的新操作编号再撤销即可重做 |
+
+可选参数使用关键字。history 的 operation_id 与项目/实体范围互斥，指定操作时返回完整快照。项目筛选只用于选相关操作，结果仍展开跨项目批次的全部变化。分页使用 next_cursor，操作次数和改动条数分别统计。
+
+undo 返回现有 operation/operation_id/ok/applied/checks 协议，另有 undo_of；成功 data 含 undone_operation_id、restored_records。失败的 error.conflicts 列出记录差异或引用阻碍。冲突比较与恢复在同一写事务中完成；当前状态重新等于原操作最终状态时允许撤销，不凭后续日志数量判断。
+
+恢复使用原编号和日志中的实际值，不回退 max_id，不按当前轴重新取整；项目发号进度不参与内容冲突比较。恢复后的语义检查使用当前配置，仍在提交后运行。关联 id 全库递增、不复用，独立于项目实体编号；旧库使用 initialize_database 显式升级。调用示例、CLI 与完整边界见 [复查、历史与撤销](storage/HISTORY.md)。
+
 ## Python 实例的完整往返
 
 ```python
@@ -127,7 +141,7 @@ result = dispatch(connection, plan)
 
 位置工具与 dispatch/save/CRUD 的对象写入共用 runtime.positions：按最近声明的轴取得 precision，没有轴或该轴没有精度时使用 1e-6，按最近刻度落点，中点远离零。写入位置或更改所属层时归一对应位置；只改名字/内容不重写历史坐标。保存返回值、日志与回填的 Python 实例使用实际落点。检查按同样的整数刻度比较旧、新记录；原始读取和范围查询保持数值读取，不换算单位、不批量修改旧数据。
 
-检查是否执行继续由原有约束控制。字段 optional=true 表示允许缺省，随字段继承；缺省判为符合约定，已填值仍检查类型。未声明 optional 按 false 检查缺失。模型/动作的 source/data 均声明为 optional=true。汇报等级独立配置在 configs/logging/diagnostics.toml：error/warn/none，路径覆盖不继承，未配置默认 warn；none 只隐藏输出，无法执行的检查仍使 checks.status=partial。缺字段与字段类型错误采用不同 code。同一对象同一配置失败合并成一条，affected_checks 保留受影响检查。文字输出只显示操作结果和逐条问题。
+检查是否执行继续由原有约束控制。字段 optional=true 表示允许缺省，随字段继承；缺省判为符合约定，已填值仍检查类型。未声明 optional 按 false 检查缺失；继承字段可 true→false 收紧，不可 false→true 放宽，包括隐式默认 false。模型/动作的 source/data 均声明为 optional=true。汇报等级独立配置在 configs/logging/diagnostics.toml：error/warn/none，路径覆盖不继承，未配置默认 warn；none 只隐藏输出，无法执行的检查仍使 checks.status=partial。缺字段与字段类型错误采用不同 code。同一对象同一配置失败合并成一条，affected_checks 保留受影响检查。文字输出只显示操作结果和逐条问题。
 
 ## 配置与自定义类型
 

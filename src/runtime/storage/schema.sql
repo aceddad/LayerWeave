@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS objects (
 -- 两端都是普通引用，不建立指向实体的外键。
 -- 目标消失时保留关联，后续检测通道可据此报告失效引用。
 CREATE TABLE IF NOT EXISTS binds (
-    id                  INTEGER PRIMARY KEY, -- 关联记录的内部行号，不占 projects.max_id
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT, -- 全库递增，不占 projects.max_id
     source_kind         TEXT NOT NULL,       -- layer / object
     source_project_id   INTEGER NOT NULL,
     source_id           INTEGER NOT NULL,
@@ -66,7 +66,8 @@ CREATE TABLE IF NOT EXISTS changes (
     target_id       INTEGER NOT NULL,
     action          TEXT NOT NULL,
     before_data     TEXT,           -- JSON；创建时为 NULL
-    after_data      TEXT            -- JSON；删除时为 NULL
+    after_data      TEXT,           -- JSON；删除时为 NULL
+    undo_of         TEXT            -- 撤销所针对的 operation_id；普通操作为 NULL
 );
 
 CREATE INDEX IF NOT EXISTS layers_by_father

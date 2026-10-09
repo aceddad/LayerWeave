@@ -10,10 +10,11 @@ import sys
 from runtime.api import open_database, format_feedback, format_issue
 
 
-def parser_for(description):
+def parser_for(description, *, project=True):
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("database", type=Path, help="已有的 SQLite 数据库")
-    parser.add_argument("project_id", type=int, help="项目编号")
+    if project:
+        parser.add_argument("project_id", type=int, help="项目编号")
     return parser
 
 

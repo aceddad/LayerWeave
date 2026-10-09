@@ -105,13 +105,19 @@ class OptionalHelpTests(unittest.TestCase):
             self.assertEqual([(i["code"], i["severity"]) for i in issues], [("missing_field", "warn")])
         self.assertNotIn("optional", Loader(self.configs).load("objects/text.toml", "object")["information"]["text"])
 
-    def test_explicit_optional_is_a_fixed_boolean_contract(self):
-        bad = self.derive("Bad", "model", '[object.information]\ndata={optional=false}\n')
-        with self.assertRaisesRegex(ConfigError, "改写父约定"):
+    def test_optional_can_narrow_but_cannot_widen_even_an_implicit_default(self):
+        ref = self.derive("RequiredModel", "model", '[object.information]\nsource={optional=false}\n')
+        config = Loader(self.configs).load(ref, "object")
+        self.assertFalse(config["information"]["source"]["optional"])
+        self.assertTrue(config["information"]["data"]["optional"])
+        issues = self.obj(ref, {}, self.layer("model"))["checks"]["issues"]
+        self.assertEqual([(i["field"], i["severity"]) for i in issues], [("information.source", "warn")])
+        bad = self.derive("WidenDefault", "text", '[object.information]\ntext={optional=true}\n')
+        with self.assertRaisesRegex(ConfigError, "放宽父约定"):
             Loader(self.configs).load(bad, "object")
         self.derive("Explicit", "text", '[object.information]\ntext={optional=false}\n')
         bad = self.derive("BadChild", "Explicit", '[object.information]\ntext={optional=true}\n')
-        with self.assertRaisesRegex(ConfigError, "改写父约定"):
+        with self.assertRaisesRegex(ConfigError, "放宽父约定"):
             Loader(self.configs).load(bad, "object")
         for value in ('"true"', '1'):
             bad = self.derive("Invalid", "text", f'[object.information]\ntext={{optional={value}}}\n')
@@ -119,6 +125,8 @@ class OptionalHelpTests(unittest.TestCase):
                 Loader(self.configs).load(bad, "object")
 
     def test_collect_respects_optional_absence_and_still_reports_bad_values(self):
+        path = self.configs / "objects/text.toml"
+        path.write_text(path.read_text(encoding="utf-8").replace('text = { type = "str",', 'text = { type = "str", optional = true,'), encoding="utf-8")
         ref = self.derive("OptionalText", "text", '[object.information]\ntext={optional=true}\n')
         self.derive("OptionalChild", "OptionalText")
         layer = self.layer("text")

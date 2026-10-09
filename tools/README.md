@@ -7,6 +7,9 @@
 | 工具 | 代码 | 用途 |
 |---|---|---|
 | 配置 help | [config_help.py](../src/tools/common/config_help.py) | 动态查看支持总览、层/对象类定义和联合说明；无需数据库 |
+| 主动复查 | [recheck.py](../src/tools/common/recheck.py) | 项目、多棵子树或指定对象按当前配置重新检查；只读 |
+| 历史 | [history.py](../src/tools/common/history.py) | 按操作分页展示字段变化、前后快照和撤销来源；只读 |
+| 撤销/重做 | [undo.py](../src/tools/common/undo.py) | 按 operation_id 原子恢复完整批次，冲突逐条报告 |
 | 项目概览 | [project_overview.py](../src/tools/common/project_overview.py) | 项目层级、层类型、名字与对象数量；只读 |
 | 项目详细展开 | [project_details.py](../src/tools/common/project_details.py) | 展开项目/子树的层、对象内容和关联引用，可按数值范围筛选；只读 |
 | 对象检索 | [find_objects.py](../src/tools/common/find_objects.py) | 按层、名字、内容、位置范围查找对象；只读 |
@@ -22,6 +25,8 @@
 第一批四个工具已齐备，完整内存示例见 [first_batch.py](../src/examples/first_batch.py)。从 src/ 运行 `python -X utf8 -B -m examples.first_batch`，不改动真实项目数据库。
 
 第二批六个通用写入工具的完整内存示例见 [second_batch.py](../src/examples/second_batch.py)：`python -X utf8 -B -m examples.second_batch`。两批工具都不依赖可视化、Skill 或 MCP。
+
+复查、历史与撤销的 Python/CLI 参数和恢复语义见 [完整说明](../src/runtime/storage/HISTORY.md)。从 src 运行 `python -X utf8 -B -m examples.review_history` 可查看独立内存数据库示例。新工具继续使用 runtime.api，数据库查询与恢复代码在存储层；它们不需要 Skill 或 MCP。
 
 ## 配置 help
 

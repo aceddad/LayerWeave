@@ -128,15 +128,17 @@ class Loader:
 
     def _merge(self, parent, raw):
         result = deepcopy(parent) if parent else {}
-        # 只有 default/note 是字段说明；字段类型等声明属于固定约定。
+        # 类型等声明固定；optional 可收紧，default/note 是可更新的说明。
         for section in ("fields", "information"):
             declarations = result.setdefault(section, {})
             for field, spec in raw.get(section, {}).items():
                 if "optional" in spec and type(spec["optional"]) is not bool:
                     raise ConfigError(f"{section}.{field}.optional 应为 true 或 false")
                 old = declarations.get(field, {})
-                fixed_old = {k: v for k, v in old.items() if k not in {"note", "default"}}
-                fixed_new = {k: v for k, v in spec.items() if k not in {"note", "default"}}
+                if field in declarations and spec.get("optional") is True and not old.get("optional", False):
+                    raise ConfigError(f"{section}.{field}.optional 放宽父约定：false → true")
+                fixed_old = {k: v for k, v in old.items() if k not in {"note", "default", "optional"}}
+                fixed_new = {k: v for k, v in spec.items() if k not in {"note", "default", "optional"}}
                 declarations[field] = {**old, **spec, **_fixed(fixed_old, fixed_new, f"{section}.{field}")}
         contracts = deepcopy(parent.get("_contracts", {})) if parent else {}
         defaults = deepcopy(result.get("defaults", {}))

@@ -15,7 +15,8 @@ config = Loader().load("objects/text.toml", "object")
 
 | 配置内容 | 继承行为 |
 |---|---|
-| fields / information 中的类型、optional 等约定 | 已有显式声明保持，允许新增字段/属性；note/default 是说明，可更新 |
+| fields / information 中的类型等约定 | 已有显式声明保持，允许新增字段/属性；note/default 是说明，可更新 |
+| 字段 optional | 已有字段允许 true→false 收紧，禁止 false→true 放宽，包括父字段默认的 false；新增字段自行声明 |
 | rules | 固定规则可重复、可新增，不能改写父值；重复规则只执行一次 |
 | constraint / display | 显式值成为固定约定，后代不能改成其他值 |
 | defaults.constraint / defaults.display | 尚未明确取值时使用的默认值，不覆盖显式约定 |
@@ -53,7 +54,7 @@ axis_only_on_root = false
 
 字段声明 `optional=true` 表示允许缺省，是字段约定，不是检测开关。检查仍执行：缺省符合约定，已填值仍检查类型。模型/动作的 source/data 均这样声明，派生封装自然继承。比如 `data = { type="dict", optional=true }` 允许省略 data，但不允许传入字符串或 None。
 
-未声明 optional 的字段在完成继承后按 false 解释，缺失产生 missing_field，不拦截、不自动填值。默认 false 不写入父配置的显式约定，所以父配置未声明时子配置可以增加 optional；一旦父配置明确声明 true 或 false，后代不能改写，与字段类型遵守同一继承规则。仅接受 TOML 布尔值。
+未声明 optional 的字段在完成继承后按 false 解释，缺失产生 missing_field，不拦截、不自动填值。继承字段依据父配置有效值判断：允许 true→false 收紧，禁止 false→true 放宽，包括父字段未显式填写时的默认 false。子配置未写则继承，新增字段可自行声明。仅接受 TOML 布尔值。比如从 Model 派生 FileModel，可只声明 `source={optional=false}`，继承 str 类型，同时要求资源地址；data 仍继承可选。
 
 汇报等级独立放在 [diagnostics.toml](../../../configs/logging/diagnostics.toml)，未配置时默认 warn。路径覆盖只作用于指定封装、不继承；none 隐藏已经产生的问题，optional 则使合法缺省不产生问题。类型错误另行控制，见 [汇报配置说明](../validation/DIAGNOSTICS.md)。open=true 允许额外键；疑似笔误仍可提示，包括指向可选字段的 src→source。空字符串/空字典是已填写。类型支持 str、int、float、dict、list、bool、None，以及用竖线组合的联合类型。float 接受整数坐标；bool 不作为数值类型。未实现的显式类型或规则报告未检查，普通说明字段不因未知而报错。
 

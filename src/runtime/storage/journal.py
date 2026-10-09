@@ -11,7 +11,7 @@ def json_text(value):
     return json.dumps(value, ensure_ascii=False, allow_nan=False)
 
 
-def append_change(connection, operation_id, kind, before, after):
+def append_change(connection, operation_id, kind, before, after, *, undo_of=None):
     """只记录实际发生的变化，返回供检测通道使用的变更描述。"""
     if same_value(before, after):
         return None
@@ -25,11 +25,11 @@ def append_change(connection, operation_id, kind, before, after):
     action = "create" if before is None else "delete" if after is None else "update"
     cursor = connection.execute(
         "INSERT INTO changes (operation_id, created_at, kind, project_id, target_id, "
-        "action, before_data, after_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        "action, before_data, after_data, undo_of) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (operation_id, datetime.now(timezone.utc).isoformat(), kind, project_id,
          record["id"], action,
          None if before is None else json_text(before),
-         None if after is None else json_text(after)),
+         None if after is None else json_text(after), undo_of),
     )
     return {
         "change_id": cursor.lastrowid,

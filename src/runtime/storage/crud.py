@@ -35,7 +35,7 @@ SPECS = {
     },
     "change": {
         "table": "changes", "fields": (),
-        "extra": ("operation_id", "created_at", "kind", "project_id", "target_id", "action", "before_data", "after_data"),
+        "extra": ("operation_id", "created_at", "kind", "project_id", "target_id", "action", "before_data", "after_data", "undo_of"),
         "json": ("before_data", "after_data"), "scoped": False, "order": '"id"',
     },
 }

@@ -21,8 +21,8 @@ python -X utf8 -B -m runtime.storage.database ../output/ai-production.sqlite3
 | projects | id、name、max_id、tips；项目编号独立发放 |
 | layers | 以 (project_id, id) 保存层，father 指向同项目的层 |
 | objects | 以 (project_id, id) 保存对象，layer 指向同项目的层 |
-| binds | 两端各自记录 kind、project_id、id，另存 tips 和独立的内部行号 |
-| changes | 内部 id、operation_id、UTC 时间、目标种类/项目/编号、动作和修改前后的 JSON 快照 |
+| binds | 两端各自记录 kind、project_id、id，另存 tips 和全库递增、不复用的独立 id |
+| changes | 内部 id、operation_id、UTC 时间、目标种类/项目/编号、动作、前后 JSON 快照；undo_of 记录撤销来源 |
 
 - `config_ref` 是两类实体的存储元数据，路径相对于项目的 `configs/`，例如 `objects/image.toml`。它给读取配置、恢复对应 Python 类提供依据，不添加到基础类中。
 - 层的 `type` 保存 TOML 中的类型标识，Python 类不再声明同名字符串。save_layer 自动取得它；dispatch 在省略 type 且提供 config_ref 时也会补齐。低层 crud 不读配置，仍写入调用方提供的原始 type/config_ref，独立检测负责报告矛盾。
@@ -60,6 +60,8 @@ with closing(open_database("../output/ai-production.sqlite3")) as connection:
 
 已提交的编号不因删除实体而回退；整个事务回滚时，本次发号也回滚。实体编号在写入事务提交后才作为持久化身份使用。
 
+关联经统一 CRUD 入口创建，binds.id 由 SQLite AUTOINCREMENT 保持全库递增，不占 projects.max_id。initialize_database 还会升级旧关联表并补上 changes.undo_of；关联发号起点同时参考现存行和已删除记录的历史最大编号，保留旧数据及索引。普通打开连接不会自动迁移；旧库写入前运行初始化命令，详见 [历史与恢复](HISTORY.md)。
+
 两个实体表的主键各自防止同表重号，跨表共享编号由统一发号方法保证。直接 SQL 会绕过 CRUD 日志；若使用自定编号，还需写入方保持跨表不重号并相应更新 max_id。建表脚本没有额外触发器。
 
 通用调用优先使用 dispatch，它会统一生成 operation_id、开启事务和返回反馈。低层 CRUD 供需要动态组合操作的 Python 调用方使用，不自行提交。
@@ -72,7 +74,9 @@ with closing(open_database("../output/ai-production.sqlite3")) as connection:
 - 业务写入与日志同事务提交；数据或日志写入失败时，由事务调用方一起回滚。
 - operation_id 由分流入口生成 UUID，同一批操作共用，不占 projects.max_id。低层组合操作由其调用方生成一次并传入。
 - 日志没有实体外键，目标被删除后仍能查看历史。日志本身通过 read(kind="change") 查询。
-- 检测在提交后运行，不改变日志或业务操作的提交状态。自动撤销和失败操作的持久化诊断日志尚未实现。
+- 检测在提交后运行，不改变日志或业务操作的提交状态。显式撤销由 undo_operation 提供，新操作保留 undo_of；不自动撤回有诊断的写入。失败操作的持久化诊断日志尚未实现。
+
+历史查询通过 read_history 按操作分组、分页并展示字段差异；撤销使用日志恢复原编号和实际存储值，不重新取整坐标，也不回退发号上界。冲突比较和恢复同事务，任意失败整批回滚。完整说明见 [复查、历史与撤销](HISTORY.md)。
 
 ## 范围与验证
 

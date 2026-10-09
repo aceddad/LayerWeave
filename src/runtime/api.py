@@ -34,7 +34,26 @@ def read_support(*args, **kwargs):
     return read(*args, **kwargs)
 
 
+def recheck(*args, **kwargs):
+    """按项目、子树或对象范围主动复查。"""
+    from .validation.recheck import recheck as check
+    return check(*args, **kwargs)
+
+
+def read_history(*args, **kwargs):
+    """按操作分页查看历史，或展开指定操作。"""
+    from .storage.history import read_history as read
+    return read(*args, **kwargs)
+
+
+def undo_operation(*args, **kwargs):
+    """原子撤销完整操作；对撤销操作再调用即可重做。"""
+    from .storage.undo import undo_operation as undo
+    return undo(*args, **kwargs)
+
+
 __all__ = ["Loader", "dispatch", "initialize_database", "open_database", "read_layer", "read_object", "read_project_index",
            "load_layer", "load_object", "save_layer", "save_object", "validate",
            "read_record", "read_snapshot", "query_objects", "read_bindings", "read_project_details", "DEFAULT_CHECKER",
-           "format_feedback", "format_issue", "diagnostic_report", "PositionMath", "decimal_value", "read_support"]
+           "format_feedback", "format_issue", "diagnostic_report", "PositionMath", "decimal_value", "read_support",
+           "recheck", "read_history", "undo_operation"]

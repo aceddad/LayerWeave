@@ -125,6 +125,8 @@ CRUD 仅存取 config_ref，不要求配置文件此时存在。提交后的检�
 
 主动复查使用 validation.runner.validate，不写日志。示例与自定义配置目录接入见 [检测说明](validation/README.md)。直接调用低层 CRUD 时，调用方负责提交并显式调用检测器；不会通过类构造或属性赋值暗中触发检测。
 
+项目/多子树/对象的现成复查工具为 tools.common.recheck；按操作查看历史用 tools.common.history，整批撤销与重做用 tools.common.undo。它们通过 runtime.api 组合现有核心，不增加 dispatch 的 action 名称。参数与迁移说明见 [复查、历史与撤销](storage/HISTORY.md)。
+
 ## 查询改动日志
 
 ```json
@@ -136,5 +138,7 @@ CRUD 仅存取 config_ref，不要求配置文件此时存在。提交后的检�
 ```
 
 还可以按 kind、project_id、target_id、action 等实际列等值查询。before_data、after_data 会还原为 JSON 值。日志没有实体外键，删除目标后仍保留；日志记录的是请求目标的变化，发号带来的 max_id 更新不另记一条日志。bind 日志的项目上下文取修改后来源项目，删除时取删除前来源项目。
+
+撤销产生新的操作与普通前后快照，undo_of 列指向被撤销的操作编号。原日志保持不变；重做就是撤销这个新操作。关联 id 在全库递增，不复用已删除编号；旧库先运行初始化命令升级。
 
 read 和没有实际改变数据的请求不写日志。日志表由内部记录方法写入，四种业务实体的 CRUD 不再为日志写入递归生成日志。

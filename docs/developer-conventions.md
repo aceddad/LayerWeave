@@ -19,6 +19,7 @@ python -X utf8 -B -m examples.read_write
 |---|---|
 | 新增层或对象封装 | [模型](../src/models/README.md)、[配置](../configs/README.md)，参考 [Title 示例](../src/examples/title.py) |
 | 新增或维护内部工具 | [内部工具开发流程](../src/tools/developer/README.md)、[公共 API](../src/runtime/API.md) |
+| 编写供层原型引用的外置技能 | [外置工具与示例](../tool/README.md)，技能自己的 SKILL.md |
 | 修改存储、检测或配置读取 | [核心模块](../src/runtime/README.md)，再读对应实现专题 |
 | 开发视图 | [视图边界](../src/tools/view/README.md)，开始实现时再建立独立分支 |
 | 修改说明、示例或文档布局 | [文档约定](documentation.md) |
@@ -31,6 +32,7 @@ python -X utf8 -B -m examples.read_write
 | src/models/ | Python 基础类和派生类 |
 | src/runtime/ | 公共接口、配置读取、存储、事务、日志及检测 |
 | src/tools/ | usage 使用工具、developer 开发入口、view 视图分类、shared 共用支持 |
+| tool/skills/ | 按层归类的外置技能及场景补充；由层配置 tools 引用 |
 | src/examples/ | 可运行示例与请求样例 |
 | tests/ | 自动化测试 |
 | docs/ | 架构、开发指南、文档约定、示例索引及后续候选 |

@@ -1,10 +1,11 @@
 # LayerWeave 工作导引
 
-所有软件自带工具统称为“内部工具”。按当前任务选择阅读范围：
+src/tools 中的软件执行能力统称为“内部工具”；tool/skills 存放供层原型 tools 引用的外置技能。按当前任务选择阅读范围：
 
 - 操作项目内容：从[内部工具](src/tools/README.md)进入[使用工具](src/tools/usage/README.md)。
 - 修改代码或增加封装：先读[开发指南](docs/developer-conventions.md)，再读对应 API、实现专题和配置。
 - 修改文档或示例：读取[文档约定](docs/documentation.md)，确认受众和主要维护位置。
+- 新增或整理外置技能：读取[外置工具](tool/README.md)；技能独立成包，实际绑定由 AI 按任务填写层配置。
 - 视图工作：先读[视图边界](src/tools/view/README.md)。当前 main 保持不依赖 GUI。
 
 ## 工作要求

@@ -53,7 +53,7 @@ class ToolLayoutTests(unittest.TestCase):
 
     def test_current_documentation_links_resolve_after_moves(self):
         documents = [ROOT / "README.md", ROOT / "AGENTS.md"]
-        for directory in ("src", "docs", "configs"):
+        for directory in ("src", "docs", "configs", "tool"):
             documents.extend((ROOT / directory).rglob("*.md"))
         broken = []
         for document in documents:

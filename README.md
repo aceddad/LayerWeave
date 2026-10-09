@@ -85,3 +85,4 @@ with TemporaryDirectory() as directory:
 - [开发指南](docs/developer-conventions.md)：开发准备、源码位置、扩充与验证。
 - [架构说明](docs/architecture.md)：概念、模块关系与设计边界。
 - [示例索引](docs/examples.md)：可运行的完整场景。
+- [外置技能示例](tool/README.md)：独立技能包的组织方式与层原型绑定写法。

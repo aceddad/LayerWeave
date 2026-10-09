@@ -4,8 +4,8 @@ from contextlib import closing
 
 from runtime.api import dispatch, open_database, save_layer
 from runtime.storage.database import SCHEMA_PATH
-from tools.common.objects import append_object
-from tools.common.project_details import format_details, project_details
+from tools.usage.common.objects import append_object
+from tools.usage.common.project_details import format_details, project_details
 
 
 def create_example():

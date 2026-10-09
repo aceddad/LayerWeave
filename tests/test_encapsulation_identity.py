@@ -13,7 +13,7 @@ from runtime.api import (dispatch, load_layer, load_object, open_database, read_
 from runtime.configuration.loader import ConfigError, DEFAULT_ROOT, Loader
 from runtime.storage import crud
 from runtime.storage.database import SCHEMA_PATH
-from tools.text.collect import collect_text
+from tools.usage.text.collect import collect_text
 
 
 class EncapsulationIdentityTests(unittest.TestCase):

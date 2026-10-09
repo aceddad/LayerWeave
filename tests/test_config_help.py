@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 from runtime.api import diagnostic_report, read_support
 from runtime.configuration.loader import DEFAULT_ROOT, Loader
-from tools.common.config_help import config_help, format_help
+from tools.shared.config_help import config_help, format_help
 
 
 class ConfigHelpTests(unittest.TestCase):
@@ -205,7 +205,7 @@ objects="dialogue"
         self.assertNotIn("source", result["items"][0])
 
     def test_cli_four_modes_json_raw_and_no_database_argument(self):
-        command = [sys.executable, "-X", "utf8", "-B", "-m", "tools.common.config_help"]
+        command = [sys.executable, "-X", "utf8", "-B", "-m", "tools.shared.config_help"]
         for args in ([], ["layers", "text", "image"], ["objects", "Text", "Title", "--raw"], ["combined", "text", "audio"]):
             result = subprocess.run([*command, *args, "--config-root", str(self.configs), "--json"], capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(result.returncode, 0, result.stderr)

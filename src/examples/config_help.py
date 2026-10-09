@@ -1,6 +1,6 @@
 """python -X utf8 -B -m examples.config_help：查看文字层与其对象类的联合说明。"""
 
-from tools.common.config_help import config_help, format_help
+from tools.shared.config_help import config_help, format_help
 
 
 def create_example():

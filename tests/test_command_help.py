@@ -13,8 +13,8 @@ from unittest.mock import patch
 
 from runtime.api import command_help, dispatch, insert_gap, open_database, split_object
 from runtime.storage.database import SCHEMA_PATH
-from tools.catalog import DEFAULT_SOURCE_ROOT, help_examples
-from tools.common.command_help import format_commands
+from tools.shared.catalog import DEFAULT_SOURCE_ROOT, help_examples
+from tools.shared.command_help import format_commands
 
 
 class CommandHelpTests(unittest.TestCase):
@@ -133,7 +133,7 @@ class CommandHelpTests(unittest.TestCase):
         self.assertEqual(len(result["data"]["moved"]),1)
 
     def test_command_help_cli_json_and_invalid_root(self):
-        base=[sys.executable,"-X","utf8","-B","-m","tools.common.command_help"]
+        base=[sys.executable,"-X","utf8","-B","-m","tools.shared.command_help"]
         run=subprocess.run([*base,"split","gaps","--json"],capture_output=True,text=True,encoding="utf-8")
         self.assertEqual(run.returncode,0,run.stderr)
         self.assertEqual(len(json.loads(run.stdout)["items"]),2)

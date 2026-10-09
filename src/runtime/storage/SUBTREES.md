@@ -10,7 +10,7 @@ information 自由内容、配置引用、轴说明、备注和资源路径按�
 
 返回标准 operation/operation_id/ok/applied/checks；data 提供范围、层/对象/关联数量。复制另外返回新根层 layer_id 和 id_map，按 layer/object/bind 分组列出 old_id/new_id，编号为数值。不存在的起始层明确报告失败，不修改其他内容。
 
-核心编排位于 storage/subtrees.py，经 runtime.api 提供；工具与 CLI 位于 tools/common/subtrees.py。新编号使用现有 CRUD 发放，日志复用既有通道，不新增表或模型字段。
+核心编排位于 storage/subtrees.py，经 runtime.api 提供；工具与 CLI 位于 tools/usage/common/subtrees.py。新编号使用现有 CRUD 发放，日志复用既有通道，不新增表或模型字段。
 
 ## Python
 
@@ -56,10 +56,10 @@ if deleted["ok"]:
 从 src 运行，数据库路径及编号替换为实际值：
 
 ```sh
-python -X utf8 -B -m tools.common.subtrees DATABASE PROJECT_ID copy LAYER_ID --name "歌词修改版"
-python -X utf8 -B -m tools.common.subtrees DATABASE PROJECT_ID delete LAYER_ID --json
-python -X utf8 -B -m tools.common.subtrees DATABASE PROJECT_ID copy LAYER_ID --config-root CONFIG_DIRECTORY --json
-python -X utf8 -B -m tools.common.undo DATABASE OPERATION_ID
+python -X utf8 -B -m tools.usage.common.subtrees DATABASE PROJECT_ID copy LAYER_ID --name "歌词修改版"
+python -X utf8 -B -m tools.usage.common.subtrees DATABASE PROJECT_ID delete LAYER_ID --json
+python -X utf8 -B -m tools.usage.common.subtrees DATABASE PROJECT_ID copy LAYER_ID --config-root CONFIG_DIRECTORY --json
+python -X utf8 -B -m tools.usage.common.undo DATABASE OPERATION_ID
 ```
 
 默认文字输出显示数量、复制编号映射、操作结果和逐条诊断；--json 返回完整结构。失败退出码 1，已提交但存在诊断仍为 0。--name 仅用于 copy。

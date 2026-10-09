@@ -12,7 +12,7 @@ from unittest.mock import patch
 from runtime.api import dispatch, open_database
 from runtime.storage import crud
 from runtime.storage.database import SCHEMA_PATH
-from tools.common.project_overview import format_overview, project_overview
+from tools.usage.common.project_overview import format_overview, project_overview
 
 
 class ProjectOverviewTests(unittest.TestCase):
@@ -134,7 +134,7 @@ class ProjectOverviewTests(unittest.TestCase):
                 self.connection.backup(copy)
             finally:
                 copy.close()
-            command = [sys.executable, "-X", "utf8", "-B", "-m", "tools.common.project_overview"]
+            command = [sys.executable, "-X", "utf8", "-B", "-m", "tools.usage.common.project_overview"]
             result = subprocess.run([*command, str(database), str(self.project_id), "--json"],
                                     capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(result.returncode, 0, result.stderr)

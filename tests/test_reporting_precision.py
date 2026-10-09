@@ -13,7 +13,7 @@ from runtime.api import (diagnostic_report, dispatch, format_feedback, load_obje
 from runtime.configuration.loader import DEFAULT_ROOT
 from runtime.storage import crud
 from runtime.storage.database import SCHEMA_PATH
-from tools.text.collect import collect_text
+from tools.usage.text.collect import collect_text
 
 
 class ReportingPrecisionTests(unittest.TestCase):

@@ -1,1 +1,1 @@
-"""LayerWeave 内部业务工具；按具体模块导入，不集中加载。"""
+"""LayerWeave 内部工具：usage 使用、developer 开发、view 视图；shared 共用支持。按需导入。"""

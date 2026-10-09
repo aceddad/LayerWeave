@@ -12,9 +12,9 @@ from runtime.api import (dispatch, initialize_database, open_database, read_hist
                          recheck, save_layer, save_object, undo_operation)
 from runtime.configuration.loader import DEFAULT_ROOT
 from runtime.storage.database import SCHEMA_PATH, upgrade_history
-from tools.common.history import format_history
-from tools.common.recheck import format_recheck
-from tools.common.undo import format_undo
+from tools.usage.common.history import format_history
+from tools.usage.common.recheck import format_recheck
+from tools.usage.common.undo import format_undo
 
 
 class HistoryToolsTests(unittest.TestCase):
@@ -353,11 +353,11 @@ class HistoryToolsTests(unittest.TestCase):
         obj = save_object(c, pid, {"config_ref": "objects/text.toml", "layer": layer, "information": {"text": "test"}})
         commands = [("recheck", [str(pid), "--layer-ids", str(layer)]), ("history", ["--project-id", str(pid)]), ("undo", [obj["operation_id"]])]
         for module, args in commands:
-            run = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", f"tools.common.{module}", str(path), *args, "--json"], capture_output=True, text=True, encoding="utf-8")
+            run = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", f"tools.usage.common.{module}", str(path), *args, "--json"], capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(run.returncode, 0, run.stderr)
             result = json.loads(run.stdout)
             self.assertIsInstance(result, dict)
-        run = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", "tools.common.undo", str(path), result["operation_id"]], capture_output=True, text=True, encoding="utf-8")
+        run = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", "tools.usage.common.undo", str(path), result["operation_id"]], capture_output=True, text=True, encoding="utf-8")
         self.assertEqual(run.returncode, 0, run.stderr)
         self.assertIn("写入成功", run.stdout)
 

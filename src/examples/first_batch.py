@@ -5,10 +5,10 @@ import json
 
 from runtime.api import dispatch, open_database, save_layer
 from runtime.storage.database import SCHEMA_PATH
-from tools.common.find_objects import find_objects
-from tools.common.project_overview import project_overview
-from tools.common.relations import query_relations
-from tools.text.collect import collect_text
+from tools.usage.common.find_objects import find_objects
+from tools.usage.common.project_overview import project_overview
+from tools.usage.common.relations import query_relations
+from tools.usage.text.collect import collect_text
 
 
 def create_example():

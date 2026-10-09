@@ -90,7 +90,7 @@ def transfer_subtree(*args, **kwargs):
 
 def command_help(*args, **kwargs):
     """只读发现所有命令及参数/示例，不执行命令或导入被发现的模块。"""
-    from tools.catalog import command_help as describe
+    from tools.shared.catalog import command_help as describe
     return describe(*args, **kwargs)
 
 
@@ -102,7 +102,7 @@ def transfer_objects(*args, **kwargs):
 
 def find_gaps(*args, **kwargs):
     """查询指定层在有限区间内的空档，不改写位置。"""
-    from tools.common.free_ranges import find_gaps as find
+    from tools.usage.common.free_ranges import find_gaps as find
     return find(*args, **kwargs)
 
 

@@ -6,13 +6,13 @@
 
 command_help(names=None, source_root=DEFAULT_SOURCE_ROOT) 为只读命令查询，source_root 用关键字传入。省略 names 列总览，传命令名/别名/完整 entrypoint 或其列表展开参数、返回和可用 JSON 示例。它静态发现工具自身的 COMMANDS 声明，不导入被发现的模块、不连接数据库，也不执行命令。
 
-返回 view/status/items/issues，可供未来 MCP 展示和适配；当前没有新增 MCP 服务或通用执行器。CLI 为 `python -m tools.common.command_help split insert_gap undo --json`。结构与新增工具约定见 [命令目录说明](../tools/COMMANDS.md)。配置 help 继续专门描述层和对象的封装支持。
+返回 view/status/items/issues，可供未来 MCP 展示和适配；当前没有新增 MCP 服务或通用执行器。CLI 为 `python -m tools.shared.command_help split insert_gap undo --json`。结构与新增工具约定见 [命令目录说明](../tools/shared/COMMANDS.md)。配置 help 继续专门描述层和对象的封装支持。
 
 ## 配置 help（查询支持能力）
 
 read_support(view="overview", targets=None, config_root=DEFAULT_ROOT, audience="usage", include_source=None) 动态读取 configs/layers 与 configs/objects，包含子目录。四种 view：overview 总览层与兼容对象类；layers 层支持详情；objects 对象类支持详情；combined 层＋兼容对象类详情。后三项支持一个目标或目标列表；目标为 config_ref、唯一 type、完整 class 路径或唯一类名。它们均查询封装定义，不查询项目实例，不导入 Python 类。
 
-返回 items 与逐项状态、issues；联合查看的共享对象说明放在 object_details，通过 accepted_objects 中的 config_ref 对应。默认 usage 展示用途 summary、内容输入及约定 usage、特殊汇报等级和含 config_ref 的 save_example，公共接口输入/返回 io 只列一次。audience="developer" 保留原先的完整 definition、lineage、fixed_contracts、reporting，并增加 field_origins，默认附带当前文件 source。两种详情均可用 include_source 显式控制原文。依赖完整 definition 的调用者应指定 developer。新增类和 TOML 后，下次查询自动发现；损坏配置逐项提示，其余继续。文字/JSON 入口为 tools.common.config_help，详见 [配置 help 说明](configuration/HELP.md)。
+返回 items 与逐项状态、issues；联合查看的共享对象说明放在 object_details，通过 accepted_objects 中的 config_ref 对应。默认 usage 展示用途 summary、内容输入及约定 usage、特殊汇报等级和含 config_ref 的 save_example，公共接口输入/返回 io 只列一次。audience="developer" 保留原先的完整 definition、lineage、fixed_contracts、reporting，并增加 field_origins，默认附带当前文件 source。两种详情均可用 include_source 显式控制原文。依赖完整 definition 的调用者应指定 developer。新增类和 TOML 后，下次查询自动发现；损坏配置逐项提示，其余继续。文字/JSON 入口为 tools.shared.config_help，详见 [配置 help 说明](configuration/HELP.md)。
 
 ## 六个读写函数
 
@@ -29,11 +29,11 @@ read/load 不写数据或日志，不自动运行检测；目标不存在返回 
 
 read 返回保留 project_id/config_ref 的普通字典，不需要配置文件可用。load 才读取配置、按 class 路径导入对应 Python 类；配置或类不可用时抛出包含目标和配置路径的 ValueError，仍可通过 read 取得原始完整记录。配置应来自调用方信任的项目代码，因为 class 导入会执行模块代码。
 
-项目摘要使用 read_project_index(connection, project_id)：返回 project 与层摘要列表，每个层带直属 object_count，不读取正文或配置文件。它提供一次读取事务内的平面数据；层级排列与纯文本展示由 [项目概览工具](../tools/common/project_overview.py) 完成。
+项目摘要使用 read_project_index(connection, project_id)：返回 project 与层摘要列表，每个层带直属 object_count，不读取正文或配置文件。它提供一次读取事务内的平面数据；层级排列与纯文本展示由 [项目概览工具](../tools/usage/common/project_overview.py) 完成。
 
 完整范围读取使用 read_project_details(connection, project_id, layer_id=None, layer_ids=None, begin=None, end=None)，可选参数用关键字传入。未指定层表示全项目；单层或多层均包含自身与全部子孙层，父子重选自动去重。layer_id 与 layer_ids 互斥，显式 layer_ids=[] 表示空选择。时间只筛选对象，所选范围内未命中的层也保留。原始数值相交筛选不转换轴、不量化查询值、不裁剪对象位置。
 
-返回 project/scope/layers/missing_layer_ids。多层请求中的不存在编号列入 missing_layer_ids，其余有效子树继续读取；项目不存在或旧单层入口 layer_id 不存在时仍返回 None。scope.layer_ids 保留去重后的请求，scope.root_ids 给出有效起始层的树序。数据保持完整，读取不加载配置、不写日志。工具 project_details 增加树序、depth、本范围直属 object_count、counts 与缺失目标的逐条提示；compact=True 可生成文字/JSON 共用的精简视图，详见 [详细展开工具](../tools/common/project_details.py)。
+返回 project/scope/layers/missing_layer_ids。多层请求中的不存在编号列入 missing_layer_ids，其余有效子树继续读取；项目不存在或旧单层入口 layer_id 不存在时仍返回 None。scope.layer_ids 保留去重后的请求，scope.root_ids 给出有效起始层的树序。数据保持完整，读取不加载配置、不写日志。工具 project_details 增加树序、depth、本范围直属 object_count、counts 与缺失目标的逐条提示；compact=True 可生成文字/JSON 共用的精简视图，详见 [详细展开工具](../tools/usage/common/project_details.py)。
 
 ## 通用只读查询
 
@@ -50,9 +50,9 @@ read 返回保留 project_id/config_ref 的普通字典，不需要配置文件�
 
 位置查询采用相交语义：[begin,end)，begin=end 表示点查询，一端 None 表示该方向未限定。提供位置条件时排除无效区间；没有位置条件时不因此过滤记录。query_objects 不读取配置文件、不装载关联或换算单位；read_bindings 保留失效引用且不装载端点。
 
-对象检索、关联分组和文字提取的业务整理放在对应工具中，完整用法见 [第一批工具](../../tools/README.md)。SQL 只在存储层维护，工具不复制查询实现。
+对象检索、关联分组和文字提取的业务整理放在对应工具中，完整用法见 [第一批工具](../tools/README.md)。SQL 只在存储层维护，工具不复制查询实现。
 
-find_gaps 返回 project_id/layer_id/scope/count/gaps；每段含 begin/end/length/begin_inclusive，终点始终不包含。重叠与相邻占用先合并；瞬间对象占点，后续空档用 begin_inclusive=false 表示开起点，不虚构 epsilon。min_length 按实际可容纳长度筛选；开起点区间不能容纳恰好等于其跨度的对象。只查询直属层；空层返回整个区间，零长查询返回空列表，层不存在或位置无法解释时抛出 ValueError 并指出目标。CLI 与例子见 [工具指南](../../tools/README.md)。
+find_gaps 返回 project_id/layer_id/scope/count/gaps；每段含 begin/end/length/begin_inclusive，终点始终不包含。重叠与相邻占用先合并；瞬间对象占点，后续空档用 begin_inclusive=false 表示开起点，不虚构 epsilon。min_length 按实际可容纳长度筛选；开起点区间不能容纳恰好等于其跨度的对象。只查询直属层；空层返回整个区间，零长查询返回空列表，层不存在或位置无法解释时抛出 ValueError 并指出目标。CLI 与例子见 [工具指南](../tools/README.md)。
 
 ## 复查、历史与撤销
 
@@ -228,4 +228,4 @@ result = save_object(connection, project_id, obj)
 - operation.py：CRUD 与组合保存共用事务、日志编号和检测入口。
 - configuration/ 与 validation/：继续负责配置与约束。
 
-业务小工具放在 src/tools/<内容类型>/，共用工具放在 src/tools/common/，具体目录按实际工具需要创建。它们调用上述 API；核心不反向导入工具。两批内部工具与开发指南见 [工具说明](../../tools/README.md)。
+使用工具放在 src/tools/usage/common/ 或对应内容类型目录；开发入口放 developer，共用 help 和 CLI 支持放 shared。工具通过本 API 使用核心；存储、配置与检测不依赖具体工具模块。少数 API 便捷入口在调用时延迟导入对应工具。分类与开发指南见 [内部工具导航](../tools/README.md)。

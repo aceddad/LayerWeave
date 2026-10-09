@@ -8,7 +8,7 @@
 - [dispatch.py](dispatch.py)：记录请求分流，可选择完整读取。
 - [operation.py](operation.py)：单条 CRUD 与组合保存共用事务、operation_id 和提交后检测。
 - [feedback.py](feedback.py)：带修正线索的错误、明确的操作状态，以及逐条诊断文字格式。
-- [console.py](console.py)：JSON 文件／标准输入入口，输出 JSON 结果。
+- [console.py](../tools/usage/crud.py)：JSON 文件／标准输入入口，输出 JSON 结果。
 - [validation/channel.py](validation/channel.py)：独立检测反馈；默认使用内置执行器。
 - [validation/README.md](validation/README.md)：检测时点、主动复查、模块划分和新增规则示例。
 - [configuration/loader.py](configuration/loader.py)：读取配置、合并继承、保留父约定。
@@ -77,13 +77,13 @@ dispatch 管理整个事务，连接中不能已有待提交操作。低层 CRUD
 读取项目列表的 JSON 文件入口：
 
 ```sh
-python -X utf8 -B -m runtime.console ../output/ai-production.sqlite3 --request examples/requests/read-projects.json
+python -X utf8 -B -m tools.usage.crud ../output/ai-production.sqlite3 --request examples/requests/read-projects.json
 ```
 
 可加 `--text` 将输出切换为编译器式文字：先显示操作结果，再逐条列出诊断。默认仍为 JSON。
 
 ```sh
-python -X utf8 -B -m runtime.console ../output/ai-production.sqlite3 --text --request examples/requests/read-projects.json
+python -X utf8 -B -m tools.usage.crud ../output/ai-production.sqlite3 --text --request examples/requests/read-projects.json
 ```
 
 省略 --request 时从标准输入读 JSON。操作成功返回退出码 0，操作失败返回 1。检测发现问题或执行失败不会把已成功提交的操作改成失败退出码。
@@ -125,7 +125,7 @@ CRUD 仅存取 config_ref，不要求配置文件此时存在。提交后的检�
 
 主动复查使用 validation.runner.validate，不写日志。示例与自定义配置目录接入见 [检测说明](validation/README.md)。直接调用低层 CRUD 时，调用方负责提交并显式调用检测器；不会通过类构造或属性赋值暗中触发检测。
 
-项目/多子树/对象的现成复查工具为 tools.common.recheck；按操作查看历史用 tools.common.history，整批撤销与重做用 tools.common.undo。它们通过 runtime.api 组合现有核心，不增加 dispatch 的 action 名称。参数与迁移说明见 [复查、历史与撤销](storage/HISTORY.md)。
+项目/多子树/对象的现成复查工具为 tools.usage.common.recheck；按操作查看历史用 tools.usage.common.history，整批撤销与重做用 tools.usage.common.undo。它们通过 runtime.api 组合现有核心，不增加 dispatch 的 action 名称。参数与迁移说明见 [复查、历史与撤销](storage/HISTORY.md)。
 
 ## 查询改动日志
 

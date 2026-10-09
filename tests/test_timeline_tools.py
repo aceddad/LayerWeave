@@ -12,7 +12,7 @@ from runtime.api import (dispatch, insert_gap, open_database, read_record, shift
                          split_object, undo_operation)
 from runtime.configuration.loader import DEFAULT_ROOT
 from runtime.storage.database import SCHEMA_PATH
-from tools.common.gaps import format_gap
+from tools.usage.common.gaps import format_gap
 
 
 class TimelineToolsTests(unittest.TestCase):
@@ -233,7 +233,7 @@ class TimelineToolsTests(unittest.TestCase):
                         ("gaps", ["14", "2", "--project", "--json"]),
                         ("positions", ["shift", "--layer-ids", str(self.l), "--from-position", "16", "--offset", "1"])]
             for module, args in commands:
-                run = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", f"tools.common.{module}", str(db), str(self.p), *args], capture_output=True, text=True, encoding="utf-8")
+                run = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", f"tools.usage.common.{module}", str(db), str(self.p), *args], capture_output=True, text=True, encoding="utf-8")
                 self.assertEqual(run.returncode, 0, run.stderr)
                 self.assertTrue(json.loads(run.stdout)["ok"])
 

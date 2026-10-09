@@ -1,24 +1,24 @@
-# LayerWeave development
+# LayerWeave 工作导引
 
-LayerWeave is a nonvisual core for layers, objects, configuration, storage and diagnostics.
+LayerWeave 是非可视化核心。所有软件自带工具统称为“内部工具”。
 
-- Start with `README.md`, then `src/runtime/API.md` and the relevant TOML configuration. Runnable round-trip example: `src/examples/read_write.py`.
-- Internal tools import `runtime.api`. Reuse its read/load/save functions and existing `dispatch`; do not duplicate SQL, ID allocation, transaction logs or configuration merging in each tool.
-- Core storage adaptation belongs in `src/runtime/storage/`. Tool implementations belong in `src/tools/<content-type>/` or `src/tools/common/`; create those directories only when implementing an actual tool. `tools/README.md` lists tools and the development guide. The first batch includes project overview, object search, relation queries and text collection; `src/examples/first_batch.py` demonstrates all four.
-- Each encapsulation TOML explicitly declares its own class and type; one class binds one config. Derived encapsulations add both a Python subclass and a TOML. Models do not carry a type string; normal saves derive it from TOML. Title/Text is the runnable inheritance example in src/examples/title.py.
-- Configuration help lives in runtime/configuration/catalog.py and tools/common/config_help.py. Discover layers/objects recursively through Loader; never hardcode a list of encapsulations or import their Python classes merely to show help. Reuse Loader.accepts_object and DiagnosticPolicy so displayed compatibility and reporting levels match execution. All four help views describe configuration support, not project instances.
-- optional is an inherited field contract, not a validation switch: an absent optional field satisfies its presence rule; present values still undergo type checks. An inherited field may narrow true to false, never widen false to true, including an implicit false default. New fields choose their own value. Logging overrides stay local to their target configuration. Usage help is concise, developer help retains full definitions and origins; both keep purpose and accurate save examples distinct from constructor examples.
-- Recheck, history and undo tools live in tools/common/. Recheck selects scopes under one read snapshot and reuses validation. History and restoration belong in storage/history.py and storage/undo.py. Undo of updates compares and restores only the operation's net-changed top-level fields; information and axis are whole fields, never merged by inner keys. Creation/deletion still require whole-record matches. Any conflict blocks the entire transaction; logs retain undo_of. Restore original IDs and stored values without resnapping coordinates, and never lower allocation high-water marks. Binds use a global persistent sequence. Upgrade old databases explicitly; read-only tools do not migrate.
-- Subtree operations are composed in storage/subtrees.py under one run_operation transaction. Ordinary copy stays in the same project/parent; transfer_subtree creates a root in a different project in the same database and allocates destination IDs. Copy preserves incoming references to the source; cut redirects external incoming targets to the new identities before deleting source records, all in one operation. Preserve free content and resource references. Delete includes owned outgoing bindings; ordinary deletion retains external incoming bindings. Reuse shared creation/deletion helpers, CRUD and undo rather than duplicating them in tools.
-- transfer_objects reuses these transfer helpers for explicit object IDs, targeting one existing layer in a different project. Keep source layers; copy outgoing binds, map selected internal targets, redirect external incoming targets only for cut. Preserve raw positions and perform compatibility checks after commit. Empty selections do not write.
-- find_gaps lives in tools/common/free_ranges.py and uses read_layer_positions through runtime.api. Read only direct-layer position columns in one snapshot; never load content or snap coordinates. Merge occupied intervals, preserve instantaneous point occupancy with begin_inclusive=false, and filter by usable minimum length. Uninterpretable positions must not be silently reported as free space.
-- Split, scope shifting and gap insertion share storage/timeline.py. Split needs first_information plus ordered cuts with information for each new segment; the first segment retains bindings. Empty cuts do nothing. Gap insertion requires an explicit direct-layer, subtree or whole-project scope. Each crossing object explicitly uses split (two contents), keep (unchanged), stretch (end only) or move (both edges). Stretch/move add the layer's actual insertion length, preserving identity, content and bindings; they never process media or infer a policy from type. These actions may cover the insertion interval, so feedback must not promise a fully empty gap. Scope shifting filters begin and reports semantic conflicts after commit. Compound actions share a transaction rather than nesting public operations.
-- Each user-facing tool declares a literal COMMANDS list in its own Python module. tools/catalog.py discovers these declarations with AST, without importing tools or opening databases. command_help provides an overview or batch details for names, aliases and entrypoints; CLI examples come from the same declarations. Keep this read-only description separate from execution and constraint configuration. Include readable parameters, returns and valid JSON examples when adding commands.
-- Keep operation results separate from diagnostics. operation.status and committed change targets describe writes; built-in issues carry direct/related/manual scope without guessing whether an issue is old. Reuse runtime.feedback for text output; error hints never silently rewrite input. Reference explanations run only after SQL constraint failure, before rollback.
-- Preserve simple model classes, explicit project context, post-commit diagnostics, and lazy imports. `config_ref` and `project_id` are storage metadata, not new model fields. Document new persistence semantics before extending them.
-- Reporting levels live in configs/logging/diagnostics.toml, separate from constraint enablement. Missing settings default to warn; none hides a diagnostic without disabling its check. Merge repeated configuration failures per target while retaining affected checks. Text output shows operation results and individual diagnostics, without a broad check summary.
-- Ordinary object position writes use runtime.positions and the nearest declared axis precision, with a 1e-6 fallback when no precision is provided. Undo and cross-project transfers preserve exact stored coordinates without resnapping; transfer copies explicit axis metadata only and does not synthesize inherited axes or convert units. Validation compares integer ticks with the same rounding. Raw reads/range queries do not convert units or rewrite historical data. Existing rows are normalized only when position or owning layer is written. Detailed project/subtree expansion is in src/tools/common/project_details.py.
-- Detailed expansion keeps every selected layer, including zero-hit layers; time filters only objects. layer_ids selects a union of subtrees, deduplicated in project tree order; an explicit empty list is an empty selection. Compact output removes redundant container metadata only, preserving config_ref, content values, explicit empty axes and nonempty bindings. Core reads remain full records; missing requested layer IDs are reported individually by the tool.
-- For read-modify-write tools, use `dispatch(connection, request_factory)` so calculation runs inside the write transaction. Do not calculate a layer tail outside the transaction and save later. The second-batch tools are `src/tools/common/positions.py` and `src/tools/common/objects.py`; their combined example is `src/examples/second_batch.py`.
-- The nonvisual `main` branch must remain usable without GUI dependencies. Start visualization on its own branch when requested; keep common improvements in the core.
-- From `src/`, run `python -X utf8 -B -m unittest discover -s ../tests -v` for changes to persistence or shared execution. Tests and examples use their own temporary/in-memory databases; do not populate the user's output database.
+## 先选择入口
+
+- 操作项目内容：从 [内部工具导航](src/tools/README.md) 进入 [使用工具](src/tools/usage/README.md)。
+- 修改代码、增加封装或工具：先读 [开发工具](src/tools/developer/README.md)、[开发约定](docs/developer-conventions.md)，再读相关 API 和 TOML。
+- 视图相关工作：先读 [视图工具边界](src/tools/view/README.md)。尚未实现界面，main 保持不依赖 GUI。
+
+## 放置与复用
+
+- 使用工具放 src/tools/usage/common 或对应内容类型目录；开发工具放 developer；共用 help、目录和 CLI 支持放 shared。view 当前只保留分类说明。
+- 存储、事务、日志、发号、配置继承和检测留在 src/runtime；工具从 runtime.api 导入能力，不重复实现 SQL 或事务。
+- 新封装同时提供 Python 类与 TOML。原始 Layer/Object 保持简单，不塞入功能组件或额外运行时防御。
+- 文档入口是 src/tools/README.md。README 保持简短，技术细节放相应模块或 docs。新代码不再写入 tools.common、tools.text 等旧路径；这些文件只兼容已有调用。
+- 用户已确定 help 的进一步编排留到 MCP 阶段。本次目录分类不增加 help 分组、权限限制、MCP 注册或自动执行框架。
+
+## 验证与数据
+
+- 保留用户数据和无关改动；示例、测试使用自己的内存或临时数据库，不写 output 中的实际项目数据库。
+- 修改持久化、共享执行或模块路径后，从 src 运行 `python -X utf8 -B -m unittest discover -s ../tests -v`。
+- 操作结果与检测反馈分开；提交后诊断不表示写入回滚。保持原有编号、关联、位置、继承和撤销语义，详细规则见开发约定。
+- 非可视化核心留在 main；用户要求开始可视化时再建立独立分支。

@@ -11,10 +11,10 @@ details = command_help(["split", "insert_gap", "undo"])
 
 ```sh
 # 从 src 运行。
-python -X utf8 -B -m tools.common.command_help
-python -X utf8 -B -m tools.common.command_help split insert_gap undo --json
-python -X utf8 -B -m tools.common.gaps --help
-python -X utf8 -B -m tools.common.split --help
+python -X utf8 -B -m tools.shared.command_help
+python -X utf8 -B -m tools.shared.command_help split insert_gap undo --json
+python -X utf8 -B -m tools.usage.common.gaps --help
+python -X utf8 -B -m tools.usage.common.split --help
 ```
 
 总览只有 name、summary、read_only 和 cli 模块入口。详情还包括 Python entrypoint、参数说明、返回说明、notes、examples 和声明所在 source。参数含类型、用途、是否必需，以及适用的 choices/default。示例中的 files 直接保存可解析的 JSON 值；文件最外层的字典或列表不会用省略号代替。
@@ -27,7 +27,9 @@ python -X utf8 -B -m tools.common.split --help
 
 各工具在自己的 Python 文件中放置字面量 COMMANDS 列表，使用普通赋值，且放在执行 main 的语句之前。统一目录按文件递归发现，无需修改中央命令名单；下次查询重新读取。目录只使用 AST 读取字面量，不导入被发现的工具模块。
 
-`tools._cli.parser_for(..., commands=COMMANDS)` 将同一份 examples/notes 放进根级 --help。使用独立 argparse 的入口通过 tools.catalog.help_examples 复用它。split 和 gaps 的关键参数 help 也直接引用参数描述。
+使用工具的新实现位于 tools/usage，开发工具位于 tools/developer，共用 help 位于 tools/shared；view 目前没有命令。目录分类见[内部工具导航](../README.md)。这次迁移不增加 help 分组或筛选参数；兼容文件只导入新实现，不再声明另一份 COMMANDS。
+
+`tools.shared._cli.parser_for(..., commands=COMMANDS)` 将同一份 examples/notes 放进根级 --help。使用独立 argparse 的入口通过 tools.shared.catalog.help_examples 复用它。split 和 gaps 的关键参数 help 也直接引用参数描述。
 
 最小声明示意：
 
@@ -35,15 +37,15 @@ python -X utf8 -B -m tools.common.split --help
 COMMANDS = [{
     "name": "example_tool",
     "summary": "说明这个工具处理什么",
-    "entrypoint": "tools.custom.example:example_tool",
-    "cli": "python -m tools.custom.example",
+    "entrypoint": "tools.usage.custom.example:example_tool",
+    "cli": "python -m tools.usage.custom.example",
     "read_only": True,
     "context": ["database", "project_id"],
     "parameters": {
         "object_id": {"type": "integer", "required": True, "description": "项目内对象编号"}
     },
     "returns": "返回对象说明",
-    "examples": [{"cli": "python -m tools.custom.example DATABASE 1 8"}]
+    "examples": [{"cli": "python -m tools.usage.custom.example DATABASE 1 8"}]
 }]
 ```
 

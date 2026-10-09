@@ -193,7 +193,7 @@ class FeedbackTests(unittest.TestCase):
 
     def test_cli_text_mode_does_not_change_json_defaults_or_exit_codes(self):
         path = initialize_database(self.root / "cli.sqlite3")
-        command = [sys.executable, "-X", "utf8", "-B", "-m", "runtime.console", str(path)]
+        command = [sys.executable, "-X", "utf8", "-B", "-m", "tools.usage.crud", str(path)]
         def run(request, *flags):
             return subprocess.run([*command, *flags], input=json.dumps(request), text=True, encoding="utf-8", capture_output=True)
         created = run({"action": "create", "kind": "project", "data": {}})
@@ -208,7 +208,7 @@ class FeedbackTests(unittest.TestCase):
         failed = run({"action": "add", "kind": "object", "project_id": 1}, "--text")
         self.assertEqual(failed.returncode, 1)
         self.assertIn("可选值：create / read / update / delete", failed.stdout)
-        tool = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", "tools.common.positions", str(path), "1",
+        tool = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", "tools.usage.common.positions", str(path), "1",
                                "--text", "duration", "2", "2"], text=True, encoding="utf-8", capture_output=True)
         self.assertEqual(tool.returncode, 0, tool.stderr)
         self.assertIn("[写入成功] object (1, 2)：已更新", tool.stdout)

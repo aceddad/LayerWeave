@@ -5,8 +5,8 @@ from contextlib import closing
 from runtime.api import (copy_subtree, delete_subtree, dispatch, open_database,
                          save_layer, save_object, undo_operation)
 from runtime.storage.database import SCHEMA_PATH
-from tools.common.subtrees import format_subtree
-from tools.common.undo import format_undo
+from tools.usage.common.subtrees import format_subtree
+from tools.usage.common.undo import format_undo
 
 
 def create_example():

@@ -13,10 +13,10 @@ from unittest.mock import patch
 from runtime.api import dispatch, open_database, read_record
 from runtime.configuration.loader import DEFAULT_ROOT
 from runtime.storage.database import SCHEMA_PATH
-from tools.common.find_objects import find_objects
-from tools.common.project_overview import project_overview
-from tools.common.relations import query_relations
-from tools.text.collect import collect_text
+from tools.usage.common.find_objects import find_objects
+from tools.usage.common.project_overview import project_overview
+from tools.usage.common.relations import query_relations
+from tools.usage.text.collect import collect_text
 
 
 class FirstBatchToolsTests(unittest.TestCase):
@@ -235,17 +235,17 @@ class FirstBatchToolsTests(unittest.TestCase):
                                    str(database), str(self.project_id), *map(str, args)],
                                   capture_output=True, text=True, encoding="utf-8")
 
-        found = run("tools.common.find_objects", "--name", "hello", "--begin", 1, "--end", 3)
+        found = run("tools.usage.common.find_objects", "--name", "hello", "--begin", 1, "--end", 3)
         self.assertEqual(found.returncode, 0, found.stderr)
         self.assertEqual(json.loads(found.stdout)[0]["id"], good)
-        relations = run("tools.common.relations", "object", good)
+        relations = run("tools.usage.common.relations", "object", good)
         self.assertEqual(relations.returncode, 0, relations.stderr)
         self.assertEqual(json.loads(relations.stdout)["outgoing"][0]["id"], bind_id)
-        collected = run("tools.text.collect", self.layer_id, "--json")
+        collected = run("tools.usage.text.collect", self.layer_id, "--json")
         self.assertEqual(collected.returncode, 0, collected.stderr)
         self.assertEqual(json.loads(collected.stdout)["status"], "partial")
-        plain = run("tools.text.collect", self.layer_id)
+        plain = run("tools.usage.text.collect", self.layer_id)
         self.assertEqual(plain.stdout.strip(), "你好")
         self.assertIn("information.text", plain.stderr)
-        invalid = run("tools.common.find_objects", "--begin", 3, "--end", 1)
+        invalid = run("tools.usage.common.find_objects", "--begin", 3, "--end", 1)
         self.assertEqual(invalid.returncode, 1)

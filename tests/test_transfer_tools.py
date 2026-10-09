@@ -206,7 +206,7 @@ class TransferToolsTests(unittest.TestCase):
             self.c.backup(c)
             c.close()
             for mode in ("copy", "cut"):
-                result = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", "tools.common.transfer", str(path), str(self.p), mode,
+                result = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", "tools.usage.common.transfer", str(path), str(self.p), mode,
                                          str(self.root), str(self.q), "--json"], capture_output=True, text=True, encoding="utf-8")
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertTrue(json.loads(result.stdout)["ok"])

@@ -1,50 +1,53 @@
-# LayerWeave 内部工具开发
+# 内部工具 · 使用工具
 
-这里保存 LayerWeave 自身的内部工具说明。工具使用普通 Python 函数与核心 API，保持非可视化运行。
+操作项目内容从这里开始。使用工具通过 Python 或 CLI 调用；供未来外部封装复用，当前不依赖 MCP 或界面。
+
+[返回内部工具导航](../README.md)。命令与配置 help 是使用、开发共用的入口，详见下文。
 
 ## 已有工具
 
 | 工具 | 代码 | 用途 |
 |---|---|---|
-| 配置 help | [config_help.py](../src/tools/common/config_help.py) | 动态查看支持总览、层/对象类定义和联合说明；无需数据库 |
-| 命令 help | [command_help.py](../src/tools/common/command_help.py) | 所有命令的总览或多目标详情，含参数、返回与 JSON 示例；只读 |
-| 主动复查 | [recheck.py](../src/tools/common/recheck.py) | 项目、多棵子树或指定对象按当前配置重新检查；只读 |
-| 历史 | [history.py](../src/tools/common/history.py) | 按操作分页展示字段变化、前后快照和撤销来源；只读 |
-| 撤销/重做 | [undo.py](../src/tools/common/undo.py) | 原子撤销完整批次；更新按顶层字段判断，创建/删除按整条记录 |
-| 删除子树 | [subtrees.py](../src/tools/common/subtrees.py) | 删除起始层、子孙层、对象及出向关联；保留外部入向关联 |
-| 整层复制 | [subtrees.py](../src/tools/common/subtrees.py) | 同项目同父层复制完整子树，重映射内部引用，返回编号映射 |
-| 对象分割 | [split.py](../src/tools/common/split.py) | 按单点/多点与明确的各段 information 分割，第一段保留编号和关联 |
-| 插空档 | [gaps.py](../src/tools/common/gaps.py) | 明确选范围、位置和长度，跨界对象逐个 split/keep/stretch/move，整批原子执行 |
-| 跨项目复制/剪切 | [transfer.py](../src/tools/common/transfer.py) | 目标重新发号、原数值保留；剪切时外部入向引用跟随新地址 |
-| 对象跨项目复制/剪切 | [transfer_objects.py](../src/tools/common/transfer_objects.py) | 选择一个或多个对象，放入另一项目已有层，沿用关联映射与撤销规则 |
-| 空档查询 | [free_ranges.py](../src/tools/common/free_ranges.py) | 查询直属层在指定区间内的空白，可按最小可容纳长度筛选；只读 |
-| 项目概览 | [project_overview.py](../src/tools/common/project_overview.py) | 项目层级、层类型、名字与对象数量；只读 |
-| 项目详细展开 | [project_details.py](../src/tools/common/project_details.py) | 展开项目/子树的层、对象内容和关联引用，可按数值范围筛选；只读 |
-| 对象检索 | [find_objects.py](../src/tools/common/find_objects.py) | 按层、名字、内容、位置范围查找对象；只读 |
-| 关联查询 | [relations.py](../src/tools/common/relations.py) | 查询直接引用与被引用，保留跨项目完整身份；只读 |
-| 文本汇集 | [collect.py](../src/tools/text/collect.py) | 按顺序提取文字，保留来源，逐项报告不可读取的内容；只读 |
-| 接续新增 | [objects.py](../src/tools/common/objects.py) | 自动从层尾或指定对象后新增；写入 |
-| 连续排列 | [positions.py](../src/tools/common/positions.py) | 同层对象首尾接续，保留各自时长；写入 |
-| 整体平移 | [positions.py](../src/tools/common/positions.py) | 同时移动所选对象的开始和结束位置；写入 |
-| 起终点对齐 | [positions.py](../src/tools/common/positions.py) | 共享开始位置或结束位置，保持各自时长；写入 |
-| 修改时长 | [positions.py](../src/tools/common/positions.py) | 保持起点，计算新的终点；写入 |
-| 复制对象 | [objects.py](../src/tools/common/objects.py) | 复制内容与配置、发放新编号，不复制关联；写入 |
+| 基础 CRUD | [crud.py](crud.py) | 创建、读取、更新、删除及原子批量请求；格式见[运行协议](../../runtime/README.md) |
+| 配置 help | [config_help.py](../shared/config_help.py) | 动态查看支持总览、层/对象类定义和联合说明；无需数据库 |
+| 命令 help | [command_help.py](../shared/command_help.py) | 所有命令的总览或多目标详情，含参数、返回与 JSON 示例；只读 |
+| 主动复查 | [recheck.py](common/recheck.py) | 项目、多棵子树或指定对象按当前配置重新检查；只读 |
+| 历史 | [history.py](common/history.py) | 按操作分页展示字段变化、前后快照和撤销来源；只读 |
+| 撤销/重做 | [undo.py](common/undo.py) | 原子撤销完整批次；更新按顶层字段判断，创建/删除按整条记录 |
+| 删除子树 | [subtrees.py](common/subtrees.py) | 删除起始层、子孙层、对象及出向关联；保留外部入向关联 |
+| 整层复制 | [subtrees.py](common/subtrees.py) | 同项目同父层复制完整子树，重映射内部引用，返回编号映射 |
+| 对象分割 | [split.py](common/split.py) | 按单点/多点与明确的各段 information 分割，第一段保留编号和关联 |
+| 插空档 | [gaps.py](common/gaps.py) | 明确选范围、位置和长度，跨界对象逐个 split/keep/stretch/move，整批原子执行 |
+| 跨项目复制/剪切 | [transfer.py](common/transfer.py) | 目标重新发号、原数值保留；剪切时外部入向引用跟随新地址 |
+| 对象跨项目复制/剪切 | [transfer_objects.py](common/transfer_objects.py) | 选择一个或多个对象，放入另一项目已有层，沿用关联映射与撤销规则 |
+| 空档查询 | [free_ranges.py](common/free_ranges.py) | 查询直属层在指定区间内的空白，可按最小可容纳长度筛选；只读 |
+| 项目概览 | [project_overview.py](common/project_overview.py) | 项目层级、层类型、名字与对象数量；只读 |
+| 项目详细展开 | [project_details.py](common/project_details.py) | 展开项目/子树的层、对象内容和关联引用，可按数值范围筛选；只读 |
+| 对象检索 | [find_objects.py](common/find_objects.py) | 按层、名字、内容、位置范围查找对象；只读 |
+| 关联查询 | [relations.py](common/relations.py) | 查询直接引用与被引用，保留跨项目完整身份；只读 |
+| 文本汇集 | [collect.py](text/collect.py) | 按顺序提取文字，保留来源，逐项报告不可读取的内容；只读 |
+| 接续新增 | [objects.py](common/objects.py) | 自动从层尾或指定对象后新增；写入 |
+| 连续排列 | [positions.py](common/positions.py) | 同层对象首尾接续，保留各自时长；写入 |
+| 整体平移 | [positions.py](common/positions.py) | 同时移动所选对象的开始和结束位置；写入 |
+| 起终点对齐 | [positions.py](common/positions.py) | 共享开始位置或结束位置，保持各自时长；写入 |
+| 修改时长 | [positions.py](common/positions.py) | 保持起点，计算新的终点；写入 |
+| 复制对象 | [objects.py](common/objects.py) | 复制内容与配置、发放新编号，不复制关联；写入 |
 
-第一批四个工具已齐备，完整内存示例见 [first_batch.py](../src/examples/first_batch.py)。从 src/ 运行 `python -X utf8 -B -m examples.first_batch`，不改动真实项目数据库。
+第一批四个工具已齐备，完整内存示例见 [first_batch.py](../../examples/first_batch.py)。从 src/ 运行 `python -X utf8 -B -m examples.first_batch`，不改动真实项目数据库。
 
-第二批六个通用写入工具的完整内存示例见 [second_batch.py](../src/examples/second_batch.py)：`python -X utf8 -B -m examples.second_batch`。两批工具都不依赖可视化、Skill 或 MCP。
+第二批六个通用写入工具的完整内存示例见 [second_batch.py](../../examples/second_batch.py)：`python -X utf8 -B -m examples.second_batch`。两批工具都不依赖可视化、Skill 或 MCP。
 
-复查、历史与撤销的 Python/CLI 参数和恢复语义见 [完整说明](../src/runtime/storage/HISTORY.md)。从 src 运行 `python -X utf8 -B -m examples.review_history` 可查看独立内存数据库示例。新工具继续使用 runtime.api，数据库查询与恢复代码在存储层；它们不需要 Skill 或 MCP。
+复查、历史与撤销的 Python/CLI 参数和恢复语义见 [完整说明](../../runtime/storage/HISTORY.md)。从 src 运行 `python -X utf8 -B -m examples.review_history` 可查看独立内存数据库示例。新工具继续使用 runtime.api，数据库查询与恢复代码在存储层；它们不需要 Skill 或 MCP。
 
-子树删除与整层复制也已提供，范围包含起始层及全部后代；每次操作可整批撤销。用法、关联边界和 id_map 格式见 [子树工具说明](../src/runtime/storage/SUBTREES.md)，内存演示为 `python -X utf8 -B -m examples.subtrees`。
+子树删除与整层复制也已提供，范围包含起始层及全部后代；每次操作可整批撤销。用法、关联边界和 id_map 格式见 [子树工具说明](../../runtime/storage/SUBTREES.md)，内存演示为 `python -X utf8 -B -m examples.subtrees`。
 
-分割、按起点筛选平移、插空档和跨项目复制/剪切的参数与完整示例见 [编辑工具说明](../src/runtime/storage/EDITING.md)。内存演示为 `python -X utf8 -B -m examples.editing`。位置工具的 shift 入口保持兼容，新增 --layer-ids、--from-position 和 --config-root；其与插空档共用底层数值计算。
+分割、按起点筛选平移、插空档和跨项目复制/剪切的参数与完整示例见 [编辑工具说明](../../runtime/storage/EDITING.md)。内存演示为 `python -X utf8 -B -m examples.editing`。位置工具的 shift 入口保持兼容，新增 --layer-ids、--from-position 和 --config-root；其与插空档共用底层数值计算。
 
 ## 命令 help
 
-不知道该调用哪个工具时，先用 `python -m tools.common.command_help`；指定多个名字可查看详情，例如 `python -m tools.common.command_help split insert_gap undo --json`。Python 入口为 `runtime.api.command_help()` 或 `command_help(["split", "insert_gap"])`。
+不知道该调用哪个工具时，先用 `python -m tools.shared.command_help`；指定多个名字可查看详情，例如 `python -m tools.shared.command_help split insert_gap undo --json`。Python 入口为 `runtime.api.command_help()` 或 `command_help(["split", "insert_gap"])`。
 
-各工具在自身模块的 COMMANDS 字面量中声明用途、参数、返回和示例。统一目录自动发现，根级 CLI --help 共用其中的示例；新增工具不必改中央名单。它仅提供只读说明，未来 MCP 可以复用这些数据。完整规则见 [命令目录说明](../src/tools/COMMANDS.md)。
+各工具在自身模块的 COMMANDS 字面量中声明用途、参数、返回和示例。统一目录自动发现，根级 CLI --help 共用其中的示例；新增工具不必改中央名单。它仅提供只读说明，未来 MCP 可以复用这些数据。完整规则见 [命令目录说明](../shared/COMMANDS.md)。
 
 插空档必须明确选择 --layer-id、--layer-ids 或 --project。--contents-file 是 object_id/action 列表；split 带两段 information，keep 保持原样，stretch 只延长终点，move 将起终点一起后移本层实际插入长度。后两者不处理媒体内容，数据与关联保持。漏传范围不会默认扩大到整个项目，未选择的对象不被修改；这些跨界动作可能覆盖插入时段。
 
@@ -53,7 +56,7 @@
 这是封装说明查询，不查询项目中的实际层或对象，也不需要数据库。四种范围共用动态配置目录：
 
 ```python
-from tools.common.config_help import config_help, format_help
+from tools.shared.config_help import config_help, format_help
 
 catalog = config_help()
 layers = config_help("layers", ["text", "image"])
@@ -69,20 +72,20 @@ print(format_help(combined))
 - combined：层与其兼容对象类的联合详情，共用的对象说明只展开一次。
 
 ```sh
-python -X utf8 -B -m tools.common.config_help
-python -X utf8 -B -m tools.common.config_help layers text image --json
-python -X utf8 -B -m tools.common.config_help objects Title --raw
-python -X utf8 -B -m tools.common.config_help objects model Title --dev
-python -X utf8 -B -m tools.common.config_help combined text audio
+python -X utf8 -B -m tools.shared.config_help
+python -X utf8 -B -m tools.shared.config_help layers text image --json
+python -X utf8 -B -m tools.shared.config_help objects Title --raw
+python -X utf8 -B -m tools.shared.config_help objects model Title --dev
+python -X utf8 -B -m tools.shared.config_help combined text audio
 python -X utf8 -B -m examples.config_help
 ```
 
-默认使用版精简展示传入/返回、用途和带 config_ref 的保存示例；--dev / audience="developer" 展开完整定义、继承与字段来源、汇报设置和当前原文。两种模式均支持四种范围与多目标。目标支持配置路径、唯一 type、完整 Python 类路径或唯一类名，歧义会列出候选。--raw 可为使用版附当前 TOML 原文。坏配置逐项提示，其他继续。新增封装无需修改 help 代码，查看也不导入封装模块。格式和开发约定见 [配置 help 说明](../src/runtime/configuration/HELP.md)。
+默认使用版精简展示传入/返回、用途和带 config_ref 的保存示例；--dev / audience="developer" 展开完整定义、继承与字段来源、汇报设置和当前原文。两种模式均支持四种范围与多目标。目标支持配置路径、唯一 type、完整 Python 类路径或唯一类名，歧义会列出候选。--raw 可为使用版附当前 TOML 原文。坏配置逐项提示，其他继续。新增封装无需修改 help 代码，查看也不导入封装模块。格式和开发约定见 [配置 help 说明](../../runtime/configuration/HELP.md)。
 
 ## 项目概览
 
 ```python
-from tools.common.project_overview import project_overview, format_overview
+from tools.usage.common.project_overview import project_overview, format_overview
 
 # connection 使用 runtime.api.open_database 打开。
 overview = project_overview(connection, project_id)
@@ -104,8 +107,8 @@ object_count 只计本层直接装载的对象，不重复计算子层对象。d
 从 src/ 目录查看自己的项目：
 
 ```sh
-python -X utf8 -B -m tools.common.project_overview ../output/ai-production.sqlite3 1
-python -X utf8 -B -m tools.common.project_overview ../output/ai-production.sqlite3 1 --json
+python -X utf8 -B -m tools.usage.common.project_overview ../output/ai-production.sqlite3 1
+python -X utf8 -B -m tools.usage.common.project_overview ../output/ai-production.sqlite3 1 --json
 ```
 
 默认输出纯文本树，--json 输出结构化结果。项目不存在时退出码为 1；数据库路径不存在时不会创建空数据库。
@@ -129,7 +132,7 @@ python -X utf8 -B -m examples.project_overview
 ## 项目详细展开
 
 ```python
-from tools.common.project_details import project_details, format_details
+from tools.usage.common.project_details import project_details, format_details
 
 whole = project_details(connection, project_id)
 subtree = project_details(connection, project_id, layer_id=1)
@@ -168,17 +171,17 @@ layer_id 与 layer_ids 互斥。多层编号去重；同时选择父层和子层
 原始数据在一个读取快照内批量获取。非空全项目展开通常为 4 次查询，指定单层/多层为 5 次；多层查询批量读取项目的 id/father 来确定树序，范围外正文和关联不读取。核心不加载配置、不写日志；只有工具遇到不存在的编号时，才读取独立的日志汇报配置。可传 config_root（CLI 为 --config-root）指定该配置根目录。
 
 ```sh
-python -X utf8 -B -m tools.common.project_details ../output/ai-production.sqlite3 1 --json
-python -X utf8 -B -m tools.common.project_details ../output/ai-production.sqlite3 1 --layer-id 1 --begin 10 --end 20
-python -X utf8 -B -m tools.common.project_details ../output/ai-production.sqlite3 1 --layer-ids 1 7 --begin 10 --end 20 --compact
-python -X utf8 -B -m tools.common.project_details ../output/ai-production.sqlite3 1 --layer-ids 1 7 --compact --json
+python -X utf8 -B -m tools.usage.common.project_details ../output/ai-production.sqlite3 1 --json
+python -X utf8 -B -m tools.usage.common.project_details ../output/ai-production.sqlite3 1 --layer-id 1 --begin 10 --end 20
+python -X utf8 -B -m tools.usage.common.project_details ../output/ai-production.sqlite3 1 --layer-ids 1 7 --begin 10 --end 20 --compact
+python -X utf8 -B -m tools.usage.common.project_details ../output/ai-production.sqlite3 1 --layer-ids 1 7 --compact --json
 python -X utf8 -B -m examples.project_details
 ```
 
 ## 对象检索
 
 ```python
-from tools.common.find_objects import find_objects
+from tools.usage.common.find_objects import find_objects
 
 objects = find_objects(connection, project_id, layer_id=1,
                        name="开场", content="你好", begin=10, end=20)
@@ -191,7 +194,7 @@ objects = find_objects(connection, project_id, layer_id=1,
 - 返回普通对象记录列表，保留 project_id、id、layer、config_ref 和 information，不装载关联。多个层先按 layer 排列，层内按 begin/end/id 排列；没有匹配时返回空列表。
 
 ```sh
-python -X utf8 -B -m tools.common.find_objects ../output/ai-production.sqlite3 1 --layer-id 1 --content 你好 --begin 10 --end 20
+python -X utf8 -B -m tools.usage.common.find_objects ../output/ai-production.sqlite3 1 --layer-id 1 --content 你好 --begin 10 --end 20
 ```
 
 命令行默认输出 JSON。结构条件在存储层使用参数化 SQL；内容匹配处理已经按结构条件筛选的 JSON 值，不打开内容引用的资源文件。
@@ -199,7 +202,7 @@ python -X utf8 -B -m tools.common.find_objects ../output/ai-production.sqlite3 1
 ## 关联查询
 
 ```python
-from tools.common.relations import query_relations
+from tools.usage.common.relations import query_relations
 
 relations = query_relations(connection, project_id, "object", object_id)
 ```
@@ -209,7 +212,7 @@ relations = query_relations(connection, project_id, "object", object_id)
 自关联在 outgoing/incoming 中各出现一次。按 kind、项目和编号共同匹配，不把其他项目的同号记录混入结果。实体或目标已删除时仍可查询保留的关联；工具不声称端点一定存在，也不自动装载或递归目标。需要存在性诊断时使用核心 validate。
 
 ```sh
-python -X utf8 -B -m tools.common.relations ../output/ai-production.sqlite3 1 object 2 --direction both
+python -X utf8 -B -m tools.usage.common.relations ../output/ai-production.sqlite3 1 object 2 --direction both
 ```
 
 命令行默认输出 JSON。查询直接关联只使用一次 SELECT。
@@ -217,7 +220,7 @@ python -X utf8 -B -m tools.common.relations ../output/ai-production.sqlite3 1 ob
 ## 文本汇集
 
 ```python
-from tools.text.collect import collect_text
+from tools.usage.text.collect import collect_text
 
 result = collect_text(connection, project_id, layer_id, separator="\n")
 text = result["text"]
@@ -236,13 +239,13 @@ sources = result["items"]
 - 文字基准配置本身不可用时返回 partial，明确说明未能汇集；层不存在返回 None。
 
 ```sh
-python -X utf8 -B -m tools.text.collect ../output/ai-production.sqlite3 1 1
-python -X utf8 -B -m tools.text.collect ../output/ai-production.sqlite3 1 1 --json
+python -X utf8 -B -m tools.usage.text.collect ../output/ai-production.sqlite3 1 1
+python -X utf8 -B -m tools.usage.text.collect ../output/ai-production.sqlite3 1 1 --json
 ```
 
 默认输出汇集文字；需要来源与诊断时用 --json。纯文本模式仍会把诊断写到标准错误，不静默隐藏未读取的内容。条目诊断不改成查询失败退出码；SQL/参数错误或目标层不存在时退出码非零。
 
-## 第二批：通用写入约定
+## 通用写入约定
 
 六个工具都是普通函数，使用同一项目内的明确编号，不改项目号或对象编号。位置只按数值计算，允许负位置，不自动换算轴单位、裁剪内容或留出间隔。
 
@@ -261,7 +264,7 @@ python -X utf8 -B -m tools.text.collect ../output/ai-production.sqlite3 1 1 --js
 ### 接续新增
 
 ```python
-from tools.common.objects import append_object
+from tools.usage.common.objects import append_object
 
 result = append_object(connection, project_id, layer_id, {
     "config_ref": "objects/text.toml", "name": "下一句",
@@ -276,7 +279,7 @@ data 是原有 create 的对象字段字典，需要 config_ref；工具决定�
 ### 连续排列、平移与对齐
 
 ```python
-from tools.common.positions import arrange_objects, shift_objects, align_objects
+from tools.usage.common.positions import arrange_objects, shift_objects, align_objects
 
 # 不传 object_ids：排列该层全部对象，默认保留首个对象的起点。
 result = arrange_objects(connection, project_id, layer_id)
@@ -299,8 +302,8 @@ result = align_objects(connection, project_id, [2, 5], position=10, edge="end")
 ### 修改时长与复制
 
 ```python
-from tools.common.positions import set_duration
-from tools.common.objects import copy_object
+from tools.usage.common.positions import set_duration
+from tools.usage.common.objects import copy_object
 
 result = set_duration(connection, project_id, object_id, 4)
 result = copy_object(connection, project_id, object_id)
@@ -312,19 +315,19 @@ result = copy_object(connection, project_id, object_id, layer_id=target_layer_id
 
 复制默认保留内容、配置、名字、备注、所属层与位置，新编号由核心发放。可另选同项目目标层、名字或起点；指定起点时保留原时长。append=True 将副本接到目标层末尾，空层从 0 开始，不能同时指定 begin。
 
-单对象复制不修改原对象，不复制出向/入向关联，也不复制媒体文件；information 中的资源引用保持原样。需要连同内部关联复制完整子树时，使用 [copy_subtree](../src/runtime/storage/SUBTREES.md)。跨项目子树使用 transfer_subtree；选中一个或多个对象放入目标已有层使用 transfer_objects，后者会复制出向关联。详见 [跨项目工具](../src/runtime/storage/EDITING.md)。
+单对象复制不修改原对象，不复制出向/入向关联，也不复制媒体文件；information 中的资源引用保持原样。需要连同内部关联复制完整子树时，使用 [copy_subtree](../../runtime/storage/SUBTREES.md)。跨项目子树使用 transfer_subtree；选中一个或多个对象放入目标已有层使用 transfer_objects，后者会复制出向关联。详见 [跨项目工具](../../runtime/storage/EDITING.md)。
 
-### 第二批命令行
+### 位置与对象命令行
 
-从 src/ 目录运行，默认返回标准操作与检测 JSON。在子命令之前加 `--text` 可逐条显示写入结果与诊断，例如 `python -X utf8 -B -m tools.common.positions ../output/ai-production.sqlite3 1 --text duration 2 4`。成功和无变化操作退出码为 0，操作失败为 1；检测报告问题不会把已经成功写入的操作改成失败。
+从 src/ 目录运行，默认返回标准操作与检测 JSON。在子命令之前加 `--text` 可逐条显示写入结果与诊断，例如 `python -X utf8 -B -m tools.usage.common.positions ../output/ai-production.sqlite3 1 --text duration 2 4`。成功和无变化操作退出码为 0，操作失败为 1；检测报告问题不会把已经成功写入的操作改成失败。
 
 ```sh
-python -X utf8 -B -m tools.common.positions ../output/ai-production.sqlite3 1 arrange 1 --start 0
-python -X utf8 -B -m tools.common.positions ../output/ai-production.sqlite3 1 shift --ids 2 5 --offset -3
-python -X utf8 -B -m tools.common.positions ../output/ai-production.sqlite3 1 align --ids 2 5 --edge end --position 10
-python -X utf8 -B -m tools.common.positions ../output/ai-production.sqlite3 1 duration 2 4
-python -X utf8 -B -m tools.common.objects ../output/ai-production.sqlite3 1 append 1 3 --data-file object.json
-python -X utf8 -B -m tools.common.objects ../output/ai-production.sqlite3 1 copy 2 --append
+python -X utf8 -B -m tools.usage.common.positions ../output/ai-production.sqlite3 1 arrange 1 --start 0
+python -X utf8 -B -m tools.usage.common.positions ../output/ai-production.sqlite3 1 shift --ids 2 5 --offset -3
+python -X utf8 -B -m tools.usage.common.positions ../output/ai-production.sqlite3 1 align --ids 2 5 --edge end --position 10
+python -X utf8 -B -m tools.usage.common.positions ../output/ai-production.sqlite3 1 duration 2 4
+python -X utf8 -B -m tools.usage.common.objects ../output/ai-production.sqlite3 1 append 1 3 --data-file object.json
+python -X utf8 -B -m tools.usage.common.objects ../output/ai-production.sqlite3 1 copy 2 --append
 ```
 
 object.json 为对象创建字段，例如 `{"config_ref":"objects/text.toml","information":{"text":"下一句"}}`。平移与对齐可用 --layer-id 选择整层；arrange 用 --ids 指定排列顺序；append 可用 --after-id 或 --empty-start。
@@ -340,7 +343,7 @@ result = find_gaps(connection, project_id, layer_id, begin=0, end=20, min_length
 ```
 
 ```sh
-python -m tools.common.free_ranges DATABASE 1 4 0 20 --min-length 3 --json
+python -m tools.usage.common.free_ranges DATABASE 1 4 0 20 --min-length 3 --json
 ```
 
 只查询指定层直属对象，不自动包含子层。begin/end 明确限定 [begin,end)，min_length 默认 0；先合并占用区间，再返回正长度空档。相邻对象的首尾相接不产生空档；空层返回整个查询区间，begin=end 返回空列表。负位置可用。
@@ -364,33 +367,10 @@ result = transfer_objects(connection, source_project_id, [8, 9], target_project_
 ```
 
 ```sh
-python -m tools.common.transfer_objects DATABASE 1 copy 2 4 --ids 8 9 --json
-python -m tools.common.transfer_objects DATABASE 1 cut 2 4 --ids 8 --json
+python -m tools.usage.common.transfer_objects DATABASE 1 copy 2 4 --ids 8 9 --json
+python -m tools.usage.common.transfer_objects DATABASE 1 cut 2 4 --ids 8 --json
 ```
 
 object_ids 可包含源项目不同层的对象；去重后保持选择顺序，空列表不写入。目标是另一项目中已存在的一个层。源层不搬移；位置原数值、配置与内容保持，目标层兼容性及重叠在提交后检查。
 
-两种模式都复制对象和它们发出的关联，重新发号；选中对象之间的关联换成新编号，其他出向目标保持原地址。copy 保留源对象，外部入向关联仍指向源；cut 删除源对象和出向关联，外部入向关联跟随新地址。一个 operation_id 覆盖整批操作，可整体撤销/重做。返回 counts、id_map 与改指的关联编号，格式见 [编辑工具说明](../src/runtime/storage/EDITING.md)。
-
-## 开发下一个工具
-
-AI 开发工具时按这个顺序阅读：
-
-1. [公共读写 API](../src/runtime/API.md)：完整层/对象的读取、装载和保存。
-2. 对应的 [层配置](../configs/layers/README.md) 与 [对象配置](../configs/objects/README.md)：理解内容结构和约定。
-3. [第一批工具示例](../src/examples/first_batch.py)、[第二批工具示例](../src/examples/second_batch.py)与[完整往返示例](../src/examples/read_write.py)：查询组合、位置编辑，以及关闭数据库后重开再保存。
-4. 仅在新增约束时阅读 [规则扩充说明](../src/runtime/validation/README.md)。
-
-Python 工具实现放在 src/tools/<内容类型>/，通用功能放在 src/tools/common/；具体分类按需要创建。这里的 tools/README.md 作为说明入口，不提前增加工具注册框架。
-
-工具使用 `from runtime.api import ...`，只处理自己的业务内容。读取时可选择完整字典或 Python 实例；修改后调用 save_layer/save_object。ID、事务、日志、配置继承、检测由核心处理。
-
-小工具采用普通函数，参数显式带 connection、project_id 和目标编号。需要哪些输入、会修改哪些内容、返回什么，写在函数说明和一个可运行示例中。新工具无需进入核心的 __init__ 批量导入，也不要求 MCP、Skill 或可视化依赖。
-
-命令行的打开数据库、JSON 输出和错误反馈由 [tools/_cli.py](../src/tools/_cli.py) 复用；它不注册或扫描工具。范围与关联 SQL 放在核心 [storage/queries.py](../src/runtime/storage/queries.py)，工具通过 runtime.api 调用。需要连续几次一致的读取，可使用 read_snapshot 复用现有读取事务。
-
-需要先读取再计算写入的工具，使用 `dispatch(connection, request_factory)`：工厂接收 read_record 查询函数，在写事务内返回一个请求字典或请求列表。不要在事务外先计算层尾再单独保存，也不要在工厂中自行写 SQL 或调用另一个完整事务入口。现有位置工具可作为例子。
-
-生成新坐标时复用 [PositionMath/decimal_value](../src/runtime/positions.py)，从 runtime.api 导入，共享十进制运算、轴来源查找与精度落点；原 tools/common/_precision.py 仅保留导入兼容。纯读取工具继续使用原始存储数值，不调用取整逻辑。
-
-涉及删除的工具应明确调用 delete；不要用省略对象或清空局部列表来表达删除。纯查询工具不写数据。模型的 config_ref 留在数据库记录中；实例保存按实际 Python 类取得唯一配置。新增封装同时提供自己的类与 TOML，字典保存明确指定 config_ref。Title/Text 的继承与往返示例见 `src/examples/title.py`。
+两种模式都复制对象和它们发出的关联，重新发号；选中对象之间的关联换成新编号，其他出向目标保持原地址。copy 保留源对象，外部入向关联仍指向源；cut 删除源对象和出向关联，外部入向关联跟随新地址。一个 operation_id 覆盖整批操作，可整体撤销/重做。返回 counts、id_map 与改指的关联编号，格式见 [编辑工具说明](../../runtime/storage/EDITING.md)。

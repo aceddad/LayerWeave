@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 from runtime.api import dispatch, find_gaps, open_database
 from runtime.storage.database import SCHEMA_PATH
-from tools.common.free_ranges import format_gaps
+from tools.usage.common.free_ranges import format_gaps
 
 
 class FreeRangesTests(unittest.TestCase):
@@ -110,7 +110,7 @@ class FreeRangesTests(unittest.TestCase):
             destination = open_database(path)
             self.c.backup(destination)
             destination.close()
-            command = [sys.executable, "-X", "utf8", "-B", "-m", "tools.common.free_ranges", str(path),
+            command = [sys.executable, "-X", "utf8", "-B", "-m", "tools.usage.common.free_ranges", str(path),
                        str(self.p), str(self.layer), "0", "20", "--min-length", "4"]
             result = subprocess.run([*command, "--json"], capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(result.returncode, 0, result.stderr)

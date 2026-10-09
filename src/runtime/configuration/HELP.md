@@ -16,12 +16,12 @@
 从 src/ 运行，无需提供数据库或项目编号：
 
 ```sh
-python -X utf8 -B -m tools.common.config_help
-python -X utf8 -B -m tools.common.config_help layers text image
-python -X utf8 -B -m tools.common.config_help objects Text Title objects/model.toml
-python -X utf8 -B -m tools.common.config_help combined TextLayer ImageLayer --json
-python -X utf8 -B -m tools.common.config_help objects model title --dev
-python -X utf8 -B -m tools.common.config_help objects title --raw
+python -X utf8 -B -m tools.shared.config_help
+python -X utf8 -B -m tools.shared.config_help layers text image
+python -X utf8 -B -m tools.shared.config_help objects Text Title objects/model.toml
+python -X utf8 -B -m tools.shared.config_help combined TextLayer ImageLayer --json
+python -X utf8 -B -m tools.shared.config_help objects model title --dev
+python -X utf8 -B -m tools.shared.config_help objects title --raw
 ```
 
 默认文字输出，--json 返回相应用途的结构化数据，使用版 JSON 也不会携带完整开发定义。--dev 选择开发版；--raw 让使用版详情也附带当前文件原文。开发版详情默认带原文，Python 可用 include_source=False 省略。总览不提供原文。父配置原文可按 lineage 中的路径另行查询。--config-root 指定配置根目录，其中包含 layers/、objects/ 和可选的 logging/diagnostics.toml。
@@ -29,7 +29,7 @@ python -X utf8 -B -m tools.common.config_help objects title --raw
 Python 工具入口：
 
 ```python
-from tools.common.config_help import config_help, format_help
+from tools.shared.config_help import config_help, format_help
 
 result = config_help("combined", ["text", "image"])
 print(format_help(result))
@@ -82,4 +82,4 @@ TOML 的 example 仍表示 Python 类的构造参数，开发版保留原样；c
 
 总览和联查使用 Loader.accepts_object，与运行时兼容检查共用同一个判断。例如继承 text.toml 的 Dialogue 会自动成为文字层可选对象；收窄为 dialogue 的层只列出 Dialogue 及其派生配置。
 
-每次查询内，文件扫描、原文、解析结果、继承合并和日志等级各自复用；下次查询重新读取，因此新增或修改配置后不需要重启。配置损坏、名称冲突和继承错误逐项诊断，未认识的附加节在开发版完整展示。新增检测语义仍由现有规则执行器实现；help 负责描述配置，不替代规则实现。展示数据在 help_data.py，查询编排在 catalog.py，文字与 CLI 在 tools/common/config_help.py，不需要另建封装注册表。
+每次查询内，文件扫描、原文、解析结果、继承合并和日志等级各自复用；下次查询重新读取，因此新增或修改配置后不需要重启。配置损坏、名称冲突和继承错误逐项诊断，未认识的附加节在开发版完整展示。新增检测语义仍由现有规则执行器实现；help 负责描述配置，不替代规则实现。展示数据在 help_data.py，查询编排在 catalog.py，文字与 CLI 在 tools/shared/config_help.py，不需要另建封装注册表。

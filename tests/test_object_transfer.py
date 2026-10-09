@@ -177,7 +177,7 @@ class ObjectTransferTests(unittest.TestCase):
             self.c.backup(c)
             c.close()
             for mode in ("copy", "cut"):
-                result = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", "tools.common.transfer_objects", str(path),
+                result = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", "tools.usage.common.transfer_objects", str(path),
                                          str(self.p), mode, str(self.q), str(self.dst), "--ids", str(self.first), "--json"],
                                         capture_output=True, text=True, encoding="utf-8")
                 self.assertEqual(result.returncode, 0, result.stderr)

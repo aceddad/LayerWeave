@@ -18,9 +18,9 @@ objects = recheck(connection, project_id, object_ids=[8, 12])
 
 ```sh
 # 从 src 运行；以下数据库路径与编号替换为实际值。
-python -X utf8 -B -m tools.common.recheck DATABASE PROJECT_ID
-python -X utf8 -B -m tools.common.recheck DATABASE PROJECT_ID --layer-ids 4 7
-python -X utf8 -B -m tools.common.recheck DATABASE PROJECT_ID --object-ids 8 12 --json
+python -X utf8 -B -m tools.usage.common.recheck DATABASE PROJECT_ID
+python -X utf8 -B -m tools.usage.common.recheck DATABASE PROJECT_ID --layer-ids 4 7
+python -X utf8 -B -m tools.usage.common.recheck DATABASE PROJECT_ID --object-ids 8 12 --json
 ```
 
 文字输出先说明范围和执行状态，随后逐条诊断。--config-root 指定当前配置目录。
@@ -47,10 +47,10 @@ operation_count 是匹配范围内的操作次数，change_count 是原始改动
 detail=True 给列表附带完整前后快照；按 operation_id 查询总是附带快照。操作不存在时 items=[]。undo_of 非空表示该操作撤销了哪个原操作，原日志不会被删除或改写。
 
 ```sh
-python -X utf8 -B -m tools.common.history DATABASE --project-id PROJECT_ID
-python -X utf8 -B -m tools.common.history DATABASE --project-id PROJECT_ID --kind object --id OBJECT_ID
-python -X utf8 -B -m tools.common.history DATABASE --operation-id OPERATION_ID
-python -X utf8 -B -m tools.common.history DATABASE --project-id PROJECT_ID --limit 20 --before CURSOR --json
+python -X utf8 -B -m tools.usage.common.history DATABASE --project-id PROJECT_ID
+python -X utf8 -B -m tools.usage.common.history DATABASE --project-id PROJECT_ID --kind object --id OBJECT_ID
+python -X utf8 -B -m tools.usage.common.history DATABASE --operation-id OPERATION_ID
+python -X utf8 -B -m tools.usage.common.history DATABASE --project-id PROJECT_ID --limit 20 --before CURSOR --json
 ```
 
 ## 撤销与重做
@@ -64,8 +64,8 @@ redone = undo_operation(connection, undone["operation_id"])
 ```
 
 ```sh
-python -X utf8 -B -m tools.common.undo DATABASE OPERATION_ID
-python -X utf8 -B -m tools.common.undo DATABASE UNDO_OPERATION_ID --json
+python -X utf8 -B -m tools.usage.common.undo DATABASE OPERATION_ID
+python -X utf8 -B -m tools.usage.common.undo DATABASE UNDO_OPERATION_ID --json
 ```
 
 撤销总是针对完整操作，可跨项目，不提供局部撤销或强制覆盖开关。创建的记录删除，删除的记录按原编号恢复，修改的记录恢复原值。一次操作对同一记录的多次改动合并成最初/最终状态；已完全抵消的变化不制造新恢复日志。
@@ -89,9 +89,9 @@ create/delete 涉及记录存在性，继续要求整条记录匹配，不能按
 binds.id 使用 SQLite AUTOINCREMENT，经现有 CRUD 入口创建，不占项目 max_id。旧库执行既有初始化命令即可升级：
 
 ```sh
-python -X utf8 -B -m runtime.storage.database DATABASE
+python -X utf8 -B -m tools.developer.database DATABASE
 ```
 
 迁移保留关联记录、日志和附加索引/触发器，将关联发号上界至少提升到现存关联与历史关联编号的最大值，并为 changes 增加可空 undo_of 列。旧日志该列为 NULL。重复初始化不降低序列，也不改写旧历史中已经发生过的编号复用。普通打开连接及只读工具不会暗中迁移数据库；旧库写入新版前应执行初始化。
 
-复查范围在 runtime/validation/recheck.py；历史查询与差异在 storage/history.py；恢复事务在 storage/undo.py。工具入口位于 tools/common/recheck.py、history.py、undo.py。可运行 examples.review_history 查看内存数据库示例。
+复查范围在 runtime/validation/recheck.py；历史查询与差异在 storage/history.py；恢复事务在 storage/undo.py。工具入口位于 tools/usage/common/recheck.py、history.py、undo.py。可运行 examples.review_history 查看内存数据库示例。

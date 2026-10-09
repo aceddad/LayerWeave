@@ -5,8 +5,8 @@ import json
 
 from runtime.api import dispatch, open_database, read_layer, save_layer
 from runtime.storage.database import SCHEMA_PATH
-from tools.common.objects import append_object, copy_object
-from tools.common.positions import align_objects, arrange_objects, set_duration, shift_objects
+from tools.usage.common.objects import append_object, copy_object
+from tools.usage.common.positions import align_objects, arrange_objects, set_duration, shift_objects
 
 
 def _ok(result):

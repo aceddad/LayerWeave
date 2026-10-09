@@ -9,7 +9,7 @@
 在项目的 `src/` 下运行：
 
 ```sh
-python -X utf8 -B -m runtime.storage.database ../output/ai-production.sqlite3
+python -X utf8 -B -m tools.developer.database ../output/ai-production.sqlite3
 ```
 
 会创建父目录、数据库文件和缺失的表，保留已有记录；原来的四表数据库可通过此命令补建 changes。旧版可空的 objects.layer 会在事务中升级为 NOT NULL，保留数据、日志和对象表的索引、触发器。若有 layer=NULL 的旧对象，迁移明确列出其项目和编号并停止；先由调用方选择所属层，再重试，不自动分配归属。每个连接都需要启用外键；`open_database()` 已处理此事。

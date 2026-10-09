@@ -33,7 +33,7 @@ data 返回 project_id、object_id、cuts（requested/actual 切点）和 segmen
 
 ```sh
 # 从 src 运行，DATA.json 包含 first_information 与 cuts。
-python -X utf8 -B -m tools.common.split DATABASE PROJECT_ID OBJECT_ID --data-file DATA.json --json
+python -X utf8 -B -m tools.usage.common.split DATABASE PROJECT_ID OBJECT_ID --data-file DATA.json --json
 ```
 
 ## 范围平移
@@ -50,8 +50,8 @@ object_ids 显式选对象，layer_id 只选择该层直属对象，layer_ids �
 from_position 按存储的 begin >= 此数值筛选，不是“与这个时间段相交”。跨过筛选起点、但 begin 更早的对象保持原位。平移沿用目标层当前精度，编号、内容及关联保持；返回原来的批量 dispatch 结果协议，包括 results。移动后 overlap=false 的层按最终状态报告重叠，不自动回滚，允许重叠的层不因此报错。
 
 ```sh
-python -X utf8 -B -m tools.common.positions DATABASE PROJECT_ID shift --ids 8 12 --offset -2
-python -X utf8 -B -m tools.common.positions DATABASE PROJECT_ID shift --layer-ids 4 7 --from-position 30 --offset 2
+python -X utf8 -B -m tools.usage.common.positions DATABASE PROJECT_ID shift --ids 8 12 --offset -2
+python -X utf8 -B -m tools.usage.common.positions DATABASE PROJECT_ID shift --layer-ids 4 7 --from-position 30 --offset 2
 ```
 
 ## 插空档
@@ -88,10 +88,10 @@ result = insert_gap(connection, project_id, layer_ids=[root_layer_id], at=30, le
 缺少跨界处理时 error.required_crossings 列出对象、所属层、原区间和实际切点，allowed 给出 split/keep/stretch/move；required_splits 暂作为兼容别名。unused_object_ids 列出不适用的处理项，本批不写。选择 split 而旧坐标无法在当前刻度上形成两段时报告 invalid_cut；keep 不改写原始坐标。
 
 ```sh
-python -X utf8 -B -m tools.common.gaps DATABASE PROJECT_ID 30 2 --layer-ids 4 7 --json
+python -X utf8 -B -m tools.usage.common.gaps DATABASE PROJECT_ID 30 2 --layer-ids 4 7 --json
 # CONTENTS.json 是 object_id/action 列表，split 项另带两段 information。
-python -X utf8 -B -m tools.common.gaps DATABASE PROJECT_ID 30 2 --layer-id 4 --contents-file CONTENTS.json
-python -X utf8 -B -m tools.common.gaps DATABASE PROJECT_ID 30 2 --project --json
+python -X utf8 -B -m tools.usage.common.gaps DATABASE PROJECT_ID 30 2 --layer-id 4 --contents-file CONTENTS.json
+python -X utf8 -B -m tools.usage.common.gaps DATABASE PROJECT_ID 30 2 --project --json
 ```
 
 ## 跨项目复制和剪切
@@ -114,8 +114,8 @@ data 含 mode、source_project_id、project_id（目标）、source_layer_id、l
 整个剪切是一条操作历史；创建失败、入向改指失败或源删除失败，均回滚目标数据、源数据、关联、发号和日志。恢复时若目标对象或被改指的外部关联后来被修改，现有撤销冲突规则会整批拒绝。源、目标的 max_id 不因已提交的剪切或撤销回退。
 
 ```sh
-python -X utf8 -B -m tools.common.transfer DATABASE SOURCE_PROJECT copy SOURCE_LAYER TARGET_PROJECT --name "新版本" --json
-python -X utf8 -B -m tools.common.transfer DATABASE SOURCE_PROJECT cut SOURCE_LAYER TARGET_PROJECT --json
+python -X utf8 -B -m tools.usage.common.transfer DATABASE SOURCE_PROJECT copy SOURCE_LAYER TARGET_PROJECT --name "新版本" --json
+python -X utf8 -B -m tools.usage.common.transfer DATABASE SOURCE_PROJECT cut SOURCE_LAYER TARGET_PROJECT --json
 ```
 
 所有新入口支持 config_root 和 checker；CLI 可传 --config-root，默认采用内置检查。示例 `python -X utf8 -B -m examples.editing` 使用内存数据库演示这些工具，不修改真实项目。
@@ -136,8 +136,8 @@ result = transfer_objects(connection, 1, [8, 9], 2, 4, mode="copy")
 ```
 
 ```sh
-python -m tools.common.transfer_objects DATABASE 1 copy 2 4 --ids 8 9 --json
-python -m tools.common.transfer_objects DATABASE 1 cut 2 4 --ids 8 --json
+python -m tools.usage.common.transfer_objects DATABASE 1 copy 2 4 --ids 8 9 --json
+python -m tools.usage.common.transfer_objects DATABASE 1 cut 2 4 --ids 8 --json
 ```
 
 ## 代码位置
@@ -146,4 +146,4 @@ python -m tools.common.transfer_objects DATABASE 1 cut 2 4 --ids 8 --json
 - positions.shifted_positions：平移与插空档共用的数值计算。
 - storage/subtrees.py：同项目复制和跨项目迁移共用的创建/删除逻辑。
 - storage/crud.py 的私有 _insert：统一发号、插入和日志；仅跨项目复制在此保留原始坐标，普通写入仍先落点。
-- tools/common/split.py、gaps.py、transfer.py、transfer_objects.py：CLI 与展示；原 positions.py 的 shift 入口仍可用。
+- tools/usage/common/split.py、gaps.py、transfer.py、transfer_objects.py：CLI 与展示；原 positions.py 的 shift 入口仍可用。

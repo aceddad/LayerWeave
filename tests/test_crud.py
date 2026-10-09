@@ -308,7 +308,7 @@ class CrudTests(unittest.TestCase):
             path = Path(file.name)
         self.addCleanup(path.unlink)
         initialize_database(path)
-        command = [sys.executable, "-X", "utf8", "-B", "-m", "runtime.console", str(path)]
+        command = [sys.executable, "-X", "utf8", "-B", "-m", "tools.usage.crud", str(path)]
         cwd = Path(__file__).resolve().parents[1] / "src"
         result = subprocess.run(command, input=json.dumps({
             "action": "create", "kind": "project", "data": {"name": "CLI 项目"},

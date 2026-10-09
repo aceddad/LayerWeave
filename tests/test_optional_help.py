@@ -14,8 +14,8 @@ from runtime.api import dispatch, open_database, save_layer, save_object
 from runtime.configuration.loader import ConfigError, DEFAULT_ROOT, Loader
 from runtime.storage.database import SCHEMA_PATH
 from runtime.validation.rules import fields
-from tools.common.config_help import config_help, format_help
-from tools.text.collect import collect_text
+from tools.shared.config_help import config_help, format_help
+from tools.usage.text.collect import collect_text
 
 
 class OptionalHelpTests(unittest.TestCase):
@@ -226,7 +226,7 @@ information={text="你好",speaker="A"}
             self.query("objects", "model", audience="other")
 
     def test_cli_developer_mode_and_usage_raw_are_distinct(self):
-        command = [sys.executable, "-X", "utf8", "-B", "-m", "tools.common.config_help", "objects", "model", "--json", "--config-root", str(self.configs)]
+        command = [sys.executable, "-X", "utf8", "-B", "-m", "tools.shared.config_help", "objects", "model", "--json", "--config-root", str(self.configs)]
         for flags, audience in ((["--dev"], "developer"), (["--raw"], "usage")):
             run = subprocess.run([*command, *flags], capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(run.returncode, 0, run.stderr)

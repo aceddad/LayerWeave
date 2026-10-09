@@ -14,7 +14,7 @@ from runtime.configuration.loader import DEFAULT_ROOT
 from runtime.storage import crud
 from runtime.storage.database import SCHEMA_PATH
 from runtime.validation.runner import check_changes
-from tools.common.subtrees import format_subtree
+from tools.usage.common.subtrees import format_subtree
 
 
 class SubtreeToolTests(unittest.TestCase):
@@ -312,7 +312,7 @@ class SubtreeToolTests(unittest.TestCase):
             c = open_database(path)
             self.c.backup(c)
             c.close()
-            command = [sys.executable, "-X", "utf8", "-B", "-m", "tools.common.subtrees", str(path), str(self.p)]
+            command = [sys.executable, "-X", "utf8", "-B", "-m", "tools.usage.common.subtrees", str(path), str(self.p)]
             copied = subprocess.run([*command, "copy", str(self.root), "--name", "歌词副本", "--json"], capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(copied.returncode, 0, copied.stderr)
             result = json.loads(copied.stdout)

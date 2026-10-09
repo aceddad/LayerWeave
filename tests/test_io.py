@@ -249,7 +249,7 @@ class IOTests(unittest.TestCase):
                 self.assertIsInstance(loaded, getattr(models, prefix + "Layer"))
                 self.assertIsInstance(loaded.objects[0], getattr(models, prefix))
                 self.assertEqual(loaded.objects[0].information["arbitrary"]["unicode"], "中文")
-        result = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", "runtime.console", str(path)],
+        result = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", "tools.usage.crud", str(path)],
                                 input=json.dumps({"action": "read", "kind": "layer", "project_id": project_id, "id": ids[0][0], "full": True}),
                                 text=True, encoding="utf-8", capture_output=True)
         self.assertEqual(result.returncode, 0, result.stderr)

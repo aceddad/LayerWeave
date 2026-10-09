@@ -4,12 +4,12 @@ from contextlib import closing
 
 from runtime.api import (dispatch, find_gaps, insert_gap, open_database, save_layer, save_object,
                          shift_objects, split_object, transfer_objects, transfer_subtree, undo_operation)
-from tools.common.free_ranges import format_gaps
+from tools.usage.common.free_ranges import format_gaps
 from runtime.storage.database import SCHEMA_PATH
-from tools.common.gaps import format_gap
-from tools.common.split import format_split
-from tools.common.transfer import format_transfer
-from tools.common.undo import format_undo
+from tools.usage.common.gaps import format_gap
+from tools.usage.common.split import format_split
+from tools.usage.common.transfer import format_transfer
+from tools.usage.common.undo import format_undo
 
 
 def create_example():

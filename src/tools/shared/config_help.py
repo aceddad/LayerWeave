@@ -31,6 +31,26 @@ def _grade(setting):
     return setting["default"] + "".join(f"；{field}={level}" for field, level in setting["fields"].items())
 
 
+def _format_tools(value):
+    """只展示技能引用，不解析路由、检查文件或限制声明内容。"""
+    lines = ["  外置技能（供 AI 按路由读取）："]
+    if value == []:
+        return [*lines, "    （未声明）"]
+    if not isinstance(value, list):
+        return [*lines, "    " + _dump(value)]
+    for tool in value:
+        if not isinstance(tool, dict):
+            lines.append("    - " + _dump(tool))
+            continue
+        lines.append(f"    - route: {tool.get('route', '（未填写）')}")
+        lines.append(f"      tier: {tool.get('tier', '（未填写）')}")
+        lines.append(f"      when: {tool.get('when', '（未填写）')}")
+        extra = {key: val for key, val in tool.items() if key not in {"route", "tier", "when"}}
+        if extra:
+            lines.append("      " + _dump(extra))
+    return lines
+
+
 def _format_usage(item):
     lines = []
     use = item["usage"]
@@ -65,6 +85,8 @@ def _format_entry(item):
         for name, label in (("when", "用途"), ("note", "说明"), ("not_for", "适用边界")):
             if definition.get(name):
                 lines.append(f"  {label}：{definition[name]}")
+        if "tools" in definition:
+            lines.extend(_format_tools(definition["tools"]))
         if item.get("lineage"):
             lines.append("  继承：" + " → ".join(item["lineage"]))
         if "accepted_objects" in item:
@@ -82,7 +104,7 @@ def _format_entry(item):
             if definition.get("information"):
                 lines.append("  疑似笔误汇报（按实际问题字段应用覆盖）：" + _dump(reporting["field_typo"]))
             for section, value in definition.items():
-                if section in {"type", "name", "class", "when", "note", "not_for", "extends", "objects", "open"}:
+                if section in {"type", "name", "class", "when", "note", "not_for", "extends", "objects", "open", "tools"}:
                     continue
                 lines.append(f"  {SECTIONS.get(section, section)}：")
                 if section in SECTIONS and value == {}:

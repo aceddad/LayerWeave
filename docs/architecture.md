@@ -8,6 +8,8 @@ Layer 组织上下文并装载 Object；Object 保存具体内容及其在轴上
 
 Python 类表达封装类型，TOML 描述该封装的标识、内容字段与约定。name 是实例的用途名称；type 来自 TOML。模型与配置的扩充入口分别是[models](../src/models/README.md)和[configs](../configs/README.md)。
 
+层配置的 tools 记录外置 skill 的 route、tier、when，供 AI 选择并查阅；这是原型的能力说明，独立于软件内部工具。声明由 help 原样展示，具体格式见[层配置](../configs/layers/README.md#外置技能-tools)。
+
 项目提供实体身份的上下文。层与对象的数据、结构关系和自由内容由存储层保存；编号与关联规则见[存储专题](../src/runtime/storage/SCHEMA.md)。
 
 ## 模块关系

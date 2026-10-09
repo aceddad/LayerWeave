@@ -48,7 +48,7 @@ development = config_help("objects", ["model", "title"], audience="developer")
 
 总览使用简短 summary。使用版详情包含：
 
-- summary：身份与用途，保留 when/note/not_for。
+- summary：身份与用途，保留 when/note/not_for 和外置技能 tools 声明。
 - usage：有效内容字段与相关约定；派生 Title 仍能看到继承的 information.text，不要求调用者自行追查父类。
 - reporting_exceptions：仅列与全局设置不同的汇报等级；无差异则不出现。
 - save_example：带当前 config_ref 的保存调用代码，以及所需上下文变量。
@@ -63,6 +63,14 @@ development = config_help("objects", ["model", "title"], audience="developer")
 - source：默认提供，也可用 include_source 控制，表示当前 TOML 文件原文。
 
 optional=true 表示允许缺省；缺省符合约定，已填写时仍检查类型。未声明时默认 false，缺失会产生诊断，缺失等级未配置则为 warn；这不等于在写入前阻止保存。开发版 reporting 说明“若产生该诊断时采用的等级”，不会让 optional 字段的合法缺省变成问题。日志路径覆盖不继承。
+
+## 层原型的外置技能
+
+配置里的 tools 是给 AI 阅读的技能引用。声明格式和 route/tier/when 的含义统一见[层配置说明](../../../configs/layers/README.md#外置技能-tools)。
+
+总览与使用版详情在 summary.tools 中保留完整声明；开发版详情在 definition.tools 中保留。文字输出将 route、tier、when 分行列出，联合查看也沿用同样展示。空列表显示“未声明”。
+
+help 不打开技能文件、不解析路由或判断 tier/when 是否满足条件。其他形状的声明原样展示，不产生技能诊断；--raw 或开发版的 TOML 原文仍可查看实际写法。tools 只是配置说明，不出现在保存层实例的字段列表中。
 
 ## 保存示例与构造参数
 

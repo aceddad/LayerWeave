@@ -13,7 +13,7 @@ from ..validation.diagnostics import DiagnosticPolicy, prepare_diagnostics
 VIEWS = ("overview", "layers", "objects", "combined")
 AUDIENCES = ("usage", "developer")
 INTERNAL_KEYS = {"_ref", "_lineage", "_contracts"}
-SUMMARY_KEYS = ("type", "name", "class", "when", "note", "not_for")
+SUMMARY_KEYS = ("type", "name", "class", "when", "note", "not_for", "tools")
 
 
 def _json_value(value):

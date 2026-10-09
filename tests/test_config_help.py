@@ -44,6 +44,53 @@ class ConfigHelpTests(unittest.TestCase):
         self.assertTrue(all("information" not in item for item in text["accepted_objects"]))
         self.assertNotIn("logging/diagnostics.toml", [item["config_ref"] for item in result["items"]])
 
+    def test_skill_routes_are_visible_without_reading_or_resolving_them(self):
+        external = self.root / "external-skill.md"
+        external.write_text("外部技能内容不属于配置 help 的读取范围", encoding="utf-8")
+        routes = [
+            {"route": external.as_posix(), "tier": "层级", "when": "整理文字格式时"},
+            {"route": "skill:missing-scene-skill", "tier": "自定义场景", "when": "已有歌词和时间标记时"},
+        ]
+        declaration = "tools = [\n" + ",\n".join(
+            "  { " + ", ".join(f"{key} = {json.dumps(value, ensure_ascii=False)}" for key, value in item.items()) + " }"
+            for item in routes) + "\n]"
+        path = self.configs / "layers/text.toml"
+        path.write_text(path.read_text(encoding="utf-8").replace("tools = []", declaration, 1), encoding="utf-8")
+        original_open = Path.open
+
+        def config_only(path, *args, **kwargs):
+            if path == external:
+                raise AssertionError("help must not read routed skills")
+            return original_open(path, *args, **kwargs)
+
+        with patch.object(Path, "open", config_only):
+            for audience in ("usage", "developer"):
+                for view in ("overview", "layers", "combined"):
+                    with self.subTest(audience=audience, view=view):
+                        result = self.query(view, None if view == "overview" else "text", audience=audience, include_source=False)
+                        self.assertEqual(result["status"], "completed")
+                        self.assertEqual(result["issues"], [])
+                        item = next(item for item in result["items"] if item["config_ref"] == "layers/text.toml")
+                        self.assertEqual(item.get("definition", item.get("summary"))["tools"], routes)
+                        rendered = format_help(result)
+                        for route in routes:
+                            self.assertEqual(rendered.count("route: " + route["route"]), 1)
+                            self.assertIn("tier: " + route["tier"], rendered)
+                            self.assertIn("when: " + route["when"], rendered)
+
+    def test_skill_declarations_are_display_data_not_validation_rules(self):
+        path = self.configs / "layers/text.toml"
+        source = path.read_text(encoding="utf-8")
+        for value in ('[{ route = "skill:only-a-reference" }, "free note"]', '"free-form declaration"'):
+            path.write_text(source.replace("tools = []", "tools = " + value, 1), encoding="utf-8")
+            for audience in ("usage", "developer"):
+                result = self.query("layers", "text", audience=audience, include_source=False)
+                self.assertEqual(result["issues"], [])
+                self.assertEqual(result["status"], "completed")
+                self.assertIn("外置技能", format_help(result))
+        path.write_text(source, encoding="utf-8")
+        self.assertIn("（未声明）", format_help(self.query("layers", "text", audience="usage")))
+
     def test_layer_details_use_merged_definition_and_only_class_summaries(self):
         result = self.query("layers", ["TextLayer", "image"])
         self.assertEqual(len(result["items"]), 2)

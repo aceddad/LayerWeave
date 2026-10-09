@@ -9,6 +9,7 @@ name    = "基础层"                    # 配置的显示名，与实例 name �
 class   = "models.layers.base:Layer"   # 对应的 Python 类
 objects = "Object"                    # 基础对象配置名称；按 objects/ 下配置 type 唯一定位
 when    = "组织上下文、层间关系，并装载对象"
+tools = []  # 外置技能引用；每项写 route（位置）、tier（分类）、when（使用时机），供 AI 阅读
 
 [layer.fields]
 id      = { type = "int | None", note = "项目内层编号，初始为 None；与本项目对象共用编号，本类不分配编号；完整身份还需项目上下文" }

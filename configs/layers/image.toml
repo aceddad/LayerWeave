@@ -10,6 +10,7 @@ class   = "models.layers.image:ImageLayer"
 extends = "base.toml"
 objects = "image"
 when    = "组织图片资源，例如原画、背景、角色参考"
+tools = []  # 外置技能引用；每项写 route（位置）、tier（分类）、when（使用时机），供 AI 阅读
 
 [layer.constraint]
 overlap = true                # 允许对象在轴上的区间重叠，不控制显隐

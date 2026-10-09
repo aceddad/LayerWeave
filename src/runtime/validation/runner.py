@@ -6,8 +6,10 @@ import json
 from ..configuration.loader import ConfigError, DEFAULT_ROOT, Loader
 from ..values import same_value
 from ..feedback import target as make_target
+from ..positions import PositionMath
 from .channel import report
 from .registry import RULES
+from .diagnostics import prepare_diagnostics
 
 
 def _identity(kind, record):
@@ -45,12 +47,33 @@ def _related(change, scope, read_record):
 
 
 def _collect(changes, read_record):
-    jobs = {}
+    changes = list(changes)
+    affected_layers, position_checks = set(), []
     for change in changes:
+        before, after = change["before"], change["after"]
+        if change["kind"] != "layer" or not before or not after or change.get("force"):
+            continue
+        if all(same_value(before[name], after[name]) for name in ("axis", "father")):
+            continue
+        pending = [after]
+        while pending:
+            layer = pending.pop()
+            key = (layer["project_id"], layer["id"])
+            if key in affected_layers:
+                continue
+            affected_layers.add(key)
+            for obj in read_record("object", project_id=key[0], filters={"layer": key[1]}):
+                position_checks.append({"kind": "object", "before": obj, "after": obj,
+                                        "force": True, "position_only": True})
+            pending.extend(read_record("layer", project_id=key[0], filters={"father": key[1]}))
+    jobs = {}
+    for change in [*changes, *position_checks]:
         before, after, kind = change["before"], change["after"], change["kind"]
         changed = {key for key in (before or {}).keys() | (after or {}).keys()
                    if not same_value((before or {}).get(key), (after or {}).get(key))}
         for rule, spec in RULES.items():
+            if change.get("position_only") and rule not in {"begin_le_end", "duration", "overlap"}:
+                continue
             if kind not in spec["triggers"]:
                 continue
             fields = spec["triggers"][kind]
@@ -65,13 +88,19 @@ def _collect(changes, read_record):
 
 def _execute(jobs, read_record, loader, modified=None):
     issues, configs, invalid_configs, prepared = [], {}, set(), set()
+    references = {key: row.get("config_ref") for (key, rule), (row, changed) in jobs.items()}
+    positions = {}
 
     def add(key, rule, message, **extra):
         kind, project_id, entity_id = key
         checked = make_target(kind, project_id, entity_id)
-        issue = {"severity": "error", "rule": rule, "target": checked, "message": message, **extra}
+        issue = {"rule": rule, "target": checked, "message": message, **extra}
         actual = issue["target"]
         identity = (actual["kind"], actual.get("project_id") if actual["kind"] in {"layer", "object"} else None, actual["id"])
+        if identity not in references and actual["kind"] in {"layer", "object"}:
+            references[identity] = (_read(read_record, identity) or {}).get("config_ref")
+        if references.get(identity):
+            issue["config_ref"] = references[identity]
         issue["scope"] = "manual" if modified is None else "direct" if identity in modified else "related"
         if actual != checked:
             issue["checked_target"] = checked
@@ -129,7 +158,11 @@ def _execute(jobs, read_record, loader, modified=None):
         try:
             module, name = spec["function"].split(":", 1)
             function = getattr(import_module(module), name)
-            found = function(record, {**config, "_loader": loader, "_changed_fields": changed_fields}, read_record)
+            project_id = record.get("project_id")
+            if project_id not in positions:
+                positions[project_id] = PositionMath(read_record, project_id)
+            found = function(record, {**config, "_loader": loader, "_changed_fields": changed_fields,
+                                      "_positions": positions[project_id]}, read_record)
             if not isinstance(found, list) or any(not isinstance(item, dict) for item in found):
                 raise TypeError("规则应返回问题字典列表")
             json.dumps(found, ensure_ascii=False, allow_nan=False)
@@ -138,7 +171,7 @@ def _execute(jobs, read_record, loader, modified=None):
                 message = detail.pop("message")
                 add(key, rule, message, **detail)
         except Exception as error:
-            add(key, rule, f"本项检查未完成：{type(error).__name__}: {error}", skipped=True)
+            add(key, rule, f"本项检查未完成：{type(error).__name__}: {error}", code="check_failed", skipped=True)
     # 同一关联或问题可能从多个受影响目标到达，保留一次。
     unique = {}
     for item in issues:
@@ -158,7 +191,8 @@ def check_changes(changes, read_record, *, config_root=DEFAULT_ROOT):
         change["after"] = _read(read_record, key)
         if not same_value(change["before"], change["after"]):
             final.append(change)
-    return _execute(_collect(final, read_record), read_record, Loader(config_root), modified=set(merged))
+    return prepare_diagnostics(_execute(_collect(final, read_record), read_record, Loader(config_root), modified=set(merged)),
+                               config_root=config_root)
 
 
 def validate(targets, read_record, *, config_root=DEFAULT_ROOT):
@@ -174,7 +208,7 @@ def validate(targets, read_record, *, config_root=DEFAULT_ROOT):
         key = (kind, target.get("project_id") if kind in {"layer", "object"} else None, target["id"])
         row = _read(read_record, key)
         if row is None:
-            missing.append({"severity": "warn", "rule": "target", "target": target,
+            missing.append({"rule": "target", "target": target,
                             "message": "指定目标不存在，未进行复查", "skipped": True, "scope": "manual"})
             continue
         include(kind, row)
@@ -188,4 +222,5 @@ def validate(targets, read_record, *, config_root=DEFAULT_ROOT):
             for side in ("source", "target"):
                 for bind in read_record("bind", filters={f"{side}_project_id": row["id"]}):
                     include("bind", bind)
-    return report([*missing, *_execute(_collect(changes.values(), read_record), read_record, Loader(config_root))])
+    return report(prepare_diagnostics([*missing, *_execute(_collect(changes.values(), read_record), read_record, Loader(config_root))],
+                                      config_root=config_root))

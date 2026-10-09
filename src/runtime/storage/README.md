@@ -26,6 +26,7 @@ python -X utf8 -B -m runtime.storage.database ../output/ai-production.sqlite3
 
 - `config_ref` 是两类实体的存储元数据，路径相对于项目的 `configs/`，例如 `objects/image.toml`。它给读取配置、恢复对应 Python 类提供依据，不添加到基础类中。
 - 层的 `type` 保存 TOML 中的类型标识，Python 类不再声明同名字符串。save_layer 自动取得它；dispatch 在省略 type 且提供 config_ref 时也会补齐。低层 crud 不读配置，仍写入调用方提供的原始 type/config_ref，独立检测负责报告矛盾。
+- 对象的 begin/end 在 CRUD 写入时按适用轴精度落点，缺少精度用 1e-6；直接 SQL 不经过该过程。更新只归一提交的坐标，换层时两端都按目标层精度归一；其他字段更新不改旧坐标。日志记录实际落点后的值。
 - `axis` 和 `information` 使用 JSON 文本；无轴说明使用 SQL NULL，空 information 使用 `{}`。
 - 层的 objects 从对象表反查并装载，bind 从关联表反查当前实体发出的关联，不在实体行内再存副本。
 - 项目归属和层归属有外键；father 可为 NULL 表示根层，objects.layer 必须非空并指向同项目实际存在的层。没有级联更新或删除。

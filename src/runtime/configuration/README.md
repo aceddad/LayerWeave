@@ -51,6 +51,6 @@ axis_only_on_root = false
 
 根层始终不必填写轴。没有默认单位、坐标换算或资源读取。
 
-配置声明过的字段没有填写时逐条报告 warn，不拦截、不自动填值。text/source/data 等仍是可填字段，缺少不变成保存失败；已填写的内容按类型检查，空字符串是已填写。open=true 允许额外键，但不会抑制声明字段缺失的提醒。类型支持 str、int、float、dict、list、bool、None，以及用竖线组合的联合类型。float 接受整数坐标；bool 不作为数值类型。未实现的显式类型或规则报告未检查，普通说明字段不因未知而报错。
+配置声明过的字段没有填写时产生 missing_field 诊断，不拦截、不自动填值。汇报等级独立放在 [diagnostics.toml](../../../configs/diagnostics.toml)，默认 warn，模型/动作的按需字段覆盖为 none；类型错误用另一诊断项单独控制，见 [汇报配置说明](../validation/DIAGNOSTICS.md)。text/source/data 等仍是可填字段，缺少不变成保存失败；已填写的内容按类型检查，空字符串是已填写。open=true 允许额外键，但不会抑制声明字段缺失的提醒。类型支持 str、int、float、dict、list、bool、None，以及用竖线组合的联合类型。float 接受整数坐标；bool 不作为数值类型。未实现的显式类型或规则报告未检查，普通说明字段不因未知而报错。
 
 内部有效配置含 _ref、_lineage 和 _contracts，分别记录配置路径、继承链与固定约定，用于兼容判断和合并。读取失败抛出 ConfigError，由检测器逐目标转为诊断，其他目标继续。缺少明确 class、同一类重复绑定多份配置均为配置错误；无关的损坏配置不会阻止有效目标读取。type 字符串以 TOML 为唯一来源，Layer 类不保存它。配置读取器不执行 class 导入；需要还原实例时，由 storage/models.py 按需导入配置指定的类。

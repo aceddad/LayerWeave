@@ -6,6 +6,7 @@ from .storage import crud
 from .operation import DEFAULT_CHECKER, RequestError, run_operation
 from .configuration.loader import DEFAULT_ROOT, Loader
 from .feedback import InputError
+from .positions import PositionMath
 
 
 WRITES = {"create": crud.create, "update": crud.update, "delete": crud.delete}
@@ -23,6 +24,7 @@ def dispatch(connection, request, *, config_root=DEFAULT_ROOT, checker=DEFAULT_C
         requests = resolved if batch else [resolved]
         results, changes = [], []
         loader = Loader(config_root)
+        positions = {}
         for index, item in enumerate(requests):
             try:
                 if not isinstance(item, dict):
@@ -47,9 +49,17 @@ def dispatch(connection, request, *, config_root=DEFAULT_ROOT, checker=DEFAULT_C
                     if kind == "layer" and action in {"create", "update"} and isinstance(payload, dict):
                         if "type" not in payload and "config_ref" in payload:
                             args["data"] = {**payload, "type": loader.load(payload["config_ref"], "layer")["type"]}
+                    if kind == "object" and action in {"create", "update"}:
+                        project_id = args.get("project_id")
+                        if project_id not in positions:
+                            positions[project_id] = PositionMath(partial(crud.read, connection), project_id)
+                        args["position_math"] = positions[project_id]
                     data, change = WRITES[action](
                         connection, kind, operation_id=operation_id, **args,
                     )
+                    if kind == "layer" and change is not None:
+                        for math in positions.values():
+                            math.cache.clear()
                 else:
                     raise InputError(f"未知 action：{action}", code="unknown_action", field="action",
                                      allowed=["create", "read", "update", "delete"])

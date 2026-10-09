@@ -1,0 +1,35 @@
+# 只控制汇报等级，不增加检查开关，也不改变约束和提交结果。
+# 查找顺序：封装+诊断 code+字段 → 封装+code → 全局 code → warn。
+# 没有 code 的扩展规则使用 rule 名称查找。none 不输出该条诊断。
+[levels]
+field_type = "error"
+missing_field = "warn"
+field_typo = "warn"
+unknown_field = "error"
+field_check_unavailable = "error"
+configuration = "error"
+config_not_found = "error"
+config_unreadable = "error"
+config_invalid = "error"
+check_failed = "error"
+layer_type = "error"
+no_cycle = "error"
+axis_only_on_root = "error"
+accepts_objects = "error"
+overlap = "error"
+begin_le_end = "error"
+duration = "error"
+position_invalid = "warn"
+bind_kind = "error"
+bind_reference_missing = "warn"
+target = "warn"
+
+# 这两个封装支持资源引用或内嵌内容；两项都是按需填写。
+# 只关闭“缺字段”提示，已填值的类型检查和疑似拼写提示仍保留。
+[overrides."objects/model.toml".missing_field]
+"information.source" = "none"
+"information.data" = "none"
+
+[overrides."objects/active.toml".missing_field]
+"information.source" = "none"
+"information.data" = "none"

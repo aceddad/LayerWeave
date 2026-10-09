@@ -14,8 +14,8 @@ open    = true                           # 基础约定允许 information 中使
 id          = { type = "int | None", note = "项目内对象编号，初始为 None；与本项目层共用编号，本类不分配编号；完整身份还需项目上下文" }
 name        = { type = "str", default = "", note = "创建时传入的名字，可以重名" }
 layer       = { type = "int", note = "必传的所属层编号；数据库保证非空且层实际存在；赋值不自动装载进 objects" }
-begin       = { type = "float", default = 0.0, note = "开始位置，单位按所在模块的轴理解；本类不自动按轴精度取整" }
-end         = { type = "float", default = 0.0, note = "结束位置；持续区间为 [begin,end)，相等时单独占用该点；本类不自动取整" }
+begin       = { type = "float", default = 0.0, note = "开始位置，单位按所在模块的轴理解；本类不自动取整，保存时由公共执行层按轴精度落点" }
+end         = { type = "float", default = 0.0, note = "结束位置；持续区间为 [begin,end)，相等时单独占用该点；本类不自动取整，保存时由公共执行层按轴精度落点" }
 information = { type = "dict", default = {}, note = "具体内容或内容的引用；每个实例独立持有字典" }
 tips        = { type = "str", default = "", note = "自由备注" }
 bind        = { type = "list", default = [], note = "发出的关联字典列表；新建可提供 target_kind、target_project_id、target_id 和 tips；保存时补齐来源与关联 id，读回保留完整引用；允许相互引用" }

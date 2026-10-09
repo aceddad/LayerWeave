@@ -1,6 +1,6 @@
 # LayerWeave
 
-创建日期：2026-10-08。当前状态：六类封装及 Title 派生示例、SQLite 存储与日志、完整读写、配置继承与检测已实现。已提供概览/详细展开、对象检索、文本汇集及位置编辑工具；操作结果与逐条诊断可输出编译器式文字；缺字段给 warn，工具生成位置按轴精度落点。可视化尚未开始。
+创建日期：2026-10-08。当前状态：六类封装及 Title 派生示例、SQLite 存储与日志、完整读写、配置继承与检测已实现。已提供概览/详细展开、对象检索、文本汇集及位置编辑工具；操作结果与逐条诊断可输出编译器式文字；汇报等级独立配置，所有位置写入按轴精度落点，无可用精度时默认 1e-6。可视化尚未开始。
 
 ## 快速开始
 
@@ -16,6 +16,8 @@ python -X utf8 -B -m examples.read_write
 此示例使用自己的临时数据库文件，演示创建层与对象、关闭重开、还原 Python 实例、修改并再次保存、读取关联和日志，不改动输出数据库。原有记录 CRUD 示例仍可用：`python -X utf8 -B -m examples.crud`。
 
 反馈示例：`python -X utf8 -B -m examples.feedback`。先单列写入结果，再逐条显示诊断目标、字段、原因和检查范围；JSON CLI 可加 `--text` 使用同一格式。
+
+诊断与精度示例：`python -X utf8 -B -m examples.diagnostics`。汇报等级在 [diagnostics.toml](configs/diagnostics.toml) 配置，完整格式见 [诊断配置说明](src/runtime/validation/DIAGNOSTICS.md)。
 
 派生封装示例：`python -X utf8 -B -m examples.title`。Title 继承 Text，标题 TOML 继承文字 TOML 并绑定 Title；普通文字层可同时装载两种对象，保存时不需要额外指定配置。
 
@@ -138,7 +140,7 @@ python -X utf8 -B -m unittest discover -s ../tests -v
 
 测试覆盖配置继承、父约定保护、字段类型、区间边界、类型兼容、检测触发范围、逐项继续、批次最终状态、按需导入，以及存储、日志、迁移、完整记录/实例往返、关闭重开和 CLI。使用内存库和专用临时文件，不写入输出数据库。
 
-当前包含详细展开、缺字段提醒和轴精度回归在内的 168 项测试通过。JSON 内容变化会区分 `1`、`1.0` 与 `true`，日志、批次最终状态和检测字段选择使用同一比较方式；字典键顺序不产生变化。无变化的字段在 SQL UPDATE 前跳过。
+当前包含详细展开、缺字段提醒和轴精度回归在内的 182 项测试通过。JSON 内容变化会区分 `1`、`1.0` 与 `true`，日志、批次最终状态和检测字段选择使用同一比较方式；字典键顺序不产生变化。无变化的字段在 SQL UPDATE 前跳过。
 
 此前读写优化时的本地 100 对象场景记录（现有层、新 Text 实例自动匹配配置、内置检测开启；以下文件读取数是加入 Title 与配置唯一性检查前的基线）：
 
@@ -182,7 +184,7 @@ API 参数、保存范围与错误反馈见 [公共 API](src/runtime/API.md)。�
 - src/examples：模型示例、CRUD 全流程示例和 JSON 请求示例。
 - src/runtime/storage：表结构、初始化、发号、CRUD、日志、完整记录组合与模型适配。
 - src/runtime/api.py：内部工具的固定导入入口；operation.py 提供共享事务与提交后检测。
-- src/runtime/dispatch.py、console.py：分流与 JSON 入口；validation 为模块化规则执行器，configuration 负责配置读取和继承。
+- src/runtime/dispatch.py、console.py：分流与 JSON/文字入口；positions.py 提供公共刻度运算，validation 执行规则并按独立汇报配置整理诊断，configuration 负责封装读取和继承。
 - tests：存储、CRUD、事务日志、检测接口及 CLI 检查。
 - output：可供使用的 SQLite 数据库。
 - src/tools/common：通用内部工具，包括项目概览、对象检索、关联查询，以及位置编辑、接续新增和对象复制。
@@ -196,8 +198,8 @@ API 参数、保存范围与错误反馈见 [公共 API](src/runtime/API.md)。�
 - 规则是普通函数，登记表集中记录触发字段、函数路径和检查范围；实际执行才导入模块。新增规则的完整示例见 [检测说明](src/runtime/validation/README.md)。
 - 可调选项与固定约定分开；默认仅根层可设轴，根不必填轴。持续区间采用 [begin,end)，瞬间占一个点，允许首尾衔接。
 - 配置缺失、未知规则、规则异常逐项报告，其他检查继续。主动复查直接使用 validate，不制造修改或日志。
-- 已声明但未填的字段逐条 warn，open=true 不会掩盖漏填；保留附加内容，不自动改拼写。文本汇集遇到缺 text 也会提示。
-- 位置工具用十进制计算并按 axis.precision 落点，默认继承根轴、自有轴优先；原始数据读写和时间筛选不做换算或自动取整。
+- 约束开关与汇报等级分开；diagnostics.toml 设置 error/warn/none，未配置默认 warn。模型/动作的 source/data 缺失不提示，已填值类型错误仍报告；疑似拼写只建议，不自动改键名。相同配置失败按目标合并，保留受影响检查。
+- 所有对象位置写入共用 runtime.positions，按 axis.precision 落点，无精度时默认 1e-6；起止、时长与重叠按同一整数刻度比较。修改轴或父层后复查受影响子树的位置关系，不批量重写旧坐标。原始读取与范围筛选不换算单位、不自动取整。
 - 按需导入已解决旧版包入口一次加载全部封装的耦合，保持 from models import Text 等用法。
 - 后续推进项目内部工具、视图和明确提出的新用途；不预先增加资源检查或更多字段限制。
 - 当前是源码和本地运行验证，尚未做独立 AI 的使用评测。

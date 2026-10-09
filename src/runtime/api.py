@@ -4,6 +4,7 @@ from .configuration.loader import Loader
 from .dispatch import dispatch
 from .operation import DEFAULT_CHECKER
 from .feedback import format_feedback, format_issue
+from .positions import PositionMath, decimal_value
 from .storage.assembly import read_layer, read_object, read_project_index
 from .storage.assembly import _snapshot as read_snapshot
 from .storage.crud import read as read_record
@@ -20,7 +21,14 @@ def validate(*args, **kwargs):
     return check(*args, **kwargs)
 
 
+def diagnostic_report(issues, *, config_root=None):
+    """只读工具共用的汇报配置、同因合并与静音处理。"""
+    from .validation.diagnostics import prepare_diagnostics
+    from .validation.channel import report
+    return report(prepare_diagnostics(issues, **({"config_root": config_root} if config_root is not None else {})))
+
+
 __all__ = ["Loader", "dispatch", "initialize_database", "open_database", "read_layer", "read_object", "read_project_index",
            "load_layer", "load_object", "save_layer", "save_object", "validate",
            "read_record", "read_snapshot", "query_objects", "read_bindings", "read_project_details", "DEFAULT_CHECKER",
-           "format_feedback", "format_issue"]
+           "format_feedback", "format_issue", "diagnostic_report", "PositionMath", "decimal_value"]

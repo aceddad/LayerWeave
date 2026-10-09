@@ -2,9 +2,11 @@
 
 import json
 from difflib import get_close_matches
+from functools import partial
 
 from ..values import same_value
 from ..feedback import InputError
+from ..positions import PositionMath, numeric_position
 from .database import allocate_id
 from .journal import append_change, json_text
 from .errors import execute
@@ -124,11 +126,36 @@ def read(connection, kind, *, project_id=None, id=None, filters=None):
     return [_decode(spec, row) for row in cursor.fetchall()]
 
 
-def create(connection, kind, data, *, operation_id, project_id=None):
+def _positions(connection, values, project_id, before=None, math=None):
+    if not ({"begin", "end", "layer"} & values.keys()):
+        return values
+    fields = {name for name in ("begin", "end") if name in values}
+    candidate = dict(values)
+    if before is not None and "layer" in values and values["layer"] != before["layer"]:
+        fields.update(("begin", "end"))
+        for name in fields:
+            candidate.setdefault(name, before[name])
+    layer = candidate.get("layer", (before or {}).get("layer"))
+    fields = {name for name in fields if numeric_position(candidate[name])}
+    if layer is None or not fields:
+        return candidate
+    math = math or PositionMath(partial(read, connection), project_id)
+    try:
+        math.precision(layer)
+    except KeyError:
+        return candidate  # 缺失引用仍由 SQLite 外键报告，不猜测轴。
+    for name in fields:
+        candidate[name] = math.snap(layer, candidate[name])
+    return candidate
+
+
+def create(connection, kind, data, *, operation_id, project_id=None, position_math=None):
     """创建记录及日志，返回新记录和变更描述；调用方提交或回滚。"""
     spec = _spec(kind, writing=True)
     _scope(spec, project_id)
     values = _encode(spec, data)
+    if kind == "object":
+        values = _positions(connection, values, project_id, math=position_math)
     if spec["scoped"]:
         values = {"project_id": project_id, "id": allocate_id(connection, project_id), **values}
     if values:
@@ -147,7 +174,7 @@ def create(connection, kind, data, *, operation_id, project_id=None):
     return record, change
 
 
-def update(connection, kind, id, data, *, operation_id, project_id=None):
+def update(connection, kind, id, data, *, operation_id, project_id=None, position_math=None):
     """修改明确传入的字段；JSON 字段整体替换。记录缺失或无变化时不记日志。"""
     spec = _spec(kind, writing=True)
     if id is None:
@@ -156,6 +183,8 @@ def update(connection, kind, id, data, *, operation_id, project_id=None):
     before = read(connection, kind, project_id=project_id, id=id)
     if before is None or not values:
         return before, None
+    if kind == "object":
+        values = _positions(connection, values, project_id, before, position_math)
     changed = {}
     for key, value in values.items():
         if key in spec["json"]:

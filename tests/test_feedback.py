@@ -174,7 +174,7 @@ class FeedbackTests(unittest.TestCase):
             raise RuntimeError("检查器异常")
         result = dispatch(self.connection, {"action": "create", "kind": "project", "data": {}}, checker=checker)
         self.assertEqual(result["operation"]["status"], "committed")
-        self.assertIn("[检查失败]", format_feedback(result))
+        self.assertIn("[ERROR] 检测执行器", format_feedback(result))
         self.assertNotIn("[操作失败]", format_feedback(result))
 
     def test_model_save_feedback_lists_actual_nested_changes(self):

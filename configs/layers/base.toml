@@ -14,7 +14,7 @@ when    = "组织上下文、层间关系，并装载对象"
 id      = { type = "int | None", note = "项目内层编号，初始为 None；与本项目对象共用编号，本类不分配编号；完整身份还需项目上下文" }
 name    = { type = "str", default = "", note = "创建时传入的名字，可以重名" }
 father  = { type = "int | None", note = "父层编号，初始为 None；为空表示根层，非空编号由数据库保证指向同项目实际父层" }
-axis    = { type = "dict | None", note = "可选的轴说明，初始为 None；默认仅根层可填写。precision 为正数步长，供位置工具落点；单位不自动换算" }
+axis    = { type = "dict | None", note = "可选的轴说明，初始为 None；默认仅根层可填写。precision 为正数步长，供写入和检查落点，无精度时默认 1e-6；单位不自动换算" }
 tips    = { type = "str", default = "", note = "自由备注" }
 bind    = { type = "list", default = [], note = "发出的关联字典列表；新建可提供 target_kind、target_project_id、target_id 和 tips；保存时补齐来源与关联 id，读回保留完整引用；允许相互引用" }
 objects = { type = "list", default = [], note = "实际装载 Object 或其子类的实例；每个层独立持有列表，不自动改写对象的 layer" }

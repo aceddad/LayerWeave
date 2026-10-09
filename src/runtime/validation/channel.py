@@ -7,7 +7,8 @@ from ..feedback import error_detail
 
 def report(issues):
     """completed 表示检查执行完成；是否符合约定仍须查看 issues。"""
-    return {"status": "partial" if any(item.get("skipped") for item in issues) else "completed", "issues": issues}
+    return {"status": "partial" if any(item.get("skipped") for item in issues) else "completed",
+            "issues": [{**item, "severity": item.get("severity", "warn")} for item in issues if item.get("severity") != "none"]}
 
 
 def run_checks(changes, read_record, checker=None):

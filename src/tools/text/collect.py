@@ -1,6 +1,6 @@
 """按位置顺序汇集一层中的 text 及其派生对象，保留来源编号，不合并或修改原对象。"""
 
-from runtime.api import Loader, query_objects, read_record, read_snapshot
+from runtime.api import Loader, query_objects, read_record, read_snapshot, diagnostic_report
 
 
 def collect_text(connection, project_id, layer_id, *, separator="\n", begin=None, end=None, config_root=None):
@@ -14,23 +14,33 @@ def collect_text(connection, project_id, layer_id, *, separator="\n", begin=None
     if not records:
         return result
     loader = Loader() if config_root is None else Loader(config_root)
+    references = {row["id"]: row["config_ref"] for row in records}
 
-    def issue(kind, id, field, message, severity="error", details=None):
-        result["issues"].append({"severity": severity, "target": {"kind": kind, "project_id": project_id, "id": id},
+    def issue(kind, id, field, message, code="field_type", details=None):
+        ref = references.get(id) if kind == "object" else None
+        result["issues"].append({"rule": "collect_text", "code": code, "config_ref": ref,
+                                 "target": {"kind": kind, "project_id": project_id, "id": id},
                                  "field": field, "message": message, **(details or {})})
+
+    def finish():
+        # 汇集是否完整取决于提取结果，不因为静音诊断而改成完整。
+        if result["issues"]:
+            result["status"] = "partial"
+        result["issues"] = diagnostic_report(result["issues"], config_root=config_root)["issues"]
+        return result
 
     try:
         expected = loader.object_config("text")
     except (ValueError, OSError) as error:
-        issue("layer", layer_id, "config_ref", f"文字基准配置不可用，未汇集本层文本：{error}", details=getattr(error, "details", {}))
+        issue("layer", layer_id, "config_ref", f"文字基准配置不可用，未汇集本层文本：{error}", code="configuration", details=getattr(error, "details", {}))
         result.update(status="partial", skipped_count=len(records))
-        return result
+        return finish()
 
     for record in records:
         try:
             config = loader.load(record["config_ref"], "object")
         except (ValueError, OSError) as error:
-            issue("object", record["id"], "config_ref", f"无法判断对象是否为文字类型：{error}", details=getattr(error, "details", {}))
+            issue("object", record["id"], "config_ref", f"无法判断对象是否为文字类型：{error}", code="configuration", details=getattr(error, "details", {}))
             continue
         if expected["_ref"] not in config["_lineage"]:
             continue
@@ -39,7 +49,7 @@ def collect_text(connection, project_id, layer_id, *, separator="\n", begin=None
             issue("object", record["id"], "information", "内容不是字典，无法提取文字")
             continue
         if "text" not in information:
-            issue("object", record["id"], "information.text", "未填写配置声明的文字字段，请检查是否漏填或字段名写错", severity="warn")
+            issue("object", record["id"], "information.text", "未填写配置声明的文字字段，请检查是否漏填或字段名写错", code="missing_field")
             continue
         if not isinstance(information["text"], str):
             issue("object", record["id"], "information.text", "文字不是字符串，未将它自动转成文本")
@@ -48,9 +58,7 @@ def collect_text(connection, project_id, layer_id, *, separator="\n", begin=None
                                 "text": information["text"]})
     result["text"] = separator.join(item["text"] for item in result["items"])
     result["skipped_count"] = len(records) - len(result["items"])
-    if result["issues"]:
-        result["status"] = "partial"
-    return result
+    return finish()
 
 
 def main():

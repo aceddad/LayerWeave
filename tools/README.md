@@ -158,7 +158,7 @@ sources = result["items"]
 
 可传 begin/end 使用与对象检索相同的位置范围，也可传 config_root 指定配置目录。一次调用内共享配置读取结果。
 
-- 非文字对象会跳过。文字对象未填写配置声明的 text 时，返回一条 warn 后跳过；不会悄悄只增加 skipped_count。空字符串视为已填写，正常保留。
+- 非文字对象会跳过。文字对象未填写 text 时产生 missing_field 后跳过；默认 warn，可通过独立 diagnostics.toml 改变汇报等级。即使设置 none，提取不完整的状态和 skipped_count 仍如实保留。空字符串视为已填写，正常保留。
 - 配置缺失或文字类型错误逐条放入 issues，附 severity、target、field 和 message，其他对象继续。
 - status=completed 表示本次汇集完成；存在无法汇集的条目时为 partial。skipped_count 包含非文字、未填写文字及错误条目。
 - 文字基准配置本身不可用时返回 partial，明确说明未能汇集；层不存在返回 None。
@@ -174,11 +174,11 @@ python -X utf8 -B -m tools.text.collect ../output/ai-production.sqlite3 1 1 --js
 
 六个工具都是普通函数，使用同一项目内的明确编号，不改项目号或对象编号。位置只按数值计算，允许负位置，不自动换算轴单位、裁剪内容或留出间隔。
 
-工具生成的坐标使用十进制计算，再按当前轴的 precision（正数步长）落到最近刻度；正好半格时远离 0 取整。默认沿父链使用根轴，若子层显式提供自己的 axis，则它和后代使用该轴；自有轴未声明 precision 时不借用另一轴的精度。没有 precision 就不猜步长，fps 不用于换算。轴查找在同一次操作内复用，下一次操作重新读取。
+工具生成的坐标使用十进制计算，再按当前轴的 precision（正数步长）落到最近刻度；正好半格时远离 0 取整。默认沿父链使用根轴，若子层显式提供自己的 axis，则它和后代使用该轴；自有轴未声明 precision 时不借用另一轴的精度。没有轴或该轴没有 precision 时默认步长 1e-6，fps 不用于换算。轴查找在同一次操作内复用，下一次操作重新读取。
 
 例如 precision=0.001 时三次追加 0.1 的终点为 0.1、0.2、0.3，不留下浮点尾差。连续排列先累计未量化的位置，再分别落点，避免每段取整后继续累计造成额外误差。独立追加使用实际已保存的层尾，不保存隐藏的时间残差。
 
-量化可能使实际位置或时长相对原请求产生精度范围内的差异，短区间也可能变成瞬间。修改时长仍保留原起点，只量化新计算的终点；未指定新位置的普通复制仍保留原值。直接 CRUD、普通保存和只读查询不自动取整，也不批量改写已有数据；未落在格点上的旧数据执行零偏移时仍可能被归一并记入日志。
+量化可能使实际位置或时长相对原请求产生精度范围内的差异，短区间也可能变成瞬间。修改时长按原起点计算终点，提交的两端统一落点；普通复制也按目标层刻度保存。直接 CRUD 与普通保存同样落点，原始读取和只读范围查询保留原数值，不批量改写已有数据；旧数据再次写入位置时才归一并记日志。
 
 读取当前位置、计算请求、写入数据与日志在一次 BEGIN IMMEDIATE 事务内完成；接续新增不会先在事务外读取旧的层尾。一个工具调用共用一个 operation_id，提交后检测一次。底层约定问题仍作为 checks 返回，已经提交的数据保留。
 
@@ -218,7 +218,7 @@ result = align_objects(connection, project_id, [2, 5], position=10, edge="begin"
 result = align_objects(connection, project_id, [2, 5], position=10, edge="end")
 ```
 
-连续排列限定在同一层。默认按当前 begin/end/id 排序，显式 object_ids 按给定顺序；以各对象原有 end-begin 累计位置，再按精度落点，依次首尾衔接。
+连续排列限定在同一层。默认按当前 begin/end/id 排序，显式 object_ids 按给定顺序；以各对象实际存储的 end-begin 累计位置，再按精度落点，依次首尾衔接。
 
 平移和对齐可选同项目不同层的对象，调用方负责选择轴含义一致的对象。也可通过 layer_id 明确选择整层；不会隐式修改整个项目。重复编号只处理一次，显式空列表表示不修改对象。
 
@@ -276,6 +276,6 @@ Python 工具实现放在 src/tools/<内容类型>/，通用功能放在 src/too
 
 需要先读取再计算写入的工具，使用 `dispatch(connection, request_factory)`：工厂接收 read_record 查询函数，在写事务内返回一个请求字典或请求列表。不要在事务外先计算层尾再单独保存，也不要在工厂中自行写 SQL 或调用另一个完整事务入口。现有位置工具可作为例子。
 
-生成新坐标时复用 [PositionMath/decimal_value](../src/tools/common/_precision.py)，共享十进制运算、轴来源查找与精度落点。纯读取工具继续使用原始存储数值，不调用取整逻辑。
+生成新坐标时复用 [PositionMath/decimal_value](../src/runtime/positions.py)，从 runtime.api 导入，共享十进制运算、轴来源查找与精度落点；原 tools/common/_precision.py 仅保留导入兼容。纯读取工具继续使用原始存储数值，不调用取整逻辑。
 
 涉及删除的工具应明确调用 delete；不要用省略对象或清空局部列表来表达删除。纯查询工具不写数据。模型的 config_ref 留在数据库记录中；实例保存按实际 Python 类取得唯一配置。新增封装同时提供自己的类与 TOML，字典保存明确指定 config_ref。Title/Text 的继承与往返示例见 `src/examples/title.py`。

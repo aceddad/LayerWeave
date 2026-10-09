@@ -8,6 +8,7 @@
 |---|---|
 | [channel.py](channel.py) | 区分操作结果与检测反馈；兼容外部 checker |
 | [feedback.py](../feedback.py) | 独立显示操作状态、目标和逐条诊断；不执行规则 |
+| [diagnostics.py](diagnostics.py) | 按独立配置指定汇报等级、合并同因诊断；不关闭规则 |
 | [runner.py](runner.py) | 合并批次变化、查询最终记录、选择目标、逐项执行与去重 |
 | [registry.py](registry.py) | 规则名、函数路径、触发字段与检查范围 |
 | [rules/fields.py](rules/fields.py) | 共用类型判断与已声明字段检测 |
@@ -25,7 +26,7 @@
 | begin/end | 起止顺序、已启用的时长与重叠限制 |
 | 对象换层 | 旧层、新层的对象兼容与重叠 |
 | father | 父链无环、改变根/子身份后的轴约定 |
-| axis | 字段类型、轴的位置约定 |
+| axis/father 改变轴解释 | 字段与层约定，以及该层和子孙层对象的起止、时长、重叠；不检查无关内容字段 |
 | 层 type | layer_type：存储值与配置标识一致 |
 | config_ref | 当前目标规则；对象类型变化或层配置变化也检查层的装载约定 |
 | 关联端点变化 | 关联两端存在性 |
@@ -43,9 +44,9 @@
 - 层记录的 type 应等于 TOML 的 type；新建、type/config_ref 变化和主动复查时检查。不一致报告 error，原始写入不撤销。配置缺失时不拿基础配置的 type 代替实际类型进行比较。
 - 每份配置必须显式绑定自己的 Python 类，同一类不得绑定多份配置。解析配置时检查这些约定，基础类不添加赋值检测。
 - 层接受指定对象配置及其派生配置。拥有 text 字段的基础 Object 不自动成为 Text；类型兼容和内容有效性分别判断。
-- begin<=end，允许负位置。持续区间为 [begin,end)，瞬间 begin=end 占一个点。1～3 与 3～5 不冲突；瞬间 3 与 1～3 不冲突，与 3～5 冲突；同点瞬间冲突。
+- begin<=end，允许负位置。位置写入与检查共用轴刻度，默认 1e-6；检查旧记录时比较整数刻度，不重写数据库原值。持续区间为 [begin,end)，瞬间 begin=end 占一个点。1～3 与 3～5 不冲突；瞬间 3 与 1～3 不冲突，与 3～5 冲突；同点瞬间冲突。
 - overlap=true 不执行冲突检查；duration=any 不增加时长限制。positive 要求正时长，zero 要求瞬间。
-- 配置声明过而未提供的字段逐条给出 warn，不阻止保存、不自动补默认值或改名；包括继承的 information 字段。open=true 仍允许附加键。例如只有 information.txt 时，提示缺少 information.text，保留 txt 原值。空字符串/空字典视为已提供，类型仍按声明检查。
+- 配置声明过而未提供的字段产生 missing_field，不阻止保存、不自动补默认值；包括继承的 information 字段。独立汇报配置决定 error/warn/none，缺少等级设置默认 warn。模型/动作的 source/data 缺失设为 none，类型错误仍是 field_type。open=true 保留附加键；疑似 txt→text、src→source 或高相似度笔误产生 field_typo，正确字段已存在时不猜测，不自动改名。空字符串/空字典视为已提供。
 - 缺字段检查沿用现有增量范围：创建、修改 information、切换配置或主动复查时检查相关内容；仅修改 name/tips 不重复检查旧内容。行记录中未携带的 objects/bind 属于反查组合字段，不当作漏填。
 - 没有必填 text/source、文本长度、资源存在性、文件格式、树深度等附加限制。visibility 留给视图，不检查实例显隐。
 
@@ -67,7 +68,7 @@ scope=direct 表示该问题目标在本次操作中发生过修改；related �
   范围：关联目标，本次未直接修改
 ```
 
-写入结果与诊断分开；检查的 error 不改变 operation.status=committed。外部 checker 的问题字典保持由提供方定义，不擅自猜测缺少的目标。
+写入结果与诊断分开，不再显示笼统的检查总评；某项无法完成在对应条目中说明。检查的 error 不改变 operation.status=committed。同一对象同一配置失败只报告一次，affected_checks 列出受影响规则；不同对象保持各自定位。独立汇报设置见 [诊断配置说明](DIAGNOSTICS.md)，none 隐藏输出但不会跳过检查。外部 checker 的问题字典保持由提供方定义，不擅自猜测缺少的目标。
 
 - completed：本次选择的检查执行完成，issues 仍可含 error。
 - partial：部分检查无法执行，每条 skipped=true 的问题说明原因，其他继续。
@@ -115,7 +116,7 @@ result = dispatch(connection, request, checker=partial(check_changes, config_roo
 def text_nonempty(record, config, read_record):
     information = record.get("information")
     if isinstance(information, dict) and information.get("text") == "":
-        return [{"severity": "error", "field": "information.text", "message": "标题文本不能为空"}]
+        return [{"code": "text_nonempty", "field": "information.text", "message": "标题文本不能为空"}]
     return []
 ```
 
@@ -142,6 +143,8 @@ note = "标题封装，使用继承 Text 的独立 Title 类"
 [object.rules]
 text_nonempty = true
 ```
+
+需要将该诊断报告为错误时，在独立 diagnostics.toml 的 [levels] 中设置 `text_nonempty = "error"`；未设置则默认 warn。规则开关与汇报等级各自管理。
 
 文字层接受此派生配置。新规则仅在配置启用且有关字段变化时执行，runner 与 CRUD 无需修改。规则返回问题列表；runner 补充 rule/target，规则也可为相关对象指定 target。函数应只读输入与关联数据。
 

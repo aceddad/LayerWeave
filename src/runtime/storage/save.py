@@ -4,6 +4,8 @@ from copy import deepcopy
 
 from ..configuration.loader import DEFAULT_ROOT, Loader
 from ..feedback import target
+from ..positions import PositionMath
+from functools import partial
 from ..operation import DEFAULT_CHECKER, run_operation
 from . import crud
 from .assembly import read_layer, read_object
@@ -25,15 +27,18 @@ def _parts(value, kind, project_id):
     return model_fields(value, kind)
 
 
-def _upsert(connection, kind, project_id, entity_id, data, operation_id, changes):
+def _upsert(connection, kind, project_id, entity_id, data, operation_id, changes, positions=None):
+    extra = {"position_math": positions} if kind == "object" else {}
     if entity_id is None:
-        row, change = crud.create(connection, kind, data, project_id=project_id, operation_id=operation_id)
+        row, change = crud.create(connection, kind, data, project_id=project_id, operation_id=operation_id, **extra)
     else:
-        row, change = crud.update(connection, kind, entity_id, data, project_id=project_id, operation_id=operation_id)
+        row, change = crud.update(connection, kind, entity_id, data, project_id=project_id, operation_id=operation_id, **extra)
         if row is None:
             raise KeyError(f"{kind} ({project_id}, {entity_id}) 不存在；创建新记录时省略 id")
     if change is not None:
         changes.append(change)
+        if kind == "layer" and positions is not None:
+            positions.cache.clear()
     return row
 
 
@@ -54,7 +59,7 @@ def _save_bindings(connection, entries, kind, project_id, entity_id, operation_i
         updates.append((entry, row))
 
 
-def _save_entity(connection, kind, project_id, value, loader, operation_id, changes, updates, *, layer_id=None):
+def _save_entity(connection, kind, project_id, value, loader, operation_id, changes, updates, *, layer_id=None, positions=None):
     entity_id = _get(value, "id")
     data = _parts(value, kind, project_id)
     if kind == "object" and layer_id is not None:
@@ -74,10 +79,10 @@ def _save_entity(connection, kind, project_id, value, loader, operation_id, chan
             raise ValueError(f"type 由配置提供：传入 {data['type']!r} 与 {ref} 的 {config['type']!r} 不一致")
         data["type"] = config["type"]
     data["config_ref"] = ref
-    row = _upsert(connection, kind, project_id, entity_id, data, operation_id, changes)
+    row = _upsert(connection, kind, project_id, entity_id, data, operation_id, changes, positions)
     saved = {"id": row["id"]}
     if kind == "object":
-        saved["layer"] = row["layer"]
+        saved.update({name: row[name] for name in ("layer", "begin", "end")})
     if isinstance(value, dict):
         saved.update(project_id=project_id, config_ref=ref)
         if kind == "layer":
@@ -93,10 +98,12 @@ def _save(connection, kind, project_id, value, *, config_root=DEFAULT_ROOT, chec
     def work(operation_id):
         changes = []
         loader = Loader(config_root)
+        positions = PositionMath(partial(crud.read, connection), project_id)
 
         def save_entity(entity_kind, entity, **context):
             try:
-                return _save_entity(connection, entity_kind, project_id, entity, loader, operation_id, changes, updates, **context)
+                return _save_entity(connection, entity_kind, project_id, entity, loader, operation_id, changes, updates,
+                                    positions=positions, **context)
             except Exception as error:
                 error.details = {"target": target(entity_kind, project_id, _get(entity, "id")),
                                  **getattr(error, "details", {})}

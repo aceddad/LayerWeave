@@ -101,6 +101,8 @@ class Loader:
                                       code="config_unreadable", field="config_ref", value=self.ref(path))
             else:
                 failure = error if isinstance(error, ConfigError) else ConfigError(f"{self.ref(path)}：{error}")
+            if not failure.details:
+                failure.details.update(code="config_invalid", field="config_ref", value=self.ref(path))
             self.cache[key] = failure
             raise failure
 

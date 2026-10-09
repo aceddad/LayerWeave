@@ -56,7 +56,8 @@ class MissingFieldsPrecisionTests(unittest.TestCase):
         typo = self.obj(information={"txt": "你好"})
         self.obj(begin=1, end=2, information={"text": "世界"})
         warnings = [item for item in typo["checks"]["issues"] if item["severity"] == "warn"]
-        self.assertEqual([item["field"] for item in warnings], ["information.text"])
+        self.assertEqual([item["field"] for item in warnings], ["information.txt"])
+        self.assertEqual(warnings[0]["suggestions"], {"txt": "text"})
         self.assertEqual(typo["data"]["information"], {"txt": "你好"})
         result = collect_text(self.connection, self.project_id, self.layer_id, config_root=self.configs)
         self.assertEqual(result["text"], "世界")
@@ -83,11 +84,11 @@ class MissingFieldsPrecisionTests(unittest.TestCase):
                                            "id": result["id"], "data": {"name": "只改名字"}}, checker=self.checker)
         self.assertEqual(renamed["checks"]["issues"], [])
 
-    def test_other_declared_optional_fields_warn_individually(self):
+    def test_optional_model_data_is_silent(self):
         layer = self.layer(type="Layer", config_ref="layers/base.toml")
         result = self.obj(layer_id=layer, config_ref="objects/model.toml", information={"source": "mesh.glb"})
         self.assertTrue(result["ok"])
-        self.assertEqual([(item["field"], item["severity"]) for item in result["checks"]["issues"]], [("information.data", "warn")])
+        self.assertEqual(result["checks"]["issues"], [])
 
     def test_three_decimal_appends_end_at_point_three_without_false_overlap(self):
         records = [self.append() for _ in range(3)]
@@ -119,7 +120,7 @@ class MissingFieldsPrecisionTests(unittest.TestCase):
     def test_all_generated_positions_snap_but_duration_keeps_original_start(self):
         obj = self.obj(begin=1.0004, end=2.0004, information={"text": "位置"})["id"]
         shifted = shift_objects(self.connection, self.project_id, [obj], offset=0, checker=self.checker)
-        self.assertTrue(shifted["applied"])
+        self.assertFalse(shifted["applied"])  # 创建时已经落点，平移零不再产生修改。
         self.assertEqual(self.span(obj), (1.0, 2.0))
         aligned = align_objects(self.connection, self.project_id, [obj], position=0.1004, checker=self.checker)
         self.assertTrue(aligned["ok"])
@@ -131,7 +132,7 @@ class MissingFieldsPrecisionTests(unittest.TestCase):
         raw = self.obj(begin=4.0004, end=5, information={"text": "保持起点"})["id"]
         result = set_duration(self.connection, self.project_id, raw, 0.1, checker=self.checker)
         self.assertTrue(result["ok"])
-        self.assertEqual(self.span(raw), (4.0004, 4.1))
+        self.assertEqual(self.span(raw), (4.0, 4.1))
         destination = self.layer(axis={"precision": 0.01})
         copied = copy_object(self.connection, self.project_id, obj, layer_id=destination, begin=2.006, checker=self.checker)
         self.assertEqual(self.span(copied["id"]), (2.01, 3.01))
@@ -148,8 +149,11 @@ class MissingFieldsPrecisionTests(unittest.TestCase):
         self.assertTrue(result["ok"])
         self.assertEqual(self.span(obj), (1.0, 1.01))
 
-    def test_arrangement_quantizes_endpoints_without_rounding_cumulative_cursor(self):
+    def test_arrangement_quantizes_endpoints_from_legacy_durations_without_rounding_cursor(self):
         ids = [self.obj(begin=0, end=1/30, information={"text": str(i)})["id"] for i in range(3)]
+        # 模拟旧数据库中尚未落点的时长；新写入现在会先落点。
+        self.connection.execute('UPDATE objects SET "end"=? WHERE project_id=?', (1/30, self.project_id))
+        self.connection.commit()
         result = arrange_objects(self.connection, self.project_id, self.layer_id, object_ids=ids, start=0, checker=self.checker)
         self.assertTrue(result["ok"], result)
         self.assertEqual([self.span(id) for id in ids], [(0, 0.033), (0.033, 0.067), (0.067, 0.1)])
@@ -163,8 +167,8 @@ class MissingFieldsPrecisionTests(unittest.TestCase):
         self.assertIn("precision", result["error"]["message"])
         self.assertEqual(read_record(self.connection, "project", id=self.project_id)["max_id"], before)
 
-    def test_direct_writes_and_plain_copy_keep_original_numeric_values(self):
+    def test_direct_writes_and_plain_copy_use_axis_precision(self):
         original = self.obj(begin=0.0004, end=0.30000000000000004, information={"text": "原值"})["id"]
         copied = copy_object(self.connection, self.project_id, original, checker=self.checker)
-        self.assertEqual(self.span(copied["id"]), (0.0004, 0.30000000000000004))
+        self.assertEqual(self.span(copied["id"]), (0.0, 0.3))
         self.assertEqual(self.span(original), self.span(copied["id"]))

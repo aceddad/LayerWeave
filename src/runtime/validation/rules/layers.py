@@ -1,7 +1,8 @@
 """层关系、对象兼容与占用规则，读取关联数据但不修改记录。"""
 
 from ...configuration.loader import ConfigError
-from .fields import interval, problem
+from .fields import problem
+from ...positions import interval_ticks
 
 
 def layer_type(record, config, read_record):
@@ -69,10 +70,11 @@ def overlap(record, config, read_record):
     objects = read_record("object", project_id=record["project_id"], filters={"layer": record["id"]})
     valid = []
     for obj in objects:
-        if interval(obj):
-            valid.append(obj)
+        span = interval_ticks(obj, read_record, config.get("_positions"))
+        if span is not None and span[0] <= span[1]:
+            valid.append({**obj, "begin": span[0], "end": span[1]})
         else:
-            issues.append(problem("对象起止位置无效，未参与重叠比较", severity="warn", skipped=True,
+            issues.append(problem("对象起止位置无效，未参与重叠比较", code="position_invalid", skipped=True,
                                   target={"kind": "object", "project_id": obj["project_id"], "id": obj["id"]}))
     for obj in sorted(valid, key=lambda item: (item["begin"], item["end"], item["id"])):
         # 持续对象不占结束点；瞬间对象在同一坐标仍须参与比较。

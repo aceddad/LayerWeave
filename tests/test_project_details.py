@@ -77,6 +77,10 @@ class ProjectDetailsTests(unittest.TestCase):
     def test_query_does_not_snap_positions_or_bounds(self):
         layer = self.layer(axis={"precision": 1})
         obj = self.obj(layer, 0.49, 0.51)
+        # 模拟旧记录，验证读取不会因新写入规则而暗中重写或量化查询边界。
+        self.connection.execute('UPDATE objects SET "begin"=?, "end"=? WHERE project_id=? AND id=?',
+                                (0.49, 0.51, self.project_id, obj))
+        self.connection.commit()
         self.assertEqual(project_details(self.connection, self.project_id, begin=0, end=0)["layers"], [])
         result = project_details(self.connection, self.project_id, begin=0.5, end=0.5)
         self.assertEqual(result["layers"][0]["objects"][0]["id"], obj)

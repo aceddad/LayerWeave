@@ -54,9 +54,13 @@ def format_issue(issue):
         lines.append("  配置候选：" + " / ".join(issue["candidates"]))
         if issue.get("candidate_count", 0) > len(issue["candidates"]):
             lines.append(f"  共 {issue['candidate_count']} 份配置，仅列出最相关的 {len(issue['candidates'])} 份")
-    if issue.get("rule"):
+    if issue.get("rule") and not issue.get("affected_checks"):
         lines.append(f"  检查：{issue['rule']}")
-    if issue.get("checked_target"):
+    for check in issue.get("affected_checks", []):
+        lines.append(f"  受影响检查：{check['rule']} · {_location(check.get('target'))}")
+    if issue.get("skipped"):
+        lines.append("  结果：此项检查无法完成")
+    if issue.get("checked_target") and not issue.get("affected_checks"):
         lines.append("  检查对象：" + _location(issue["checked_target"]))
     scopes = {"direct": "本次直接修改的目标", "related": "关联目标，本次未直接修改", "manual": "主动复查"}
     if issue.get("scope") in scopes:
@@ -83,11 +87,7 @@ def format_feedback(result):
         lines.extend(["", json.dumps(item.get("data"), ensure_ascii=False, indent=2)])
     checks = result.get("checks", {})
     if checks.get("status") == "failed":
-        lines.extend(["", "[检查失败]", format_issue(checks["error"])])
-    elif checks.get("status") == "partial":
-        lines.extend(["", "[检查未完成] 部分检查无法执行。"])
-    elif checks.get("status") == "completed" and not checks.get("issues"):
-        lines.extend(["", "[检查完成] 未发现问题。"])
+        lines.extend(["", format_issue({**checks["error"], "field": "检测执行器", "skipped": True})])
     for issue in checks.get("issues", []):
         lines.extend(["", format_issue(issue)])
     return "\n".join(lines)

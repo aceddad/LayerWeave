@@ -12,7 +12,7 @@
 | 新增检查规则 | [检测执行与扩展](../../runtime/validation/RULES.md) |
 | 调整诊断汇报 | [诊断配置](../../runtime/validation/DIAGNOSTICS.md) |
 | 修改存储、编号、日志或恢复 | [存储入口](../../runtime/storage/README.md) |
-| 查完整封装定义 | [配置 help](../../runtime/configuration/HELP.md)，使用既有 --dev 模式 |
+| 查完整封装定义 | [配置 help](../shared/CONFIG_HELP.md)，使用既有 --dev 模式 |
 
 修改前阅读[开发约定](../../../docs/developer-conventions.md)，只展开当前任务需要的专题。
 

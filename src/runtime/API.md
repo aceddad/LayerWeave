@@ -1,6 +1,6 @@
 # LayerWeave 读写与工具开发入口
 
-工具统一从 `runtime.api` 导入。数据读写先初始化数据库再打开连接；配置 help 不需要数据库。项目创建、单条删除和任意记录查询继续使用 dispatch。Python 3.11+，当前从项目 src/ 目录运行。核心结构见 [模块导航](README.md)，JSON 请求与反馈字段见 [协议](PROTOCOL.md)。
+工具统一从 `runtime.api` 导入。数据读写先初始化数据库再打开连接；配置 help 不需要数据库。项目创建、单条删除和任意记录查询继续使用 dispatch。Python 3.11+，当前从项目 src/ 目录运行。核心结构见 [模块导航](README.md)，JSON 请求与反馈字段见 [协议](../tools/usage/CRUD.md)。
 
 ## 命令总览与详情
 
@@ -12,7 +12,7 @@ command_help(names=None, source_root=DEFAULT_SOURCE_ROOT) 为只读命令查询�
 
 read_support(view="overview", targets=None, config_root=DEFAULT_ROOT, audience="usage", include_source=None) 动态读取 configs/layers 与 configs/objects，包含子目录。四种 view：overview 总览层与兼容对象类；layers 层支持详情；objects 对象类支持详情；combined 层＋兼容对象类详情。后三项支持一个目标或目标列表；目标为 config_ref、唯一 type、完整 class 路径或唯一类名。它们均查询封装定义，不查询项目实例，不导入 Python 类。
 
-返回 items 与逐项状态、issues；联合查看的共享对象说明放在 object_details，通过 accepted_objects 中的 config_ref 对应。默认 usage 展示用途 summary、内容输入及约定 usage、特殊汇报等级和含 config_ref 的 save_example，公共接口输入/返回 io 只列一次。audience="developer" 保留原先的完整 definition、lineage、fixed_contracts、reporting，并增加 field_origins，默认附带当前文件 source。两种详情均可用 include_source 显式控制原文。依赖完整 definition 的调用者应指定 developer。新增类和 TOML 后，下次查询自动发现；损坏配置逐项提示，其余继续。文字/JSON 入口为 tools.shared.config_help，详见 [配置 help 说明](configuration/HELP.md)。
+返回 items 与逐项状态、issues；联合查看的共享对象说明放在 object_details，通过 accepted_objects 中的 config_ref 对应。默认 usage 展示用途 summary、内容输入及约定 usage、特殊汇报等级和含 config_ref 的 save_example，公共接口输入/返回 io 只列一次。audience="developer" 保留原先的完整 definition、lineage、fixed_contracts、reporting，并增加 field_origins，默认附带当前文件 source。两种详情均可用 include_source 显式控制原文。依赖完整 definition 的调用者应指定 developer。新增类和 TOML 后，下次查询自动发现；损坏配置逐项提示，其余继续。文字/JSON 入口为 tools.shared.config_help，详见 [配置 help 说明](../tools/shared/CONFIG_HELP.md)。
 
 ## 六个读写函数
 
@@ -62,19 +62,11 @@ find_gaps 返回 project_id/layer_id/scope/count/gaps；每段含 begin/end/leng
 | read_history(connection, project_id=None, kind=None, id=None, operation_id=None, limit=20, before=None, detail=False) | 按完整操作分页查看历史；实体可已删除，字段差异保留 JSON 类型与缺失状态 |
 | undo_operation(connection, operation_id, config_root=DEFAULT_ROOT, checker=DEFAULT_CHECKER) | 原子撤销完整操作，冲突时整批不写；对返回的新操作编号再撤销即可重做 |
 
-可选参数使用关键字。history 的 operation_id 与项目/实体范围互斥，指定操作时返回完整快照。项目筛选只用于选相关操作，结果仍展开跨项目批次的全部变化。分页使用 next_cursor，操作次数和改动条数分别统计。
-
-undo 返回现有 operation/operation_id/ok/applied/checks 协议，另有 undo_of；成功 data 含 undone_operation_id、restored_records。update 只比较并恢复该操作最终改变的顶层字段，保留后来改过的其他字段；information 和 axis 各算一个整体字段，不合并内部键。create/delete 仍按整条记录判断。失败的 error.conflicts 列出顶层字段差异或引用阻碍，任何冲突均整批不写。比较与恢复在同一事务中完成，不凭后续日志数量判断。
-
-恢复使用原编号和日志中的实际值，不回退 max_id，不按当前轴重新取整；项目发号进度不参与内容冲突比较。恢复后的语义检查使用当前配置，仍在提交后运行。关联 id 全库递增、不复用，独立于项目实体编号；旧库使用 initialize_database 显式升级。调用示例、CLI 与完整边界见 [复查、历史与撤销](storage/HISTORY.md)。
+可选参数使用关键字。参数选择、返回、冲突处理和 CLI 的主要说明见[复查、历史与撤销](../tools/usage/HISTORY.md)。
 
 ## 子树删除与整层复制
 
-delete_subtree(connection, project_id, layer_id, config_root=DEFAULT_ROOT, checker=DEFAULT_CHECKER) 原子删除起始层、全部子孙层、装载对象和这些实体发出的关联；外部入向关联保留并由检查报告失效目标。普通单条 delete 的行为保持不变。
-
-copy_subtree(connection, project_id, layer_id, name=None, config_root=DEFAULT_ROOT, checker=DEFAULT_CHECKER) 在同项目、同父层创建完整副本，可选参数使用关键字。保留配置、轴说明、位置和自由内容；对象位置沿用普通写入落点。新层、新对象和新关联统一发号，内部结构引用换成新编号，出向外部目标保留完整原引用，不复制入向关联或资源文件。
-
-两项操作都在同一写事务内读取范围并执行，返回标准操作结果、operation_id 和提交后 checks。成功 data 含 project_id、layer_id、counts；复制另含 source_layer_id、id_map（layer/object/bind 三组 old_id/new_id 数值对）。复制时 layer_id 是新根层，删除时是已删除的起始层。可通过 undo_operation 撤销整个批次；config_root 和 checker 语义与既有入口一致。完整说明见 [子树工具](storage/SUBTREES.md)。
+delete_subtree(connection, project_id, layer_id, ...) 与 copy_subtree(connection, project_id, layer_id, ...) 处理完整子树；后者可传 name。均接受 config_root 和 checker。行为、返回和示例统一见[子树工具](../tools/usage/SUBTREES.md)。
 
 ## 分割、范围平移、插空档与跨项目迁移
 
@@ -86,13 +78,7 @@ copy_subtree(connection, project_id, layer_id, name=None, config_root=DEFAULT_RO
 | transfer_subtree(connection, project_id, layer_id, target_project_id, mode="copy", name=None) | 同库跨项目复制或剪切到目标根部，重新发号、映射结构引用、精确保留位置数值；cut 让外部入向关联跟随新地址 |
 | transfer_objects(connection, project_id, object_ids, target_project_id, target_layer_id, mode="copy") | 同库跨项目复制/剪切选中对象及出向关联，放入目标已有层；源层保留，内部引用映射，cut 的外部入向引用跟随 |
 
-可选参数使用关键字，均接受 config_root 与 checker。新工具返回标准操作结果和提交后 checks，能按 operation_id 整批撤销/重做。分割内容为完整 information 字典，工具不推测文本切分、媒体范围或自由内容里的编号。空 cuts 不写入；非空 cuts 需要 first_information。
-
-insert_gap 的 crossing_actions 是 object_id/action 项列表；split 需要两段 information，keep 原样保留，stretch 仅 end 后移，move 将 begin/end 一起后移，偏移量为本层实际插入长度。后两者保持编号、内容、关联，不解释媒体行为。缺项或过期项整批不写，并用 required_crossings 列出所需目标。旧 split_contents 参数仍兼容，不能与 crossing_actions 同传；完整两段内容未写 action 时按旧 split 解释。keep/stretch/move 可能覆盖插入时段。from_position 只控制平移的 begin 选择；重叠冲突仍依据层配置在写入后报告。
-
-迁移的显式 axis 保留，祖先提供的轴不补造，不做单位换算或重新落点。复制保留源地址，剪切将入向引用的 target_project_id/target_id 改为新身份并保留关联自身 id；源删除与目标创建同事务。具体格式、命令行、编号对应表见 [编辑工具说明](storage/EDITING.md)。
-
-transfer_objects 的 object_ids 是一个或多个源项目对象的编号列表，可跨层；重复编号去重，空列表不写入。目标项目必须不同，target_layer_id 必须已存在。data 返回 source_object_ids、source_project_id、project_id（目标）、layer_id（目标已有层）、mode、counts、id_map、redirected_bind_ids；id_map.layer 为空。位置精确保留，层兼容性与重叠在提交后检查，剪切不删除源层。
+可选参数使用关键字，均接受 config_root 与 checker。详细参数、返回和跨界/关联规则统一见[编辑工具](../tools/usage/EDITING.md)。
 
 ## Python 实例的完整往返
 
@@ -178,6 +164,22 @@ result = dispatch(connection, plan)
 位置工具与 dispatch/save/CRUD 的对象写入共用 runtime.positions：按最近声明的轴取得 precision，没有轴或该轴没有精度时使用 1e-6，按最近刻度落点，中点远离零。写入位置或更改所属层时归一对应位置；只改名字/内容不重写历史坐标。保存返回值、日志与回填的 Python 实例使用实际落点。检查按同样的整数刻度比较旧、新记录；原始读取和范围查询保持数值读取，不换算单位、不批量修改旧数据。
 
 检查是否执行继续由原有约束控制。字段 optional=true 表示允许缺省，随字段继承；缺省判为符合约定，已填值仍检查类型。未声明 optional 按 false 检查缺失；继承字段可 true→false 收紧，不可 false→true 放宽，包括隐式默认 false。模型/动作的 source/data 均声明为 optional=true。汇报等级独立配置在 configs/logging/diagnostics.toml：error/warn/none，路径覆盖不继承，未配置默认 warn；none 只隐藏输出，无法执行的检查仍使 checks.status=partial。缺字段与字段类型错误采用不同 code。同一对象同一配置失败合并成一条，affected_checks 保留受影响检查。文字输出只显示操作结果和逐条问题。
+
+## 自定义检查器
+
+检测在事务成功提交之后运行，一批只调用一次。回调形式为：
+
+```python
+def checker(changes, read_record):
+    # changes 包含 action、kind、project_id、id、before、after、change_id、operation_id。
+    # read_record(kind, project_id=..., id=..., filters=...) 读取当前记录。
+    # 只读取变更描述和查询结果，不修改它们。
+    return []  # 问题字典列表；规则示例见 validation/RULES.md
+```
+
+默认 dispatch 与 CLI 已接入内置执行器。显式传 checker=None 可关闭自动检测；传入自定义 checker 会替换内置执行器。变更描述保留修改前后数据，内置执行器以最终数据库记录检查，选择相关旧层、新层或被删除目标的剩余关联，并对目标与规则去重。
+
+变更描述中的 project_id 是日志查询上下文；查询 project、bind 时仍只传它们的独立 id，查询 layer、object 才传 project_id。
 
 ## 配置与自定义类型
 

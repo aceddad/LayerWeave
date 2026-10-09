@@ -28,7 +28,7 @@ python -X utf8 -B -m tools.shared.config_help combined text
 python -X utf8 -B -m examples.read_write
 ```
 
-两个 help 无需数据库；示例使用自己的临时数据库。需要实际项目数据库时，运行[开发工具中的初始化命令](src/tools/developer/README.md)，然后使用[CRUD 请求协议](src/runtime/PROTOCOL.md)读写。
+两个 help 无需数据库；示例使用自己的临时数据库。需要实际项目数据库时，运行[开发工具中的初始化命令](src/tools/developer/README.md)，然后使用[CRUD 请求协议](src/tools/usage/CRUD.md)读写。
 
 ## 目录职责
 

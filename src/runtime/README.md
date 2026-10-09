@@ -7,7 +7,7 @@ runtime 提供配置读取、数据存储、事务、日志、检测与公共 AP
 | 任务 | 主要说明 |
 |---|---|
 | 从 Python 读写记录或装载模型 | [公共 API](API.md) |
-| 发送 JSON CRUD 请求、处理操作与检测反馈 | [请求协议](PROTOCOL.md) |
+| 发送 JSON CRUD 请求、处理操作与检测反馈 | [请求协议](../tools/usage/CRUD.md) |
 | 理解配置继承、合并与类绑定 | [配置模块](configuration/README.md) |
 | 理解数据表、编号、事务和日志 | [存储模块](storage/README.md) |
 | 修改检查时点或新增规则 | [检测模块](validation/README.md) |

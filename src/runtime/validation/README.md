@@ -6,8 +6,8 @@
 |---|---|
 | 查检测时点、规则范围或新增规则 | [检测执行与扩展](RULES.md) |
 | 配置 error/warn/none、静音与同因合并 | [诊断汇报](DIAGNOSTICS.md) |
-| 理解 committed 与 checks 的关系 | [请求与反馈协议](../PROTOCOL.md) |
-| 对项目、子树或对象主动复查 | [复查工具](../storage/HISTORY.md) |
+| 理解 committed 与 checks 的关系 | [请求与反馈协议](../../tools/usage/CRUD.md) |
+| 对项目、子树或对象主动复查 | [复查工具](../../tools/usage/HISTORY.md) |
 
 ## 代码位置
 

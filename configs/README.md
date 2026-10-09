@@ -10,4 +10,4 @@
 
 一份层/对象封装 TOML 对应一个 [Python 类](../src/models/README.md)。base.toml 是基础约定，具体封装通过 extends 延续约定；继承合并、收紧与类绑定规则见[配置读取器说明](../src/runtime/configuration/README.md)。
 
-只想知道可以使用什么层或对象时，调用[配置 help](../src/runtime/configuration/HELP.md)即可。开发封装时再阅读对应 TOML 和类文件。
+只想知道可以使用什么层或对象时，调用[配置 help](../src/tools/shared/CONFIG_HELP.md)即可。开发封装时再阅读对应 TOML 和类文件。

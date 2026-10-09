@@ -1,47 +1,8 @@
-# 使用工具手册
+# 查询与常用编辑
 
-操作项目内容从这里开始。使用工具通过 Python 或 CLI 调用；供未来外部封装复用，当前不依赖 MCP 或界面。
+这里说明项目查询、接续、排列、对齐、时长、对象复制和空档查询。[返回使用入口](README.md)。
 
-[返回使用入口](README.md)。命令与配置 help 是使用、开发共用的入口，详见下文。
-
-## 已有工具
-
-| 工具 | 代码 | 用途 |
-|---|---|---|
-| 基础 CRUD | [crud.py](crud.py) | 创建、读取、更新、删除及原子批量请求；格式见[运行协议](../../runtime/PROTOCOL.md) |
-| 配置 help | [config_help.py](../shared/config_help.py) | 动态查看支持总览、层/对象类定义和联合说明；无需数据库 |
-| 命令 help | [command_help.py](../shared/command_help.py) | 所有命令的总览或多目标详情，含参数、返回与 JSON 示例；只读 |
-| 主动复查 | [recheck.py](common/recheck.py) | 项目、多棵子树或指定对象按当前配置重新检查；只读 |
-| 历史 | [history.py](common/history.py) | 按操作分页展示字段变化、前后快照和撤销来源；只读 |
-| 撤销/重做 | [undo.py](common/undo.py) | 原子撤销完整批次；更新按顶层字段判断，创建/删除按整条记录 |
-| 删除子树 | [subtrees.py](common/subtrees.py) | 删除起始层、子孙层、对象及出向关联；保留外部入向关联 |
-| 整层复制 | [subtrees.py](common/subtrees.py) | 同项目同父层复制完整子树，重映射内部引用，返回编号映射 |
-| 对象分割 | [split.py](common/split.py) | 按单点/多点与明确的各段 information 分割，第一段保留编号和关联 |
-| 插空档 | [gaps.py](common/gaps.py) | 明确选范围、位置和长度，跨界对象逐个 split/keep/stretch/move，整批原子执行 |
-| 跨项目复制/剪切 | [transfer.py](common/transfer.py) | 目标重新发号、原数值保留；剪切时外部入向引用跟随新地址 |
-| 对象跨项目复制/剪切 | [transfer_objects.py](common/transfer_objects.py) | 选择一个或多个对象，放入另一项目已有层，沿用关联映射与撤销规则 |
-| 空档查询 | [free_ranges.py](common/free_ranges.py) | 查询直属层在指定区间内的空白，可按最小可容纳长度筛选；只读 |
-| 项目概览 | [project_overview.py](common/project_overview.py) | 项目层级、层类型、名字与对象数量；只读 |
-| 项目详细展开 | [project_details.py](common/project_details.py) | 展开项目/子树的层、对象内容和关联引用，可按数值范围筛选；只读 |
-| 对象检索 | [find_objects.py](common/find_objects.py) | 按层、名字、内容、位置范围查找对象；只读 |
-| 关联查询 | [relations.py](common/relations.py) | 查询直接引用与被引用，保留跨项目完整身份；只读 |
-| 文本汇集 | [collect.py](text/collect.py) | 按顺序提取文字，保留来源，逐项报告不可读取的内容；只读 |
-| 接续新增 | [objects.py](common/objects.py) | 自动从层尾或指定对象后新增；写入 |
-| 连续排列 | [positions.py](common/positions.py) | 同层对象首尾接续，保留各自时长；写入 |
-| 整体平移 | [positions.py](common/positions.py) | 同时移动所选对象的开始和结束位置；写入 |
-| 起终点对齐 | [positions.py](common/positions.py) | 共享开始位置或结束位置，保持各自时长；写入 |
-| 修改时长 | [positions.py](common/positions.py) | 保持起点，计算新的终点；写入 |
-| 复制对象 | [objects.py](common/objects.py) | 复制内容与配置、发放新编号，不复制关联；写入 |
-
-通用查询工具已有，完整内存示例见 [first_batch.py](../../examples/first_batch.py)。从 src/ 运行 `python -X utf8 -B -m examples.first_batch`，不改动真实项目数据库。
-
-通用位置与对象写入工具的完整内存示例见 [second_batch.py](../../examples/second_batch.py)：`python -X utf8 -B -m examples.second_batch`。这些工具都不依赖可视化、Skill 或 MCP。
-
-复查、历史与撤销的 Python/CLI 参数和恢复语义见 [完整说明](../../runtime/storage/HISTORY.md)。从 src 运行 `python -X utf8 -B -m examples.review_history` 可查看独立内存数据库示例。新工具继续使用 runtime.api，数据库查询与恢复代码在存储层；它们不需要 Skill 或 MCP。
-
-子树删除与整层复制也已提供，范围包含起始层及全部后代；每次操作可整批撤销。用法、关联边界和 id_map 格式见 [子树工具说明](../../runtime/storage/SUBTREES.md)，内存演示为 `python -X utf8 -B -m examples.subtrees`。
-
-分割、按起点筛选平移、插空档和跨项目复制/剪切的参数与完整示例见 [编辑工具说明](../../runtime/storage/EDITING.md)。内存演示为 `python -X utf8 -B -m examples.editing`。位置工具的 shift 支持 --layer-ids、--from-position 和 --config-root，并与插空档共用底层数值计算。
+范围平移、分割、插空档和跨项目搬移见[编辑工具](EDITING.md)，整层操作见[子树工具](SUBTREES.md)，复查与恢复见[历史工具](HISTORY.md)。Python 示例使用已有连接和真实编号，CLI 从 src 运行。
 
 ## 帮助入口
 
@@ -52,7 +13,7 @@ python -m tools.shared.command_help split insert_gap undo --json
 python -m tools.shared.config_help combined text
 ```
 
-完整说明分别维护在[命令说明](../shared/COMMANDS.md)和[配置 help](../../runtime/configuration/HELP.md)。
+完整说明分别维护在[命令说明](../shared/COMMANDS.md)和[配置 help](../shared/CONFIG_HELP.md)。
 
 ## 项目概览
 
@@ -74,7 +35,7 @@ object_count 只计本层直接装载的对象，不重复计算子层对象。d
 
 无法从根层到达的层放在列表末尾，depth=None，原 father 保留。工具不修改父层关系，也不代替主动检测。项目不存在返回 None；存在但没有层的项目返回空列表和零计数。
 
-核心通过 read_project_index 提供摘要，工具只负责排列与展示。一次概览使用两次 SELECT，不加载对象正文、轴数据、关联目标或配置文件，不写数据、日志，不发号；已有事务由调用方继续管理。
+概览只读，不返回对象正文或轴详情；需要内容时使用详细展开。
 
 从 src/ 目录查看自己的项目：
 
@@ -140,7 +101,7 @@ layer_id 与 layer_ids 互斥。多层编号去重；同时选择父层和子层
 - 不清理 information 内部的任何值；0、false、空字符串、空列表、空字典、null 均原样保留。显式 axis={} 也保留，因为它表示自有轴。
 - 每层保留 objects（即使为空）和本范围 object_count。精简只是查看投影，不修改数据库；需要完整记录时使用默认模式或 read_project_details。
 
-原始数据在一个读取快照内批量获取。非空全项目展开通常为 4 次查询，指定单层/多层为 5 次；多层查询批量读取项目的 id/father 来确定树序，范围外正文和关联不读取。核心不加载配置、不写日志；只有工具遇到不存在的编号时，才读取独立的日志汇报配置。可传 config_root（CLI 为 --config-root）指定该配置根目录。
+详细展开只读；config_root（CLI 为 --config-root）选择缺失目标提示所用的诊断配置目录。
 
 ```sh
 python -X utf8 -B -m tools.usage.common.project_details ../output/ai-production.sqlite3 1 --json
@@ -187,7 +148,7 @@ relations = query_relations(connection, project_id, "object", object_id)
 python -X utf8 -B -m tools.usage.common.relations ../output/ai-production.sqlite3 1 object 2 --direction both
 ```
 
-命令行默认输出 JSON。查询直接关联只使用一次 SELECT。
+命令行默认输出 JSON。
 
 ## 文本汇集
 
@@ -217,23 +178,13 @@ python -X utf8 -B -m tools.usage.text.collect ../output/ai-production.sqlite3 1 
 
 默认输出汇集文字；需要来源与诊断时用 --json。纯文本模式仍会把诊断写到标准错误，不静默隐藏未读取的内容。条目诊断不改成查询失败退出码；SQL/参数错误或目标层不存在时退出码非零。
 
-## 通用写入约定
+## 常用编辑
 
-六个工具都是普通函数，使用同一项目内的明确编号，不改项目号或对象编号。位置只按数值计算，允许负位置，不自动换算轴单位、裁剪内容或留出间隔。
-
-工具生成的坐标使用十进制计算，再按当前轴的 precision（正数步长）落到最近刻度；正好半格时远离 0 取整。默认沿父链使用根轴，若子层显式提供自己的 axis，则它和后代使用该轴；自有轴未声明 precision 时不借用另一轴的精度。没有轴或该轴没有 precision 时默认步长 1e-6，fps 不用于换算。轴查找在同一次操作内复用，下一次操作重新读取。
-
-例如 precision=0.001 时三次追加 0.1 的终点为 0.1、0.2、0.3，不留下浮点尾差。连续排列先累计未量化的位置，再分别落点，避免每段取整后继续累计造成额外误差。独立追加使用实际已保存的层尾，不保存隐藏的时间残差。
-
-量化可能使实际位置或时长相对原请求产生精度范围内的差异，短区间也可能变成瞬间。修改时长按原起点计算终点，提交的两端统一落点；普通复制也按目标层刻度保存。直接 CRUD 与普通保存同样落点，原始读取和只读范围查询保留原数值，不批量改写已有数据；旧数据再次写入位置时才归一并记日志。
-
-读取当前位置、计算请求、写入数据与日志在一次 BEGIN IMMEDIATE 事务内完成；接续新增不会先在事务外读取旧的层尾。一个工具调用共用一个 operation_id，提交后检测一次。底层约定问题仍作为 checks 返回，已经提交的数据保留。
-
-输入不是可计算的有限数值、指定目标不存在或写入失败时，本次操作整体回滚。可计算的负时长不会被改成正数：begin<=end 等约定仍在提交后反馈。瞬间对象继续占一个点；它后面直接接续可能产生重叠提示，工具不猜一个微小间隔。
-
-以下函数都可传 checker，含义与 dispatch 一致：默认内置检测，None 关闭自动检测，或传入自定义检查器。单对象动作返回单次 dispatch 结果，批量动作返回 results 列表；无变化时 applied=false，不写日志。不得在调用方尚未提交的事务中再调用这些完整操作入口。
+以下操作使用同一项目的对象。先看调用示例，共用的位置和反馈规则见下方[通用写入约定](#通用写入约定)。
 
 ### 接续新增
+
+从层尾或指定对象的终点接着创建一个对象。
 
 ```python
 from tools.usage.common.objects import append_object
@@ -248,18 +199,17 @@ result = append_object(connection, project_id, layer_id, {
 
 data 是原有 create 的对象字段字典，需要 config_ref；工具决定其中的 layer、begin、end，其他字段交给核心保存，不修改传入字典。新编号从结果 id 取得。关联仍使用明确的关联操作添加。
 
-### 连续排列、平移与对齐
+### 连续排列与对齐
+
+保留各自时长，连续排列或对齐起终点。整体平移见[平移](EDITING.md#平移)。
 
 ```python
-from tools.usage.common.positions import arrange_objects, shift_objects, align_objects
+from tools.usage.common.positions import arrange_objects, align_objects
 
 # 不传 object_ids：排列该层全部对象，默认保留首个对象的起点。
 result = arrange_objects(connection, project_id, layer_id)
 # 显式列表决定排列顺序；其余对象保持原状。
 result = arrange_objects(connection, project_id, layer_id, object_ids=[5, 2, 8], start=0)
-
-result = shift_objects(connection, project_id, [2, 5], offset=-3)
-result = shift_objects(connection, project_id, layer_id=layer_id, offset=5)
 
 result = align_objects(connection, project_id, [2, 5], position=10, edge="begin")
 result = align_objects(connection, project_id, [2, 5], position=10, edge="end")
@@ -267,11 +217,13 @@ result = align_objects(connection, project_id, [2, 5], position=10, edge="end")
 
 连续排列限定在同一层。默认按当前 begin/end/id 排序，显式 object_ids 按给定顺序；以各对象实际存储的 end-begin 累计位置，再按精度落点，依次首尾衔接。
 
-平移和对齐可选同项目不同层的对象，调用方负责选择轴含义一致的对象。也可通过 layer_id 明确选择整层；不会隐式修改整个项目。重复编号只处理一次，显式空列表表示不修改对象。
+对齐可选同项目不同层的对象，调用方负责选择轴含义一致的对象。也可通过 layer_id 明确选择整层；不会隐式修改整个项目。重复编号只处理一次，显式空列表表示不修改对象。
 
 起点对齐以 position 为新起点、终点按原时长计算；终点对齐以 position 为终点、起点按原时长倒推，再将生成的端点按各自轴精度落点。内容不变；实际时长可能有量化差异。在同一层可能产生重叠，沿用提交后诊断。
 
 ### 修改时长与复制
+
+设置对象时长，或创建一个可放到新位置的副本。
 
 ```python
 from tools.usage.common.positions import set_duration
@@ -287,7 +239,7 @@ result = copy_object(connection, project_id, object_id, layer_id=target_layer_id
 
 复制默认保留内容、配置、名字、备注、所属层与位置，新编号由核心发放。可另选同项目目标层、名字或起点；指定起点时保留原时长。append=True 将副本接到目标层末尾，空层从 0 开始，不能同时指定 begin。
 
-单对象复制不修改原对象，不复制出向/入向关联，也不复制媒体文件；information 中的资源引用保持原样。需要连同内部关联复制完整子树时，使用 [copy_subtree](../../runtime/storage/SUBTREES.md)。跨项目子树使用 transfer_subtree；选中一个或多个对象放入目标已有层使用 transfer_objects，后者会复制出向关联。详见 [跨项目工具](../../runtime/storage/EDITING.md)。
+单对象复制不修改原对象，不复制出向/入向关联，也不复制媒体文件；information 中的资源引用保持原样。需要连同内部关联复制完整子树时，使用 [copy_subtree](SUBTREES.md)。跨项目子树使用 transfer_subtree；选中一个或多个对象放入目标已有层使用 transfer_objects，后者会复制出向关联。详见 [跨项目工具](EDITING.md)。
 
 ### 位置与对象命令行
 
@@ -295,18 +247,36 @@ result = copy_object(connection, project_id, object_id, layer_id=target_layer_id
 
 ```sh
 python -X utf8 -B -m tools.usage.common.positions ../output/ai-production.sqlite3 1 arrange 1 --start 0
-python -X utf8 -B -m tools.usage.common.positions ../output/ai-production.sqlite3 1 shift --ids 2 5 --offset -3
 python -X utf8 -B -m tools.usage.common.positions ../output/ai-production.sqlite3 1 align --ids 2 5 --edge end --position 10
 python -X utf8 -B -m tools.usage.common.positions ../output/ai-production.sqlite3 1 duration 2 4
 python -X utf8 -B -m tools.usage.common.objects ../output/ai-production.sqlite3 1 append 1 3 --data-file object.json
 python -X utf8 -B -m tools.usage.common.objects ../output/ai-production.sqlite3 1 copy 2 --append
 ```
 
-object.json 为对象创建字段，例如 `{"config_ref":"objects/text.toml","information":{"text":"下一句"}}`。平移与对齐可用 --layer-id 选择整层；arrange 用 --ids 指定排列顺序；append 可用 --after-id 或 --empty-start。
+object.json 为对象创建字段，例如 `{"config_ref":"objects/text.toml","information":{"text":"下一句"}}`。对齐可用 --layer-id 选择整层；arrange 用 --ids 指定排列顺序；append 可用 --after-id 或 --empty-start。
 
-## 空档查询与对象搬移
+## 通用写入约定
 
-### 空档查询
+| 事项 | 行为 |
+|---|---|
+| 编号 | 修改保留原身份；新建和复制由系统发号 |
+| 坐标 | 按轴 precision 取最近刻度，半格时远离 0；无精度时用 1e-6 |
+| 轴来源 | 默认沿父链查找；显式自有轴覆盖上级，自有轴未声明 precision 时使用默认精度 |
+| 单位 | 按数值计算，允许负位置；不做单位或 fps 换算，不裁剪内容 |
+| 量化影响 | 实际位置/时长可能有精度范围内差异，极短区间可能变成瞬间 |
+| 反馈 | 单对象动作返回单次结果，批量动作有 results；无变化时 applied=false |
+
+- 连续排列累计未量化的时长后再落点，避免逐段取整引入额外误差。独立追加从实际保存的层尾继续，不保留隐藏残差。
+- precision=0.001 时，连续三次追加 0.1 的终点为 0.1、0.2、0.3。
+- 修改时长会把提交的两端统一落点；普通复制按目标层精度保存。纯读取保留原值，不批量归一旧数据。
+- 每次修改对应一个 operation_id。不可计算的值、缺失目标或操作写入失败时整批不写；提交后的检查问题不会自动撤销数据。
+- 可计算的负时长不自动改正；瞬间对象占一个点，紧接其后追加可能产生重叠提示。
+- Python 可传 checker；默认检查，None 关闭自动检查。自定义回调见[开发 API](../../runtime/API.md#自定义检查器)。
+- 完整操作入口不能使用已有待提交操作的连接。反馈字段见[CRUD 协议](CRUD.md)。
+
+## 空档查询
+
+查找指定层在一个区间内的空白，可要求至少容纳一定长度。
 
 ```python
 from runtime.api import find_gaps
@@ -329,20 +299,3 @@ python -m tools.usage.common.free_ranges DATABASE 1 4 0 20 --min-length 3 --json
 每个空档的终点都不包含。瞬间对象仍占一个点：若 5 处有瞬间对象，其后的空档从 `(5,...` 开始，begin_inclusive=false；工具不猜一个 epsilon 或改写坐标。min_length 按可容纳长度筛选，因此开起点的 `(5,8)` 不算能容纳完整 3 单位的对象。
 
 查询不加载配置、对象正文或关联，不换算轴或取整。与对象检索不同，若本层存在无法解释的位置（非有限数值或 begin>end），本次空档查询会指出对象并失败，避免把未知占用视为空闲；可用 recheck 查看完整诊断。读取使用同一快照，不写入数据库或日志。
-
-### 对象跨项目复制/剪切
-
-```python
-from runtime.api import transfer_objects
-
-result = transfer_objects(connection, source_project_id, [8, 9], target_project_id, target_layer_id, mode="copy")
-```
-
-```sh
-python -m tools.usage.common.transfer_objects DATABASE 1 copy 2 4 --ids 8 9 --json
-python -m tools.usage.common.transfer_objects DATABASE 1 cut 2 4 --ids 8 --json
-```
-
-object_ids 可包含源项目不同层的对象；去重后保持选择顺序，空列表不写入。目标是另一项目中已存在的一个层。源层不搬移；位置原数值、配置与内容保持，目标层兼容性及重叠在提交后检查。
-
-两种模式都复制对象和它们发出的关联，重新发号；选中对象之间的关联换成新编号，其他出向目标保持原地址。copy 保留源对象，外部入向关联仍指向源；cut 删除源对象和出向关联，外部入向关联跟随新地址。一个 operation_id 覆盖整批操作，可整体撤销/重做。返回 counts、id_map 与改指的关联编号，格式见 [编辑工具说明](../../runtime/storage/EDITING.md)。

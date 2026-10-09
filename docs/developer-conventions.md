@@ -16,6 +16,8 @@
 
 README 解释当前目录的职责、文件位置和阅读入口。短说明可以直接写入；大量字段、规则、参数和示例放专题文件。AGENTS.md 只维护 AI 的工作流程和必要要求。
 
+工具的用途、示例、输入/返回与可观察边界集中在 tools/usage；共用 help 说明放 tools/shared。runtime 保留开发 API 和实现说明。编号、关联、失败、撤销的可观察行为属于使用说明，事务步骤和内部辅助函数属于实现说明。使用章节先给用途和例子，再用表格或独立条目解释参数与规则。
+
 一项语义在一个主要位置详细维护，其他文档保留简短说明并链接过去：
 
 | 主题 | 主要维护位置 |
@@ -24,14 +26,15 @@ README 解释当前目录的职责、文件位置和阅读入口。短说明可�
 | Python 模型与扩充入口 | [模型说明](../src/models/README.md)，字段声明在类及对应 TOML |
 | 配置继承、合并与类绑定 | [配置说明](../src/runtime/configuration/README.md) |
 | Python 调用、输入与返回 | [公共 API](../src/runtime/API.md) |
-| JSON CRUD 请求和操作/检查反馈 | [请求协议](../src/runtime/PROTOCOL.md) |
+| JSON CRUD 请求和操作/检查反馈 | [请求协议](../src/tools/usage/CRUD.md) |
 | 数据表、编号、持久化与日志写入 | [存储专题](../src/runtime/storage/SCHEMA.md) |
-| 历史与恢复、子树、范围编辑 | storage 的 [HISTORY](../src/runtime/storage/HISTORY.md)、[SUBTREES](../src/runtime/storage/SUBTREES.md)、[EDITING](../src/runtime/storage/EDITING.md) |
+| 历史与恢复、子树、范围编辑的使用行为 | usage 的 [HISTORY](../src/tools/usage/HISTORY.md)、[SUBTREES](../src/tools/usage/SUBTREES.md)、[EDITING](../src/tools/usage/EDITING.md) |
+| 这些工具的实现流程 | storage 的 [HISTORY](../src/runtime/storage/HISTORY.md)、[SUBTREES](../src/runtime/storage/SUBTREES.md)、[EDITING](../src/runtime/storage/EDITING.md)；参数与业务规则链接到使用说明 |
 | 检测时点、执行和新增规则 | [检测专题](../src/runtime/validation/RULES.md) |
 | 汇报等级和配置覆盖 | [诊断专题](../src/runtime/validation/DIAGNOSTICS.md) |
 | 通用查询与位置工具用法 | [使用手册](../src/tools/usage/GUIDE.md) |
 | 命令声明、发现及 CLI 示例 | [命令专题](../src/tools/shared/COMMANDS.md) |
-| 配置 help 的使用/开发模式 | [配置 help 专题](../src/runtime/configuration/HELP.md) |
+| 配置 help 的使用/开发模式 | [配置 help 专题](../src/tools/shared/CONFIG_HELP.md) |
 
 修改规则时更新其主要说明；新增阅读入口时同步相邻 README。配置和命令的具体支持清单由已有 help 动态发现，文档不再维护另一套执行登记表。
 

@@ -1,22 +1,15 @@
 # 存储模块
 
-这里负责 SQLite 表结构、编号、记录读写、模型装配、事务内组合和历史恢复。[返回核心模块](../README.md)。
+这里维护 SQLite、记录装配和事务内编辑实现。[返回核心模块](../README.md)。工具调用者从[使用入口](../../tools/usage/README.md)进入。
 
-| 任务 | 主要说明 |
+| 开发任务 | 实现说明 |
 |---|---|
-| 初始化/升级数据库、理解字段、编号和日志 | [数据表与持久化](SCHEMA.md) |
-| 读取完整记录、装载类、保存层或对象 | [公共 API](../API.md) |
-| 查询操作历史、处理撤销冲突与重做 | [历史与恢复](HISTORY.md) |
-| 删除或复制子树 | [子树操作](SUBTREES.md) |
-| 分割、平移、插空档及跨项目搬移 | [编辑操作](EDITING.md) |
+| 修改数据表、编号、记录映射和日志写入 | [SCHEMA](SCHEMA.md) |
+| 修改历史查询或恢复计划 | [HISTORY](HISTORY.md) |
+| 修改子树遍历、复制、关联映射与迁移组合 | [SUBTREES](SUBTREES.md) |
+| 修改分割、插空档与坐标计算的组合流程 | [EDITING](EDITING.md) |
+| 使用 Python 读写或装载模型 | [公共 API](../API.md) |
 
-## 代码位置
+代码位置：database/schema 管理表与发号；crud/journal/errors 管理记录写入；assembly/details/queries 管理读取；models/save 管理实例装配；history/undo 管理历史恢复；subtrees/timeline 管理复合编辑。
 
-- schema.sql、database.py：建表、连接、升级和发号。
-- crud.py、journal.py、errors.py：记录操作、同事务日志与 SQL 错误解释。
-- assembly.py、details.py、queries.py：完整记录与范围读取。
-- models.py、save.py：Python 实例装载与组合保存。
-- history.py、undo.py：历史查询与恢复。
-- subtrees.py、timeline.py：复用 CRUD 的批量编辑步骤。
-
-内部工具优先从 runtime.api 调用；低层 CRUD 不自行提交或运行语义检查，组合要求见 SCHEMA 和 API。数据库初始化的 CLI 位于开发工具目录。
+低层 CRUD 不自行提交或运行语义检查。完整调用参数、返回和业务边界只在 usage 的对应说明维护，开发者通过上面的实现说明链接查阅。

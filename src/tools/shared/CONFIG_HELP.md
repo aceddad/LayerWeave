@@ -82,4 +82,4 @@ TOML 的 example 仍表示 Python 类的构造参数，开发版保留原样；c
 
 总览和联查使用 Loader.accepts_object，与运行时兼容检查共用同一个判断。例如继承 text.toml 的 Dialogue 会自动成为文字层可选对象；收窄为 dialogue 的层只列出 Dialogue 及其派生配置。
 
-每次查询内，文件扫描、原文、解析结果、继承合并和日志等级各自复用；下次查询重新读取，因此新增或修改配置后不需要重启。配置损坏、名称冲突和继承错误逐项诊断，未认识的附加节在开发版完整展示。新增检测语义仍由现有规则执行器实现；help 负责描述配置，不替代规则实现。展示数据在 help_data.py，查询编排在 catalog.py，文字与 CLI 在 tools/shared/config_help.py，不需要另建封装注册表。
+每次查询内，文件扫描、原文、解析结果、继承合并和日志等级各自复用；下次查询重新读取，因此新增或修改配置后不需要重启。配置损坏、名称冲突和继承错误逐项诊断，未认识的附加节在开发版完整展示。新增检测语义仍由现有规则执行器实现；help 负责描述配置，不替代规则实现。展示数据在 runtime/configuration/help_data.py，查询编排在 runtime/configuration/catalog.py，文字与 CLI 在 tools/shared/config_help.py，不需要另建封装注册表。

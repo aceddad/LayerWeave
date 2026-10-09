@@ -27,4 +27,4 @@ python -X utf8 -B -m examples.read_write
 python -X utf8 -B -m examples.editing
 ```
 
-示例中的编号来自该次运行或内存演示上下文。操作实际数据库时使用工具返回的编号；请求格式见 [CRUD 协议](../src/runtime/PROTOCOL.md)。
+示例中的编号来自该次运行或内存演示上下文。操作实际数据库时使用工具返回的编号；请求格式见 [CRUD 协议](../src/tools/usage/CRUD.md)。

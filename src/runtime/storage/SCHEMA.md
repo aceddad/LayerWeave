@@ -2,7 +2,7 @@
 
 本专题维护存储格式与写入约定。[返回存储入口](README.md)。
 
-`schema.sql` 定义四张业务表和一张 changes 日志表；`database.py` 提供打开连接、初始化和项目内发号，`crud.py` 提供通用操作，`journal.py` 记录改动；`errors.py` 仅在 SQL 约束失败时解释缺失/被引用的记录。完整模型读写优先见 [公共 API](../API.md)；单条请求和检测协议见 [请求与反馈协议](../PROTOCOL.md)。
+`schema.sql` 定义四张业务表和一张 changes 日志表；`database.py` 提供打开连接、初始化和项目内发号，`crud.py` 提供通用操作，`journal.py` 记录改动；`errors.py` 仅在 SQL 约束失败时解释缺失/被引用的记录。完整模型读写优先见 [公共 API](../API.md)；单条请求和检测协议见 [请求与反馈协议](../../tools/usage/CRUD.md)。
 
 ## 初始化
 
@@ -66,7 +66,7 @@ with closing(open_database("../output/ai-production.sqlite3")) as connection:
 
 已提交的编号不因删除实体而回退；整个事务回滚时，本次发号也回滚。实体编号在写入事务提交后才作为持久化身份使用。
 
-关联经统一 CRUD 入口创建，binds.id 由 SQLite AUTOINCREMENT 保持全库递增，不占 projects.max_id。initialize_database 还会升级旧关联表并补上 changes.undo_of；关联发号起点同时参考现存行和已删除记录的历史最大编号，保留旧数据及索引。普通打开连接不会自动迁移；旧库写入前运行初始化命令，详见 [历史与恢复](HISTORY.md)。
+关联经统一 CRUD 入口创建，binds.id 由 SQLite AUTOINCREMENT 保持全库递增，不占 projects.max_id。initialize_database 还会升级旧关联表并补上 changes.undo_of；关联发号起点同时参考现存行和已删除记录的历史最大编号，保留旧数据及索引。普通打开连接不会自动迁移；旧库写入前运行初始化命令，详见 [历史与恢复](../../tools/usage/HISTORY.md)。
 
 两个实体表的主键各自防止同表重号，跨表共享编号由统一发号方法保证。直接 SQL 会绕过 CRUD 日志；若使用自定编号，还需写入方保持跨表不重号并相应更新 max_id。建表脚本没有额外触发器。
 
@@ -82,11 +82,11 @@ with closing(open_database("../output/ai-production.sqlite3")) as connection:
 - 日志没有实体外键，目标被删除后仍能查看历史。日志本身通过 read(kind="change") 查询。
 - 检测在提交后运行，不改变日志或业务操作的提交状态。显式撤销由 undo_operation 提供，新操作保留 undo_of；不自动撤回有诊断的写入。失败操作的持久化诊断日志尚未实现。
 
-历史查询通过 read_history 按操作分组、分页并展示字段差异；撤销使用日志恢复原编号和实际存储值，不重新取整坐标，也不回退发号上界。更新只恢复原操作净改变的顶层字段，information/axis 各为整体；创建、删除继续按整条记录判断。比较和恢复同事务，任意失败整批回滚。完整说明见 [复查、历史与撤销](HISTORY.md)。
+历史查询通过 read_history 按操作分组、分页并展示字段差异；撤销使用日志恢复原编号和实际存储值，不重新取整坐标，也不回退发号上界。更新只恢复原操作净改变的顶层字段，information/axis 各为整体；创建、删除继续按整条记录判断。比较和恢复同事务，任意失败整批回滚。完整说明见 [复查、历史与撤销](../../tools/usage/HISTORY.md)。
 
-storage/subtrees.py 提供子树删除与整层复制，复用既有范围读取、CRUD 和 run_operation；新编号取实际创建结果。删除范围包含树内实体发出的关联，外部入向关联保留；复制仅重映射明确的结构引用。两者都记录为一个可撤销操作，详见 [子树工具](SUBTREES.md)。
+storage/subtrees.py 提供子树删除与整层复制，复用既有范围读取、CRUD 和 run_operation；新编号取实际创建结果。删除范围包含树内实体发出的关联，外部入向关联保留；复制仅重映射明确的结构引用。两者都记录为一个可撤销操作，详见 [子树工具](../../tools/usage/SUBTREES.md)。
 
-跨项目复制/剪切在同模块中复用上述内部步骤；目标项目重新发号并在根部落位，原 begin/end 数值精确保留。剪切还把外部入向关联的目标改为新身份，和源删除、目标创建一起记录。对象分割与插空档的共同计算和写入在 storage/timeline.py，普通平移仍通过 dispatch 工厂执行。详见 [编辑工具](EDITING.md)。
+跨项目复制/剪切在同模块中复用上述内部步骤；目标项目重新发号并在根部落位，原 begin/end 数值精确保留。剪切还把外部入向关联的目标改为新身份，和源删除、目标创建一起记录。对象分割与插空档的共同计算和写入在 storage/timeline.py，普通平移仍通过 dispatch 工厂执行。详见 [编辑工具](../../tools/usage/EDITING.md)。
 
 ## 范围与验证
 

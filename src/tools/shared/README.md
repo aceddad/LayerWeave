@@ -20,4 +20,4 @@ python -m tools.shared.config_help objects model --dev
 
 从项目 src 运行。命令 help、配置 help 的参数、返回和默认展示保持原有行为；本次不增加分类筛选、权限限制或 MCP 执行器。
 
-完整说明见[命令声明与 CLI 帮助](COMMANDS.md)、[配置 help](../../runtime/configuration/HELP.md)。runtime.api.command_help/read_support 仍可供 Python 调用方使用。
+完整说明见[命令声明与 CLI 帮助](COMMANDS.md)、[配置 help](CONFIG_HELP.md)。runtime.api.command_help/read_support 仍可供 Python 调用方使用。

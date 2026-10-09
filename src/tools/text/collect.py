@@ -49,7 +49,8 @@ def collect_text(connection, project_id, layer_id, *, separator="\n", begin=None
             issue("object", record["id"], "information", "内容不是字典，无法提取文字")
             continue
         if "text" not in information:
-            issue("object", record["id"], "information.text", "未填写配置声明的文字字段，请检查是否漏填或字段名写错", code="missing_field")
+            if not config.get("information", {}).get("text", {}).get("optional", False):
+                issue("object", record["id"], "information.text", "未填写配置声明的文字字段，请检查是否漏填或字段名写错", code="missing_field")
             continue
         if not isinstance(information["text"], str):
             issue("object", record["id"], "information.text", "文字不是字符串，未将它自动转成文本")

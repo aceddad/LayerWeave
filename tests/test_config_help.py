@@ -24,6 +24,7 @@ class ConfigHelpTests(unittest.TestCase):
         shutil.copytree(DEFAULT_ROOT, self.configs)
 
     def query(self, view="overview", targets=None, **kwargs):
+        kwargs.setdefault("audience", "developer")
         return config_help(view, targets, config_root=self.configs, **kwargs)
 
     def write(self, ref, source):
@@ -130,7 +131,8 @@ objects="dialogue"
     def test_reporting_matches_real_diagnostics_and_refreshes_between_calls(self):
         item = self.query("objects", "model")["items"][0]
         levels = item["reporting"]["information"]["data"]
-        self.assertEqual(levels, {"missing_field": "none", "field_type": "error"})
+        self.assertEqual(levels, {"missing_field": "warn", "field_type": "error"})
+        self.assertTrue(item["definition"]["information"]["data"]["optional"])
         policy = self.configs / "logging/diagnostics.toml"
         policy.write_text('[levels]\nmissing_field="error"\nfield_type="warn"\n'
                           '[overrides."objects/model.toml".missing_field]\n"information.data"="warn"\n'

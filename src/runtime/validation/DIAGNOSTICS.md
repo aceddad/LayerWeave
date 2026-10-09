@@ -22,16 +22,17 @@ field_type = "error"
 missing_field = "warn"
 field_typo = "warn"
 
-# 只隐藏模型对象缺少 data 的提醒，类型错误仍使用全局 error。
-[overrides."objects/model.toml".missing_field]
-"information.data" = "none"
+# 只隐藏文字对象缺少 text 的提醒，类型错误仍使用全局 error。
+# 这是本封装的汇报偏好，不改变字段约定，也不传给 Title。
+[overrides."objects/text.toml".missing_field]
+"information.text" = "none"
 
 # 也可以对一个封装的某类诊断整体指定等级。
-[overrides."objects/active.toml"]
-missing_field = "none"
+[overrides."objects/title.toml"]
+missing_field = "error"
 ```
 
-内置配置对 model/active 的 source 和 data 缺失使用 none，两项均按需填写。open=true 仍允许自定义键；未声明键像某个未填写字段时，field_typo 提供建议而不自动修改数据。对应字段已经存在时不猜测笔误。
+model/active 的 source 和 data 在各自封装里声明 optional=true，并随字段继承；缺省符合约定，不产生 missing_field，因而不需要本文件静音。提供了值仍检查类型。未声明 optional 时按 false 检查，产生的问题依照这里的等级汇报。none 只隐藏已有诊断，不负责表达字段是否可选。open=true 仍允许自定义键；未声明键像某个未填写字段时，field_typo 提供建议而不自动修改数据，包括可选字段。对应字段已经存在时不猜测笔误。
 
 ## 合并与展示
 

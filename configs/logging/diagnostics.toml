@@ -24,12 +24,5 @@ bind_kind = "error"
 bind_reference_missing = "warn"
 target = "warn"
 
-# 这两个封装支持资源引用或内嵌内容；两项都是按需填写。
-# 只关闭“缺字段”提示，已填值的类型检查和疑似拼写提示仍保留。
-[overrides."objects/model.toml".missing_field]
-"information.source" = "none"
-"information.data" = "none"
-
-[overrides."objects/active.toml".missing_field]
-"information.source" = "none"
-"information.data" = "none"
+# 可选填入由封装字段的 optional 声明表达并继承。
+# 此文件仅决定已产生诊断的等级；按路径指定的特殊覆盖不继承。

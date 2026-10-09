@@ -53,6 +53,10 @@ class Loader:
             self.source_cache[path] = path.read_text(encoding="utf-8")
         return self.source_cache[path]
 
+    def declared(self, ref, kind):
+        """当前文件直接声明的内容；供开发 help 标注来源，不修改合并缓存。"""
+        return deepcopy(self._raw((self.root / ref).resolve(), kind))
+
     def _raw(self, path, kind):
         key = (kind, path)
         if key not in self.raw_cache:
@@ -128,6 +132,8 @@ class Loader:
         for section in ("fields", "information"):
             declarations = result.setdefault(section, {})
             for field, spec in raw.get(section, {}).items():
+                if "optional" in spec and type(spec["optional"]) is not bool:
+                    raise ConfigError(f"{section}.{field}.optional 应为 true 或 false")
                 old = declarations.get(field, {})
                 fixed_old = {k: v for k, v in old.items() if k not in {"note", "default"}}
                 fixed_new = {k: v for k, v in spec.items() if k not in {"note", "default"}}

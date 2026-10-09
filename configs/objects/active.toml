@@ -11,11 +11,12 @@ extends = "base.toml"
 note    = "通过 information.source 引用动作，或用 information.data 承载动作数据；作用对象通过 bind 说明"
 open    = true                 # 保留附加内容
 
-# 声明字段缺失和类型错误分别诊断，等级由 ../logging/diagnostics.toml 控制；不拦截，不检查格式或资源存在性。
+# optional=true 允许缺省并随字段继承，检查仍执行；填入后继续检查类型。
+# 产生的诊断由 ../logging/diagnostics.toml 指定等级；不拦截，不检查格式或资源存在性。
 # 引用只作为字符串保存，由使用方解释；本类不读取或解析资源。
 [object.information]
-source = { type = "str", note = "动作资源引用，例如本地路径、URL 或使用方约定的资源地址" }
-data = { type = "dict", note = "可选的动作数据，具体结构由使用方约定；source 和 data 按需填写" }
+source = { type = "str", optional = true, note = "动作资源引用，例如本地路径、URL 或使用方约定的资源地址" }
+data = { type = "dict", optional = true, note = "可选的动作数据，具体结构由使用方约定；source 和 data 按需填写" }
 
 [object.constraint]
 duration = "any"               # 可以有时长，也可以表示瞬间

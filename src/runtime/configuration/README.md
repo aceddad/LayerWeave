@@ -15,7 +15,7 @@ config = Loader().load("objects/text.toml", "object")
 
 | 配置内容 | 继承行为 |
 |---|---|
-| fields / information 中的类型等约定 | 已有声明保持，允许新增字段；note/default 是说明，可更新 |
+| fields / information 中的类型、optional 等约定 | 已有显式声明保持，允许新增字段/属性；note/default 是说明，可更新 |
 | rules | 固定规则可重复、可新增，不能改写父值；重复规则只执行一次 |
 | constraint / display | 显式值成为固定约定，后代不能改成其他值 |
 | defaults.constraint / defaults.display | 尚未明确取值时使用的默认值，不覆盖显式约定 |
@@ -51,7 +51,11 @@ axis_only_on_root = false
 
 根层始终不必填写轴。没有默认单位、坐标换算或资源读取。
 
-配置声明过的字段没有填写时产生 missing_field 诊断，不拦截、不自动填值。汇报等级独立放在 [diagnostics.toml](../../../configs/logging/diagnostics.toml)，默认 warn，模型/动作的按需字段覆盖为 none；类型错误用另一诊断项单独控制，见 [汇报配置说明](../validation/DIAGNOSTICS.md)。text/source/data 等仍是可填字段，缺少不变成保存失败；已填写的内容按类型检查，空字符串是已填写。open=true 允许额外键，但不会抑制声明字段缺失的提醒。类型支持 str、int、float、dict、list、bool、None，以及用竖线组合的联合类型。float 接受整数坐标；bool 不作为数值类型。未实现的显式类型或规则报告未检查，普通说明字段不因未知而报错。
+字段声明 `optional=true` 表示允许缺省，是字段约定，不是检测开关。检查仍执行：缺省符合约定，已填值仍检查类型。模型/动作的 source/data 均这样声明，派生封装自然继承。比如 `data = { type="dict", optional=true }` 允许省略 data，但不允许传入字符串或 None。
+
+未声明 optional 的字段在完成继承后按 false 解释，缺失产生 missing_field，不拦截、不自动填值。默认 false 不写入父配置的显式约定，所以父配置未声明时子配置可以增加 optional；一旦父配置明确声明 true 或 false，后代不能改写，与字段类型遵守同一继承规则。仅接受 TOML 布尔值。
+
+汇报等级独立放在 [diagnostics.toml](../../../configs/logging/diagnostics.toml)，未配置时默认 warn。路径覆盖只作用于指定封装、不继承；none 隐藏已经产生的问题，optional 则使合法缺省不产生问题。类型错误另行控制，见 [汇报配置说明](../validation/DIAGNOSTICS.md)。open=true 允许额外键；疑似笔误仍可提示，包括指向可选字段的 src→source。空字符串/空字典是已填写。类型支持 str、int、float、dict、list、bool、None，以及用竖线组合的联合类型。float 接受整数坐标；bool 不作为数值类型。未实现的显式类型或规则报告未检查，普通说明字段不因未知而报错。
 
 内部有效配置含 _ref、_lineage 和 _contracts，分别记录配置路径、继承链与固定约定，用于兼容判断和合并。读取失败抛出 ConfigError，由检测器逐目标转为诊断，其他目标继续。缺少明确 class、同一类重复绑定多份配置均为配置错误；无关的损坏配置不会阻止有效目标读取。type 字符串以 TOML 为唯一来源，Layer 类不保存它。配置读取器不执行 class 导入；需要还原实例时，由 storage/models.py 按需导入配置指定的类。
 

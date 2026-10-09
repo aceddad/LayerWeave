@@ -34,23 +34,25 @@ catalog = config_help()
 layers = config_help("layers", ["text", "image"])
 objects = config_help("objects", ["Text", "Title", "objects/model.toml"])
 combined = config_help("combined", ["TextLayer", "ImageLayer"])
+developer = config_help("objects", ["model", "Title"], audience="developer")
 print(format_help(combined))
 ```
 
 - overview：简短列出所有层及其可接受的对象类。
 - layers：层支持详情，兼容对象类只列摘要。
-- objects：对象类支持详情，包含继承后的字段、约束、示例和汇报等级。
+- objects：对象类支持详情，包含用途、有效内容字段、约束和保存示例。
 - combined：层与其兼容对象类的联合详情，共用的对象说明只展开一次。
 
 ```sh
 python -X utf8 -B -m tools.common.config_help
 python -X utf8 -B -m tools.common.config_help layers text image --json
 python -X utf8 -B -m tools.common.config_help objects Title --raw
+python -X utf8 -B -m tools.common.config_help objects model Title --dev
 python -X utf8 -B -m tools.common.config_help combined text audio
 python -X utf8 -B -m examples.config_help
 ```
 
-目标支持配置路径、唯一 type、完整 Python 类路径或唯一类名，歧义会列出候选。--raw 附当前 TOML 原文；默认展示继承合并后的定义。坏配置逐项提示，其他继续。新增封装无需修改 help 代码，查看也不导入封装模块。格式和开发约定见 [配置 help 说明](../src/runtime/configuration/HELP.md)。
+默认使用版精简展示传入/返回、用途和带 config_ref 的保存示例；--dev / audience="developer" 展开完整定义、继承与字段来源、汇报设置和当前原文。两种模式均支持四种范围与多目标。目标支持配置路径、唯一 type、完整 Python 类路径或唯一类名，歧义会列出候选。--raw 可为使用版附当前 TOML 原文。坏配置逐项提示，其他继续。新增封装无需修改 help 代码，查看也不导入封装模块。格式和开发约定见 [配置 help 说明](../src/runtime/configuration/HELP.md)。
 
 ## 项目概览
 
@@ -203,7 +205,7 @@ sources = result["items"]
 
 可传 begin/end 使用与对象检索相同的位置范围，也可传 config_root 指定配置目录。一次调用内共享配置读取结果。
 
-- 非文字对象会跳过。文字对象未填写 text 时产生 missing_field 后跳过；默认 warn，可通过独立 configs/logging/diagnostics.toml 改变汇报等级。即使设置 none，提取不完整的状态和 skipped_count 仍如实保留。空字符串视为已填写，正常保留。
+- 非文字对象会跳过。文字对象未填写 text 且未声明 optional=true 时产生 missing_field 后跳过；默认 warn，可通过独立 configs/logging/diagnostics.toml 改变汇报等级。即使设置 none，提取不完整的状态和 skipped_count 仍如实保留。optional=true 的合法缺省只计入 skipped_count，不导致 partial；提供了错误类型仍报告。空字符串视为已填写，正常保留。
 - 配置缺失或文字类型错误逐条放入 issues，附 severity、target、field 和 message，其他对象继续。
 - status=completed 表示本次汇集完成；存在无法汇集的条目时为 partial。skipped_count 包含非文字、未填写文字及错误条目。
 - 文字基准配置本身不可用时返回 partial，明确说明未能汇集；层不存在返回 None。

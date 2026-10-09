@@ -4,9 +4,9 @@
 
 ## 配置 help（查询支持能力）
 
-read_support(view="overview", targets=None, config_root=DEFAULT_ROOT, include_source=False) 动态读取 configs/layers 与 configs/objects，包含子目录。四种 view：overview 总览层与兼容对象类；layers 层支持详情；objects 对象类支持详情；combined 层＋兼容对象类详情。后三项支持一个目标或目标列表；目标为 config_ref、唯一 type、完整 class 路径或唯一类名。它们均查询封装定义，不查询项目实例，不导入 Python 类。
+read_support(view="overview", targets=None, config_root=DEFAULT_ROOT, audience="usage", include_source=None) 动态读取 configs/layers 与 configs/objects，包含子目录。四种 view：overview 总览层与兼容对象类；layers 层支持详情；objects 对象类支持详情；combined 层＋兼容对象类详情。后三项支持一个目标或目标列表；目标为 config_ref、唯一 type、完整 class 路径或唯一类名。它们均查询封装定义，不查询项目实例，不导入 Python 类。
 
-返回 items 与逐项状态、issues；联合查看的共享对象说明放在 object_details，通过 accepted_objects 中的 config_ref 对应。默认展示继承合并后的 definition、lineage、fixed_contracts 和实际汇报等级；include_source=True 附带当前文件 source 原文。新增类和 TOML 后，下次查询自动发现；损坏配置逐项提示，其余继续。文字/JSON 入口为 tools.common.config_help，详见 [配置 help 说明](configuration/HELP.md)。
+返回 items 与逐项状态、issues；联合查看的共享对象说明放在 object_details，通过 accepted_objects 中的 config_ref 对应。默认 usage 展示用途 summary、内容输入及约定 usage、特殊汇报等级和含 config_ref 的 save_example，公共接口输入/返回 io 只列一次。audience="developer" 保留原先的完整 definition、lineage、fixed_contracts、reporting，并增加 field_origins，默认附带当前文件 source。两种详情均可用 include_source 显式控制原文。依赖完整 definition 的调用者应指定 developer。新增类和 TOML 后，下次查询自动发现；损坏配置逐项提示，其余继续。文字/JSON 入口为 tools.common.config_help，详见 [配置 help 说明](configuration/HELP.md)。
 
 ## 六个读写函数
 
@@ -127,7 +127,7 @@ result = dispatch(connection, plan)
 
 位置工具与 dispatch/save/CRUD 的对象写入共用 runtime.positions：按最近声明的轴取得 precision，没有轴或该轴没有精度时使用 1e-6，按最近刻度落点，中点远离零。写入位置或更改所属层时归一对应位置；只改名字/内容不重写历史坐标。保存返回值、日志与回填的 Python 实例使用实际落点。检查按同样的整数刻度比较旧、新记录；原始读取和范围查询保持数值读取，不换算单位、不批量修改旧数据。
 
-检查是否执行继续由原有约束控制。汇报等级独立配置在 configs/logging/diagnostics.toml：error/warn/none，未配置默认 warn；none 只隐藏输出，无法执行的检查仍使 checks.status=partial。缺字段与字段类型错误采用不同 code，模型/动作的 source/data 缺失可静音而类型错误仍报告。同一对象同一配置失败合并成一条，affected_checks 保留受影响检查。文字输出只显示操作结果和逐条问题。
+检查是否执行继续由原有约束控制。字段 optional=true 表示允许缺省，随字段继承；缺省判为符合约定，已填值仍检查类型。未声明 optional 按 false 检查缺失。模型/动作的 source/data 均声明为 optional=true。汇报等级独立配置在 configs/logging/diagnostics.toml：error/warn/none，路径覆盖不继承，未配置默认 warn；none 只隐藏输出，无法执行的检查仍使 checks.status=partial。缺字段与字段类型错误采用不同 code。同一对象同一配置失败合并成一条，affected_checks 保留受影响检查。文字输出只显示操作结果和逐条问题。
 
 ## 配置与自定义类型
 

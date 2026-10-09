@@ -46,7 +46,7 @@
 - 层接受指定对象配置及其派生配置。拥有 text 字段的基础 Object 不自动成为 Text；类型兼容和内容有效性分别判断。
 - begin<=end，允许负位置。位置写入与检查共用轴刻度，默认 1e-6；检查旧记录时比较整数刻度，不重写数据库原值。持续区间为 [begin,end)，瞬间 begin=end 占一个点。1～3 与 3～5 不冲突；瞬间 3 与 1～3 不冲突，与 3～5 冲突；同点瞬间冲突。
 - overlap=true 不执行冲突检查；duration=any 不增加时长限制。positive 要求正时长，zero 要求瞬间。
-- 配置声明过而未提供的字段产生 missing_field，不阻止保存、不自动补默认值；包括继承的 information 字段。独立汇报配置决定 error/warn/none，缺少等级设置默认 warn。模型/动作的 source/data 缺失设为 none，类型错误仍是 field_type。open=true 保留附加键；疑似 txt→text、src→source 或高相似度笔误产生 field_typo，正确字段已存在时不猜测，不自动改名。空字符串/空字典视为已提供。
+- 配置声明 optional=true 的字段允许缺省，检查时判为符合约定；提供了值仍检查类型。optional 随字段继承；未声明时按 false 检查缺失，产生 missing_field，不阻止保存、不自动补默认值。模型/动作的 source/data 声明为 optional=true。独立汇报配置决定 error/warn/none，路径覆盖不继承，缺少等级设置默认 warn。类型错误仍是 field_type。open=true 保留附加键；疑似 txt→text、src→source 或高相似度笔误产生 field_typo，正确字段已存在时不猜测，不自动改名。空字符串/空字典视为已提供；None 是已提供的值，是否接受由 type 决定。
 - 缺字段检查沿用现有增量范围：创建、修改 information、切换配置或主动复查时检查相关内容；仅修改 name/tips 不重复检查旧内容。行记录中未携带的 objects/bind 属于反查组合字段，不当作漏填。
 - 没有必填 text/source、文本长度、资源存在性、文件格式、树深度等附加限制。visibility 留给视图，不检查实例显隐。
 

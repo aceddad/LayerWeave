@@ -4,12 +4,14 @@ from datetime import date, datetime, time
 from math import isfinite
 
 from .loader import DEFAULT_ROOT, ConfigError, Loader
+from .help_data import field_origins, io_help, reporting_exceptions, save_example, usage
 from ..feedback import InputError, error_detail
 from ..validation.channel import report
 from ..validation.diagnostics import DiagnosticPolicy, prepare_diagnostics
 
 
 VIEWS = ("overview", "layers", "objects", "combined")
+AUDIENCES = ("usage", "developer")
 INTERNAL_KEYS = {"_ref", "_lineage", "_contracts"}
 SUMMARY_KEYS = ("type", "name", "class", "when", "note", "not_for")
 
@@ -32,12 +34,13 @@ def _summary(config):
 
 
 class _Catalog:
-    def __init__(self, config_root, include_source):
+    def __init__(self, config_root, include_source, audience):
         self.loader = Loader(config_root)
         if not self.loader.root.is_dir():
             raise InputError(f"配置目录不存在：{self.loader.root}", field="config_root", code="config_not_found")
         self.policy = DiagnosticPolicy(config_root)
         self.include_source = include_source
+        self.audience = audience
         self.loaded, self.issues = {}, []
         self.objects = None
 
@@ -108,8 +111,16 @@ class _Catalog:
                 pass  # 读取失败已由 load 逐项报告；语法损坏但可读的原文仍保留。
         if config is not None:
             if detail:
-                entry.update(definition={key: value for key, value in config.items() if key not in INTERNAL_KEYS},
-                             lineage=config["_lineage"], fixed_contracts=config["_contracts"], reporting=self.reporting(config))
+                entry["save_example"] = save_example(config, kind, self.loader.root)
+                if self.audience == "developer":
+                    entry.update(definition={key: value for key, value in config.items() if key not in INTERNAL_KEYS},
+                                 lineage=config["_lineage"], fixed_contracts=config["_contracts"],
+                                 reporting=self.reporting(config), field_origins=field_origins(self.loader, config, kind))
+                else:
+                    entry.update(summary=_summary(config), usage=usage(config))
+                    exceptions = reporting_exceptions(config, self.policy)
+                    if exceptions:
+                        entry["reporting_exceptions"] = exceptions
             else:
                 entry["summary"] = _summary(config)
             if kind == "layer":
@@ -121,10 +132,14 @@ class _Catalog:
         return entry
 
 
-def read_support(view="overview", targets=None, *, config_root=DEFAULT_ROOT, include_source=False):
+def read_support(view="overview", targets=None, *, config_root=DEFAULT_ROOT, audience="usage", include_source=None):
     """四种 help 都查看封装定义；后三项接受单个或多个配置路径/type/类名。"""
     if view not in VIEWS:
         raise InputError(f"未知 help 视图：{view}", field="view", code="target", allowed=list(VIEWS))
+    if audience not in AUDIENCES:
+        raise InputError(f"未知 help 用途：{audience}", field="audience", allowed=list(AUDIENCES))
+    if include_source is None:
+        include_source = audience == "developer" and view != "overview"
     if view == "overview":
         if targets is not None:
             raise InputError("总览不指定目标；详细查询请使用 layers、objects 或 combined", field="targets")
@@ -132,7 +147,7 @@ def read_support(view="overview", targets=None, *, config_root=DEFAULT_ROOT, inc
             raise InputError("TOML 原文请通过详细查询读取", field="include_source")
     elif targets is None:
         raise InputError("详细查询需要一个目标或目标列表；使用 overview 查看总览", field="targets")
-    catalog = _Catalog(config_root, include_source)
+    catalog = _Catalog(config_root, include_source, audience)
     kind = "object" if view == "objects" else "layer"
     requests = catalog.loader.refs("layer") if view == "overview" else [targets] if isinstance(targets, str) else list(targets)
     items, seen = [], set()
@@ -146,10 +161,13 @@ def read_support(view="overview", targets=None, *, config_root=DEFAULT_ROOT, inc
         if ref not in seen:
             seen.add(ref)
             items.append(catalog.entry(ref, kind, detail=view != "overview", target=target))
-    result = {"view": view, "items": items}
+    result = {"view": view, "audience": audience, "items": items}
     if view == "combined":
         refs = dict.fromkeys(obj["config_ref"] for item in items for obj in item.get("accepted_objects", []))
         result["object_details"] = [catalog.entry(ref, "object", detail=True) for ref in refs]
+    if view != "overview":
+        kinds = {item["kind"] for item in [*items, *result.get("object_details", [])]}
+        result["io"] = io_help(kinds)
     issues = prepare_diagnostics(catalog.issues, config_root=config_root, policy=catalog.policy)
     result.update(status="partial" if issues or any(item["status"] != "loaded" for item in items) else "completed",
                   issues=report(issues)["issues"])

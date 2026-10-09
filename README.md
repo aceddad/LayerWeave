@@ -12,9 +12,10 @@
 cd src
 python -X utf8 -B -m tools.common.config_help
 python -X utf8 -B -m tools.common.config_help combined text
+python -X utf8 -B -m tools.common.config_help objects model Title --dev
 ```
 
-四种 help 为总览、层支持、对象类支持、层与对象类联查；详情支持多目标、文字/JSON 和 TOML 原文。新增封装会自动发现，完整说明见 [配置 help](src/runtime/configuration/HELP.md)。
+Help 分为默认使用版与 --dev 开发版：使用版保留用途、内容输入、返回说明和带 config_ref 的保存示例；开发版展示完整定义、继承与字段来源、汇报设置及原文。两者均支持总览、层支持、对象类支持、层与对象类联查，详情支持多目标和文字/JSON。新增封装会自动发现，完整说明见 [配置 help](src/runtime/configuration/HELP.md)。
 
 在 src 目录运行完整数据读写示例：
 
@@ -150,7 +151,7 @@ python -X utf8 -B -m unittest discover -s ../tests -v
 
 测试覆盖配置继承、父约定保护、字段类型、区间边界、类型兼容、检测触发范围、逐项继续、批次最终状态、按需导入，以及存储、日志、迁移、完整记录/实例往返、关闭重开和 CLI。使用内存库和专用临时文件，不写入输出数据库。
 
-当前包含详细展开、缺字段提醒和轴精度回归在内的 207 项测试通过。JSON 内容变化会区分 `1`、`1.0` 与 `true`，日志、批次最终状态和检测字段选择使用同一比较方式；字典键顺序不产生变化。无变化的字段在 SQL UPDATE 前跳过。
+当前包含可选字段继承、两种 help 的实际保存示例、详细展开与轴精度回归在内的 221 项测试通过。JSON 内容变化会区分 `1`、`1.0` 与 `true`，日志、批次最终状态和检测字段选择使用同一比较方式；字典键顺序不产生变化。无变化的字段在 SQL UPDATE 前跳过。
 
 此前读写优化时的本地 100 对象场景记录（现有层、新 Text 实例自动匹配配置、内置检测开启；以下文件读取数是加入 Title 与配置唯一性检查前的基线）：
 
@@ -209,7 +210,7 @@ API 参数、保存范围与错误反馈见 [公共 API](src/runtime/API.md)。�
 - 规则是普通函数，登记表集中记录触发字段、函数路径和检查范围；实际执行才导入模块。新增规则的完整示例见 [检测说明](src/runtime/validation/README.md)。
 - 可调选项与固定约定分开；默认仅根层可设轴，根不必填轴。持续区间采用 [begin,end)，瞬间占一个点，允许首尾衔接。
 - 配置缺失、未知规则、规则异常逐项报告，其他检查继续。主动复查直接使用 validate，不制造修改或日志。
-- 约束开关与汇报等级分开；configs/logging/diagnostics.toml 设置 error/warn/none，未配置默认 warn。模型/动作的 source/data 缺失不提示，已填值类型错误仍报告；疑似拼写只建议，不自动改键名。相同配置失败按目标合并，保留受影响检查。
+- 约束与汇报等级分开；optional=true 是允许字段缺省的可继承约定，检查仍执行，填入后仍检查类型。模型/动作的 source/data 均可选。configs/logging/diagnostics.toml 设置 error/warn/none，路径覆盖不继承，未配置默认 warn；疑似拼写只建议，不自动改键名。相同配置失败按目标合并，保留受影响检查。
 - 所有对象位置写入共用 runtime.positions，按 axis.precision 落点，无精度时默认 1e-6；起止、时长与重叠按同一整数刻度比较。修改轴或父层后复查受影响子树的位置关系，不批量重写旧坐标。原始读取与范围筛选不换算单位、不自动取整。
 - 按需导入已解决旧版包入口一次加载全部封装的耦合，保持 from models import Text 等用法。
 - 后续推进项目内部工具、视图和明确提出的新用途；不预先增加资源检查或更多字段限制。

@@ -44,7 +44,7 @@ def check(record, config, read_record):
         if changed is None or name in changed:
             if name in record:
                 field(record[name], spec, name)
-            elif name not in {"objects", "bind"}:
+            elif name not in {"objects", "bind"} and not spec.get("optional", False):
                 # objects/bind 是反查装载的组合字段，不是数据库记录缺失。
                 issues.append(problem("未提供配置声明的字段，请检查是否漏填或字段名写错", field=name, code="missing_field"))
     information = record.get("information")
@@ -65,7 +65,7 @@ def check(record, config, read_record):
                 key = hints[name]
                 issues.append(problem(f"未提供 {name}；未声明字段 {key} 可能是它的笔误", code="field_typo",
                                       field=f"information.{key}", suggestions={key: name}))
-            else:
+            elif not spec.get("optional", False):
                 issues.append(problem("未提供配置声明的字段，请检查是否漏填或字段名写错",
                                       field=f"information.{name}", code="missing_field"))
         if config.get("open", True) is False:

@@ -10,6 +10,7 @@ def create_example():
         "layers": config_help("layers", ["text", "image"]),
         "objects": config_help("objects", ["Text", "Title", "objects/model.toml"]),
         "combined": config_help("combined", ["TextLayer"]),
+        "developer": config_help("objects", ["model", "Title"], audience="developer"),
     }
 
 

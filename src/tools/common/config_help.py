@@ -9,12 +9,12 @@ from runtime.api import read_support, format_issue
 VIEWS = {"overview": "支持总览", "layers": "层支持详情", "objects": "对象类支持详情", "combined": "层＋对象类支持详情"}
 SECTIONS = {"fields": "基础字段", "information": "内容字段", "methods": "方法说明", "rules": "检查约定",
             "constraint": "有效约束", "options": "可调选项", "display": "显示能力",
-            "defaults": "可调整默认约定（实际取值见对应项）", "example": "创建参数示例", "tools": "工具声明"}
+            "defaults": "可调整默认约定（实际取值见对应项）", "example": "Python 构造参数示例（编号为作者示意值）", "tools": "工具声明"}
 
 
-def config_help(view="overview", targets=None, *, config_root=None, include_source=False):
+def config_help(view="overview", targets=None, *, config_root=None, audience="usage", include_source=None):
     """后三种 view 支持一个或多个配置路径、type、完整 class 路径或唯一类名。"""
-    return read_support(view, targets, include_source=include_source,
+    return read_support(view, targets, audience=audience, include_source=include_source,
                         **({"config_root": config_root} if config_root is not None else {}))
 
 
@@ -24,6 +24,33 @@ def _dump(value):
 
 def _identity(summary):
     return f"{summary.get('name', summary.get('type', ''))} [{summary.get('type', '')}] · {summary.get('class', '')}"
+
+
+def _grade(setting):
+    return setting["default"] + "".join(f"；{field}={level}" for field, level in setting["fields"].items())
+
+
+def _format_usage(item):
+    lines = []
+    use = item["usage"]
+    if "information" in use:
+        lines.append("  内容输入：")
+        for name, spec in use["information"].items():
+            presence = "可选填入" if spec.get("optional", False) else "缺省会产生诊断"
+            note = " · " + str(spec["note"]) if spec.get("note") else ""
+            lines.append(f"    - information.{name}: {spec.get('type', '未声明类型')} · {presence}{note}")
+            extra = {key: value for key, value in spec.items() if key not in {"type", "optional", "note"}}
+            if extra:
+                lines.append("      " + _dump(extra))
+    if "open" in use:
+        lines.append("  附加内容：" + ("允许未声明的键" if use["open"] else "仅接受已声明的键"))
+    for section in ("rules", "constraint", "options", "display"):
+        if use.get(section):
+            lines.append(f"  {SECTIONS[section]}：" + "，".join(f"{key}={_dump(value)}" for key, value in use[section].items()))
+    for exception in item.get("reporting_exceptions", []):
+        detail = f"{exception['field']}={exception['level']}" if "field" in exception else _grade(exception)
+        lines.append(f"  特殊汇报 {exception['code']}：{detail}")
+    return lines
 
 
 def _format_entry(item):
@@ -63,26 +90,43 @@ def _format_entry(item):
                 if section in {"fields", "information"} and isinstance(value, dict):
                     for name, spec in value.items():
                         text = f"    - {name}: {spec.get('type', '未声明类型')}"
+                        text += " · optional=" + _dump(spec.get("optional", False))
+                        if "optional" not in spec:
+                            text += "（默认）"
+                        elif spec["optional"]:
+                            text += "（允许缺省，填入仍检查）"
                         if "default" in spec:
                             text += " · 声明默认=" + _dump(spec["default"])
                         if spec.get("note"):
                             text += " · " + str(spec["note"])
                         lines.append(text)
-                        extras = {key: val for key, val in spec.items() if key not in {"type", "default", "note"}}
+                        extras = {key: val for key, val in spec.items() if key not in {"type", "default", "note", "optional"}}
                         if extras:
                             lines.append("      附加声明：" + _dump(extras))
                         labels = {"missing_field": "缺少字段", "field_type": "类型错误", "field_typo": "疑似笔误"}
                         grades = reporting.get(section, {}).get(name, {})
                         lines.append("      问题汇报：" + "，".join(f"{labels.get(code, code)}={level}" for code, level in grades.items()))
+                        origins = item["field_origins"][section][name]
+                        lines.append("      声明来源：" + "，".join(f"{key} ← {origin}" for key, origin in origins.items()))
                 elif section in {"rules", "constraint", "display", "options"} and isinstance(value, dict):
                     fixed = item["fixed_contracts"].get(section, {})
                     for name, val in value.items():
                         label = "固定约定" if name in fixed else "可调选项" if section == "options" else "默认约定"
                         grade = reporting.get(section, {}).get(name)
-                        suffix = " · 同名问题汇报=" + _dump(grade) if grade is not None else ""
+                        suffix = " · 同名问题汇报=" + _grade(grade) if grade is not None else ""
                         lines.append(f"    - {name} = {_dump(val)} · {label}{suffix}")
                 else:
                     lines.append("    " + _dump(value))
+        elif "usage" in item:
+            lines.extend(_format_usage(item))
+        if "save_example" in item:
+            example = item["save_example"]
+            if example["status"] == "available":
+                lines.append("  保存调用示例（使用实际项目上下文）：")
+                lines.append("    所需变量：" + "；".join(f"{key}：{value}" for key, value in example["required_context"].items()))
+                lines.extend(["```python", example["code"], "```"])
+            else:
+                lines.append("  保存示例不可用：" + example["reason"])
     if "source" in item:
         lines.extend(["  当前 TOML 原文：", *["    " + line for line in item["source"].splitlines()]])
     return lines
@@ -90,8 +134,14 @@ def _format_entry(item):
 
 def format_help(result):
     """同一结构化结果生成文字；新封装/字段/额外节无需增加显示分支。"""
-    lines = ["LayerWeave 配置 help · " + VIEWS.get(result["view"], result["view"]),
+    audience = "开发" if result.get("audience") == "developer" else "使用"
+    lines = [f"LayerWeave {audience} help · " + VIEWS.get(result["view"], result["view"]),
              "查看封装定义；项目中的实际层和对象请使用项目查询工具。"]
+    if "io" in result:
+        lines.append("公共保存接口（本次只列一次）：")
+        for kind, fields in result["io"]["inputs"].items():
+            lines.append(f"  save_{kind}(connection, project_id, 字典)：" + ", ".join(fields))
+        lines.append("  返回：" + result["io"]["output"])
     for item in result["items"]:
         lines.extend(["", *_format_entry(item)])
     if result.get("object_details"):
@@ -100,10 +150,10 @@ def format_help(result):
             lines.extend(["", *_format_entry(item)])
     if not result["items"]:
         lines.extend(["", "没有匹配的配置条目。"])
-    if result["view"] != "overview":
-        lines.extend(["", "创建提示：按 class 路径导入类，example 是配置作者提供的参数示例。",
-                      "字典保存时添加对应 config_ref；示例编号应替换为实际编号，新增记录不填写 id。",
-                      "字段 default 是声明说明；保存不会据此自动补写 information 内容。"])
+    if "io" in result:
+        lines.extend(["", *result["io"]["notes"]])
+    if result.get("audience") != "developer":
+        lines.append("完整字段、继承、汇报和原文：添加 --dev（Python 使用 audience='developer'）。")
     for issue in result.get("issues", []):
         lines.extend(["", format_issue(issue)])
     return "\n".join(lines)
@@ -114,14 +164,15 @@ def main():
     parser.add_argument("view", nargs="?", default="overview", choices=VIEWS, help="overview 总览；layers 层；objects 对象类；combined 联查")
     parser.add_argument("targets", nargs="*", help="详情目标，可传多个配置路径、type 或唯一 Python 类名")
     parser.add_argument("--config-root", help="配置根目录，默认使用项目 configs")
-    parser.add_argument("--raw", action="store_true", help="详情中附带当前 TOML 原文及注释")
+    parser.add_argument("--dev", action="store_true", help="开发 help：完整定义、字段来源、汇报设置和当前原文")
+    parser.add_argument("--raw", action="store_true", default=None, help="使用详情中也附带当前 TOML 原文及注释")
     parser.add_argument("--json", action="store_true", help="输出结构化 JSON，默认输出文字")
     args = parser.parse_args()
     try:
         if args.view != "overview" and not args.targets:
             parser.error("详情查询需要目标；先运行 overview 查看支持列表")
         result = config_help(args.view, None if args.view == "overview" and not args.targets else args.targets,
-                             config_root=args.config_root, include_source=args.raw)
+                             config_root=args.config_root, audience="developer" if args.dev else "usage", include_source=args.raw)
     except (OSError, ValueError, TypeError) as error:
         result = {"view": args.view, "status": "failed", "items": [],
                   "issues": [{"severity": "error", "message": str(error), **getattr(error, "details", {})}]}

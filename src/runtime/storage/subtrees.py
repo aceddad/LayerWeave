@@ -27,6 +27,8 @@ def _source(connection, project_id, layer_id):
 
 def _ordered_layers(layers, root_id):
     """父层在前，迭代遍历避免深树递归；已有父链环也只访问一次。"""
+    if not layers:
+        return []
     children = defaultdict(list)
     by_id = {layer["id"]: layer for layer in layers}
     for layer in layers:
@@ -75,7 +77,7 @@ def _mapping_result(mapping):
     return {kind: [{"old_id": old, "new_id": new} for old, new in ids.items()] for kind, ids in mapping.items()}
 
 
-def _copy_records(connection, source, destination, operation_id, *, name=None, cross_project=False):
+def _copy_records(connection, source, destination, operation_id, *, name=None, cross_project=False, target_layer_id=None):
     owner, root, layers, objects, bindings = source
     ordered = _ordered_layers(layers, root)
     mapping = {kind: {} for kind in ("layer", "object", "bind")}
@@ -113,7 +115,7 @@ def _copy_records(connection, source, destination, operation_id, *, name=None, c
     positions = PositionMath(partial(crud.read, connection), destination)
     for old in objects:
         data = _payload("object", old)
-        data["layer"] = mapping["layer"][old["layer"]]
+        data["layer"] = target_layer_id if target_layer_id is not None else mapping["layer"][old["layer"]]
         create("object", old, data, position_math=positions)
     for old in bindings:
         data = _payload("bind", old)
@@ -159,25 +161,73 @@ def transfer_subtree(connection, project_id, layer_id, target_project_id, *, mod
         destination = destination["id"]
         if destination == source[0]:
             raise InputError("跨项目操作需要不同的目标项目；同项目复制使用 copy_subtree", field="target_project_id")
-        incoming = {}
-        if mode == "cut":
-            from .queries import read_bindings
-            owned = {row["id"] for row in source[4]}
-            for kind, rows in (("layer", source[2]), ("object", source[3])):
-                for row in rows:
-                    for bind in read_bindings(connection, kind, source[0], row["id"], direction="incoming"):
-                        if bind["id"] not in owned:
-                            incoming[bind["id"]] = bind
-        mapping, changes = _copy_records(connection, source, destination, operation_id, name=name, cross_project=True)
-        for bind in incoming.values():
-            _, change = crud.update(connection, "bind", bind["id"], {
-                "target_project_id": destination, "target_id": mapping[bind["target_kind"]][bind["target_id"]]},
-                operation_id=operation_id)
-            changes.append(change)
-        if mode == "cut":
-            changes.extend(_delete_records(connection, source, operation_id))
+        mapping, changes, incoming = _transfer_records(connection, source, destination, operation_id, mode=mode, name=name)
         return {"mode": mode, "source_project_id": source[0], "project_id": destination,
                 "source_layer_id": source[1], "layer_id": mapping["layer"][source[1]],
                 "counts": _counts(source), "id_map": _mapping_result(mapping),
                 "redirected_bind_ids": list(incoming)}, changes
     return {**run_operation(connection, work, checker=_checker(checker, config_root)), "tool": "transfer_subtree"}
+
+
+def _transfer_records(connection, source, destination, operation_id, *, mode, name=None, target_layer_id=None):
+    """子树和对象选择共用的迁移、入向改指与删除；由外层管理单次事务。"""
+    from .queries import read_bindings
+    incoming = {}
+    if mode == "cut":
+        owned = {row["id"] for row in source[4]}
+        for kind, rows in (("layer", source[2]), ("object", source[3])):
+            for row in rows:
+                for bind in read_bindings(connection, kind, source[0], row["id"], direction="incoming"):
+                    if bind["id"] not in owned:
+                        incoming[bind["id"]] = bind
+    mapping, changes = _copy_records(connection, source, destination, operation_id, name=name,
+                                     cross_project=True, target_layer_id=target_layer_id)
+    for bind in incoming.values():
+        _, change = crud.update(connection, "bind", bind["id"], {
+            "target_project_id": destination, "target_id": mapping[bind["target_kind"]][bind["target_id"]]},
+            operation_id=operation_id)
+        changes.append(change)
+    if mode == "cut":
+        changes.extend(_delete_records(connection, source, operation_id))
+    return mapping, changes, incoming
+
+
+def transfer_objects(connection, project_id, object_ids, target_project_id, target_layer_id, *, mode="copy",
+                     config_root=DEFAULT_ROOT, checker=DEFAULT_CHECKER):
+    """同库跨项目复制/剪切选中对象及出向关联，放入明确的已有目标层。"""
+    from .assembly import read_object
+
+    def work(operation_id):
+        if mode not in {"copy", "cut"}:
+            raise InputError("迁移模式应为 copy 或 cut", field="mode", allowed=["copy", "cut"])
+        projects = []
+        for field, id in (("project_id", project_id), ("target_project_id", target_project_id)):
+            row = crud.read(connection, "project", id=id) if id is not None else None
+            if row is None:
+                raise InputError(f"项目 {id} 不存在", code="missing_reference", field=field,
+                                 target=target("project", None, id))
+            projects.append(row["id"])
+        owner, destination = projects
+        if owner == destination:
+            raise InputError("跨项目操作需要不同的目标项目；同项目复制使用 copy_object，换层使用 update",
+                             field="target_project_id")
+        layer = crud.read(connection, "layer", project_id=destination, id=target_layer_id) if target_layer_id is not None else None
+        if layer is None:
+            raise InputError(f"目标层 ({destination}, {target_layer_id}) 不存在", code="missing_reference",
+                             field="target_layer_id", target=target("layer", destination, target_layer_id))
+        if object_ids is None or isinstance(object_ids, (str, bytes)):
+            raise InputError("object_ids 需要编号列表，单个对象也使用 [id]", field="object_ids")
+        objects = {}
+        for id in dict.fromkeys(object_ids):
+            obj = read_object(connection, owner, id) if id is not None else None
+            if obj is None:
+                raise InputError(f"对象 ({owner}, {id}) 不存在", code="target_not_found", field="object_ids",
+                                 target=target("object", owner, id))
+            objects.setdefault(obj["id"], obj)
+        source = (owner, None, [], list(objects.values()), [bind for obj in objects.values() for bind in obj["bind"]])
+        mapping, changes, incoming = _transfer_records(connection, source, destination, operation_id,
+                                                       mode=mode, target_layer_id=layer["id"])
+        return {"mode": mode, "source_project_id": owner, "source_object_ids": list(objects), "project_id": destination,
+                "layer_id": layer["id"], "counts": _counts(source), "id_map": _mapping_result(mapping),
+                "redirected_bind_ids": list(incoming)}, changes
+    return {**run_operation(connection, work, checker=_checker(checker, config_root)), "tool": "transfer_objects"}

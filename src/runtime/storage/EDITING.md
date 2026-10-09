@@ -120,10 +120,30 @@ python -X utf8 -B -m tools.common.transfer DATABASE SOURCE_PROJECT cut SOURCE_LA
 
 所有新入口支持 config_root 和 checker；CLI 可传 --config-root，默认采用内置检查。示例 `python -X utf8 -B -m examples.editing` 使用内存数据库演示这些工具，不修改真实项目。
 
+## 对象跨项目复制和剪切
+
+`transfer_objects(connection, project_id, object_ids, target_project_id, target_layer_id, mode="copy")`
+将明确选择的一个或多个对象放入同库另一项目的已有层。object_ids 是编号列表，可以来自源项目不同层；重复编号只处理一次，空列表不写入。位置数值、配置和内容保留，不复制源层、轴或媒体文件，也不按目标轴重新落点。目标层的兼容性和重叠仍在提交后检查。
+
+对象和它们发出的关联重新发号。选中对象之间的关联换成目标编号，其他出向目标保留原地址；copy 保留源对象与外部入向引用，cut 让外部入向引用跟随新地址后删除源对象和出向关联。整个批次共用一条操作历史，可整批撤销/重做；源层保留，发号上限不回退。
+
+返回标准操作结果，data 含 source_project_id、source_object_ids、project_id（目标）、layer_id（目标已有层）、mode、counts、id_map、redirected_bind_ids。id_map 仍包含 layer/object/bind，layer 为空，因为这次没有创建层。
+
+```python
+from runtime.api import transfer_objects
+
+result = transfer_objects(connection, 1, [8, 9], 2, 4, mode="copy")
+```
+
+```sh
+python -m tools.common.transfer_objects DATABASE 1 copy 2 4 --ids 8 9 --json
+python -m tools.common.transfer_objects DATABASE 1 cut 2 4 --ids 8 --json
+```
+
 ## 代码位置
 
 - storage/timeline.py：对象选择、分段规划、分割和插空档的事务组合；批量平移复用 dispatch。
 - positions.shifted_positions：平移与插空档共用的数值计算。
 - storage/subtrees.py：同项目复制和跨项目迁移共用的创建/删除逻辑。
 - storage/crud.py 的私有 _insert：统一发号、插入和日志；仅跨项目复制在此保留原始坐标，普通写入仍先落点。
-- tools/common/split.py、gaps.py、transfer.py：CLI 与展示；原 positions.py 的 shift 入口仍可用。
+- tools/common/split.py、gaps.py、transfer.py、transfer_objects.py：CLI 与展示；原 positions.py 的 shift 入口仍可用。

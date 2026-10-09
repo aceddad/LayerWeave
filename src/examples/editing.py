@@ -2,8 +2,9 @@
 
 from contextlib import closing
 
-from runtime.api import (dispatch, insert_gap, open_database, save_layer, save_object,
-                         shift_objects, split_object, transfer_subtree, undo_operation)
+from runtime.api import (dispatch, find_gaps, insert_gap, open_database, save_layer, save_object,
+                         shift_objects, split_object, transfer_objects, transfer_subtree, undo_operation)
+from tools.common.free_ranges import format_gaps
 from runtime.storage.database import SCHEMA_PATH
 from tools.common.gaps import format_gap
 from tools.common.split import format_split
@@ -36,7 +37,11 @@ def create_example():
         assert cut["ok"], cut
         restored = undo_operation(connection, cut["operation_id"])
         assert restored["ok"], restored
-        return {"split": split, "shift": shift, "gap": gap, "cut": cut, "restored": restored}
+        free = find_gaps(connection, source, layer, begin=0, end=30, min_length=1)
+        copied = transfer_objects(connection, source, [obj], destination, other, mode="copy")
+        assert copied["ok"], copied
+        return {"split": split, "shift": shift, "gap": gap, "cut": cut, "restored": restored,
+                "free": free, "copied_objects": copied}
 
 
 if __name__ == "__main__":
@@ -45,3 +50,5 @@ if __name__ == "__main__":
     print(format_gap(result["gap"]))
     print(format_transfer(result["cut"]))
     print(format_undo(result["restored"]))
+    print(format_gaps(result["free"]))
+    print(format_transfer(result["copied_objects"]))

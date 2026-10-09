@@ -45,10 +45,14 @@ read 返回保留 project_id/config_ref 的普通字典，不需要配置文件�
 | read_snapshot(connection) | with 上下文中的读取快照；借用已有事务时不会替调用方提交 |
 | query_objects(connection, project_id, layer_id=None, name=None, begin=None, end=None) | 参数化筛选对象记录；可选参数用关键字传入，name 是区分大小写的字面子串 |
 | read_bindings(connection, kind, project_id, id, direction="both") | 按完整实体身份查询 outgoing/incoming/both 直接关联，direction 使用关键字传入 |
+| read_layer_positions(connection, project_id, layer_id) | 返回层身份和直属对象的 id/begin/end；不存在返回 None，不加载正文或隐藏异常位置 |
+| find_gaps(connection, project_id, layer_id, begin=..., end=..., min_length=0) | 指定层在 [begin,end) 内的空档；三个位置参数使用关键字传入，不换算轴或取整 |
 
 位置查询采用相交语义：[begin,end)，begin=end 表示点查询，一端 None 表示该方向未限定。提供位置条件时排除无效区间；没有位置条件时不因此过滤记录。query_objects 不读取配置文件、不装载关联或换算单位；read_bindings 保留失效引用且不装载端点。
 
 对象检索、关联分组和文字提取的业务整理放在对应工具中，完整用法见 [第一批工具](../../tools/README.md)。SQL 只在存储层维护，工具不复制查询实现。
+
+find_gaps 返回 project_id/layer_id/scope/count/gaps；每段含 begin/end/length/begin_inclusive，终点始终不包含。重叠与相邻占用先合并；瞬间对象占点，后续空档用 begin_inclusive=false 表示开起点，不虚构 epsilon。min_length 按实际可容纳长度筛选；开起点区间不能容纳恰好等于其跨度的对象。只查询直属层；空层返回整个区间，零长查询返回空列表，层不存在或位置无法解释时抛出 ValueError 并指出目标。CLI 与例子见 [工具指南](../../tools/README.md)。
 
 ## 复查、历史与撤销
 
@@ -80,12 +84,15 @@ copy_subtree(connection, project_id, layer_id, name=None, config_root=DEFAULT_RO
 | shift_objects(connection, project_id, object_ids=None, offset=..., layer_id=None, layer_ids=None, from_position=None) | 保留现有批次 results；可选择对象、直属层或多棵子树，再用 begin 下限筛选，正负偏移均支持 |
 | insert_gap(connection, project_id, at=..., length=..., layer_id=None, layer_ids=None, whole_project=False, crossing_actions=None) | 必须明确选择一个范围；跨界对象逐个选择 split/keep/stretch/move；返回 scope、gaps、splits、kept、stretched、moved、shifted |
 | transfer_subtree(connection, project_id, layer_id, target_project_id, mode="copy", name=None) | 同库跨项目复制或剪切到目标根部，重新发号、映射结构引用、精确保留位置数值；cut 让外部入向关联跟随新地址 |
+| transfer_objects(connection, project_id, object_ids, target_project_id, target_layer_id, mode="copy") | 同库跨项目复制/剪切选中对象及出向关联，放入目标已有层；源层保留，内部引用映射，cut 的外部入向引用跟随 |
 
 可选参数使用关键字，均接受 config_root 与 checker。新工具返回标准操作结果和提交后 checks，能按 operation_id 整批撤销/重做。分割内容为完整 information 字典，工具不推测文本切分、媒体范围或自由内容里的编号。空 cuts 不写入；非空 cuts 需要 first_information。
 
 insert_gap 的 crossing_actions 是 object_id/action 项列表；split 需要两段 information，keep 原样保留，stretch 仅 end 后移，move 将 begin/end 一起后移，偏移量为本层实际插入长度。后两者保持编号、内容、关联，不解释媒体行为。缺项或过期项整批不写，并用 required_crossings 列出所需目标。旧 split_contents 参数仍兼容，不能与 crossing_actions 同传；完整两段内容未写 action 时按旧 split 解释。keep/stretch/move 可能覆盖插入时段。from_position 只控制平移的 begin 选择；重叠冲突仍依据层配置在写入后报告。
 
 迁移的显式 axis 保留，祖先提供的轴不补造，不做单位换算或重新落点。复制保留源地址，剪切将入向引用的 target_project_id/target_id 改为新身份并保留关联自身 id；源删除与目标创建同事务。具体格式、命令行、编号对应表见 [编辑工具说明](storage/EDITING.md)。
+
+transfer_objects 的 object_ids 是一个或多个源项目对象的编号列表，可跨层；重复编号去重，空列表不写入。目标项目必须不同，target_layer_id 必须已存在。data 返回 source_object_ids、source_project_id、project_id（目标）、layer_id（目标已有层）、mode、counts、id_map、redirected_bind_ids；id_map.layer 为空。位置精确保留，层兼容性与重叠在提交后检查，剪切不删除源层。
 
 ## Python 实例的完整往返
 

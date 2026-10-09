@@ -11,7 +11,7 @@ from .storage.crud import read as read_record
 from .storage.database import initialize_database, open_database
 from .storage.models import load_layer, load_object
 from .storage.save import save_layer, save_object
-from .storage.queries import query_objects, read_bindings
+from .storage.queries import query_objects, read_bindings, read_layer_positions
 from .storage.details import read_project_details
 
 
@@ -94,9 +94,22 @@ def command_help(*args, **kwargs):
     return describe(*args, **kwargs)
 
 
+def transfer_objects(*args, **kwargs):
+    """将选中对象及出向关联复制/剪切到另一项目的已有层。"""
+    from .storage.subtrees import transfer_objects as transfer
+    return transfer(*args, **kwargs)
+
+
+def find_gaps(*args, **kwargs):
+    """查询指定层在有限区间内的空档，不改写位置。"""
+    from tools.common.free_ranges import find_gaps as find
+    return find(*args, **kwargs)
+
+
 __all__ = ["Loader", "dispatch", "initialize_database", "open_database", "read_layer", "read_object", "read_project_index",
            "load_layer", "load_object", "save_layer", "save_object", "validate",
            "read_record", "read_snapshot", "query_objects", "read_bindings", "read_project_details", "DEFAULT_CHECKER",
            "format_feedback", "format_issue", "diagnostic_report", "PositionMath", "decimal_value", "read_support",
            "recheck", "read_history", "undo_operation", "delete_subtree", "copy_subtree",
-           "split_object", "shift_objects", "insert_gap", "transfer_subtree", "command_help"]
+           "split_object", "shift_objects", "insert_gap", "transfer_subtree", "command_help",
+           "transfer_objects", "find_gaps", "read_layer_positions"]

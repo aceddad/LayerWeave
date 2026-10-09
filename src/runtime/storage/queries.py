@@ -63,3 +63,18 @@ def read_bindings(connection, kind, project_id, id, *, direction="both"):
     with _snapshot(connection):
         rows = connection.execute('SELECT * FROM binds WHERE ' + ' OR '.join(terms) + ' ORDER BY id', values)
         return [dict(row) for row in rows]
+
+
+def read_layer_positions(connection, project_id, layer_id):
+    """同一读取快照内取层身份和直属对象位置；不加载正文，也不隐藏异常位置。"""
+    if layer_id is None:
+        raise ValueError("需要明确的 layer_id")
+    with _snapshot(connection):
+        layer = crud.read(connection, "layer", project_id=project_id, id=layer_id)
+        if layer is None:
+            return None
+        rows = connection.execute(
+            'SELECT id, "begin", "end" FROM objects WHERE project_id = ? AND layer = ? ORDER BY "begin", "end", id',
+            (layer["project_id"], layer["id"]),
+        )
+        return {"project_id": layer["project_id"], "layer_id": layer["id"], "objects": [dict(row) for row in rows]}

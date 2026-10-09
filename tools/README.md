@@ -16,6 +16,8 @@
 | 对象分割 | [split.py](../src/tools/common/split.py) | 按单点/多点与明确的各段 information 分割，第一段保留编号和关联 |
 | 插空档 | [gaps.py](../src/tools/common/gaps.py) | 明确选范围、位置和长度，跨界对象逐个 split/keep/stretch/move，整批原子执行 |
 | 跨项目复制/剪切 | [transfer.py](../src/tools/common/transfer.py) | 目标重新发号、原数值保留；剪切时外部入向引用跟随新地址 |
+| 对象跨项目复制/剪切 | [transfer_objects.py](../src/tools/common/transfer_objects.py) | 选择一个或多个对象，放入另一项目已有层，沿用关联映射与撤销规则 |
+| 空档查询 | [free_ranges.py](../src/tools/common/free_ranges.py) | 查询直属层在指定区间内的空白，可按最小可容纳长度筛选；只读 |
 | 项目概览 | [project_overview.py](../src/tools/common/project_overview.py) | 项目层级、层类型、名字与对象数量；只读 |
 | 项目详细展开 | [project_details.py](../src/tools/common/project_details.py) | 展开项目/子树的层、对象内容和关联引用，可按数值范围筛选；只读 |
 | 对象检索 | [find_objects.py](../src/tools/common/find_objects.py) | 按层、名字、内容、位置范围查找对象；只读 |
@@ -310,7 +312,7 @@ result = copy_object(connection, project_id, object_id, layer_id=target_layer_id
 
 复制默认保留内容、配置、名字、备注、所属层与位置，新编号由核心发放。可另选同项目目标层、名字或起点；指定起点时保留原时长。append=True 将副本接到目标层末尾，空层从 0 开始，不能同时指定 begin。
 
-单对象复制不修改原对象，不复制出向/入向关联，也不复制媒体文件；information 中的资源引用保持原样。需要连同内部关联复制完整子树时，使用 [copy_subtree](../src/runtime/storage/SUBTREES.md)。跨项目的子树复制/剪切使用 [transfer_subtree](../src/runtime/storage/EDITING.md)，单独对象的跨项目入口暂未提供。
+单对象复制不修改原对象，不复制出向/入向关联，也不复制媒体文件；information 中的资源引用保持原样。需要连同内部关联复制完整子树时，使用 [copy_subtree](../src/runtime/storage/SUBTREES.md)。跨项目子树使用 transfer_subtree；选中一个或多个对象放入目标已有层使用 transfer_objects，后者会复制出向关联。详见 [跨项目工具](../src/runtime/storage/EDITING.md)。
 
 ### 第二批命令行
 
@@ -326,6 +328,49 @@ python -X utf8 -B -m tools.common.objects ../output/ai-production.sqlite3 1 copy
 ```
 
 object.json 为对象创建字段，例如 `{"config_ref":"objects/text.toml","information":{"text":"下一句"}}`。平移与对齐可用 --layer-id 选择整层；arrange 用 --ids 指定排列顺序；append 可用 --after-id 或 --empty-start。
+
+## 空档查询与对象搬移
+
+### 空档查询
+
+```python
+from runtime.api import find_gaps
+
+result = find_gaps(connection, project_id, layer_id, begin=0, end=20, min_length=3)
+```
+
+```sh
+python -m tools.common.free_ranges DATABASE 1 4 0 20 --min-length 3 --json
+```
+
+只查询指定层直属对象，不自动包含子层。begin/end 明确限定 [begin,end)，min_length 默认 0；先合并占用区间，再返回正长度空档。相邻对象的首尾相接不产生空档；空层返回整个查询区间，begin=end 返回空列表。负位置可用。
+
+返回 project_id、layer_id、scope、count、gaps。例如已有 [0,3)、[7,20) 时，查询 0–20 返回：
+
+```json
+{"begin": 3, "end": 7, "length": 4.0, "begin_inclusive": true}
+```
+
+每个空档的终点都不包含。瞬间对象仍占一个点：若 5 处有瞬间对象，其后的空档从 `(5,...` 开始，begin_inclusive=false；工具不猜一个 epsilon 或改写坐标。min_length 按可容纳长度筛选，因此开起点的 `(5,8)` 不算能容纳完整 3 单位的对象。
+
+查询不加载配置、对象正文或关联，不换算轴或取整。与对象检索不同，若本层存在无法解释的位置（非有限数值或 begin>end），本次空档查询会指出对象并失败，避免把未知占用视为空闲；可用 recheck 查看完整诊断。读取使用同一快照，不写入数据库或日志。
+
+### 对象跨项目复制/剪切
+
+```python
+from runtime.api import transfer_objects
+
+result = transfer_objects(connection, source_project_id, [8, 9], target_project_id, target_layer_id, mode="copy")
+```
+
+```sh
+python -m tools.common.transfer_objects DATABASE 1 copy 2 4 --ids 8 9 --json
+python -m tools.common.transfer_objects DATABASE 1 cut 2 4 --ids 8 --json
+```
+
+object_ids 可包含源项目不同层的对象；去重后保持选择顺序，空列表不写入。目标是另一项目中已存在的一个层。源层不搬移；位置原数值、配置与内容保持，目标层兼容性及重叠在提交后检查。
+
+两种模式都复制对象和它们发出的关联，重新发号；选中对象之间的关联换成新编号，其他出向目标保持原地址。copy 保留源对象，外部入向关联仍指向源；cut 删除源对象和出向关联，外部入向关联跟随新地址。一个 operation_id 覆盖整批操作，可整体撤销/重做。返回 counts、id_map 与改指的关联编号，格式见 [编辑工具说明](../src/runtime/storage/EDITING.md)。
 
 ## 开发下一个工具
 

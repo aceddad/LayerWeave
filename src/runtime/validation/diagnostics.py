@@ -16,7 +16,7 @@ def prepare_diagnostics(issues, *, config_root=DEFAULT_ROOT):
     root = Path(config_root).resolve()
     policy, policy_issue = {}, None
     try:
-        with (root / "diagnostics.toml").open("rb") as file:
+        with (root / "logging" / "diagnostics.toml").open("rb") as file:
             policy = tomllib.load(file)
         if not isinstance(policy.get("levels", {}), dict) or not isinstance(policy.get("overrides", {}), dict):
             raise ValueError("levels 和 overrides 应为表")
@@ -50,7 +50,7 @@ def prepare_diagnostics(issues, *, config_root=DEFAULT_ROOT):
         result.append(item)
     if policy_issue:
         result.append({"severity": "warn", "code": "diagnostics_config", "rule": "diagnostics",
-                       "field": "diagnostics.toml", "message": f"汇报配置不可用：{policy_issue}"})
+                       "field": "logging/diagnostics.toml", "message": f"汇报配置不可用：{policy_issue}"})
 
     merged = {}
     for item in result:

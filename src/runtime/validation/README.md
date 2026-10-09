@@ -144,7 +144,7 @@ note = "标题封装，使用继承 Text 的独立 Title 类"
 text_nonempty = true
 ```
 
-需要将该诊断报告为错误时，在独立 diagnostics.toml 的 [levels] 中设置 `text_nonempty = "error"`；未设置则默认 warn。规则开关与汇报等级各自管理。
+需要将该诊断报告为错误时，在独立 configs/logging/diagnostics.toml 的 [levels] 中设置 `text_nonempty = "error"`；未设置则默认 warn。规则开关与汇报等级各自管理。
 
 文字层接受此派生配置。新规则仅在配置启用且有关字段变化时执行，runner 与 CRUD 无需修改。规则返回问题列表；runner 补充 rule/target，规则也可为相关对象指定 target。函数应只读输入与关联数据。
 

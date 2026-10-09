@@ -158,7 +158,7 @@ sources = result["items"]
 
 可传 begin/end 使用与对象检索相同的位置范围，也可传 config_root 指定配置目录。一次调用内共享配置读取结果。
 
-- 非文字对象会跳过。文字对象未填写 text 时产生 missing_field 后跳过；默认 warn，可通过独立 diagnostics.toml 改变汇报等级。即使设置 none，提取不完整的状态和 skipped_count 仍如实保留。空字符串视为已填写，正常保留。
+- 非文字对象会跳过。文字对象未填写 text 时产生 missing_field 后跳过；默认 warn，可通过独立 configs/logging/diagnostics.toml 改变汇报等级。即使设置 none，提取不完整的状态和 skipped_count 仍如实保留。空字符串视为已填写，正常保留。
 - 配置缺失或文字类型错误逐条放入 issues，附 severity、target、field 和 message，其他对象继续。
 - status=completed 表示本次汇集完成；存在无法汇集的条目时为 partial。skipped_count 包含非文字、未填写文字及错误条目。
 - 文字基准配置本身不可用时返回 partial，明确说明未能汇集；层不存在返回 None。

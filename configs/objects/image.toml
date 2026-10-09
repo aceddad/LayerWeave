@@ -11,7 +11,7 @@ extends = "base.toml"
 note    = "用 information.source 引用图片资源"
 open    = true                 # 保留附加内容
 
-# 声明字段缺失和类型错误分别诊断，等级由 ../diagnostics.toml 控制；不拦截，不检查格式或资源存在性。
+# 声明字段缺失和类型错误分别诊断，等级由 ../logging/diagnostics.toml 控制；不拦截，不检查格式或资源存在性。
 # 引用只作为字符串保存，由使用方解释；本类不读取或解析资源。
 [object.information]
 source = { type = "str", note = "图片资源引用，例如本地路径、URL 或使用方约定的资源地址" }

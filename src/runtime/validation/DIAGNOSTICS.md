@@ -1,6 +1,6 @@
 # 诊断汇报配置
 
-[configs/diagnostics.toml](../../../configs/diagnostics.toml) 独立管理汇报等级。原有约束继续决定是否执行检查，不增加 enabled 开关；修改等级不改变约束和写入结果，也不影响 changes 操作历史。
+[configs/logging/diagnostics.toml](../../../configs/logging/diagnostics.toml) 独立管理汇报等级。原有约束继续决定是否执行检查，不增加 enabled 开关；修改等级不改变约束和写入结果，也不影响 changes 操作历史。
 
 | 等级 | 行为 |
 |---|---|
@@ -9,6 +9,8 @@
 | none | 检查仍执行，但不输出该项诊断 |
 
 未提供配置文件、未写对应项，均使用 warn。只有发现问题才汇报；配置缺失本身不制造一条警告。配置文件语法或等级写错时，保留已有问题并给出配置警告。每次操作重新读取文件。
+
+读取位置为 `config_root/logging/diagnostics.toml`；config_root 仍指配置根目录。文件内的封装引用仍相对于 config_root，例如 `objects/model.toml`，不随日志配置文件所在目录改变。
 
 ## 查找顺序
 

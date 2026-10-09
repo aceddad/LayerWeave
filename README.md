@@ -17,7 +17,7 @@ python -X utf8 -B -m examples.read_write
 
 反馈示例：`python -X utf8 -B -m examples.feedback`。先单列写入结果，再逐条显示诊断目标、字段、原因和检查范围；JSON CLI 可加 `--text` 使用同一格式。
 
-诊断与精度示例：`python -X utf8 -B -m examples.diagnostics`。汇报等级在 [diagnostics.toml](configs/diagnostics.toml) 配置，完整格式见 [诊断配置说明](src/runtime/validation/DIAGNOSTICS.md)。
+诊断与精度示例：`python -X utf8 -B -m examples.diagnostics`。汇报等级在 [diagnostics.toml](configs/logging/diagnostics.toml) 配置，完整格式见 [诊断配置说明](src/runtime/validation/DIAGNOSTICS.md)。
 
 派生封装示例：`python -X utf8 -B -m examples.title`。Title 继承 Text，标题 TOML 继承文字 TOML 并绑定 Title；普通文字层可同时装载两种对象，保存时不需要额外指定配置。
 
@@ -180,6 +180,7 @@ API 参数、保存范围与错误反馈见 [公共 API](src/runtime/API.md)。�
 ## 目录职责
 
 - configs/layers、configs/objects：基础约定与具体封装配置。
+- configs/logging：日志与诊断汇报配置，目前由 diagnostics.toml 管理汇报等级。
 - src/models/layers、src/models/objects：Python 类。
 - src/examples：模型示例、CRUD 全流程示例和 JSON 请求示例。
 - src/runtime/storage：表结构、初始化、发号、CRUD、日志、完整记录组合与模型适配。
@@ -198,7 +199,7 @@ API 参数、保存范围与错误反馈见 [公共 API](src/runtime/API.md)。�
 - 规则是普通函数，登记表集中记录触发字段、函数路径和检查范围；实际执行才导入模块。新增规则的完整示例见 [检测说明](src/runtime/validation/README.md)。
 - 可调选项与固定约定分开；默认仅根层可设轴，根不必填轴。持续区间采用 [begin,end)，瞬间占一个点，允许首尾衔接。
 - 配置缺失、未知规则、规则异常逐项报告，其他检查继续。主动复查直接使用 validate，不制造修改或日志。
-- 约束开关与汇报等级分开；diagnostics.toml 设置 error/warn/none，未配置默认 warn。模型/动作的 source/data 缺失不提示，已填值类型错误仍报告；疑似拼写只建议，不自动改键名。相同配置失败按目标合并，保留受影响检查。
+- 约束开关与汇报等级分开；configs/logging/diagnostics.toml 设置 error/warn/none，未配置默认 warn。模型/动作的 source/data 缺失不提示，已填值类型错误仍报告；疑似拼写只建议，不自动改键名。相同配置失败按目标合并，保留受影响检查。
 - 所有对象位置写入共用 runtime.positions，按 axis.precision 落点，无精度时默认 1e-6；起止、时长与重叠按同一整数刻度比较。修改轴或父层后复查受影响子树的位置关系，不批量重写旧坐标。原始读取与范围筛选不换算单位、不自动取整。
 - 按需导入已解决旧版包入口一次加载全部封装的耦合，保持 from models import Text 等用法。
 - 后续推进项目内部工具、视图和明确提出的新用途；不预先增加资源检查或更多字段限制。

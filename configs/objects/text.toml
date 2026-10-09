@@ -12,7 +12,7 @@ note    = "用 information.text 承载文本"
 open    = true                        # 沿用基础约定，information 可保留附加内容
 
 # 供 AI 阅读及后续检测代码使用；Python 类本身不执行检测。
-# 声明字段缺失和类型错误分别诊断，等级由 ../diagnostics.toml 控制；不增加长度或非空限制。
+# 声明字段缺失和类型错误分别诊断，等级由 ../logging/diagnostics.toml 控制；不增加长度或非空限制。
 [object.information]
 text = { type = "str", note = "文本内容，长度不限，可以是空字符串" }
 

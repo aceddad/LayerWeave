@@ -22,7 +22,7 @@ class ReportingPrecisionTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.configs = Path(self.temp.name) / "configs"
         shutil.copytree(DEFAULT_ROOT, self.configs)
-        self.policy = self.configs / "diagnostics.toml"
+        self.policy = self.configs / "logging" / "diagnostics.toml"
         path = self.configs / "layers/text.toml"
         path.write_text(path.read_text(encoding="utf-8").replace("overlap = true", "overlap = false"), encoding="utf-8")
         self.c = open_database(":memory:")

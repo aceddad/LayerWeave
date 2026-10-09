@@ -11,7 +11,7 @@ extends = "base.toml"
 note    = "通过 information.source 引用模型，或用 information.data 承载模型、骨架数据"
 open    = true                 # 保留附加内容
 
-# 声明字段缺失和类型错误分别诊断，等级由 ../diagnostics.toml 控制；不拦截，不检查格式或资源存在性。
+# 声明字段缺失和类型错误分别诊断，等级由 ../logging/diagnostics.toml 控制；不拦截，不检查格式或资源存在性。
 # 引用只作为字符串保存，由使用方解释；本类不读取或解析资源。
 [object.information]
 source = { type = "str", note = "模型或骨架资源引用，例如本地路径、URL 或使用方约定的资源地址" }

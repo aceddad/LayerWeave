@@ -22,7 +22,7 @@ class ConfigurationTests(unittest.TestCase):
 
     def test_all_builtin_configs_load_with_defaults_and_ancestry(self):
         loader = Loader(self.root)
-        for path in self.root.glob("*/*.toml"):
+        for path in [*self.root.glob("layers/*.toml"), *self.root.glob("objects/*.toml")]:
             kind = "layer" if path.parent.name == "layers" else "object"
             config = loader.load(loader.ref(path), kind)
             self.assertTrue(config["display"]["visibility"])

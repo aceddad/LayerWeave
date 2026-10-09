@@ -119,7 +119,7 @@ def checker(changes, read_record):
 - checks.status = partial：部分检查未完成；逐条 issues 说明原因，其他检查继续。
 - checks.status = failed：检测未完成，附带错误说明；已经提交的数据和日志仍然保留。
 
-CRUD 仅存取 config_ref，不要求配置文件此时存在。提交后的检测读取配置；缺失配置不会撤销数据，会返回 partial 与具体目标、原因。内置问题包含 severity（warn/error）、rule、target、message、scope；汇报等级独立配置在 diagnostics.toml，none 隐藏对应条目，未配置默认 warn。相同目标的相同配置错误合并，并附 affected_checks；可附 field、related、skipped、checked_target。scope=direct 表示问题目标本次发生过修改，related 表示关联检查的目标未被本次直接修改，manual 表示主动复查。checked_target 标明与问题目标不同的实际检查目标，例如层的兼容检查发现某个对象配置缺失。这些标记不判断问题是否以前存在。completed 表示执行完成，不表示没有约定问题。
+CRUD 仅存取 config_ref，不要求配置文件此时存在。提交后的检测读取配置；缺失配置不会撤销数据，会返回 partial 与具体目标、原因。内置问题包含 severity（warn/error）、rule、target、message、scope；汇报等级独立配置在 configs/logging/diagnostics.toml，none 隐藏对应条目，未配置默认 warn。相同目标的相同配置错误合并，并附 affected_checks；可附 field、related、skipped、checked_target。scope=direct 表示问题目标本次发生过修改，related 表示关联检查的目标未被本次直接修改，manual 表示主动复查。checked_target 标明与问题目标不同的实际检查目标，例如层的兼容检查发现某个对象配置缺失。这些标记不判断问题是否以前存在。completed 表示执行完成，不表示没有约定问题。
 
 约束开关沿用原配置；汇报级别不关闭检查。静音无法执行的检查时，checks.status 仍保留 partial。文字输出只保留操作结果和逐条诊断，不用直接/关联范围推断整次操作是否通过。
 

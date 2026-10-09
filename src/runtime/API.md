@@ -119,7 +119,7 @@ result = dispatch(connection, plan)
 
 位置工具与 dispatch/save/CRUD 的对象写入共用 runtime.positions：按最近声明的轴取得 precision，没有轴或该轴没有精度时使用 1e-6，按最近刻度落点，中点远离零。写入位置或更改所属层时归一对应位置；只改名字/内容不重写历史坐标。保存返回值、日志与回填的 Python 实例使用实际落点。检查按同样的整数刻度比较旧、新记录；原始读取和范围查询保持数值读取，不换算单位、不批量修改旧数据。
 
-检查是否执行继续由原有约束控制。汇报等级独立配置在 configs/diagnostics.toml：error/warn/none，未配置默认 warn；none 只隐藏输出，无法执行的检查仍使 checks.status=partial。缺字段与字段类型错误采用不同 code，模型/动作的 source/data 缺失可静音而类型错误仍报告。同一对象同一配置失败合并成一条，affected_checks 保留受影响检查。文字输出只显示操作结果和逐条问题。
+检查是否执行继续由原有约束控制。汇报等级独立配置在 configs/logging/diagnostics.toml：error/warn/none，未配置默认 warn；none 只隐藏输出，无法执行的检查仍使 checks.status=partial。缺字段与字段类型错误采用不同 code，模型/动作的 source/data 缺失可静音而类型错误仍报告。同一对象同一配置失败合并成一条，affected_checks 保留受影响检查。文字输出只显示操作结果和逐条问题。
 
 ## 配置与自定义类型
 

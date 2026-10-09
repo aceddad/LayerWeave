@@ -6,6 +6,7 @@
 
 | 工具 | 代码 | 用途 |
 |---|---|---|
+| 配置 help | [config_help.py](../src/tools/common/config_help.py) | 动态查看支持总览、层/对象类定义和联合说明；无需数据库 |
 | 项目概览 | [project_overview.py](../src/tools/common/project_overview.py) | 项目层级、层类型、名字与对象数量；只读 |
 | 项目详细展开 | [project_details.py](../src/tools/common/project_details.py) | 展开项目/子树的层、对象内容和关联引用，可按数值范围筛选；只读 |
 | 对象检索 | [find_objects.py](../src/tools/common/find_objects.py) | 按层、名字、内容、位置范围查找对象；只读 |
@@ -21,6 +22,35 @@
 第一批四个工具已齐备，完整内存示例见 [first_batch.py](../src/examples/first_batch.py)。从 src/ 运行 `python -X utf8 -B -m examples.first_batch`，不改动真实项目数据库。
 
 第二批六个通用写入工具的完整内存示例见 [second_batch.py](../src/examples/second_batch.py)：`python -X utf8 -B -m examples.second_batch`。两批工具都不依赖可视化、Skill 或 MCP。
+
+## 配置 help
+
+这是封装说明查询，不查询项目中的实际层或对象，也不需要数据库。四种范围共用动态配置目录：
+
+```python
+from tools.common.config_help import config_help, format_help
+
+catalog = config_help()
+layers = config_help("layers", ["text", "image"])
+objects = config_help("objects", ["Text", "Title", "objects/model.toml"])
+combined = config_help("combined", ["TextLayer", "ImageLayer"])
+print(format_help(combined))
+```
+
+- overview：简短列出所有层及其可接受的对象类。
+- layers：层支持详情，兼容对象类只列摘要。
+- objects：对象类支持详情，包含继承后的字段、约束、示例和汇报等级。
+- combined：层与其兼容对象类的联合详情，共用的对象说明只展开一次。
+
+```sh
+python -X utf8 -B -m tools.common.config_help
+python -X utf8 -B -m tools.common.config_help layers text image --json
+python -X utf8 -B -m tools.common.config_help objects Title --raw
+python -X utf8 -B -m tools.common.config_help combined text audio
+python -X utf8 -B -m examples.config_help
+```
+
+目标支持配置路径、唯一 type、完整 Python 类路径或唯一类名，歧义会列出候选。--raw 附当前 TOML 原文；默认展示继承合并后的定义。坏配置逐项提示，其他继续。新增封装无需修改 help 代码，查看也不导入封装模块。格式和开发约定见 [配置 help 说明](../src/runtime/configuration/HELP.md)。
 
 ## 项目概览
 

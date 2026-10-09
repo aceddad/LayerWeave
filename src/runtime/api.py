@@ -28,7 +28,13 @@ def diagnostic_report(issues, *, config_root=None):
     return report(prepare_diagnostics(issues, **({"config_root": config_root} if config_root is not None else {})))
 
 
+def read_support(*args, **kwargs):
+    """动态读取层/对象封装的 help，不需要项目或数据库，不导入封装类。"""
+    from .configuration.catalog import read_support as read
+    return read(*args, **kwargs)
+
+
 __all__ = ["Loader", "dispatch", "initialize_database", "open_database", "read_layer", "read_object", "read_project_index",
            "load_layer", "load_object", "save_layer", "save_object", "validate",
            "read_record", "read_snapshot", "query_objects", "read_bindings", "read_project_details", "DEFAULT_CHECKER",
-           "format_feedback", "format_issue", "diagnostic_report", "PositionMath", "decimal_value"]
+           "format_feedback", "format_issue", "diagnostic_report", "PositionMath", "decimal_value", "read_support"]

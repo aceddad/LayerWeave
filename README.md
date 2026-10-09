@@ -6,10 +6,19 @@
 
 当前代码只使用 Python 标准库。本机核对环境为 Python 3.11.3、SQLite 3.40.1。读取 TOML 使用 tomllib；发号语句需要 SQLite 3.35+。
 
-从本项目目录进入 src，运行完整示例：
+从本项目目录进入 src。首次使用可以先查询支持能力，无需数据库：
 
 ```sh
 cd src
+python -X utf8 -B -m tools.common.config_help
+python -X utf8 -B -m tools.common.config_help combined text
+```
+
+四种 help 为总览、层支持、对象类支持、层与对象类联查；详情支持多目标、文字/JSON 和 TOML 原文。新增封装会自动发现，完整说明见 [配置 help](src/runtime/configuration/HELP.md)。
+
+在 src 目录运行完整数据读写示例：
+
+```sh
 python -X utf8 -B -m examples.read_write
 ```
 
@@ -49,6 +58,7 @@ python -X utf8 -B -m runtime.console ../output/ai-production.sqlite3 --request e
 
 | 要做什么 | 从哪里开始 |
 |---|---|
+| 查看可用层、兼容对象类和封装说明 | [配置 help](src/runtime/configuration/HELP.md)、[查询入口](src/tools/common/config_help.py) |
 | 读写完整层/对象、开发内部工具 | [公共 API](src/runtime/API.md)、[统一入口](src/runtime/api.py)、[往返示例](src/examples/read_write.py) |
 | 理解层的基础结构 | [层基础类](src/models/layers/base.py)、[层基础配置](configs/layers/base.toml) |
 | 理解对象的基础结构 | [对象基础类](src/models/objects/base.py)、[对象基础配置](configs/objects/base.toml) |
@@ -140,7 +150,7 @@ python -X utf8 -B -m unittest discover -s ../tests -v
 
 测试覆盖配置继承、父约定保护、字段类型、区间边界、类型兼容、检测触发范围、逐项继续、批次最终状态、按需导入，以及存储、日志、迁移、完整记录/实例往返、关闭重开和 CLI。使用内存库和专用临时文件，不写入输出数据库。
 
-当前包含详细展开、缺字段提醒和轴精度回归在内的 192 项测试通过。JSON 内容变化会区分 `1`、`1.0` 与 `true`，日志、批次最终状态和检测字段选择使用同一比较方式；字典键顺序不产生变化。无变化的字段在 SQL UPDATE 前跳过。
+当前包含详细展开、缺字段提醒和轴精度回归在内的 207 项测试通过。JSON 内容变化会区分 `1`、`1.0` 与 `true`，日志、批次最终状态和检测字段选择使用同一比较方式；字典键顺序不产生变化。无变化的字段在 SQL UPDATE 前跳过。
 
 此前读写优化时的本地 100 对象场景记录（现有层、新 Text 实例自动匹配配置、内置检测开启；以下文件读取数是加入 Title 与配置唯一性检查前的基线）：
 

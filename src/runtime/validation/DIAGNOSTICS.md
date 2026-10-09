@@ -42,3 +42,5 @@ missing_field = "none"
 内置检查与文本汇集使用这一配置。外部 checker 若直接返回诊断列表，仍由提供方设置其等级；要使用统一配置，可调用 prepare_diagnostics 后交给通道，或在只读工具中调用 runtime.api.diagnostic_report。
 
 新增诊断只需给出稳定 code、目标、字段和原因，再在这个文件中配置等级；漏写等级时自然回退为 warn。规则函数不需要负责文字展示或读取汇报配置。
+
+配置 help 通过同一个 DiagnosticPolicy.level/describe 查询等级，不伪造诊断来推测级别，也不单独维护等级映射。规则对应的问题代码可能带字段覆盖，describe 同时保留默认级别和这些覆盖。

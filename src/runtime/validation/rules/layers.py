@@ -50,7 +50,7 @@ def accepts_objects(record, config, read_record):
             issues.append(problem(f"无法判断对象兼容性：{error}", target=target, skipped=True,
                                   **{"field": "config_ref", **getattr(error, "details", {})}))
             continue
-        if expected["_ref"] not in actual["_lineage"]:
+        if not loader.accepts_object(config, actual):
             issues.append(problem(f"层接受 {expected['type']} 及其派生配置，当前对象为 {actual['type']}",
                                   target=target, field="config_ref"))
     return issues

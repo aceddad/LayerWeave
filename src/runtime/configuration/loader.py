@@ -35,12 +35,28 @@ class Loader:
         self.cache = {}
         self.indexes = {}
         self.raw_cache = {}
+        self.source_cache = {}
+        self.file_refs = {}
+
+    def refs(self, kind):
+        """发现该种类全部配置，包括尚不可解析的文件；每次 Loader 内扫描一次。"""
+        if kind not in {"layer", "object"}:
+            raise ConfigError("配置种类应为 layer 或 object")
+        if kind not in self.file_refs:
+            self.file_refs[kind] = [self.ref(path) for path in sorted((self.root / f"{kind}s").rglob("*.toml"))]
+        return list(self.file_refs[kind])
+
+    def source(self, ref):
+        """读取当前文件原文，保留注释；与解析结果共用本次调用内的文件快照。"""
+        path = (self.root / ref).resolve()
+        if path not in self.source_cache:
+            self.source_cache[path] = path.read_text(encoding="utf-8")
+        return self.source_cache[path]
 
     def _raw(self, path, kind):
         key = (kind, path)
         if key not in self.raw_cache:
-            with path.open("rb") as file:
-                self.raw_cache[key] = tomllib.load(file)[kind]
+            self.raw_cache[key] = tomllib.loads(self.source(str(path)))[kind]
         return self.raw_cache[key]
 
     def ref(self, path):
@@ -138,7 +154,8 @@ class Loader:
         """同一个 Loader 内每种配置只扫描一次，同时索引名称与直接声明的类。"""
         if kind not in self.indexes:
             index = {"type": {}, "class": {}}
-            for path in sorted((self.root / f"{kind}s").rglob("*.toml")):
+            for ref in self.refs(kind):
+                path = self.root / ref
                 try:
                     section = self._raw(path.resolve(), kind)
                     for key in index:
@@ -157,8 +174,22 @@ class Loader:
             raise ConfigError(f"{class_path} 必须只绑定一份配置，实际找到 {len(refs)} 份：{', '.join(refs)}")
         return refs[0]
 
+    def find_configs(self, name, kind):
+        """按 type、完整 class 路径或类名查找；有歧义时交给查询入口逐项说明。"""
+        index = self._index(kind)
+        refs = set(index["type"].get(name, []))
+        for class_path, matches in index["class"].items():
+            if name in {class_path, class_path.rsplit(":", 1)[-1]}:
+                refs.update(matches)
+        return sorted(refs)
+
     def object_config(self, type_name):
         refs = self._index("object")["type"].get(type_name, [])
         if len(refs) != 1:
             raise ConfigError(f"对象配置 {type_name!r} 无法唯一定位：找到 {len(refs)} 份")
         return self.load(refs[0], "object")
+
+    def accepts_object(self, layer_config, object_config):
+        """层按配置继承接受对象；检测和 help 共用，不导入 Python 类。"""
+        expected = self.object_config(layer_config["objects"])
+        return expected["_ref"] in object_config["_lineage"]

@@ -1,6 +1,6 @@
 # 配置读取与继承
 
-入口为 [Loader](loader.py)。每次检测使用一个 Loader，在该次调用内缓存；下次调用重新读取文件，因此配置修改后可直接主动复查。只读取 TOML，不导入 class 或实例化 Python 对象。
+查看支持能力使用 [配置 help](HELP.md)，四种查询均不需要数据库。底层入口为 [Loader](loader.py)。每次检测使用一个 Loader，在该次调用内缓存；下次调用重新读取文件，因此配置修改后可直接主动复查。只读取 TOML，不导入 class 或实例化 Python 对象。
 
 配置名称和直接声明的 Python 类共用按种类构建的索引；同一 Loader 内每个种类只扫描一次。模型保存通过 class_config 查找实例实际类的配置，不再为每个实例重新扫描目录。索引和继承共用已读取的 TOML 内容；同一文件在一次 Loader 内只读取一次。
 
@@ -54,3 +54,5 @@ axis_only_on_root = false
 配置声明过的字段没有填写时产生 missing_field 诊断，不拦截、不自动填值。汇报等级独立放在 [diagnostics.toml](../../../configs/logging/diagnostics.toml)，默认 warn，模型/动作的按需字段覆盖为 none；类型错误用另一诊断项单独控制，见 [汇报配置说明](../validation/DIAGNOSTICS.md)。text/source/data 等仍是可填字段，缺少不变成保存失败；已填写的内容按类型检查，空字符串是已填写。open=true 允许额外键，但不会抑制声明字段缺失的提醒。类型支持 str、int、float、dict、list、bool、None，以及用竖线组合的联合类型。float 接受整数坐标；bool 不作为数值类型。未实现的显式类型或规则报告未检查，普通说明字段不因未知而报错。
 
 内部有效配置含 _ref、_lineage 和 _contracts，分别记录配置路径、继承链与固定约定，用于兼容判断和合并。读取失败抛出 ConfigError，由检测器逐目标转为诊断，其他目标继续。缺少明确 class、同一类重复绑定多份配置均为配置错误；无关的损坏配置不会阻止有效目标读取。type 字符串以 TOML 为唯一来源，Layer 类不保存它。配置读取器不执行 class 导入；需要还原实例时，由 storage/models.py 按需导入配置指定的类。
+
+Loader.refs(kind) 发现包括坏文件在内的配置路径，source(ref) 保留原文，find_configs(name, kind) 查找唯一名称的候选，accepts_object(layer_config, object_config) 提供统一兼容判断。Help 的查询整理在 catalog.py；这些方法与既有解析过程共享调用内缓存。

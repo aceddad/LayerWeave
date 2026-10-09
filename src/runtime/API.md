@@ -1,6 +1,12 @@
 # LayerWeave 读写与工具开发入口
 
-工具统一从 `runtime.api` 导入。先初始化数据库，再打开连接；项目创建、单条删除和任意记录查询继续使用 dispatch。Python 3.11+，当前从项目 src/ 目录运行。
+工具统一从 `runtime.api` 导入。数据读写先初始化数据库再打开连接；配置 help 不需要数据库。项目创建、单条删除和任意记录查询继续使用 dispatch。Python 3.11+，当前从项目 src/ 目录运行。
+
+## 配置 help（查询支持能力）
+
+read_support(view="overview", targets=None, config_root=DEFAULT_ROOT, include_source=False) 动态读取 configs/layers 与 configs/objects，包含子目录。四种 view：overview 总览层与兼容对象类；layers 层支持详情；objects 对象类支持详情；combined 层＋兼容对象类详情。后三项支持一个目标或目标列表；目标为 config_ref、唯一 type、完整 class 路径或唯一类名。它们均查询封装定义，不查询项目实例，不导入 Python 类。
+
+返回 items 与逐项状态、issues；联合查看的共享对象说明放在 object_details，通过 accepted_objects 中的 config_ref 对应。默认展示继承合并后的 definition、lineage、fixed_contracts 和实际汇报等级；include_source=True 附带当前文件 source 原文。新增类和 TOML 后，下次查询自动发现；损坏配置逐项提示，其余继续。文字/JSON 入口为 tools.common.config_help，详见 [配置 help 说明](configuration/HELP.md)。
 
 ## 六个读写函数
 

@@ -3,11 +3,15 @@
 from collections import defaultdict
 
 
-def order_layers(layers, root_id=None):
+def order_layers(layers, root_id=None, *, root_ids=None):
     children = defaultdict(list)
     for layer in layers:
         children[layer["father"]].append(layer)
-    roots = children[None] if root_id is None else [layer for layer in layers if layer["id"] == root_id]
+    if root_ids is not None:
+        by_id = {layer["id"]: layer for layer in layers}
+        roots = [by_id[id] for id in root_ids if id in by_id]
+    else:
+        roots = children[None] if root_id is None else [layer for layer in layers if layer["id"] == root_id]
     pending = [(layer, 0) for layer in reversed(roots)]
     ordered, placed = [], set()
     while pending:

@@ -19,7 +19,9 @@ read 返回保留 project_id/config_ref 的普通字典，不需要配置文件�
 
 项目摘要使用 read_project_index(connection, project_id)：返回 project 与层摘要列表，每个层带直属 object_count，不读取正文或配置文件。它提供一次读取事务内的平面数据；层级排列与纯文本展示由 [项目概览工具](../tools/common/project_overview.py) 完成。
 
-完整范围读取使用 read_project_details(connection, project_id, layer_id=None, begin=None, end=None)，可选参数用关键字传入。未指定层表示全项目，指定层包含自身与全部子孙层；时间条件共用原始数值相交筛选，不转换轴或量化查询值。返回 project/scope/layers，层内带完整 objects 与发出关联。时间筛选保留必要父路径，未命中返回空 layers；不存在项目/指定层返回 None。层级排列和文本输出见 [详细展开工具](../tools/common/project_details.py)。
+完整范围读取使用 read_project_details(connection, project_id, layer_id=None, layer_ids=None, begin=None, end=None)，可选参数用关键字传入。未指定层表示全项目；单层或多层均包含自身与全部子孙层，父子重选自动去重。layer_id 与 layer_ids 互斥，显式 layer_ids=[] 表示空选择。时间只筛选对象，所选范围内未命中的层也保留。原始数值相交筛选不转换轴、不量化查询值、不裁剪对象位置。
+
+返回 project/scope/layers/missing_layer_ids。多层请求中的不存在编号列入 missing_layer_ids，其余有效子树继续读取；项目不存在或旧单层入口 layer_id 不存在时仍返回 None。scope.layer_ids 保留去重后的请求，scope.root_ids 给出有效起始层的树序。数据保持完整，读取不加载配置、不写日志。工具 project_details 增加树序、depth、本范围直属 object_count、counts 与缺失目标的逐条提示；compact=True 可生成文字/JSON 共用的精简视图，详见 [详细展开工具](../tools/common/project_details.py)。
 
 ## 通用只读查询
 

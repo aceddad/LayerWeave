@@ -77,31 +77,46 @@ from tools.common.project_details import project_details, format_details
 whole = project_details(connection, project_id)
 subtree = project_details(connection, project_id, layer_id=1)
 window = project_details(connection, project_id, begin=10, end=20)
-subtree_window = project_details(connection, project_id, layer_id=1, begin=10, end=20)
+multiple = project_details(connection, project_id, layer_ids=[1, 7], begin=10, end=20)
+compact = project_details(connection, project_id, layer_ids=[1, 7], begin=10, end=20, compact=True)
+print(format_details(compact))
 ```
 
 | 层范围 | 时间/位置范围 | 结果 |
 |---|---|---|
-| 未指定 | 未指定 | 项目全部层和对象，包括空层 |
-| 指定 layer_id | 未指定 | 该层自身及全部子孙层，所有对象 |
-| 未指定 | 指定 begin/end | 全项目中与数值范围相交的对象及必要父层路径 |
-| 指定 layer_id | 指定 begin/end | 指定子树内命中对象及必要父层路径 |
+| 未指定 | 未指定 | 全部层和对象，包括空层 |
+| layer_id 或 layer_ids | 未指定 | 所选层自身及子孙层的并集，所有对象 |
+| 未指定 | 指定 begin/end | 全部层保留，对象按数值范围筛选 |
+| layer_id 或 layer_ids | 指定 begin/end | 所选子树完整保留，对象按数值范围筛选 |
+| layer_ids=[] | 任意 | 空选择，不展开全项目 |
 
-位置条件与对象检索共用：[begin,end)，两端相等为点查询，可只提供一端。严格按已保存的数值比较，不按轴单位、precision 或 fps 换算、取整查询范围，也不裁剪命中对象的原位置或内容。
+layer_id 与 layer_ids 互斥。多层编号去重；同时选择父层和子层时，每个层/对象只返回一次。输出按全项目的父子树序排列，不按传入编号的先后排列；每个独立选中子树从 depth=0 开始，原 father 保留。父链异常也不会无限展开。
 
-返回 project、scope、counts、layers。layers 是按层级排列的扁平列表，每层保留原始字段（含 father、axis、config_ref、tips），增加 depth、objects 和发出的 bind。objects 包含完整对象记录、information 和发出的 bind。关联只保留完整引用，不递归目标或打开资源文件。
+位置条件与对象检索共用：[begin,end)，两端相等为点查询，可只提供一端。严格按已保存的数值比较，不按轴单位、precision 或 fps 换算、取整查询范围，也不裁剪命中对象的原位置或内容。未命中的层返回 objects=[]、object_count=0；该数量仅表示本次范围内的直属对象，子层独立统计。
 
-指定层的 depth 从 0 开始，但原 father 不改写。时间筛选时未命中分支被省略，空的必要祖先层仍保留；没有命中时返回项目/范围及空 layers。项目或指定层不存在才返回 None。父链异常也不会无限展开或重复对象，原父编号始终保留。
+返回 project、scope、counts、layers、missing_layer_ids、status、issues。scope.layer_ids 是去重后的请求编号，root_ids 是按树序排列的有效起始编号；原 layer_id 字段为单层入口保留。层仍为扁平列表，带 depth 和嵌套的 objects。
 
-数据在一个读取快照中成批获取，不逐层、逐对象查询。普通非空展开为 4 次查询，指定起始层时为 5 次；不读取配置文件、不写日志、不自动执行约束检测。
+多层请求里不存在的编号单独列入 missing_layer_ids，issues 给出可配置的诊断，其余有效子树继续返回；全部编号都不存在时也返回空 layers 与这些诊断。status 为 partial，不会把不存在的层伪装成“0 个对象的层”。项目不存在，或旧单层入口 layer_id 不存在时，仍返回 None。CLI 在文字模式将诊断逐条写入 stderr，JSON 模式将它们保留在 issues；Python 调用方也可用 runtime.api.format_issue 单独格式化。
+
+### 完整与精简输出
+
+默认保留完整字段、information 和发出的 bind。compact=True 同时适用于 Python 返回值、JSON 和文字：
+
+- 项目身份在 project.id 保留一次，省略层/对象中重复的 project_id；对象的 layer 由所属 objects 容器确定。
+- 省略空 name、tips、bind，以及值为 None 的 father/axis；project.max_id 属于发号状态，精简查看时省略。
+- 保留编号、对象 config_ref、起止位置、非空备注和完整关联引用。Text 和 Title 等派生对象仍可区分，跨项目关联的目标身份仍完整。
+- 不清理 information 内部的任何值；0、false、空字符串、空列表、空字典、null 均原样保留。显式 axis={} 也保留，因为它表示自有轴。
+- 每层保留 objects（即使为空）和本范围 object_count。精简只是查看投影，不修改数据库；需要完整记录时使用默认模式或 read_project_details。
+
+原始数据在一个读取快照内批量获取。非空全项目展开通常为 4 次查询，指定单层/多层为 5 次；多层查询批量读取项目的 id/father 来确定树序，范围外正文和关联不读取。核心不加载配置、不写日志；只有工具遇到不存在的编号时，才读取独立的日志汇报配置。可传 config_root（CLI 为 --config-root）指定该配置根目录。
 
 ```sh
 python -X utf8 -B -m tools.common.project_details ../output/ai-production.sqlite3 1 --json
 python -X utf8 -B -m tools.common.project_details ../output/ai-production.sqlite3 1 --layer-id 1 --begin 10 --end 20
+python -X utf8 -B -m tools.common.project_details ../output/ai-production.sqlite3 1 --layer-ids 1 7 --begin 10 --end 20 --compact
+python -X utf8 -B -m tools.common.project_details ../output/ai-production.sqlite3 1 --layer-ids 1 7 --compact --json
 python -X utf8 -B -m examples.project_details
 ```
-
-默认输出包含对象正文的纯文本树，--json 输出同一份结构化数据。独立示例只使用内存数据库。
 
 ## 对象检索
 

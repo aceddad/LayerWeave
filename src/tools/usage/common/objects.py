@@ -85,8 +85,7 @@ COMMANDS = [{'name': 'append_object',
   'returns': '标准操作结果、operation_id、data/results 和提交后 checks；可按操作编号撤销。',
   'examples': [{'cli': 'python -m tools.usage.common.objects DATABASE 1 append 4 2 --data-file object.json',
                 'files': {'object.json': {'config_ref': 'objects/text.toml',
-                                          'information': {'text': '新增'}}}}],
-  'aliases': ['tools.common.objects:append_object']},
+                                          'information': {'text': '新增'}}}}]},
  {'name': 'copy_object',
   'summary': '同项目复制一个对象，可选新层、新起点或接续位置',
   'entrypoint': 'tools.usage.common.objects:copy_object',
@@ -100,8 +99,7 @@ COMMANDS = [{'name': 'append_object',
                  'name': {'type': 'string', 'description': '副本名字'}},
   'returns': '标准操作结果、operation_id、data/results 和提交后 checks；可按操作编号撤销。',
   'examples': [{'cli': 'python -m tools.usage.common.objects DATABASE 1 copy 8 --layer-id 4 --append'}],
-  'notes': ['只复制对象记录，不复制关联或资源文件。'],
-  'aliases': ['tools.common.objects:copy_object']}]
+  'notes': ['只复制对象记录，不复制关联或资源文件。']}]
 
 
 if __name__ == "__main__":

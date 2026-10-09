@@ -1,6 +1,6 @@
 # LayerWeave 读写与工具开发入口
 
-工具统一从 `runtime.api` 导入。数据读写先初始化数据库再打开连接；配置 help 不需要数据库。项目创建、单条删除和任意记录查询继续使用 dispatch。Python 3.11+，当前从项目 src/ 目录运行。
+工具统一从 `runtime.api` 导入。数据读写先初始化数据库再打开连接；配置 help 不需要数据库。项目创建、单条删除和任意记录查询继续使用 dispatch。Python 3.11+，当前从项目 src/ 目录运行。核心结构见 [模块导航](README.md)，JSON 请求与反馈字段见 [协议](PROTOCOL.md)。
 
 ## 命令总览与详情
 
@@ -50,9 +50,9 @@ read 返回保留 project_id/config_ref 的普通字典，不需要配置文件�
 
 位置查询采用相交语义：[begin,end)，begin=end 表示点查询，一端 None 表示该方向未限定。提供位置条件时排除无效区间；没有位置条件时不因此过滤记录。query_objects 不读取配置文件、不装载关联或换算单位；read_bindings 保留失效引用且不装载端点。
 
-对象检索、关联分组和文字提取的业务整理放在对应工具中，完整用法见 [第一批工具](../tools/README.md)。SQL 只在存储层维护，工具不复制查询实现。
+对象检索、关联分组和文字提取的业务整理放在对应工具中，完整用法见 [使用手册](../tools/usage/GUIDE.md)。SQL 只在存储层维护，工具不复制查询实现。
 
-find_gaps 返回 project_id/layer_id/scope/count/gaps；每段含 begin/end/length/begin_inclusive，终点始终不包含。重叠与相邻占用先合并；瞬间对象占点，后续空档用 begin_inclusive=false 表示开起点，不虚构 epsilon。min_length 按实际可容纳长度筛选；开起点区间不能容纳恰好等于其跨度的对象。只查询直属层；空层返回整个区间，零长查询返回空列表，层不存在或位置无法解释时抛出 ValueError 并指出目标。CLI 与例子见 [工具指南](../tools/README.md)。
+find_gaps 返回 project_id/layer_id/scope/count/gaps；每段含 begin/end/length/begin_inclusive，终点始终不包含。重叠与相邻占用先合并；瞬间对象占点，后续空档用 begin_inclusive=false 表示开起点，不虚构 epsilon。min_length 按实际可容纳长度筛选；开起点区间不能容纳恰好等于其跨度的对象。只查询直属层；空层返回整个区间，零长查询返回空列表，层不存在或位置无法解释时抛出 ValueError 并指出目标。CLI 与例子见 [使用手册](../tools/usage/GUIDE.md#空档查询)。
 
 ## 复查、历史与撤销
 

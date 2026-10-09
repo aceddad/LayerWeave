@@ -1,5 +1,7 @@
 # 层配置
 
+[返回配置入口](../README.md)。
+
 基础约定与六种封装放在这里，可按需继续分子目录。对应 Python 类在 src/models/layers/，读取与继承见 [配置说明](../../src/runtime/configuration/README.md)。
 
 每份封装明确声明自己的 type 与 class，一个类只绑定一份配置。type 字符串只在 TOML 定义，由保存接口写入层记录，Python 层类不重复声明。

@@ -27,7 +27,7 @@ python -X utf8 -B -m tools.usage.common.split --help
 
 各工具在自己的 Python 文件中放置字面量 COMMANDS 列表，使用普通赋值，且放在执行 main 的语句之前。统一目录按文件递归发现，无需修改中央命令名单；下次查询重新读取。目录只使用 AST 读取字面量，不导入被发现的工具模块。
 
-使用工具的新实现位于 tools/usage，开发工具位于 tools/developer，共用 help 位于 tools/shared；view 目前没有命令。目录分类见[内部工具导航](../README.md)。这次迁移不增加 help 分组或筛选参数；兼容文件只导入新实现，不再声明另一份 COMMANDS。
+使用工具位于 tools/usage，开发工具位于 tools/developer，共用 help 位于 tools/shared；view 目前没有命令。目录分类见[内部工具导航](../README.md)。每个命令只在实现模块声明一次，help 的进一步编排留到 MCP 阶段讨论。
 
 `tools.shared._cli.parser_for(..., commands=COMMANDS)` 将同一份 examples/notes 放进根级 --help。使用独立 argparse 的入口通过 tools.shared.catalog.help_examples 复用它。split 和 gaps 的关键参数 help 也直接引用参数描述。
 

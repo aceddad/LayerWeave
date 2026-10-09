@@ -57,8 +57,7 @@ COMMANDS = [{'name': 'project_overview',
   'context': ['database', 'project_id'],
   'parameters': {},
   'returns': '项目与层树摘要；项目不存在返回 None。',
-  'examples': [{'cli': 'python -m tools.usage.common.project_overview DATABASE 1 --json'}],
-  'aliases': ['tools.common.project_overview:project_overview']}]
+  'examples': [{'cli': 'python -m tools.usage.common.project_overview DATABASE 1 --json'}]}]
 
 
 if __name__ == "__main__":

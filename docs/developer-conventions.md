@@ -1,24 +1,42 @@
-# LayerWeave 开发约定
+# 开发约定与文档职责
 
-LayerWeave is a nonvisual core for layers, objects, configuration, storage and diagnostics.
+本文面向修改 LayerWeave 的开发者，包括 AI。[返回开发入口](../src/tools/developer/README.md)。
 
-- Start with `README.md`, then `src/runtime/API.md` and the relevant TOML configuration. Runnable round-trip example: `src/examples/read_write.py`.
-- Internal tools import `runtime.api`. Reuse its read/load/save functions and existing `dispatch`; do not duplicate SQL, ID allocation, transaction logs or configuration merging in each tool.
-- Core storage adaptation belongs in `src/runtime/storage/`. Usage tools belong in `src/tools/usage/<content-type>/` or `src/tools/usage/common/`; developer entrypoints belong in `src/tools/developer/`, and shared help/CLI support in `src/tools/shared/`. `view/` currently contains only its boundary documentation. `src/tools/README.md` is the unified internal-tool navigation. Old paths are compatibility shims, not implementation locations. Keep help behavior unchanged until the MCP design phase.
-- Each encapsulation TOML explicitly declares its own class and type; one class binds one config. Derived encapsulations add both a Python subclass and a TOML. Models do not carry a type string; normal saves derive it from TOML. Title/Text is the runnable inheritance example in src/examples/title.py.
-- Configuration help lives in runtime/configuration/catalog.py and tools/shared/config_help.py. Discover layers/objects recursively through Loader; never hardcode a list of encapsulations or import their Python classes merely to show help. Reuse Loader.accepts_object and DiagnosticPolicy so displayed compatibility and reporting levels match execution. All four help views describe configuration support, not project instances.
-- optional is an inherited field contract, not a validation switch: an absent optional field satisfies its presence rule; present values still undergo type checks. An inherited field may narrow true to false, never widen false to true, including an implicit false default. New fields choose their own value. Logging overrides stay local to their target configuration. Usage help is concise, developer help retains full definitions and origins; both keep purpose and accurate save examples distinct from constructor examples.
-- Recheck, history and undo tools live in tools/usage/common/. Recheck selects scopes under one read snapshot and reuses validation. History and restoration belong in storage/history.py and storage/undo.py. Undo of updates compares and restores only the operation's net-changed top-level fields; information and axis are whole fields, never merged by inner keys. Creation/deletion still require whole-record matches. Any conflict blocks the entire transaction; logs retain undo_of. Restore original IDs and stored values without resnapping coordinates, and never lower allocation high-water marks. Binds use a global persistent sequence. Upgrade old databases explicitly; read-only tools do not migrate.
-- Subtree operations are composed in storage/subtrees.py under one run_operation transaction. Ordinary copy stays in the same project/parent; transfer_subtree creates a root in a different project in the same database and allocates destination IDs. Copy preserves incoming references to the source; cut redirects external incoming targets to the new identities before deleting source records, all in one operation. Preserve free content and resource references. Delete includes owned outgoing bindings; ordinary deletion retains external incoming bindings. Reuse shared creation/deletion helpers, CRUD and undo rather than duplicating them in tools.
-- transfer_objects reuses these transfer helpers for explicit object IDs, targeting one existing layer in a different project. Keep source layers; copy outgoing binds, map selected internal targets, redirect external incoming targets only for cut. Preserve raw positions and perform compatibility checks after commit. Empty selections do not write.
-- find_gaps lives in tools/usage/common/free_ranges.py and uses read_layer_positions through runtime.api. Read only direct-layer position columns in one snapshot; never load content or snap coordinates. Merge occupied intervals, preserve instantaneous point occupancy with begin_inclusive=false, and filter by usable minimum length. Uninterpretable positions must not be silently reported as free space.
-- Split, scope shifting and gap insertion share storage/timeline.py. Split needs first_information plus ordered cuts with information for each new segment; the first segment retains bindings. Empty cuts do nothing. Gap insertion requires an explicit direct-layer, subtree or whole-project scope. Each crossing object explicitly uses split (two contents), keep (unchanged), stretch (end only) or move (both edges). Stretch/move add the layer's actual insertion length, preserving identity, content and bindings; they never process media or infer a policy from type. These actions may cover the insertion interval, so feedback must not promise a fully empty gap. Scope shifting filters begin and reports semantic conflicts after commit. Compound actions share a transaction rather than nesting public operations.
-- Each user-facing tool declares a literal COMMANDS list in its own Python module. tools/shared/catalog.py discovers these declarations with AST, without importing tools or opening databases. command_help provides an overview or batch details for names, aliases and entrypoints; CLI examples come from the same declarations. Keep this read-only description separate from execution and constraint configuration. Include readable parameters, returns and valid JSON examples when adding commands.
-- Keep operation results separate from diagnostics. operation.status and committed change targets describe writes; built-in issues carry direct/related/manual scope without guessing whether an issue is old. Reuse runtime.feedback for text output; error hints never silently rewrite input. Reference explanations run only after SQL constraint failure, before rollback.
-- Preserve simple model classes, explicit project context, post-commit diagnostics, and lazy imports. `config_ref` and `project_id` are storage metadata, not new model fields. Document new persistence semantics before extending them.
-- Reporting levels live in configs/logging/diagnostics.toml, separate from constraint enablement. Missing settings default to warn; none hides a diagnostic without disabling its check. Merge repeated configuration failures per target while retaining affected checks. Text output shows operation results and individual diagnostics, without a broad check summary.
-- Ordinary object position writes use runtime.positions and the nearest declared axis precision, with a 1e-6 fallback when no precision is provided. Undo and cross-project transfers preserve exact stored coordinates without resnapping; transfer copies explicit axis metadata only and does not synthesize inherited axes or convert units. Validation compares integer ticks with the same rounding. Raw reads/range queries do not convert units or rewrite historical data. Existing rows are normalized only when position or owning layer is written. Detailed project/subtree expansion is in src/tools/usage/common/project_details.py.
-- Detailed expansion keeps every selected layer, including zero-hit layers; time filters only objects. layer_ids selects a union of subtrees, deduplicated in project tree order; an explicit empty list is an empty selection. Compact output removes redundant container metadata only, preserving config_ref, content values, explicit empty axes and nonempty bindings. Core reads remain full records; missing requested layer IDs are reported individually by the tool.
-- For read-modify-write tools, use `dispatch(connection, request_factory)` so calculation runs inside the write transaction. Do not calculate a layer tail outside the transaction and save later. The second-batch tools are `src/tools/usage/common/positions.py` and `src/tools/usage/common/objects.py`; their combined example is `src/examples/second_batch.py`.
-- The nonvisual `main` branch must remain usable without GUI dependencies. Start visualization on its own branch when requested; keep common improvements in the core.
-- From `src/`, run `python -X utf8 -B -m unittest discover -s ../tests -v` for changes to persistence or shared execution. Tests and examples use their own temporary/in-memory databases; do not populate the user's output database.
+## 实现原则
+
+1. 基础模型保存数据，维持按需导入。新约束、资源解释或媒体处理应有明确需求，不自动加入模型构造和属性赋值。
+2. 内部工具从 runtime.api 获取能力；SQL、发号、事务、日志、配置继承和检测由核心维护。普通读后写用 dispatch 请求工厂，复杂操作通过 run_operation 组合低层步骤，避免嵌套完整操作入口。
+3. 一次操作内需要一致的读取时使用 read_snapshot。纯查询保持原始存储数值，不写入、迁移或制造日志。生成位置使用公共位置计算；恢复与迁移的例外按对应专题执行。
+4. 每个命令在自身模块声明字面量 COMMANDS；复用 shared/_cli 和既有目录发现。配置 help 使用 Loader 与 DiagnosticPolicy，不硬编码封装名单或导入类来展示说明。
+5. 将“已提交什么”和“检查发现什么”分别表达，复用 runtime.feedback。具体结果字段以请求协议为准。
+6. 新封装同时提供 Python 类和 TOML。修改约定时阅读主要说明与现有测试，保持原有继承、编号、关联和恢复语义。
+7. 项目尚未发布，只维护当前模块路径。MCP 编排与视图实现按对应阶段推进，main 保持无 GUI 依赖。
+
+## 文档职责
+
+README 解释当前目录的职责、文件位置和阅读入口。短说明可以直接写入；大量字段、规则、参数和示例放专题文件。AGENTS.md 只维护 AI 的工作流程和必要要求。
+
+一项语义在一个主要位置详细维护，其他文档保留简短说明并链接过去：
+
+| 主题 | 主要维护位置 |
+|---|---|
+| 模块边界与整体概念 | [架构说明](architecture.md) |
+| Python 模型与扩充入口 | [模型说明](../src/models/README.md)，字段声明在类及对应 TOML |
+| 配置继承、合并与类绑定 | [配置说明](../src/runtime/configuration/README.md) |
+| Python 调用、输入与返回 | [公共 API](../src/runtime/API.md) |
+| JSON CRUD 请求和操作/检查反馈 | [请求协议](../src/runtime/PROTOCOL.md) |
+| 数据表、编号、持久化与日志写入 | [存储专题](../src/runtime/storage/SCHEMA.md) |
+| 历史与恢复、子树、范围编辑 | storage 的 [HISTORY](../src/runtime/storage/HISTORY.md)、[SUBTREES](../src/runtime/storage/SUBTREES.md)、[EDITING](../src/runtime/storage/EDITING.md) |
+| 检测时点、执行和新增规则 | [检测专题](../src/runtime/validation/RULES.md) |
+| 汇报等级和配置覆盖 | [诊断专题](../src/runtime/validation/DIAGNOSTICS.md) |
+| 通用查询与位置工具用法 | [使用手册](../src/tools/usage/GUIDE.md) |
+| 命令声明、发现及 CLI 示例 | [命令专题](../src/tools/shared/COMMANDS.md) |
+| 配置 help 的使用/开发模式 | [配置 help 专题](../src/runtime/configuration/HELP.md) |
+
+修改规则时更新其主要说明；新增阅读入口时同步相邻 README。配置和命令的具体支持清单由已有 help 动态发现，文档不再维护另一套执行登记表。
+
+## 验证
+
+持久化、共享执行或模块路径改动需运行项目首页所列完整测试；按影响运行相关[示例](examples.md)。测试与示例只使用内存或专用临时数据库，保留 output 中的实际项目数据。
+
+文档整理要检查本地链接和命令路径。历史交付报告保留为当时的记录，不作为现行接口说明，也不为了旧报告维护兼容入口。

@@ -89,10 +89,9 @@ COMMANDS = [{'name': 'project_details',
                  'compact': {'type': 'boolean', 'description': '省略重复容器信息与空说明', 'default': False},
                  'config_root': {'type': 'string', 'description': '检查或配置查询采用的配置根目录；省略使用项目 configs'}},
   'returns': 'project、scope、layers/objects/bind、数量、缺失目标和逐条 issues；空层保留。',
-  'examples': [{'cli': 'python -m tools.usage.common.project_details DATABASE 1 --layer-ids 4 7 --begin 10 --end '
-                       '20 --compact --json'}],
-  'notes': ['不指定层时展开整个项目；时间只筛选对象，层本身不因零命中被省略。'],
-  'aliases': ['tools.common.project_details:project_details']}]
+  'examples': [{'cli': 'python -m tools.usage.common.project_details DATABASE 1 --layer-ids 4 7 --begin 10 '
+                       '--end 20 --compact --json'}],
+  'notes': ['不指定层时展开整个项目；时间只筛选对象，层本身不因零命中被省略。']}]
 
 
 if __name__ == "__main__":

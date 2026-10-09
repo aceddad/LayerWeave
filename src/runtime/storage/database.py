@@ -96,8 +96,3 @@ def allocate_id(connection: sqlite3.Connection, project_id: int) -> int:
         raise InputError(f"项目 {project_id} 不存在", code="missing_reference", field="project_id",
                          reference=target("project", None, project_id))
     return row[0]
-
-
-if __name__ == "__main__":
-    from tools.developer.database import main
-    raise SystemExit(main())

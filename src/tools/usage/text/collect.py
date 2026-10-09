@@ -91,8 +91,7 @@ COMMANDS = [{'name': 'collect_text',
                  'end': {'type': 'number', 'description': '轴上的数值位置，不换算单位'},
                  'config_root': {'type': 'string', 'description': '检查或配置查询采用的配置根目录；省略使用项目 configs'}},
   'returns': 'text、来源 items、skipped_count、status 和逐条 issues。',
-  'examples': [{'cli': 'python -m tools.usage.text.collect DATABASE 1 4 --json'}],
-  'aliases': ['tools.text.collect:collect_text']}]
+  'examples': [{'cli': 'python -m tools.usage.text.collect DATABASE 1 4 --json'}]}]
 
 
 if __name__ == "__main__":

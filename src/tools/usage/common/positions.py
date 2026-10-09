@@ -173,8 +173,7 @@ COMMANDS = [{'name': 'arrange_objects',
                  'object_ids': {'type': 'array', 'description': '明确选择的对象编号列表，重复编号只处理一次'},
                  'start': {'type': 'number', 'description': '轴上的数值位置，不换算单位'}},
   'returns': '标准操作结果、operation_id、data/results 和提交后 checks；可按操作编号撤销。',
-  'examples': [{'cli': 'python -m tools.usage.common.positions DATABASE 1 arrange 4 --ids 8 12 --start 0'}],
-  'aliases': ['tools.common.positions:arrange_objects']},
+  'examples': [{'cli': 'python -m tools.usage.common.positions DATABASE 1 arrange 4 --ids 8 12 --start 0'}]},
  {'name': 'shift_objects',
   'summary': '选择对象/直属层/子树，按起点下限筛选后整体平移',
   'entrypoint': 'runtime.api:shift_objects',
@@ -188,8 +187,8 @@ COMMANDS = [{'name': 'arrange_objects',
                  'from_position': {'type': 'number', 'description': '筛选 begin >= 此数值，不是区间相交'},
                  'config_root': {'type': 'string', 'description': '检查或配置查询采用的配置根目录；省略使用项目 configs'}},
   'returns': '标准操作结果、operation_id、data/results 和提交后 checks；可按操作编号撤销。',
-  'examples': [{'cli': 'python -m tools.usage.common.positions DATABASE 1 shift --layer-ids 4 --from-position 30 '
-                       '--offset 2'}],
+  'examples': [{'cli': 'python -m tools.usage.common.positions DATABASE 1 shift --layer-ids 4 '
+                       '--from-position 30 --offset 2'}],
   'notes': ['重叠按层配置在提交后报告；批量平移不保证插入时段为空。']},
  {'name': 'align_objects',
   'summary': '按起点或终点对齐选中对象，保留各自时长',
@@ -205,9 +204,8 @@ COMMANDS = [{'name': 'arrange_objects',
                           'default': 'begin',
                           'choices': ['begin', 'end']}},
   'returns': '标准操作结果、operation_id、data/results 和提交后 checks；可按操作编号撤销。',
-  'examples': [{'cli': 'python -m tools.usage.common.positions DATABASE 1 align --ids 8 12 --position 10 --edge '
-                       'begin'}],
-  'aliases': ['tools.common.positions:align_objects']},
+  'examples': [{'cli': 'python -m tools.usage.common.positions DATABASE 1 align --ids 8 12 --position 10 '
+                       '--edge begin'}]},
  {'name': 'set_duration',
   'summary': '保持起点，修改对象时长',
   'entrypoint': 'tools.usage.common.positions:set_duration',
@@ -217,8 +215,7 @@ COMMANDS = [{'name': 'arrange_objects',
   'parameters': {'object_id': {'type': 'integer', 'description': '对象编号', 'required': True},
                  'duration': {'type': 'number', 'description': '新的时长', 'required': True}},
   'returns': '标准操作结果、operation_id、data/results 和提交后 checks；可按操作编号撤销。',
-  'examples': [{'cli': 'python -m tools.usage.common.positions DATABASE 1 duration 8 3'}],
-  'aliases': ['tools.common.positions:set_duration']}]
+  'examples': [{'cli': 'python -m tools.usage.common.positions DATABASE 1 duration 8 3'}]}]
 
 
 if __name__ == "__main__":

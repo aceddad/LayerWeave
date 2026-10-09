@@ -46,7 +46,7 @@ COMMANDS = [{'name': 'query_relations',
                                'choices': ['both', 'incoming', 'outgoing']}},
   'returns': 'entity、direction、incoming、outgoing；失效引用仍可读取。',
   'examples': [{'cli': 'python -m tools.usage.common.relations DATABASE 1 object 8 --direction both'}],
-  'aliases': ['relations', 'tools.common.relations:query_relations']}]
+  'aliases': ['relations']}]
 
 
 if __name__ == "__main__":

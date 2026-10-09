@@ -85,8 +85,7 @@ COMMANDS = [{'name': 'find_gaps',
   'examples': [{'cli': 'python -m tools.usage.common.free_ranges DATABASE 1 4 0 20 --min-length 3 --json'}],
   'notes': ['合并相交或首尾相接的占用，空层返回整个查询区间。数值不换算、不落点、不加载配置或正文。',
             '瞬间对象占用一个点，其后的空档 begin_inclusive=false；不猜测 epsilon。开起点的空档不能容纳等于其长度的对象。',
-            '位置不是有限数值或 begin>end 时明确指出对象，查询失败，不将无法判断的区域报告为空闲。'],
-  'aliases': ['tools.common.free_ranges:find_gaps']}]
+            '位置不是有限数值或 begin>end 时明确指出对象，查询失败，不将无法判断的区域报告为空闲。']}]
 
 
 if __name__ == "__main__":

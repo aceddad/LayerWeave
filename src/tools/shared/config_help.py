@@ -202,8 +202,7 @@ COMMANDS = [{'name': 'config_help',
                  'config_root': {'type': 'string', 'description': '检查或配置查询采用的配置根目录；省略使用项目 configs'}},
   'returns': 'items、配置支持与逐条 issues；不读取项目数据库或导入封装类。',
   'examples': [{'cli': 'python -m tools.shared.config_help combined text --json'},
-               {'cli': 'python -m tools.shared.config_help objects model --dev'}],
-  'aliases': ['tools.common.config_help:config_help']}]
+               {'cli': 'python -m tools.shared.config_help objects model --dev'}]}]
 
 
 if __name__ == "__main__":

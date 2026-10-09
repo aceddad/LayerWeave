@@ -53,8 +53,7 @@ COMMANDS = [{'name': 'find_objects',
                  'begin': {'type': 'number', 'description': '轴上的数值位置，不换算单位'},
                  'end': {'type': 'number', 'description': '轴上的数值位置，不换算单位'}},
   'returns': '匹配的对象记录列表；不修改内容。',
-  'examples': [{'cli': 'python -m tools.usage.common.find_objects DATABASE 1 --layer-id 4 --content 歌词'}],
-  'aliases': ['tools.common.find_objects:find_objects']}]
+  'examples': [{'cli': 'python -m tools.usage.common.find_objects DATABASE 1 --layer-id 4 --content 歌词'}]}]
 
 
 if __name__ == "__main__":

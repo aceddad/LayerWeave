@@ -18,7 +18,7 @@ CONTEXT = {
 
 def help_examples(commands):
     """CLI 与查询接口共用模块内的同一份示例，JSON 文件内容可直接解析。"""
-    lines = ["示例（从 src 运行；DATABASE 和编号替换为实际值）："]
+    lines = ["示例（从 src 运行；示例路径和编号替换为实际值）："]
     for command in commands:
         for example in command.get("examples", []):
             lines.append("  " + example["cli"])

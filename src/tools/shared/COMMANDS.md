@@ -1,6 +1,6 @@
 # 命令目录与命令行帮助
 
-统一入口是 `runtime.api.command_help`。它列出内部工具、基础 CRUD 分流和数据库初始化命令，或按名称展开说明；不会执行命令，也不需要数据库。
+统一入口是 `runtime.api.command_help`。它列出内部工具、基础 CRUD 分流和开发工具命令，或按名称展开说明；不会执行命令，也不需要数据库。
 
 ```python
 from runtime.api import command_help

@@ -9,7 +9,7 @@
 | 控制将来的显示、选择和视口 | [视图工具](view/README.md) | view/ 当前仅有分类说明 |
 | 查找命令或配置支持 | [共用帮助](shared/README.md) | shared/ |
 
-现有 25 个命令中，22 个业务命令位于 usage，2 个共用 help 位于 shared，1 个数据库准备命令位于 developer。项目概览、详细展开、复查和撤销均属于使用工具。
+现有 26 个命令中，22 个业务命令位于 usage，2 个共用 help 位于 shared，数据库准备和技能 ZIP 安装这 2 个命令位于 developer。项目概览、详细展开、复查和撤销均属于使用工具。
 
 工具调用 runtime.api；存储、事务、日志与检测由[核心模块](../runtime/README.md)提供。新增工具按[开发流程](developer/README.md)放置与声明。
 

@@ -15,22 +15,22 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class ToolLayoutTests(unittest.TestCase):
-    def test_same_25_commands_one_canonical_declaration_each_and_same_help_shape(self):
+    def test_commands_have_one_canonical_declaration_each_and_same_help_shape(self):
         overview = command_help()
         self.assertEqual(overview["status"], "completed")
         names = {item["name"] for item in overview["items"]}
         self.assertEqual(names, {"align_objects", "append_object", "arrange_objects", "collect_text", "command_help",
                                 "config_help", "copy_object", "copy_subtree", "delete_subtree", "dispatch", "find_gaps",
-                                "find_objects", "initialize_database", "insert_gap", "project_details", "project_overview",
+                                "find_objects", "initialize_database", "install_skill", "insert_gap", "project_details", "project_overview",
                                 "query_relations", "read_history", "recheck", "set_duration", "shift_objects", "split_object",
                                 "transfer_objects", "transfer_subtree", "undo_operation"})
-        self.assertEqual(len(overview["items"]), 25)
+        self.assertEqual(len(overview["items"]), 26)
         self.assertTrue(all(set(item) == {"name", "summary", "read_only", "cli"} for item in overview["items"]))
         groups = {}
         for command in command_help(sorted(names))["items"]:
             group = command["source"].split("/")[1]
             groups[group] = groups.get(group, 0) + 1
-        self.assertEqual(groups, {"usage": 22, "shared": 2, "developer": 1})
+        self.assertEqual(groups, {"usage": 22, "shared": 2, "developer": 2})
         self.assertEqual(list((ROOT / "src/tools/view").glob("*.py")), [])
 
     def test_database_and_crud_execute_through_canonical_tools(self):

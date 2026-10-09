@@ -38,6 +38,7 @@
 | 命令声明、发现及 CLI 示例 | [命令专题](../src/tools/shared/COMMANDS.md) |
 | 配置 help 的使用/开发模式 | [配置 help 专题](../src/tools/shared/CONFIG_HELP.md) |
 | 外置技能的存放与绑定示例 | [外置工具](../tool/README.md)；各技能的能力说明维护在包内 SKILL.md |
+| 技能 ZIP 的安装参数与文件处理 | [安装说明](../src/tools/developer/SKILLS.md) |
 
 ## 写法与示例
 

@@ -8,6 +8,7 @@
 |---|---|
 | 新增 Python 层类或对象类 | [模型](../../models/README.md)和[配置](../../../configs/README.md)，参考 [Title](../../examples/title.py) |
 | 新增内部工具 | 本页的开发流程、[公共 API](../../runtime/API.md)、[命令声明](../shared/COMMANDS.md) |
+| 安装下载的技能 ZIP | [技能安装](SKILLS.md)，选择层目录或场景补充区 |
 | 调整配置继承 | [配置读取与继承](../../runtime/configuration/README.md) |
 | 新增检查规则 | [检测执行与扩展](../../runtime/validation/RULES.md) |
 | 调整诊断汇报 | [诊断配置](../../runtime/validation/DIAGNOSTICS.md) |
@@ -15,6 +16,16 @@
 | 查完整封装定义 | [配置 help](../shared/CONFIG_HELP.md)，使用既有 --dev 模式 |
 
 修改前阅读[开发指南](../../../docs/developer-conventions.md)，只展开当前任务需要的专题。文档与示例的维护方式见[文档约定](../../../docs/documentation.md)。
+
+## 导入技能 ZIP
+
+从项目 src 运行：
+
+```sh
+python -m tools.developer.skills SKILL.zip --layer text --json
+```
+
+安装后返回 route，实际绑定由 AI 决定；场景区、多技能 ZIP 和重名处理见[技能安装说明](SKILLS.md)。
 
 ## 初始化与升级数据库
 

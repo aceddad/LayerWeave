@@ -20,6 +20,7 @@ python -X utf8 -B -m examples.read_write
 | 新增层或对象封装 | [模型](../src/models/README.md)、[配置](../configs/README.md)，参考 [Title 示例](../src/examples/title.py) |
 | 新增或维护内部工具 | [内部工具开发流程](../src/tools/developer/README.md)、[公共 API](../src/runtime/API.md) |
 | 编写供层原型引用的外置技能 | [外置工具与示例](../tool/README.md)，技能自己的 SKILL.md |
+| 导入下载的技能 ZIP | [技能安装工具](../src/tools/developer/SKILLS.md) |
 | 修改存储、检测或配置读取 | [核心模块](../src/runtime/README.md)，再读对应实现专题 |
 | 开发视图 | [视图边界](../src/tools/view/README.md)，开始实现时再建立独立分支 |
 | 修改说明、示例或文档布局 | [文档约定](documentation.md) |

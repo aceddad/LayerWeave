@@ -25,6 +25,15 @@ tool/
 
 ## 绑定示例
 
+下载的技能 ZIP 可以先通过[安装工具](../src/tools/developer/SKILLS.md)放到这里。从项目 src 运行：
+
+```sh
+python -m tools.developer.skills SKILL.zip --layer text --json
+python -m tools.developer.skills SKILL.zip --scenario --json
+```
+
+工具返回实际 route，保留包内文件和已有同名目录；技能内容由 AI 按任务阅读，安装不会自动绑定。
+
 [text-normalize](skills/layers/text/text-normalize/SKILL.md) 是一个实际可运行的纯文本整理示例。AI 阅读后，可以在选定层的 `[layer]` 内将下面的项加入 tools 数组，保留原有引用：
 
 ```toml

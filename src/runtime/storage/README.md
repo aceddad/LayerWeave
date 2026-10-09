@@ -78,6 +78,8 @@ with closing(open_database("../output/ai-production.sqlite3")) as connection:
 
 历史查询通过 read_history 按操作分组、分页并展示字段差异；撤销使用日志恢复原编号和实际存储值，不重新取整坐标，也不回退发号上界。冲突比较和恢复同事务，任意失败整批回滚。完整说明见 [复查、历史与撤销](HISTORY.md)。
 
+storage/subtrees.py 提供子树删除与整层复制，复用既有范围读取、CRUD 和 run_operation；新编号取实际创建结果。删除范围包含树内实体发出的关联，外部入向关联保留；复制仅重映射明确的结构引用。两者都记录为一个可撤销操作，详见 [子树工具](SUBTREES.md)。
+
 ## 范围与验证
 
 目前已实现表结构、初始化与所属层迁移、发号、记录 CRUD、事务日志、分流、配置加载、模块化检测和完整读写。assembly.py 组合层/对象及关联的记录字典；models.py 按配置还原派生实例；save.py 原子保存模型或记录字典。三者经 runtime.api 对外提供稳定入口，底层 CRUD 仍返回单表记录。

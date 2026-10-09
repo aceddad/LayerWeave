@@ -41,6 +41,8 @@ python -X utf8 -B -m examples.read_write
 
 复查、历史与撤销演示：`python -X utf8 -B -m examples.review_history`。复查支持项目、多棵子树和指定对象；历史按操作展示字段变化；撤销保留原编号和发号进度，发生冲突时整批不写，撤销的再撤销即重做。Python/CLI 参数见 [完整说明](src/runtime/storage/HISTORY.md)。
 
+子树工具演示：`python -X utf8 -B -m examples.subtrees`。一次删除完整子树及其出向关联，或在同项目、同父层复制一个新版本，自动重映射内部引用并返回编号对应表。两项操作均可整批撤销，用法见 [子树工具说明](src/runtime/storage/SUBTREES.md)。
+
 初始化数据库（同样从 src 目录执行）：
 
 ```sh
@@ -63,6 +65,7 @@ python -X utf8 -B -m runtime.console ../output/ai-production.sqlite3 --request e
 |---|---|
 | 查看可用层、兼容对象类和封装说明 | [配置 help](src/runtime/configuration/HELP.md)、[查询入口](src/tools/common/config_help.py) |
 | 复查项目/子树、查看历史、撤销与重做 | [完整说明](src/runtime/storage/HISTORY.md)、[内存示例](src/examples/review_history.py) |
+| 删除子树、复制整层及内部关联 | [工具说明](src/runtime/storage/SUBTREES.md)、[内存示例](src/examples/subtrees.py) |
 | 读写完整层/对象、开发内部工具 | [公共 API](src/runtime/API.md)、[统一入口](src/runtime/api.py)、[往返示例](src/examples/read_write.py) |
 | 理解层的基础结构 | [层基础类](src/models/layers/base.py)、[层基础配置](configs/layers/base.toml) |
 | 理解对象的基础结构 | [对象基础类](src/models/objects/base.py)、[对象基础配置](configs/objects/base.toml) |
@@ -154,7 +157,7 @@ python -X utf8 -B -m unittest discover -s ../tests -v
 
 测试覆盖配置继承、父约定保护、字段类型、区间边界、类型兼容、检测触发范围、逐项继续、批次最终状态、按需导入，以及存储、日志、迁移、完整记录/实例往返、关闭重开和 CLI。使用内存库和专用临时文件，不写入输出数据库。
 
-当前包含复查、历史、整批撤销/重做、关联发号迁移、可选字段收紧、详细展开与轴精度回归在内的 249 项测试通过。JSON 内容变化会区分 `1`、`1.0` 与 `true`，日志、批次最终状态和检测字段选择使用同一比较方式；字典键顺序不产生变化。无变化的字段在 SQL UPDATE 前跳过。
+当前包含子树删除/复制及关联映射、复查、历史、整批撤销/重做、关联发号迁移、可选字段收紧与轴精度回归在内的 268 项测试通过。JSON 内容变化会区分 `1`、`1.0` 与 `true`，日志、批次最终状态和检测字段选择使用同一比较方式；字典键顺序不产生变化。无变化的字段在 SQL UPDATE 前跳过。
 
 此前读写优化时的本地 100 对象场景记录（现有层、新 Text 实例自动匹配配置、内置检测开启；以下文件读取数是加入 Title 与配置唯一性检查前的基线）：
 
@@ -189,7 +192,7 @@ python -X utf8 -B -m unittest discover -s ../tests -v
 
 API 参数、保存范围与错误反馈见 [公共 API](src/runtime/API.md)。源码位置与后续工具开发说明见 [工具指南](tools/README.md)。
 
-第一批四个内部工具为只读功能。第二批六个写入工具复用事务内请求工厂、日志和提交后检测，位置计算与写入使用同一事务。整层复制、关联重映射、跨项目搬移、视图、Skill／MCP 尚未实现。
+第一批四个内部工具为只读功能。第二批六个写入工具复用事务内请求工厂、日志和提交后检测，位置计算与写入使用同一事务。后续已加入复查、历史、撤销、子树删除和同项目整层复制（含内部关联重映射）。跨项目搬移、视图、Skill／MCP 尚未实现。
 
 ## 目录职责
 

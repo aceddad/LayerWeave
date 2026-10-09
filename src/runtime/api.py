@@ -52,8 +52,20 @@ def undo_operation(*args, **kwargs):
     return undo(*args, **kwargs)
 
 
+def delete_subtree(*args, **kwargs):
+    """原子删除起始层、子孙层、装载对象及它们发出的关联。"""
+    from .storage.subtrees import delete_subtree as delete
+    return delete(*args, **kwargs)
+
+
+def copy_subtree(*args, **kwargs):
+    """同项目、同父层复制子树，返回新旧编号映射。"""
+    from .storage.subtrees import copy_subtree as copy
+    return copy(*args, **kwargs)
+
+
 __all__ = ["Loader", "dispatch", "initialize_database", "open_database", "read_layer", "read_object", "read_project_index",
            "load_layer", "load_object", "save_layer", "save_object", "validate",
            "read_record", "read_snapshot", "query_objects", "read_bindings", "read_project_details", "DEFAULT_CHECKER",
            "format_feedback", "format_issue", "diagnostic_report", "PositionMath", "decimal_value", "read_support",
-           "recheck", "read_history", "undo_operation"]
+           "recheck", "read_history", "undo_operation", "delete_subtree", "copy_subtree"]

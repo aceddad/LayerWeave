@@ -10,6 +10,8 @@
 | 主动复查 | [recheck.py](../src/tools/common/recheck.py) | 项目、多棵子树或指定对象按当前配置重新检查；只读 |
 | 历史 | [history.py](../src/tools/common/history.py) | 按操作分页展示字段变化、前后快照和撤销来源；只读 |
 | 撤销/重做 | [undo.py](../src/tools/common/undo.py) | 按 operation_id 原子恢复完整批次，冲突逐条报告 |
+| 删除子树 | [subtrees.py](../src/tools/common/subtrees.py) | 删除起始层、子孙层、对象及出向关联；保留外部入向关联 |
+| 整层复制 | [subtrees.py](../src/tools/common/subtrees.py) | 同项目同父层复制完整子树，重映射内部引用，返回编号映射 |
 | 项目概览 | [project_overview.py](../src/tools/common/project_overview.py) | 项目层级、层类型、名字与对象数量；只读 |
 | 项目详细展开 | [project_details.py](../src/tools/common/project_details.py) | 展开项目/子树的层、对象内容和关联引用，可按数值范围筛选；只读 |
 | 对象检索 | [find_objects.py](../src/tools/common/find_objects.py) | 按层、名字、内容、位置范围查找对象；只读 |
@@ -27,6 +29,8 @@
 第二批六个通用写入工具的完整内存示例见 [second_batch.py](../src/examples/second_batch.py)：`python -X utf8 -B -m examples.second_batch`。两批工具都不依赖可视化、Skill 或 MCP。
 
 复查、历史与撤销的 Python/CLI 参数和恢复语义见 [完整说明](../src/runtime/storage/HISTORY.md)。从 src 运行 `python -X utf8 -B -m examples.review_history` 可查看独立内存数据库示例。新工具继续使用 runtime.api，数据库查询与恢复代码在存储层；它们不需要 Skill 或 MCP。
+
+子树删除与整层复制也已提供，范围包含起始层及全部后代；每次操作可整批撤销。用法、关联边界和 id_map 格式见 [子树工具说明](../src/runtime/storage/SUBTREES.md)，内存演示为 `python -X utf8 -B -m examples.subtrees`。
 
 ## 配置 help
 
@@ -292,7 +296,7 @@ result = copy_object(connection, project_id, object_id, layer_id=target_layer_id
 
 复制默认保留内容、配置、名字、备注、所属层与位置，新编号由核心发放。可另选同项目目标层、名字或起点；指定起点时保留原时长。append=True 将副本接到目标层末尾，空层从 0 开始，不能同时指定 begin。
 
-复制不修改原对象，不复制出向/入向关联，也不复制媒体文件；information 中的资源引用保持原样。整层复制、跨项目迁移和关联重映射留待后续批次。
+单对象复制不修改原对象，不复制出向/入向关联，也不复制媒体文件；information 中的资源引用保持原样。需要连同内部关联复制完整子树时，使用 [copy_subtree](../src/runtime/storage/SUBTREES.md)。跨项目迁移仍留待后续批次。
 
 ### 第二批命令行
 

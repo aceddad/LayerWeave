@@ -58,6 +58,14 @@ undo 返回现有 operation/operation_id/ok/applied/checks 协议，另有 undo_
 
 恢复使用原编号和日志中的实际值，不回退 max_id，不按当前轴重新取整；项目发号进度不参与内容冲突比较。恢复后的语义检查使用当前配置，仍在提交后运行。关联 id 全库递增、不复用，独立于项目实体编号；旧库使用 initialize_database 显式升级。调用示例、CLI 与完整边界见 [复查、历史与撤销](storage/HISTORY.md)。
 
+## 子树删除与整层复制
+
+delete_subtree(connection, project_id, layer_id, config_root=DEFAULT_ROOT, checker=DEFAULT_CHECKER) 原子删除起始层、全部子孙层、装载对象和这些实体发出的关联；外部入向关联保留并由检查报告失效目标。普通单条 delete 的行为保持不变。
+
+copy_subtree(connection, project_id, layer_id, name=None, config_root=DEFAULT_ROOT, checker=DEFAULT_CHECKER) 在同项目、同父层创建完整副本，可选参数使用关键字。保留配置、轴说明、位置和自由内容；对象位置沿用普通写入落点。新层、新对象和新关联统一发号，内部结构引用换成新编号，出向外部目标保留完整原引用，不复制入向关联或资源文件。
+
+两项操作都在同一写事务内读取范围并执行，返回标准操作结果、operation_id 和提交后 checks。成功 data 含 project_id、layer_id、counts；复制另含 source_layer_id、id_map（layer/object/bind 三组 old_id/new_id 数值对）。复制时 layer_id 是新根层，删除时是已删除的起始层。可通过 undo_operation 撤销整个批次；config_root 和 checker 语义与既有入口一致。完整说明见 [子树工具](storage/SUBTREES.md)。
+
 ## Python 实例的完整往返
 
 ```python

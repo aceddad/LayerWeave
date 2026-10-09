@@ -1,6 +1,41 @@
-# 开发约定与文档职责
+# LayerWeave 开发指南
 
-本文面向修改 LayerWeave 的开发者，包括 AI。[返回开发入口](../src/tools/developer/README.md)。
+开发者和修改代码的 AI 从这里了解开发准备、源码位置与实现要求。项目用途及使用示例见[README](../README.md)，设计关系见[架构说明](architecture.md)。
+
+## 开发准备
+
+取得源码后，使用 Python 3.11+、SQLite 3.35+；当前只依赖标准库。从项目 src 目录运行命令和示例：
+
+```sh
+cd src
+python -X utf8 -B -m examples.read_write
+```
+
+该例子使用临时数据库，适合验证本地环境。需要持久数据库时，使用[开发工具中的初始化入口](../src/tools/developer/README.md)。
+
+## 选择任务
+
+| 要做什么 | 阅读入口 |
+|---|---|
+| 新增层或对象封装 | [模型](../src/models/README.md)、[配置](../configs/README.md)，参考 [Title 示例](../src/examples/title.py) |
+| 新增或维护内部工具 | [内部工具开发流程](../src/tools/developer/README.md)、[公共 API](../src/runtime/API.md) |
+| 修改存储、检测或配置读取 | [核心模块](../src/runtime/README.md)，再读对应实现专题 |
+| 开发视图 | [视图边界](../src/tools/view/README.md)，开始实现时再建立独立分支 |
+| 修改说明、示例或文档布局 | [文档约定](documentation.md) |
+
+## 源码与材料位置
+
+| 目录 | 职责 |
+|---|---|
+| configs/ | 层、对象与诊断汇报配置 |
+| src/models/ | Python 基础类和派生类 |
+| src/runtime/ | 公共接口、配置读取、存储、事务、日志及检测 |
+| src/tools/ | usage 使用工具、developer 开发入口、view 视图分类、shared 共用支持 |
+| src/examples/ | 可运行示例与请求样例 |
+| tests/ | 自动化测试 |
+| docs/ | 架构、开发指南、文档约定、示例索引及后续候选 |
+| output/ | 本地数据库与已有交付物 |
+| scratch/ | 不纳入 Git 的临时材料 |
 
 ## 实现原则
 
@@ -12,34 +47,14 @@
 6. 新封装同时提供 Python 类和 TOML。修改约定时阅读主要说明与现有测试，保持原有继承、编号、关联和恢复语义。
 7. 项目尚未发布，只维护当前模块路径。MCP 编排与视图实现按对应阶段推进，main 保持无 GUI 依赖。
 
-## 文档职责
+## 验证与交付
 
-README 解释当前目录的职责、文件位置和阅读入口。短说明可以直接写入；大量字段、规则、参数和示例放专题文件。AGENTS.md 只维护 AI 的工作流程和必要要求。
+修改持久化、共享执行或模块路径后，从 src 运行完整测试：
 
-工具的用途、示例、输入/返回与可观察边界集中在 tools/usage；共用 help 说明放 tools/shared。runtime 保留开发 API 和实现说明。编号、关联、失败、撤销的可观察行为属于使用说明，事务步骤和内部辅助函数属于实现说明。使用章节先给用途和例子，再用表格或独立条目解释参数与规则。
+```sh
+python -X utf8 -B -m unittest discover -s ../tests -v
+```
 
-一项语义在一个主要位置详细维护，其他文档保留简短说明并链接过去：
+按影响运行相关[示例](examples.md)。测试和示例使用内存或专用临时数据库，保留 output 中的实际项目数据；源码版本不代表用户数据快照。
 
-| 主题 | 主要维护位置 |
-|---|---|
-| 模块边界与整体概念 | [架构说明](architecture.md) |
-| Python 模型与扩充入口 | [模型说明](../src/models/README.md)，字段声明在类及对应 TOML |
-| 配置继承、合并与类绑定 | [配置说明](../src/runtime/configuration/README.md) |
-| Python 调用、输入与返回 | [公共 API](../src/runtime/API.md) |
-| JSON CRUD 请求和操作/检查反馈 | [请求协议](../src/tools/usage/CRUD.md) |
-| 数据表、编号、持久化与日志写入 | [存储专题](../src/runtime/storage/SCHEMA.md) |
-| 历史与恢复、子树、范围编辑的使用行为 | usage 的 [HISTORY](../src/tools/usage/HISTORY.md)、[SUBTREES](../src/tools/usage/SUBTREES.md)、[EDITING](../src/tools/usage/EDITING.md) |
-| 这些工具的实现流程 | storage 的 [HISTORY](../src/runtime/storage/HISTORY.md)、[SUBTREES](../src/runtime/storage/SUBTREES.md)、[EDITING](../src/runtime/storage/EDITING.md)；参数与业务规则链接到使用说明 |
-| 检测时点、执行和新增规则 | [检测专题](../src/runtime/validation/RULES.md) |
-| 汇报等级和配置覆盖 | [诊断专题](../src/runtime/validation/DIAGNOSTICS.md) |
-| 通用查询与位置工具用法 | [使用手册](../src/tools/usage/GUIDE.md) |
-| 命令声明、发现及 CLI 示例 | [命令专题](../src/tools/shared/COMMANDS.md) |
-| 配置 help 的使用/开发模式 | [配置 help 专题](../src/tools/shared/CONFIG_HELP.md) |
-
-修改规则时更新其主要说明；新增阅读入口时同步相邻 README。配置和命令的具体支持清单由已有 help 动态发现，文档不再维护另一套执行登记表。
-
-## 验证
-
-持久化、共享执行或模块路径改动需运行项目首页所列完整测试；按影响运行相关[示例](examples.md)。测试与示例只使用内存或专用临时数据库，保留 output 中的实际项目数据。
-
-文档整理要检查本地链接和命令路径。历史交付报告保留为当时的记录，不作为现行接口说明，也不为了旧报告维护兼容入口。
+行为变化同步其主要说明与例子。文档的受众划分、主要维护位置、写作方式和检查要求统一见[文档约定](documentation.md)，不在本页重复维护。

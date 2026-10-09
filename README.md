@@ -1,57 +1,87 @@
 # LayerWeave
 
-用层、对象、关联及轴位置组织内容的非可视化 Python 核心，供 AI 和其他程序读取、编辑与扩充。当前包含六类封装、SQLite 存储、配置与检测，以及查询、编辑、历史和撤销等内部工具。视图与 MCP 尚未实现。
+LayerWeave 是一个用层、对象、关联和轴位置组织内容的 Python 工具。AI 或其他程序可以通过 Python 和命令行读写项目，编辑内容的位置，并查看历史、撤销修改。
 
-## 按任务进入
+例如，一个短片项目可以用不同层组织段落说明、字幕、图片和音频引用。每个对象保存自己的内容与起止位置；工具负责查询、编辑和持久化，后续工具可以按需要解释具体媒体。
 
-| 你要做什么 | 从哪里开始 |
-|---|---|
-| 操作已有项目、查找或修改内容 | [内部工具](src/tools/README.md) → [使用工具](src/tools/usage/README.md) |
-| 新增层、对象类或内部工具 | [开发工具](src/tools/developer/README.md) |
-| 阅读或修改 TOML 配置 | [配置入口](configs/README.md) |
-| 理解或扩充 Python 模型 | [模型入口](src/models/README.md) |
-| 修改存储、检查或公共接口 | [核心模块](src/runtime/README.md) |
-| 了解整体设计 | [架构说明](docs/architecture.md) |
-| 跑通示例 | [示例索引](docs/examples.md) |
-| 准备做可视化 | [视图工具边界](src/tools/view/README.md) |
+## 主要能力
 
-AI 修改代码前读取 [AGENTS.md](AGENTS.md)。README 负责导航，详细约定在所链接的专题中维护。
+- **组织内容**：层级结构、对象和跨项目关联；已有文字、图片、音频、视频、模型和动作封装。
+- **查询与编辑**：项目概览、子树与区间展开、对象查找、空档查询，以及接续、排列、平移、分割、复制和搬移。
+- **保存与恢复**：SQLite 保存项目，修改记录历史，支持按操作整批撤销与重做。
+- **检查与扩充**：按配置检查约定，分别返回写入结果和诊断；通过 Python 类与 TOML 扩充封装。
+- **两种调用方式**：Python API 和 CLI；命令 help 与配置 help 可以查询支持能力和调用示例。
 
-## 快速开始
+## 开始使用
 
-只使用 Python 标准库，需要 Python 3.11+、SQLite 3.35+。从项目目录进入 src：
+当前处于开发阶段，直接从源码运行。需要 Python 3.11+、SQLite 3.35+，只使用 Python 标准库。
+
+取得源码后，在项目目录执行：
 
 ```sh
 cd src
-python -X utf8 -B -m tools.shared.command_help
-python -X utf8 -B -m tools.shared.config_help combined text
 python -X utf8 -B -m examples.read_write
 ```
 
-两个 help 无需数据库；示例使用自己的临时数据库。需要实际项目数据库时，运行[开发工具中的初始化命令](src/tools/developer/README.md)，然后使用[CRUD 请求协议](src/tools/usage/CRUD.md)读写。
+该示例使用临时数据库，演示写入、关闭重开、装载 Python 对象和再次保存。
 
-## 目录职责
-
-| 目录 | 内容 |
-|---|---|
-| configs/ | 层、对象及诊断汇报配置 |
-| src/models/ | Python 层类和对象类 |
-| src/runtime/ | 公共接口、存储、事务、日志、配置读取与检测 |
-| src/tools/ | 内部工具：usage、developer、view，以及共用支持 shared |
-| src/examples/ | 可运行示例与请求样例 |
-| docs/ | 架构、开发约定、示例索引和后续候选 |
-| tests/ | 自动化测试 |
-| output/ | 本地数据库及已有交付物 |
-| scratch/ | 不纳入 Git 的临时材料 |
-
-## 验证与后续
-
-从 src 运行完整测试：
+也可以直接查询命令和可用封装，这两个入口无需数据库：
 
 ```sh
-python -X utf8 -B -m unittest discover -s ../tests -v
+python -X utf8 -B -m tools.shared.command_help
+python -X utf8 -B -m tools.shared.config_help combined text
 ```
 
-测试使用内存或专用临时数据库。Git 保存源码、配置与文档，实际项目数据库单独保存。
+## 示例：连续追加两句字幕
 
-非可视化 main 长期独立可用；开始界面实现时再建立 visualization 分支。MCP 的入口数量、编排和 help 展示留到封装阶段讨论。[后续候选](docs/FUTURE.md)保存尚未实施的方向。
+在 src 目录运行下面的 Python 代码。它创建一个临时项目，每句占 2 个位置单位，第二句自动接在第一句后面。
+
+```python
+from contextlib import closing
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+from models import TextLayer
+from runtime.api import dispatch, initialize_database, open_database, read_layer, save_layer
+from tools.usage.common.objects import append_object
+
+with TemporaryDirectory() as directory:
+    database = initialize_database(Path(directory) / "demo.sqlite3")
+    with closing(open_database(database)) as connection:
+        project = dispatch(connection, {
+            "action": "create", "kind": "project", "data": {"name": "字幕示例"}
+        })
+        project_id = project["id"]
+        layer = TextLayer(name="字幕")
+        save_layer(connection, project_id, layer)
+
+        for text in ("你好", "世界"):
+            append_object(connection, project_id, layer.id, {
+                "config_ref": "objects/text.toml", "information": {"text": text}
+            }, duration=2)
+
+        for obj in read_layer(connection, project_id, layer.id)["objects"]:
+            print(f"[{obj['begin']:g}, {obj['end']:g}) {obj['information']['text']}")
+```
+
+输出：
+
+```text
+[0, 2) 你好
+[2, 4) 世界
+```
+
+编号由接口返回，追加工具计算位置。示例结束后临时数据会清理；实际项目使用自己的数据库路径。更多调用见[使用说明](src/tools/usage/README.md)。
+
+## 当前状态
+
+当前提供非可视化核心和内部工具，MCP 封装与界面尚未实现。图片、音视频等封装保存资源引用，实际媒体处理由相应扩展工具承担。
+
+非可视化核心会继续独立维护；可视化实现将在单独分支推进。
+
+## 更多资料
+
+- [使用说明](src/tools/usage/README.md)：各类操作、参数与返回。
+- [开发指南](docs/developer-conventions.md)：开发准备、源码位置、扩充与验证。
+- [架构说明](docs/architecture.md)：概念、模块关系与设计边界。
+- [示例索引](docs/examples.md)：可运行的完整场景。

@@ -14,7 +14,7 @@
 | 修改存储、编号、日志或恢复 | [存储入口](../../runtime/storage/README.md) |
 | 查完整封装定义 | [配置 help](../shared/CONFIG_HELP.md)，使用既有 --dev 模式 |
 
-修改前阅读[开发约定](../../../docs/developer-conventions.md)，只展开当前任务需要的专题。
+修改前阅读[开发指南](../../../docs/developer-conventions.md)，只展开当前任务需要的专题。文档与示例的维护方式见[文档约定](../../../docs/documentation.md)。
 
 ## 初始化与升级数据库
 
@@ -33,4 +33,4 @@ python -X utf8 -B -m tools.developer.database ../output/ai-production.sqlite3
 3. 用普通函数表达业务，明确输入、修改范围和返回。新增 CLI 复用 [shared/_cli.py](../shared/_cli.py)，在自身模块声明 COMMANDS。
 4. 更新主要使用说明及可运行示例，执行与改动相符的检查。测试使用独立数据库。
 
-load/save、读取快照和检查器等能力直接由开发 API 提供，不逐个包装成新命令。具体事务、声明与验证要求见开发约定。
+load/save、读取快照和检查器等能力直接由开发 API 提供，不逐个包装成新命令。具体事务、声明与验证要求见开发指南。

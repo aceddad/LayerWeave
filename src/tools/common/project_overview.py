@@ -43,8 +43,21 @@ def format_overview(overview):
 def main():
     from tools._cli import parser_for, run_cli
 
-    return run_cli(parser_for("LayerWeave 项目概览（只读）"),
+    return run_cli(parser_for("LayerWeave 项目概览（只读）", commands=COMMANDS),
                    lambda connection, args: project_overview(connection, args.project_id), formatter=format_overview)
+
+
+
+# 命令目录和 --help 共用的只读接口说明。
+COMMANDS = [{'name': 'project_overview',
+  'summary': '查看项目树、层类型和直属对象数量',
+  'entrypoint': 'tools.common.project_overview:project_overview',
+  'cli': 'python -m tools.common.project_overview',
+  'read_only': True,
+  'context': ['database', 'project_id'],
+  'parameters': {},
+  'returns': '项目与层树摘要；项目不存在返回 None。',
+  'examples': [{'cli': 'python -m tools.common.project_overview DATABASE 1 --json'}]}]
 
 
 if __name__ == "__main__":

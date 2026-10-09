@@ -27,7 +27,7 @@ def find_objects(connection, project_id, *, layer_id=None, name=None, content=No
 def main():
     from tools._cli import parser_for, run_cli
 
-    parser = parser_for("LayerWeave 对象检索（只读，输出 JSON）")
+    parser = parser_for("LayerWeave 对象检索（只读，输出 JSON）", commands=COMMANDS)
     parser.add_argument("--layer-id", type=int, help="仅查指定层直接装载的对象")
     parser.add_argument("--name", help="名字中的字面子串")
     parser.add_argument("--content", help="information 字符串值中的字面子串")
@@ -37,6 +37,23 @@ def main():
         connection, args.project_id, layer_id=args.layer_id, name=args.name, content=args.content,
         begin=args.begin, end=args.end,
     ))
+
+
+
+# 命令目录和 --help 共用的只读接口说明。
+COMMANDS = [{'name': 'find_objects',
+  'summary': '按层、名称、内容字符串或位置查询对象',
+  'entrypoint': 'tools.common.find_objects:find_objects',
+  'cli': 'python -m tools.common.find_objects',
+  'read_only': True,
+  'context': ['database', 'project_id'],
+  'parameters': {'layer_id': {'type': 'integer', 'description': '该项目内的层编号，仅直属对象'},
+                 'name': {'type': 'string', 'description': '名字字面子串'},
+                 'content': {'type': 'string', 'description': 'information 中字符串值的字面子串'},
+                 'begin': {'type': 'number', 'description': '轴上的数值位置，不换算单位'},
+                 'end': {'type': 'number', 'description': '轴上的数值位置，不换算单位'}},
+  'returns': '匹配的对象记录列表；不修改内容。',
+  'examples': [{'cli': 'python -m tools.common.find_objects DATABASE 1 --layer-id 4 --content 歌词'}]}]
 
 
 if __name__ == "__main__":

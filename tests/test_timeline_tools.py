@@ -120,7 +120,7 @@ class TimelineToolsTests(unittest.TestCase):
         a, b = self.obj(28, 34), self.obj(29, 35)
         self.obj(31, 32)
         before = self.snapshot()
-        result = insert_gap(self.c, self.p, at=30, length=2)
+        result = insert_gap(self.c, self.p, at=30, length=2, whole_project=True)
         self.assertFalse(result["ok"])
         self.assertEqual({r["object_id"] for r in result["error"]["required_splits"]}, {a, b})
         self.assertIn(f"对象 {a}", format_gap(result))
@@ -130,7 +130,7 @@ class TimelineToolsTests(unittest.TestCase):
         crossing, later = self.obj(28, 34), self.obj(34, 40)
         original = [self.row(crossing), self.row(later)]
         result = insert_gap(self.c, self.p, at=30, length=2, split_contents=[
-            {"object_id": crossing, "first_information": {"text": "前"}, "second_information": {"text": "后"}}])
+            {"object_id": crossing, "first_information": {"text": "前"}, "second_information": {"text": "后"}}], whole_project=True)
         self.assertTrue(result["ok"], result)
         parts = result["data"]["splits"][0]["segments"]
         self.assertEqual([(r["begin"], r["end"]) for r in parts], [(28, 30), (32, 36)])
@@ -146,11 +146,11 @@ class TimelineToolsTests(unittest.TestCase):
         for supplied in ([{"object_id": crossing, "first_information": {}, "second_information": None}],
                          [{"object_id": later, "first_information": {}, "second_information": {}}]):
             before = self.snapshot()
-            self.assertFalse(insert_gap(self.c, self.p, at=30, length=2, split_contents=supplied)["ok"])
+            self.assertFalse(insert_gap(self.c, self.p, at=30, length=2, split_contents=supplied, whole_project=True)["ok"])
             self.assertEqual(self.snapshot(), before)
         self.c.execute(f"CREATE TRIGGER reject_later BEFORE UPDATE ON objects WHEN old.id={later} BEGIN SELECT RAISE(ABORT,'stop'); END")
         before = self.snapshot()
-        result = insert_gap(self.c, self.p, at=30, length=2, split_contents=[{"object_id": crossing, "first_information": {}, "second_information": {}}])
+        result = insert_gap(self.c, self.p, at=30, length=2, split_contents=[{"object_id": crossing, "first_information": {}, "second_information": {}}], whole_project=True)
         self.assertFalse(result["ok"])
         self.assertEqual(self.snapshot(), before)
 
@@ -171,7 +171,7 @@ class TimelineToolsTests(unittest.TestCase):
     def test_each_axis_has_explicit_actual_gap_without_unit_conversion(self):
         coarse = self.layer(axis={"unit": "帧", "precision": 0.1})
         a, b = self.obj(1, 2), self.obj(1, 2, layer=coarse)
-        result = insert_gap(self.c, self.p, at=0.25, length=0.24)
+        result = insert_gap(self.c, self.p, at=0.25, length=0.24, whole_project=True)
         self.assertTrue(result["ok"], result)
         gaps = {g["layer_id"]: g for g in result["data"]["gaps"]}
         self.assertEqual((gaps[self.l]["begin"], gaps[self.l]["end"]), (0.25, 0.49))
@@ -182,12 +182,12 @@ class TimelineToolsTests(unittest.TestCase):
         id = self.obj(20, 30)
         for length in (0, -1, 0.00001, True, float("nan")):
             before = self.snapshot()
-            self.assertFalse(insert_gap(self.c, self.p, at=30, length=length)["ok"])
+            self.assertFalse(insert_gap(self.c, self.p, at=30, length=length, whole_project=True)["ok"])
             self.assertEqual(self.snapshot(), before)
         self.c.execute('UPDATE objects SET "end"=? WHERE project_id=? AND id=?', (30.00000000001, self.p, id))
         self.c.commit()
         before = self.snapshot()
-        result = insert_gap(self.c, self.p, at=30, length=2, split_contents=[{"object_id": id, "first_information": {}, "second_information": {}}])
+        result = insert_gap(self.c, self.p, at=30, length=2, split_contents=[{"object_id": id, "first_information": {}, "second_information": {}}], whole_project=True)
         self.assertFalse(result["ok"])
         self.assertEqual(self.snapshot(), before)
 
@@ -230,7 +230,7 @@ class TimelineToolsTests(unittest.TestCase):
             payload = Path(folder) / "parts.json"
             payload.write_text(json.dumps({"first_information": {"text": "A"}, "cuts": [{"at": 14, "information": {"text": "B"}}]}), encoding="utf-8")
             commands = [("split", [str(id), "--data-file", str(payload), "--json"]),
-                        ("gaps", ["14", "2", "--json"]),
+                        ("gaps", ["14", "2", "--project", "--json"]),
                         ("positions", ["shift", "--layer-ids", str(self.l), "--from-position", "16", "--offset", "1"])]
             for module, args in commands:
                 run = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", f"tools.common.{module}", str(db), str(self.p), *args], capture_output=True, text=True, encoding="utf-8")

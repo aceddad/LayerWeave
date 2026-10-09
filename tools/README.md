@@ -7,13 +7,14 @@
 | 工具 | 代码 | 用途 |
 |---|---|---|
 | 配置 help | [config_help.py](../src/tools/common/config_help.py) | 动态查看支持总览、层/对象类定义和联合说明；无需数据库 |
+| 命令 help | [command_help.py](../src/tools/common/command_help.py) | 所有命令的总览或多目标详情，含参数、返回与 JSON 示例；只读 |
 | 主动复查 | [recheck.py](../src/tools/common/recheck.py) | 项目、多棵子树或指定对象按当前配置重新检查；只读 |
 | 历史 | [history.py](../src/tools/common/history.py) | 按操作分页展示字段变化、前后快照和撤销来源；只读 |
-| 撤销/重做 | [undo.py](../src/tools/common/undo.py) | 按 operation_id 原子恢复完整批次，冲突逐条报告 |
+| 撤销/重做 | [undo.py](../src/tools/common/undo.py) | 原子撤销完整批次；更新按顶层字段判断，创建/删除按整条记录 |
 | 删除子树 | [subtrees.py](../src/tools/common/subtrees.py) | 删除起始层、子孙层、对象及出向关联；保留外部入向关联 |
 | 整层复制 | [subtrees.py](../src/tools/common/subtrees.py) | 同项目同父层复制完整子树，重映射内部引用，返回编号映射 |
 | 对象分割 | [split.py](../src/tools/common/split.py) | 按单点/多点与明确的各段 information 分割，第一段保留编号和关联 |
-| 插空档 | [gaps.py](../src/tools/common/gaps.py) | 选范围、位置和长度，跨界分割与后移原子执行，共用平移计算 |
+| 插空档 | [gaps.py](../src/tools/common/gaps.py) | 明确选范围、位置和长度，跨界对象逐个 split/keep，分割与后移原子执行 |
 | 跨项目复制/剪切 | [transfer.py](../src/tools/common/transfer.py) | 目标重新发号、原数值保留；剪切时外部入向引用跟随新地址 |
 | 项目概览 | [project_overview.py](../src/tools/common/project_overview.py) | 项目层级、层类型、名字与对象数量；只读 |
 | 项目详细展开 | [project_details.py](../src/tools/common/project_details.py) | 展开项目/子树的层、对象内容和关联引用，可按数值范围筛选；只读 |
@@ -36,6 +37,14 @@
 子树删除与整层复制也已提供，范围包含起始层及全部后代；每次操作可整批撤销。用法、关联边界和 id_map 格式见 [子树工具说明](../src/runtime/storage/SUBTREES.md)，内存演示为 `python -X utf8 -B -m examples.subtrees`。
 
 分割、按起点筛选平移、插空档和跨项目复制/剪切的参数与完整示例见 [编辑工具说明](../src/runtime/storage/EDITING.md)。内存演示为 `python -X utf8 -B -m examples.editing`。位置工具的 shift 入口保持兼容，新增 --layer-ids、--from-position 和 --config-root；其与插空档共用底层数值计算。
+
+## 命令 help
+
+不知道该调用哪个工具时，先用 `python -m tools.common.command_help`；指定多个名字可查看详情，例如 `python -m tools.common.command_help split insert_gap undo --json`。Python 入口为 `runtime.api.command_help()` 或 `command_help(["split", "insert_gap"])`。
+
+各工具在自身模块的 COMMANDS 字面量中声明用途、参数、返回和示例。统一目录自动发现，根级 CLI --help 共用其中的示例；新增工具不必改中央名单。它仅提供只读说明，未来 MCP 可以复用这些数据。完整规则见 [命令目录说明](../src/tools/COMMANDS.md)。
+
+插空档现在必须明确选择 --layer-id、--layer-ids 或 --project。--contents-file 是 object_id/action 列表；split 带两段 information，keep 保持原样。漏传范围不会默认扩大到整个项目，未选择的对象不被修改，keep 对象可以覆盖插入时段。
 
 ## 配置 help
 

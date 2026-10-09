@@ -228,7 +228,7 @@ class HistoryToolsTests(unittest.TestCase):
         a, b = self.obj(), self.obj()
         op = dispatch(self.c, [{"action": "update", "kind": "object", "project_id": self.p, "id": obj["id"], "data": {"name": "批次"}} for obj in (a, b)], checker=None)
         for obj in (a, b):
-            self.call("update", "object", id=obj["id"], data={"tips": "后续修改"})
+            self.call("update", "object", id=obj["id"], data={"name": "后续修改"})
         before = self.snapshot()
         result = undo_operation(self.c, op["operation_id"])
         self.assertFalse(result["ok"])

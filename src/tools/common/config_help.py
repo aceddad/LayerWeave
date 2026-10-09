@@ -2,6 +2,7 @@
 
 import argparse
 import json
+from tools.catalog import help_examples
 
 from runtime.api import read_support, format_issue
 
@@ -160,7 +161,7 @@ def format_help(result):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="LayerWeave 配置 help：查看支持的层/对象封装，无需项目或数据库")
+    parser = argparse.ArgumentParser(description="LayerWeave 配置 help：查看支持的层/对象封装，无需项目或数据库", epilog=help_examples(COMMANDS), formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("view", nargs="?", default="overview", choices=VIEWS, help="overview 总览；layers 层；objects 对象类；combined 联查")
     parser.add_argument("targets", nargs="*", help="详情目标，可传多个配置路径、type 或唯一 Python 类名")
     parser.add_argument("--config-root", help="配置根目录，默认使用项目 configs")
@@ -178,6 +179,30 @@ def main():
                   "issues": [{"severity": "error", "message": str(error), **getattr(error, "details", {})}]}
     print(json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False) if args.json else format_help(result))
     return 1 if result["status"] == "failed" else 0
+
+
+
+# 命令目录和 --help 共用的只读接口说明。
+COMMANDS = [{'name': 'config_help',
+  'summary': '查看层/对象封装的支持能力与保存示例',
+  'entrypoint': 'tools.common.config_help:config_help',
+  'cli': 'python -m tools.common.config_help',
+  'read_only': True,
+  'context': [],
+  'parameters': {'view': {'type': 'string',
+                          'description': '查询范围',
+                          'default': 'overview',
+                          'choices': ['overview', 'layers', 'objects', 'combined']},
+                 'targets': {'type': 'array', 'description': '详情的配置路径/type/Python 类名列表'},
+                 'audience': {'type': 'string',
+                              'description': '使用版或开发版',
+                              'default': 'usage',
+                              'choices': ['usage', 'developer']},
+                 'include_source': {'type': 'boolean', 'description': '附带 TOML 原文；开发详情默认提供'},
+                 'config_root': {'type': 'string', 'description': '检查或配置查询采用的配置根目录；省略使用项目 configs'}},
+  'returns': 'items、配置支持与逐条 issues；不读取项目数据库或导入封装类。',
+  'examples': [{'cli': 'python -m tools.common.config_help combined text --json'},
+               {'cli': 'python -m tools.common.config_help objects model --dev'}]}]
 
 
 if __name__ == "__main__":

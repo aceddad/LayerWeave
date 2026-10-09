@@ -132,13 +132,19 @@ def split_object(connection, project_id, object_id, *, cuts, first_information=N
     return {**run_operation(connection, work, checker=_checker(checker, config_root)), "tool": "split_object"}
 
 
-def insert_gap(connection, project_id, *, at, length, layer_id=None, layer_ids=None, split_contents=None,
+def insert_gap(connection, project_id, *, at, length, layer_id=None, layer_ids=None, whole_project=False,
+               crossing_actions=None, split_contents=None,
                config_root=DEFAULT_ROOT, checker=DEFAULT_CHECKER):
     def work(operation_id):
+        if type(whole_project) is not bool or sum((layer_id is not None, layer_ids is not None, whole_project is True)) != 1:
+            raise InputError("请明确选择一个范围：直属层、子树或整个项目", field="scope", code="explicit_scope_required",
+                             allowed=["layer_id", "layer_ids", "whole_project=True"])
+        if crossing_actions is not None and split_contents is not None:
+            raise InputError("crossing_actions 与旧参数 split_contents 不能同时提供", field="crossing_actions")
         _number(at, "at")
         if _number(length, "length") <= 0:
             raise InputError("空档长度应大于零", field="length")
-        owner, layers, rows = _select(connection, project_id, layer_id=layer_id, layer_ids=layer_ids, whole=True)
+        owner, layers, rows = _select(connection, project_id, layer_id=layer_id, layer_ids=layer_ids, whole=whole_project)
         math = PositionMath(partial(crud.read, connection), owner)
         gaps = {}
         for id in layers:
@@ -148,12 +154,18 @@ def insert_gap(connection, project_id, *, at, length, layer_id=None, layer_ids=N
                 raise InputError("长度落点后无法形成空档", field="length", target=target("layer", owner, id), actual_begin=begin, actual_end=end)
             gaps[id] = {"layer_id": id, "begin": begin, "end": end, "length": float(decimal_value(end) - decimal_value(begin))}
         supplied = {}
-        for item in split_contents or []:
+        entries = crossing_actions if crossing_actions is not None else split_contents
+        for item in entries or []:
             if not isinstance(item, dict) or type(item.get("object_id")) is not int:
-                raise InputError("split_contents 每项需要整数 object_id", field="split_contents")
+                raise InputError("每项跨界处理需要整数 object_id", field="crossing_actions")
             if item["object_id"] in supplied:
-                raise InputError("同一对象的分段内容只能提供一次", field="split_contents")
-            supplied[item["object_id"]] = item
+                raise InputError("同一对象的跨界处理只能提供一次", field="crossing_actions")
+            # 旧文件明确给出两段内容时仍表示 split；不根据对象类型推断处理方式。
+            action = item.get("action", "split" if "first_information" in item and "second_information" in item else None)
+            if action not in {"split", "keep"}:
+                raise InputError("跨界对象需要明确选择 split 或 keep", field="action", allowed=["split", "keep"],
+                                 target=target("object", owner, item["object_id"]))
+            supplied[item["object_id"]] = {**item, "action": action}
         shifts, crossings = [], []
         for row in rows:
             gap = gaps[row["layer"]]
@@ -168,12 +180,16 @@ def insert_gap(connection, project_id, *, at, length, layer_id=None, layer_ids=N
         missing = [{"object_id": row["id"], "layer_id": row["layer"], "begin": row["begin"], "end": row["end"],
                     "at": gaps[row["layer"]]["begin"]} for row in crossings if row["id"] not in supplied]
         if missing or supplied.keys() - crossing_ids:
-            raise InputError("分段内容与当前跨界对象不对应；本批未写入", code="split_contents_required", field="split_contents",
-                             target=target("project", None, owner), required_splits=missing,
+            raise InputError("跨界处理与当前对象不对应；本批未写入", code="crossing_actions_required", field="crossing_actions",
+                             target=target("project", None, owner), allowed=["split", "keep"],
+                             required_crossings=missing, required_splits=missing,
                              unused_object_ids=sorted(supplied.keys() - crossing_ids))
-        planned = []
+        planned, kept = [], []
         for row in crossings:
             gap, info = gaps[row["layer"]], supplied[row["id"]]
+            if info["action"] == "keep":
+                kept.append({"id": row["id"], "layer_id": row["layer"], "begin": row["begin"], "end": row["end"]})
+                continue
             parts, _ = _prepare_split(row, math, info.get("first_information"),
                                      [{"at": gap["begin"], "information": info.get("second_information")}])
             parts[1].update(shifted_positions({**row, **parts[1]}, gap["length"], math))
@@ -188,6 +204,7 @@ def insert_gap(connection, project_id, *, at, length, layer_id=None, layer_ids=N
             if change is not None:
                 changes.append(change)
             shifted.append({"id": updated["id"], "begin": updated["begin"], "end": updated["end"]})
-        return {"project_id": owner, "requested_at": at, "requested_length": length, "gaps": list(gaps.values()),
-                "splits": splits, "shifted": shifted}, changes
+        scope = {"mode": "project" if whole_project else "layer" if layer_id is not None else "subtrees", "layer_ids": layers}
+        return {"project_id": owner, "scope": scope, "requested_at": at, "requested_length": length,
+                "gaps": list(gaps.values()), "splits": splits, "kept": kept, "shifted": shifted}, changes
     return {**run_operation(connection, work, checker=_checker(checker, config_root)), "tool": "insert_gap"}

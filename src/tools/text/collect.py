@@ -65,7 +65,7 @@ def collect_text(connection, project_id, layer_id, *, separator="\n", begin=None
 def main():
     from tools._cli import parser_for, run_cli
 
-    parser = parser_for("LayerWeave 文本汇集（只读）")
+    parser = parser_for("LayerWeave 文本汇集（只读）", commands=COMMANDS)
     parser.add_argument("layer_id", type=int, help="仅汇集该层直接装载的文字对象")
     parser.add_argument("--separator", default="\n", help="文本间分隔符，默认换行")
     parser.add_argument("--begin", type=float, help="位置范围起点")
@@ -75,6 +75,23 @@ def main():
         connection, args.project_id, args.layer_id, separator=args.separator,
         begin=args.begin, end=args.end, config_root=args.config_root,
     ), formatter=lambda result: "层不存在。" if result is None else result["text"])
+
+
+
+# 命令目录和 --help 共用的只读接口说明。
+COMMANDS = [{'name': 'collect_text',
+  'summary': '汇集某层的文字及派生文字对象，保留来源',
+  'entrypoint': 'tools.text.collect:collect_text',
+  'cli': 'python -m tools.text.collect',
+  'read_only': True,
+  'context': ['database', 'project_id'],
+  'parameters': {'layer_id': {'type': 'integer', 'description': '仅汇集该层直属对象', 'required': True},
+                 'separator': {'type': 'string', 'description': '文本分隔符', 'default': '\n'},
+                 'begin': {'type': 'number', 'description': '轴上的数值位置，不换算单位'},
+                 'end': {'type': 'number', 'description': '轴上的数值位置，不换算单位'},
+                 'config_root': {'type': 'string', 'description': '检查或配置查询采用的配置根目录；省略使用项目 configs'}},
+  'returns': 'text、来源 items、skipped_count、status 和逐条 issues。',
+  'examples': [{'cli': 'python -m tools.text.collect DATABASE 1 4 --json'}]}]
 
 
 if __name__ == "__main__":

@@ -60,7 +60,7 @@ def format_details(result):
 def main():
     from tools._cli import parser_for, run_cli
 
-    parser = parser_for("LayerWeave 项目详细展开（只读）")
+    parser = parser_for("LayerWeave 项目详细展开（只读）", commands=COMMANDS)
     selection = parser.add_mutually_exclusive_group()
     selection.add_argument("--layer-id", type=int, help="指定起始层，包含该层及全部子孙层")
     selection.add_argument("--layer-ids", nargs="*", type=int, help="指定多个起始层；不跟编号表示空选择")
@@ -72,6 +72,26 @@ def main():
         connection, args.project_id, layer_id=args.layer_id, layer_ids=args.layer_ids, begin=args.begin, end=args.end,
         compact=args.compact, config_root=args.config_root,
     ), formatter=format_details)
+
+
+
+# 命令目录和 --help 共用的只读接口说明。
+COMMANDS = [{'name': 'project_details',
+  'summary': '展开项目或子树的完整/精简内容，支持时间相交筛选',
+  'entrypoint': 'tools.common.project_details:project_details',
+  'cli': 'python -m tools.common.project_details',
+  'read_only': True,
+  'context': ['database', 'project_id'],
+  'parameters': {'layer_id': {'type': 'integer', 'description': '指定单棵子树，包含后代'},
+                 'layer_ids': {'type': 'array', 'description': '子树起始层编号列表，包含全部后代；空列表为空选择'},
+                 'begin': {'type': 'number', 'description': '轴上的数值位置，不换算单位'},
+                 'end': {'type': 'number', 'description': '轴上的数值位置，不换算单位'},
+                 'compact': {'type': 'boolean', 'description': '省略重复容器信息与空说明', 'default': False},
+                 'config_root': {'type': 'string', 'description': '检查或配置查询采用的配置根目录；省略使用项目 configs'}},
+  'returns': 'project、scope、layers/objects/bind、数量、缺失目标和逐条 issues；空层保留。',
+  'examples': [{'cli': 'python -m tools.common.project_details DATABASE 1 --layer-ids 4 7 --begin 10 --end 20 '
+                       '--compact --json'}],
+  'notes': ['不指定层时展开整个项目；时间只筛选对象，层本身不因零命中被省略。']}]
 
 
 if __name__ == "__main__":

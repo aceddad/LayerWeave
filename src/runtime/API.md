@@ -2,6 +2,12 @@
 
 工具统一从 `runtime.api` 导入。数据读写先初始化数据库再打开连接；配置 help 不需要数据库。项目创建、单条删除和任意记录查询继续使用 dispatch。Python 3.11+，当前从项目 src/ 目录运行。
 
+## 命令总览与详情
+
+command_help(names=None, source_root=DEFAULT_SOURCE_ROOT) 为只读命令查询，source_root 用关键字传入。省略 names 列总览，传命令名/别名/完整 entrypoint 或其列表展开参数、返回和可用 JSON 示例。它静态发现工具自身的 COMMANDS 声明，不导入被发现的模块、不连接数据库，也不执行命令。
+
+返回 view/status/items/issues，可供未来 MCP 展示和适配；当前没有新增 MCP 服务或通用执行器。CLI 为 `python -m tools.common.command_help split insert_gap undo --json`。结构与新增工具约定见 [命令目录说明](../tools/COMMANDS.md)。配置 help 继续专门描述层和对象的封装支持。
+
 ## 配置 help（查询支持能力）
 
 read_support(view="overview", targets=None, config_root=DEFAULT_ROOT, audience="usage", include_source=None) 动态读取 configs/layers 与 configs/objects，包含子目录。四种 view：overview 总览层与兼容对象类；layers 层支持详情；objects 对象类支持详情；combined 层＋兼容对象类详情。后三项支持一个目标或目标列表；目标为 config_ref、唯一 type、完整 class 路径或唯一类名。它们均查询封装定义，不查询项目实例，不导入 Python 类。
@@ -54,7 +60,7 @@ read 返回保留 project_id/config_ref 的普通字典，不需要配置文件�
 
 可选参数使用关键字。history 的 operation_id 与项目/实体范围互斥，指定操作时返回完整快照。项目筛选只用于选相关操作，结果仍展开跨项目批次的全部变化。分页使用 next_cursor，操作次数和改动条数分别统计。
 
-undo 返回现有 operation/operation_id/ok/applied/checks 协议，另有 undo_of；成功 data 含 undone_operation_id、restored_records。失败的 error.conflicts 列出记录差异或引用阻碍。冲突比较与恢复在同一写事务中完成；当前状态重新等于原操作最终状态时允许撤销，不凭后续日志数量判断。
+undo 返回现有 operation/operation_id/ok/applied/checks 协议，另有 undo_of；成功 data 含 undone_operation_id、restored_records。update 只比较并恢复该操作最终改变的顶层字段，保留后来改过的其他字段；information 和 axis 各算一个整体字段，不合并内部键。create/delete 仍按整条记录判断。失败的 error.conflicts 列出顶层字段差异或引用阻碍，任何冲突均整批不写。比较与恢复在同一事务中完成，不凭后续日志数量判断。
 
 恢复使用原编号和日志中的实际值，不回退 max_id，不按当前轴重新取整；项目发号进度不参与内容冲突比较。恢复后的语义检查使用当前配置，仍在提交后运行。关联 id 全库递增、不复用，独立于项目实体编号；旧库使用 initialize_database 显式升级。调用示例、CLI 与完整边界见 [复查、历史与撤销](storage/HISTORY.md)。
 
@@ -72,12 +78,12 @@ copy_subtree(connection, project_id, layer_id, name=None, config_root=DEFAULT_RO
 |---|---|
 | split_object(connection, project_id, object_id, cuts=..., first_information=...) | cuts 为 at/information 列表；切点落点后严格递增且位于内部。第一段保留编号和关联，其余段重新发号；返回实际 cuts 与 segments |
 | shift_objects(connection, project_id, object_ids=None, offset=..., layer_id=None, layer_ids=None, from_position=None) | 保留现有批次 results；可选择对象、直属层或多棵子树，再用 begin 下限筛选，正负偏移均支持 |
-| insert_gap(connection, project_id, at=..., length=..., layer_id=None, layer_ids=None, split_contents=None) | 默认整个项目；跨界对象明确提供两段内容，分割与后移在一个操作内完成；返回各层实际 gaps、splits 与 shifted |
+| insert_gap(connection, project_id, at=..., length=..., layer_id=None, layer_ids=None, whole_project=False, crossing_actions=None) | 必须明确选择一个范围；跨界对象逐个选择 split 或 keep；返回 scope、插入时段 gaps、splits、kept 与 shifted |
 | transfer_subtree(connection, project_id, layer_id, target_project_id, mode="copy", name=None) | 同库跨项目复制或剪切到目标根部，重新发号、映射结构引用、精确保留位置数值；cut 让外部入向关联跟随新地址 |
 
 可选参数使用关键字，均接受 config_root 与 checker。新工具返回标准操作结果和提交后 checks，能按 operation_id 整批撤销/重做。分割内容为完整 information 字典，工具不推测文本切分、媒体范围或自由内容里的编号。空 cuts 不写入；非空 cuts 需要 first_information。
 
-insert_gap 的 split_contents 是 object_id/first_information/second_information 项列表，缺项或过期项整批不写并列出所需目标。from_position 只控制平移的 begin 选择，不表示插空档，也不自动分割跨界对象。重叠冲突仍依据层配置在写入后报告。
+insert_gap 的 crossing_actions 是 object_id/action 项列表；split 需要 first_information/second_information，keep 原样保留。缺项或过期项整批不写，并用 required_crossings 列出所需目标。旧 split_contents 参数仍兼容，但不能与 crossing_actions 同传；完整两段内容未写 action 时按旧 split 解释。keep 可覆盖插入时段，不执行 stretch。from_position 只控制平移的 begin 选择，不表示插空档，也不自动分割跨界对象。重叠冲突仍依据层配置在写入后报告。
 
 迁移的显式 axis 保留，祖先提供的轴不补造，不做单位换算或重新落点。复制保留源地址，剪切将入向引用的 target_project_id/target_id 改为新身份并保留关联自身 id；源删除与目标创建同事务。具体格式、命令行、编号对应表见 [编辑工具说明](storage/EDITING.md)。
 

@@ -4,7 +4,7 @@ from copy import deepcopy
 from functools import partial
 
 from . import crud
-from .history import content, differences, operation_rows
+from .history import content, operation_rows
 from .journal import append_change, json_text
 from ..configuration.loader import DEFAULT_ROOT
 from ..feedback import InputError, target
@@ -31,22 +31,48 @@ def _plan(connection, rows):
         kind, first, last = row["kind"], row["before_data"], row["after_data"]
         key = _key(kind, last or first)
         if key not in plan:
-            plan[key] = {"restore": first}
+            plan[key] = {"restore": first, "lifecycle": False}
         plan[key]["expected"] = last
+        plan[key]["lifecycle"] |= row["action"] != "update"
     conflicts = []
     for key, item in plan.items():
+        before, expected = content(key[0], item["restore"]), content(key[0], item["expected"])
+        if same_value(before, expected):
+            item["skip"] = True
+            continue
         item["current"] = _read(connection, key)
-        expected, current = content(key[0], item["expected"]), content(key[0], item["current"])
-        if not same_value(expected, current):
+        current = content(key[0], item["current"])
+        if not item["lifecycle"] and before is not None and expected is not None:
+            changed = [name for name in sorted(before.keys() | expected.keys())
+                       if (name in before) != (name in expected) or not same_value(before.get(name), expected.get(name))]
+            item["fields"] = changed
+            mismatched = [name for name in changed if current is None or
+                          (name in current) != (name in expected) or not same_value(current.get(name), expected.get(name))]
+            if current is not None:
+                desired = deepcopy(item["current"])
+                for name in changed:
+                    if name in before:
+                        desired[name] = deepcopy(before[name])
+                    else:
+                        desired.pop(name, None)
+                item["restore"] = desired
+        else:
+            mismatched = [name for name in sorted((expected or {}).keys() | (current or {}).keys())
+                          if (name in (expected or {})) != (name in (current or {}))
+                          or not same_value((expected or {}).get(name), (current or {}).get(name))]
+        if mismatched:
+            fields = [{"path": [name], "before_present": name in (expected or {}),
+                       "after_present": name in (current or {}), "before": (expected or {}).get(name),
+                       "after": (current or {}).get(name)} for name in mismatched]
             conflicts.append({"code": "undo_conflict", "target": _target(key),
-                              "message": "当前记录与原操作结束时不一致，未覆盖后续变化",
+                              "message": "原操作修改的顶层字段已有后续变化" if "fields" in item else "创建或删除涉及的整条记录已有后续变化",
                               "expected": item["expected"], "current": item["current"], "restore": item["restore"],
-                              "fields": differences(expected, current)})
+                              "comparison": "fields" if "fields" in item else "record", "fields": fields})
     if conflicts:
         raise InputError("存在撤销冲突，本批未写入", code="undo_conflict", conflicts=conflicts)
     # 操作中的中间变化已抵消时，没有需要回退的最终效果。
     return {key: item for key, item in plan.items()
-            if not same_value(content(key[0], item["current"]), content(key[0], item["restore"]))}
+            if not item.get("skip")}
 
 
 def _dependencies(connection, plan):
@@ -121,7 +147,10 @@ def _restore(connection, key, item, operation_id, undo_of):
             names = ", ".join(f'"{name}"' for name in columns)
             connection.execute(f'INSERT INTO "{spec["table"]}" ({names}) VALUES ({", ".join("?" for _ in columns)})', list(values.values()))
         else:
-            writable = [name for name in columns if name not in {"id", "project_id"}]
+            writable = [name for name in columns if name not in {"id", "project_id"}
+                        and ("fields" not in item or name in item["fields"])]
+            if kind == "project" and "max_id" not in writable and desired["max_id"] != current["max_id"]:
+                writable.append("max_id")
             assignments = ", ".join(f'"{name}"=?' for name in writable)
             connection.execute(f'UPDATE "{spec["table"]}" SET {assignments}{where}', [*[values[name] for name in writable], *identity])
         if spec["scoped"]:

@@ -88,9 +88,15 @@ def transfer_subtree(*args, **kwargs):
     return transfer(*args, **kwargs)
 
 
+def command_help(*args, **kwargs):
+    """只读发现所有命令及参数/示例，不执行命令或导入被发现的模块。"""
+    from tools.catalog import command_help as describe
+    return describe(*args, **kwargs)
+
+
 __all__ = ["Loader", "dispatch", "initialize_database", "open_database", "read_layer", "read_object", "read_project_index",
            "load_layer", "load_object", "save_layer", "save_object", "validate",
            "read_record", "read_snapshot", "query_objects", "read_bindings", "read_project_details", "DEFAULT_CHECKER",
            "format_feedback", "format_issue", "diagnostic_report", "PositionMath", "decimal_value", "read_support",
            "recheck", "read_history", "undo_operation", "delete_subtree", "copy_subtree",
-           "split_object", "shift_objects", "insert_gap", "transfer_subtree"]
+           "split_object", "shift_objects", "insert_gap", "transfer_subtree", "command_help"]

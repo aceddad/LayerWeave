@@ -126,7 +126,7 @@ def set_duration(connection, project_id, object_id, duration, *, checker=DEFAULT
 def main():
     from tools._cli import parser_for, run_cli
 
-    parser = parser_for("LayerWeave 位置工具（写入并返回 JSON）")
+    parser = parser_for("LayerWeave 位置工具（写入并返回 JSON）", commands=COMMANDS)
     commands = parser.add_subparsers(dest="command", required=True)
     arrange = commands.add_parser("arrange", help="同层连续排列")
     arrange.add_argument("layer_id", type=int)
@@ -159,6 +159,59 @@ def main():
             return align_objects(connection, args.project_id, args.ids, position=args.position, edge=args.edge, layer_id=args.layer_id)
         return set_duration(connection, args.project_id, args.object_id, args.duration)
     return run_cli(parser, execute, operation_output=True)
+
+
+
+# 命令目录和 --help 共用的只读接口说明。
+COMMANDS = [{'name': 'arrange_objects',
+  'summary': '按指定顺序连续排列对象，保留各自时长',
+  'entrypoint': 'tools.common.positions:arrange_objects',
+  'cli': 'python -m tools.common.positions',
+  'read_only': False,
+  'context': ['database', 'project_id'],
+  'parameters': {'layer_id': {'type': 'integer', 'description': '同一层的编号', 'required': True},
+                 'object_ids': {'type': 'array', 'description': '明确选择的对象编号列表，重复编号只处理一次'},
+                 'start': {'type': 'number', 'description': '轴上的数值位置，不换算单位'}},
+  'returns': '标准操作结果、operation_id、data/results 和提交后 checks；可按操作编号撤销。',
+  'examples': [{'cli': 'python -m tools.common.positions DATABASE 1 arrange 4 --ids 8 12 --start 0'}]},
+ {'name': 'shift_objects',
+  'summary': '选择对象/直属层/子树，按起点下限筛选后整体平移',
+  'entrypoint': 'runtime.api:shift_objects',
+  'cli': 'python -m tools.common.positions',
+  'read_only': False,
+  'context': ['database', 'project_id'],
+  'parameters': {'object_ids': {'type': 'array', 'description': '明确选择的对象编号列表，重复编号只处理一次'},
+                 'layer_id': {'type': 'integer', 'description': '该项目内的层编号，仅直属对象'},
+                 'layer_ids': {'type': 'array', 'description': '子树起始层编号列表，包含全部后代；空列表为空选择'},
+                 'offset': {'type': 'number', 'description': '正值后移，负值前移', 'required': True},
+                 'from_position': {'type': 'number', 'description': '筛选 begin >= 此数值，不是区间相交'},
+                 'config_root': {'type': 'string', 'description': '检查或配置查询采用的配置根目录；省略使用项目 configs'}},
+  'returns': '标准操作结果、operation_id、data/results 和提交后 checks；可按操作编号撤销。',
+  'examples': [{'cli': 'python -m tools.common.positions DATABASE 1 shift --layer-ids 4 --from-position 30 --offset '
+                       '2'}],
+  'notes': ['重叠按层配置在提交后报告；批量平移不保证插入时段为空。']},
+ {'name': 'align_objects',
+  'summary': '按起点或终点对齐选中对象，保留各自时长',
+  'entrypoint': 'tools.common.positions:align_objects',
+  'cli': 'python -m tools.common.positions',
+  'read_only': False,
+  'context': ['database', 'project_id'],
+  'parameters': {'object_ids': {'type': 'array', 'description': '明确选择的对象编号列表，重复编号只处理一次'},
+                 'layer_id': {'type': 'integer', 'description': '该项目内的层编号，仅直属对象'},
+                 'position': {'type': 'number', 'description': '对齐位置', 'required': True},
+                 'edge': {'type': 'string', 'description': '对齐端点', 'default': 'begin', 'choices': ['begin', 'end']}},
+  'returns': '标准操作结果、operation_id、data/results 和提交后 checks；可按操作编号撤销。',
+  'examples': [{'cli': 'python -m tools.common.positions DATABASE 1 align --ids 8 12 --position 10 --edge begin'}]},
+ {'name': 'set_duration',
+  'summary': '保持起点，修改对象时长',
+  'entrypoint': 'tools.common.positions:set_duration',
+  'cli': 'python -m tools.common.positions',
+  'read_only': False,
+  'context': ['database', 'project_id'],
+  'parameters': {'object_id': {'type': 'integer', 'description': '对象编号', 'required': True},
+                 'duration': {'type': 'number', 'description': '新的时长', 'required': True}},
+  'returns': '标准操作结果、operation_id、data/results 和提交后 checks；可按操作编号撤销。',
+  'examples': [{'cli': 'python -m tools.common.positions DATABASE 1 duration 8 3'}]}]
 
 
 if __name__ == "__main__":

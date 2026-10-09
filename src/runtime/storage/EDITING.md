@@ -4,7 +4,7 @@
 
 分割从数据库读取原区间，调用者提供 first_information 和 cuts 列表。每个切点包含 at 与从该处开始的 information；N 个切点得到 N+1 段。所有边界按所在轴精度落点后须严格递增且切点在内部。第一段保留原编号和全部现有关联，其余段分配新编号，不复制关联。空切点不写入。内容字段仍由现有规则在提交后检查，工具不猜测或裁切文本、媒体。
 
-批量平移支持显式对象、直属层或子树范围，可再用 from_position 选择 begin 不早于该数值的对象；不是区间相交筛选。偏移可以为负数，重叠按各层配置在整批提交后报告。插空档则默认选整个项目，也可指定直属层或子树：起点在切点及之后的对象后移，跨界对象先分割再移动后段，之前的内容不动。跨界对象需要 split_contents 明确提供前后内容；缺失时返回所需对象清单且整批不写。分割、平移的内部计算共用，组合执行只有一个 operation_id。
+批量平移支持显式对象、直属层或子树范围，可再用 from_position 选择 begin 不早于该数值的对象；不是区间相交筛选。偏移可以为负数，重叠按各层配置在整批提交后报告。插空档必须明确选择直属层、子树或整个项目：起点在切点及之后的对象后移，跨界对象逐个选择 split 或 keep，之前的内容不动。缺少处理方式时列出对象清单且整批不写。分割、平移的内部计算共用，组合执行只有一个 operation_id。
 
 跨项目操作限定同一个数据库中不同的项目，以整层/子树为范围，副本根层落在目标项目根部。目标项目重新发号，内部结构与关联使用新身份；自由 information、资源路径保持原样。显式 axis 原样复制，不补出原来从父层继承的轴，不换算单位，也不按目标刻度改写原始 begin/end 数值。
 
@@ -58,25 +58,29 @@ python -X utf8 -B -m tools.common.positions DATABASE PROJECT_ID shift --layer-id
 from runtime.api import insert_gap
 
 result = insert_gap(connection, project_id, layer_ids=[root_layer_id], at=30, length=2,
-    split_contents=[{
+    crossing_actions=[{
         "object_id": crossing_object_id,
+        "action": "split",
         "first_information": {"text": "切点之前"},
         "second_information": {"text": "切点之后"},
     }])
 ```
 
-没有跨界对象时省略 split_contents 即可；也可以先显式分割，再单独插空档。带 split_contents 的组合调用只提交一个操作，任何失败均无部分分割或部分平移。列表项要求实际整数 object_id，每个跨界对象提供一次；多余、不再跨界的对象也明确报告，避免内容被默默忽略。
+没有跨界对象时可省略 crossing_actions；也可以先显式分割，再单独插空档。每个跨界对象提供一次实际整数 object_id 及 action：split 需要 first_information/second_information，keep 原样保留对象，不需要内容副本。没有 stretch，也不按内容类型推断。组合调用只有一个操作，任何失败均无部分分割或平移；多余或不再跨界的对象明确报告。
 
-范围默认整个项目；layer_id 仅直属层，layer_ids 含子孙层，二者互斥。长度须为正数；按各层精度落点后仍须形成正长度空档。切点为所在层落点后的实际数值；对象原始 begin/end 用来判断是否跨界。结束恰好在切点的区间保持，起点或瞬间恰好在切点的对象后移。跨界的两段最终分别结束于空档开始、开始于空档结束。
+旧 split_contents 参数、或未写 action 但明确提供两段内容的旧文件仍按 split 兼容；新旧参数不能同传。
 
-各层分别计算实际切点和长度，不做轴单位换算；比如不同精度可能产生不同的实际长度。返回 data.gaps 明确列出每层 layer_id/begin/end/length，splits 列出跨界对象的分段结果，shifted 列出其余后移对象。没有对象需修改时可返回 unchanged，不创建“空白对象”。
+范围须在 layer_id、layer_ids、whole_project=True 中明确选一个；layer_id 仅直属层，layer_ids 含子孙层。省略范围不再扩展为整个项目。长度须为正数，按各层精度落点后仍须形成正长度时段。切点为所在层落点后的实际数值；对象原始 begin/end 用来判断是否跨界。结束恰好在切点的区间保持，起点或瞬间恰好在切点的对象后移。选择 split 时，两段分别结束于插入时段开始、开始于其结束；keep 保留原区间与全部内容。
 
-缺少跨界内容时 error.required_splits 列出对象、所属层、原区间和实际切点，unused_object_ids 列出不适用的内容项，本批不写。旧坐标在当前刻度上无法形成两段时报告 invalid_cut，不凭近似比较宣称已经腾空。
+各层分别计算实际切点和长度，不做轴单位换算；比如不同精度可能产生不同的实际长度。返回 data.scope 明确实际范围，data.gaps 列出插入时段，splits 列出分段结果，kept 列出保留对象，shifted 列出其余后移对象。keep 允许段落说明或背景覆盖插入时段，不宣称它完全空白。没有对象需修改时返回 unchanged，不创建“空白对象”。
+
+缺少跨界处理时 error.required_crossings 列出对象、所属层、原区间和实际切点，allowed 给出 split/keep；required_splits 暂作为兼容别名。unused_object_ids 列出不适用的处理项，本批不写。选择 split 而旧坐标无法在当前刻度上形成两段时报告 invalid_cut；keep 不改写原始坐标。
 
 ```sh
 python -X utf8 -B -m tools.common.gaps DATABASE PROJECT_ID 30 2 --layer-ids 4 7 --json
-# CONTENTS.json 是 split_contents 列表，不是包装后的请求字典。
+# CONTENTS.json 是 object_id/action 列表，split 项另带两段 information。
 python -X utf8 -B -m tools.common.gaps DATABASE PROJECT_ID 30 2 --layer-id 4 --contents-file CONTENTS.json
+python -X utf8 -B -m tools.common.gaps DATABASE PROJECT_ID 30 2 --project --json
 ```
 
 ## 跨项目复制和剪切

@@ -36,7 +36,7 @@ def format_history(result):
 
 def main():
     from tools._cli import parser_for, run_cli
-    parser = parser_for("LayerWeave 历史查询：按操作分页，已删除实体也可查询", project=False)
+    parser = parser_for("LayerWeave 历史查询：按操作分页，已删除实体也可查询", project=False, commands=COMMANDS)
     parser.add_argument("--project-id", type=int)
     parser.add_argument("--kind", choices=("project", "layer", "object", "bind"))
     parser.add_argument("--id", type=int, help="实体编号；层和对象还需 --project-id")
@@ -46,6 +46,27 @@ def main():
     parser.add_argument("--detail", action="store_true", help="列表中也展开完整前后快照")
     return run_cli(parser, lambda connection, args: history(connection, args.project_id, kind=args.kind, id=args.id,
                    operation_id=args.operation_id, limit=args.limit, before=args.before, detail=args.detail), formatter=format_history)
+
+
+
+# 命令目录和 --help 共用的只读接口说明。
+COMMANDS = [{'name': 'read_history',
+  'summary': '按操作分页查看历史或展开完整操作，包括已删除实体',
+  'entrypoint': 'runtime.api:read_history',
+  'cli': 'python -m tools.common.history',
+  'read_only': True,
+  'context': ['database'],
+  'parameters': {'project_id': {'type': 'integer', 'description': '按项目筛选相关操作；完整批次仍可跨项目'},
+                 'kind': {'type': 'string', 'description': '实体种类', 'choices': ['project', 'layer', 'object', 'bind']},
+                 'id': {'type': 'integer', 'description': '实体编号，层/对象还需 project_id'},
+                 'operation_id': {'type': 'string', 'description': '展开一个完整操作，与项目/实体筛选互斥'},
+                 'limit': {'type': 'integer', 'description': '每页操作数', 'default': 20},
+                 'before': {'type': 'integer', 'description': '上一页 next_cursor'},
+                 'detail': {'type': 'boolean', 'description': '列表也展开前后快照', 'default': False}},
+  'returns': '操作总数、改动条数、items、next_cursor；每项含字段差异与 undo_of。',
+  'examples': [{'cli': 'python -m tools.common.history DATABASE --project-id 1 --kind object --id 8 --json'},
+               {'cli': 'python -m tools.common.history DATABASE --operation-id OPERATION_ID --json'}],
+  'aliases': ['history']}]
 
 
 if __name__ == "__main__":

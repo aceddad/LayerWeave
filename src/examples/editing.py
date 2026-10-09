@@ -25,7 +25,7 @@ def create_example():
         shift = shift_objects(connection, source, layer_ids=[layer], from_position=14, offset=1)
         assert shift["ok"], shift
         gap = insert_gap(connection, source, layer_id=layer, at=12, length=2,
-                         split_contents=[{"object_id": obj, "first_information": {"text": "第一段前半"},
+                         crossing_actions=[{"object_id": obj, "action": "split", "first_information": {"text": "第一段前半"},
                                           "second_information": {"text": "第一段后半"}}])
         assert gap["ok"], gap
         other = save_layer(connection, destination, {"config_ref": "layers/text.toml", "name": "引用方"})["data"]["id"]

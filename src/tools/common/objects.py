@@ -41,7 +41,7 @@ def main():
     from pathlib import Path
     from tools._cli import parser_for, run_cli
 
-    parser = parser_for("LayerWeave 对象新增工具（写入并返回 JSON）")
+    parser = parser_for("LayerWeave 对象新增工具（写入并返回 JSON）", commands=COMMANDS)
     commands = parser.add_subparsers(dest="command", required=True)
     append = commands.add_parser("append", help="按指定时长接续新增")
     append.add_argument("layer_id", type=int)
@@ -65,6 +65,38 @@ def main():
         return copy_object(connection, args.project_id, args.object_id, layer_id=args.layer_id,
                            name=args.name, begin=args.begin, append=args.append)
     return run_cli(parser, execute, operation_output=True)
+
+
+
+# 命令目录和 --help 共用的只读接口说明。
+COMMANDS = [{'name': 'append_object',
+  'summary': '按层尾或指定对象终点接续新增对象',
+  'entrypoint': 'tools.common.objects:append_object',
+  'cli': 'python -m tools.common.objects',
+  'read_only': False,
+  'context': ['database', 'project_id'],
+  'parameters': {'layer_id': {'type': 'integer', 'description': '新增对象所属层', 'required': True},
+                 'data': {'type': 'object', 'description': '对象创建字段，含 config_ref 和 information', 'required': True},
+                 'duration': {'type': 'number', 'description': '新增对象时长', 'required': True},
+                 'after_id': {'type': 'integer', 'description': '同层锚点对象编号；省略用层内最大 end'},
+                 'empty_start': {'type': 'number', 'description': '空层起点', 'default': 0}},
+  'returns': '标准操作结果、operation_id、data/results 和提交后 checks；可按操作编号撤销。',
+  'examples': [{'cli': 'python -m tools.common.objects DATABASE 1 append 4 2 --data-file object.json',
+                'files': {'object.json': {'config_ref': 'objects/text.toml', 'information': {'text': '新增'}}}}]},
+ {'name': 'copy_object',
+  'summary': '同项目复制一个对象，可选新层、新起点或接续位置',
+  'entrypoint': 'tools.common.objects:copy_object',
+  'cli': 'python -m tools.common.objects',
+  'read_only': False,
+  'context': ['database', 'project_id'],
+  'parameters': {'object_id': {'type': 'integer', 'description': '原对象编号', 'required': True},
+                 'layer_id': {'type': 'integer', 'description': '该项目内的层编号，仅直属对象'},
+                 'begin': {'type': 'number', 'description': '轴上的数值位置，不换算单位'},
+                 'append': {'type': 'boolean', 'description': '接续到目标层末尾，与 begin 互斥', 'default': False},
+                 'name': {'type': 'string', 'description': '副本名字'}},
+  'returns': '标准操作结果、operation_id、data/results 和提交后 checks；可按操作编号撤销。',
+  'examples': [{'cli': 'python -m tools.common.objects DATABASE 1 copy 8 --layer-id 4 --append'}],
+  'notes': ['只复制对象记录，不复制关联或资源文件。']}]
 
 
 if __name__ == "__main__":

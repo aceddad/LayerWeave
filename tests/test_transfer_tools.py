@@ -146,12 +146,24 @@ class TransferToolsTests(unittest.TestCase):
     def test_later_edit_to_redirected_reference_blocks_whole_undo(self):
         moved = transfer_subtree(self.c, self.p, self.root, self.q, mode="cut")
         self.assertTrue(moved["ok"], moved)
-        self.call("update", "bind", id=self.incoming, data={"tips": "他人后来修改"})
+        self.call("update", "bind", id=self.incoming, data={"target_project_id": 999})
         before = self.snapshot()
         result = undo_operation(self.c, moved["operation_id"])
         self.assertFalse(result["ok"])
         self.assertEqual(self.snapshot(), before)
         self.assertEqual(result["error"]["conflicts"][0]["target"]["kind"], "bind")
+
+    def test_later_reference_note_survives_cut_undo_and_redo(self):
+        moved = transfer_subtree(self.c, self.p, self.root, self.q, mode="cut")
+        self.assertTrue(moved["ok"], moved)
+        self.call("update", "bind", id=self.incoming, data={"tips": "后来备注"})
+        u = self.undo(moved)
+        restored = self.row("bind", self.incoming)
+        self.assertEqual((restored["target_project_id"], restored["target_id"]), (self.p, self.obj))
+        self.assertEqual(restored["tips"], "后来备注")
+        self.undo(u)
+        self.assertEqual(self.row("bind", self.incoming)["target_project_id"], self.q)
+        self.assertEqual(self.row("bind", self.incoming)["tips"], "后来备注")
 
     def test_invalid_target_or_mode_has_no_effect(self):
         for target, mode in ((self.p, "cut"), (999, "copy"), (None, "cut"), (self.q, "move")):

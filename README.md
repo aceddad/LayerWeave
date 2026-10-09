@@ -13,9 +13,15 @@ cd src
 python -X utf8 -B -m tools.common.config_help
 python -X utf8 -B -m tools.common.config_help combined text
 python -X utf8 -B -m tools.common.config_help objects model Title --dev
+python -X utf8 -B -m tools.common.command_help
+python -X utf8 -B -m tools.common.command_help split insert_gap undo --json
 ```
 
 Help 分为默认使用版与 --dev 开发版：使用版保留用途、内容输入、返回说明和带 config_ref 的保存示例；开发版展示完整定义、继承与字段来源、汇报设置及原文。两者均支持总览、层支持、对象类支持、层与对象类联查，详情支持多目标和文字/JSON。新增封装会自动发现，完整说明见 [配置 help](src/runtime/configuration/HELP.md)。
+
+查询有哪些工具使用独立的 [命令 help](src/tools/COMMANDS.md)：提供总览、参数、返回和完整 JSON 示例，静态读取各工具的 COMMANDS 说明，不执行命令、不连接数据库。CLI --help 共用相同示例。
+
+本轮反馈的行为变化、兼容方式和复测步骤见 [插空档 命令帮助与字段撤销修复报告](output/2026-10-10-gap-help-undo-report.md)。
 
 在 src 目录运行完整数据读写示例：
 
@@ -43,7 +49,7 @@ python -X utf8 -B -m examples.read_write
 
 子树工具演示：`python -X utf8 -B -m examples.subtrees`。一次删除完整子树及其出向关联，或在同项目、同父层复制一个新版本，自动重映射内部引用并返回编号对应表。两项操作均可整批撤销，用法见 [子树工具说明](src/runtime/storage/SUBTREES.md)。
 
-编辑工具演示：`python -X utf8 -B -m examples.editing`。分割由调用者提供切点和各段内容；平移支持按子树与起点选择；插空档可原子组合分割和后移；跨项目复制/剪切保留原数值，剪切使外部入向关联跟随新地址。全部使用已有事务和撤销，详见 [编辑工具说明](src/runtime/storage/EDITING.md)。
+编辑工具演示：`python -X utf8 -B -m examples.editing`。分割由调用者提供切点和各段内容；平移支持按子树与起点选择；插空档明确指定范围，对跨界对象选择 split/keep；跨项目复制/剪切保留原数值，剪切使外部入向关联跟随新地址。全部使用已有事务和撤销，详见 [编辑工具说明](src/runtime/storage/EDITING.md)。
 
 初始化数据库（同样从 src 目录执行）：
 
@@ -66,6 +72,7 @@ python -X utf8 -B -m runtime.console ../output/ai-production.sqlite3 --request e
 | 要做什么 | 从哪里开始 |
 |---|---|
 | 查看可用层、兼容对象类和封装说明 | [配置 help](src/runtime/configuration/HELP.md)、[查询入口](src/tools/common/config_help.py) |
+| 查看所有命令及调用格式 | [命令目录说明](src/tools/COMMANDS.md)、[查询入口](src/tools/common/command_help.py) |
 | 复查项目/子树、查看历史、撤销与重做 | [完整说明](src/runtime/storage/HISTORY.md)、[内存示例](src/examples/review_history.py) |
 | 删除子树、复制整层及内部关联 | [工具说明](src/runtime/storage/SUBTREES.md)、[内存示例](src/examples/subtrees.py) |
 | 分割、范围平移、插空档、跨项目复制/剪切 | [工具说明](src/runtime/storage/EDITING.md)、[内存示例](src/examples/editing.py) |
@@ -160,7 +167,7 @@ python -X utf8 -B -m unittest discover -s ../tests -v
 
 测试覆盖配置继承、父约定保护、字段类型、区间边界、类型兼容、检测触发范围、逐项继续、批次最终状态、按需导入，以及存储、日志、迁移、完整记录/实例往返、关闭重开和 CLI。使用内存库和专用临时文件，不写入输出数据库。
 
-当前包含分割、插空档、范围平移、跨项目复制/剪切、子树关联映射与撤销等回归在内的 292 项测试通过。JSON 内容变化会区分 `1`、`1.0` 与 `true`，日志、批次最终状态和检测字段选择使用同一比较方式；字典键顺序不产生变化。无变化的字段在 SQL UPDATE 前跳过。
+当前包含显式范围、跨界 split/keep、命令目录及帮助、顶层字段撤销等回归在内的 316 项测试通过。JSON 内容变化会区分 `1`、`1.0` 与 `true`，日志、批次最终状态和检测字段选择使用同一比较方式；字典键顺序不产生变化。无变化的字段在 SQL UPDATE 前跳过。
 
 此前读写优化时的本地 100 对象场景记录（现有层、新 Text 实例自动匹配配置、内置检测开启；以下文件读取数是加入 Title 与配置唯一性检查前的基线）：
 

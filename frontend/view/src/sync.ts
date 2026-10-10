@@ -3,15 +3,16 @@ import {api} from './api';
 import {visibleBoards, visibleRange} from './camera';
 import {placeAuto} from './model/layoutOps';
 import {adoptOrphans, keyOf, rootsOf} from './model/model';
+import type {Note} from './model/notes';
 import {CAPTURE, RECORD, numParam} from './params';
-import {activeBoard, getState, modelOf, setState} from './store';
+import {activeBoard, getState, modelOf, notesOf, setState} from './store';
 import type {Layout} from './types';
 
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
-export function toast(text: string) {
+export function toast(text: string, ms = 2500) {
   setState({message: text});
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => setState({message: ''}), 2500);
+  toastTimer = setTimeout(() => setState({message: ''}), ms);
 }
 
 export async function loadProjects() {
@@ -23,8 +24,10 @@ export async function loadProjects() {
 }
 
 export async function loadProject(id: number) {
+  const before = getState().project === id ? notesOf(getState())?.list : undefined;
   const [data, layout] = await Promise.all([api.project(id), api.layout(id)]);
   setState({project: id, data: adoptOrphans(data)});
+  announceNotes(before);
   applyLayout(layout);
   await loadChanges();
   const s = getState(), model = modelOf(s)!;
@@ -34,6 +37,21 @@ export async function loadProject(id: number) {
   setState({active});
   report();
 }
+
+// 别人（比如 AI 用 view_note）写了新批注或回复：提示一下。自己写的不提示
+function announceNotes(before: Note[] | undefined) {
+  const s = getState(), info = notesOf(s);
+  if (!before || !info || CAPTURE) return;
+  const old = new Set(before.map((n) => n.id));
+  const fresh = info.list.filter((n) => !old.has(n.id) && n.author !== s.me.trim());
+  if (!fresh.length) return;
+  const n = fresh[fresh.length - 1], floor = info.threads.findIndex((t) => t.top.id === n.thread) + 1;
+  const what = n.replyTo != null ? `回复了第 ${floor} 楼` : `写了新批注（第 ${floor} 楼）`;
+  setState({notice: {text: `${n.author || '有人'}${what}：${n.text.slice(0, 40)}${fresh.length > 1 ? `（共 ${fresh.length} 条新的）` : ''}`, thread: n.thread}});
+  clearTimeout(noticeTimer);
+  noticeTimer = setTimeout(() => setState({notice: null}), 12000);
+}
+let noticeTimer: ReturnType<typeof setTimeout> | undefined;
 
 function applyLayout(layout: Layout) {
   const s = getState();

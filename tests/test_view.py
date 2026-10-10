@@ -16,7 +16,7 @@ from layerweave.tool.builtin.view.data import axis_key, extract_frame, find_ffmp
 from layerweave.tool.builtin.view.layout import arrange, chain_offsets, layout_path, merge, reconcile, split
 from layerweave.tool.builtin.view.note import add_note, list_notes, note, remove_note, threads, update_note, waiting_for
 from layerweave.tool.builtin.view.notes import AXIS, LAYER_REF, OBJECT_REF
-from layerweave.tool.builtin.view.screenshot import capture, find_browser
+from layerweave.tool.builtin.view.screenshot import capture, find_browser, link_query
 from layerweave.tool.builtin.view.server import make_server
 from layerweave.tool.builtin.view.state import read_state
 
@@ -376,6 +376,23 @@ class ViewTests(unittest.TestCase):
         self.assertTrue(cuts["ready"])
         self.assertIn("view=cuts", cuts["page"])
         self.assertIn("full=1", cuts["page"])
+        said = add_note(self.database, self.project, "这张图换一下", targets=[("object", self.project, self.image.id)], author="用户")["note"]
+        aimed = capture(self.database, self.project, Path(self.temp.name) / "shots" / "note.png", note=said,
+                        width=1000, height=600, wait_ms=15000, state_root=self.state_root)
+        self.assertTrue(aimed["ready"])
+        self.assertIn(f"note={said}", aimed["page"])
+        link = f"http://127.0.0.1:8765/?project={self.project}&view=cuts&board={self.board}&select={self.image.id}&record=1"
+        linked = capture(self.database, self.project, Path(self.temp.name) / "shots" / "link.png", link=link,
+                         width=1000, height=600, wait_ms=15000, state_root=self.state_root)
+        self.assertTrue(linked["ready"])
+        for part in ("view=cuts", f"board={self.board}", f"select={self.image.id}", "record=0"):   # 链接里的 record=1 不算数
+            self.assertIn(part, linked["page"])
+
+    def test_screenshot_link_keeps_only_view_parameters(self):
+        link = f"http://127.0.0.1:8765/?project={self.project}&board=1&begin=8&end=14&select=16&note=42&record=1&capture=0&x=1"
+        self.assertEqual(link_query(link, self.project), {"board": "1", "begin": "8", "end": "14", "select": "16", "note": "42"})
+        with self.assertRaisesRegex(ValueError, "链接是项目"):
+            link_query(f"http://127.0.0.1:8765/?project={self.project + 1}&board=1", self.project)
 
 
 if __name__ == "__main__":

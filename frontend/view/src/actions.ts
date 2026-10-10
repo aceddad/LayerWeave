@@ -1,8 +1,10 @@
-// 用户在画面上做的事：点选、放播放头、折叠、拆出、点层名、跳到批注指的地方、切换面板
-import {focusObject, focusTime} from './camera';
+// 用户在画面上做的事：点选、放播放头、折叠、拆出、点层名、跳到批注指的地方、切换面板、键盘跳转、复制链接
+import {focusNote, focusObject, focusTime, revealObject, revealTime, visibleRange} from './camera';
 import {afterResize, sizeOf, split} from './model/layoutOps';
+import {linkQuery} from './model/link';
 import {keyOf} from './model/model';
-import {getState, modelOf, setState} from './store';
+import {cutPoints, editPoints, stepObject, stepTime, stepTrack} from './model/navigate';
+import {activeBoard, getState, modelOf, setState} from './store';
 import {loadChanges, report, saveLayout, toast} from './sync';
 import type {Ref, Side, View} from './types';
 
@@ -12,7 +14,7 @@ export function clickBoard(key: number, t: number, objectId: number | null, onRu
   setState({
     active: key, playhead: +t.toFixed(3),
     selected: objectId ?? (onRuler ? s.selected : null),
-    sel: onRuler ? null : s.sel, wholeProject: false, targetLayer: null,
+    sel: onRuler ? null : s.sel, wholeProject: false, targetLayer: null, noteFocus: null,
   });
   report();
 }
@@ -74,4 +76,67 @@ export async function setSide(side: Side) {
 export function setView(view: View) {
   setState({view});
   report();
+}
+
+// 批注上的"定位"：镜头对准这一楼指的全部地方，楼和目标高亮
+export function locateNote(id: number) {
+  setState({view: 'canvas'});
+  requestAnimationFrame(() => { focusNote(id); report(); });
+}
+
+// 键盘：←/→ 同一轨道的前后对象（没选中对象时在剪辑点之间跳），↑/↓ 上下轨道，[ ] 接缝。返回 true 表示处理了
+export function keyStep(key: string): boolean {
+  const s = getState(), model = modelOf(s), b = activeBoard(s);
+  if (!model || !b || s.view !== 'canvas') return false;
+  const sel = s.selected != null ? model.object(s.selected) : undefined;
+  const onBoard = sel && model.boardOf(s.boards, sel.layer.root) === b;
+  const dir = key === 'ArrowLeft' || key === 'ArrowUp' || key === '[' ? -1 : 1;
+  const moveTo = (t: number | null) => {
+    if (t == null) return toast(dir < 0 ? '前面没有了' : '后面没有了');
+    setState({playhead: +t.toFixed(6), noteFocus: null});
+    revealTime(b, t);
+    report();
+  };
+  const pick = (item: ReturnType<typeof stepObject>, keepPlayhead: boolean) => {
+    if (!item) return toast(dir < 0 ? '前面没有了' : '后面没有了');
+    const t = s.playhead, inside = keepPlayhead && t != null && item.begin <= t && t < item.end;
+    setState({selected: item.o.id, playhead: inside ? t : +item.begin.toFixed(6), noteFocus: null});
+    requestAnimationFrame(() => requestAnimationFrame(() => revealObject(item.o.id)));
+    report();
+  };
+  if (key === '[' || key === ']') { moveTo(stepTime(cutPoints(model, b), s.playhead ?? -Infinity, dir)); return true; }
+  if (key === 'ArrowLeft' || key === 'ArrowRight') {
+    if (onBoard) pick(stepObject(model, b, sel!.id, dir), false);
+    else moveTo(stepTime(editPoints(model, b), s.playhead ?? -Infinity, dir));
+    return true;
+  }
+  if ((key === 'ArrowUp' || key === 'ArrowDown') && onBoard) {
+    const offset = model.offsetOf(s.boards, sel!.layer.root!);
+    pick(stepTrack(model, b, sel!.id, s.playhead ?? sel!.begin + offset, dir), true);
+    return true;
+  }
+  return false;
+}
+
+// 复制链接：现在看的位置（画板、看得见的范围、播放头、选中的对象、对准的批注）。贴给 AI，它用 view_screenshot --link 拍同一个画面
+export async function copyLink() {
+  const s = getState(), act = activeBoard(s);
+  if (s.project == null) return;
+  const query = linkQuery({project: s.project, view: s.view, side: s.side, board: act ? keyOf(act) : null,
+                           range: s.view === 'canvas' && act ? visibleRange(act) : null, playhead: s.playhead, select: s.selected,
+                           layers: s.only, note: s.noteFocus, changes: s.changeLimit});
+  const url = `${location.origin}${location.pathname}?${query}`;
+  if (await writeClipboard(url)) return toast('已复制链接。贴给 AI，它用 view_screenshot --link 就能拍到这个画面');
+  setState({message: '浏览器不让复制，请手动复制：' + url});
+  setTimeout(() => setState({message: ''}), 10000);
+}
+
+async function writeClipboard(text: string): Promise<boolean> {
+  try { await navigator.clipboard.writeText(text); return true; } catch { /* 有的内嵌浏览器不给剪贴板接口，换老办法 */ }
+  const box = document.createElement('textarea');
+  box.value = text;
+  box.style.cssText = 'position:fixed;opacity:0';
+  document.body.appendChild(box);
+  box.select();
+  try { return document.execCommand('copy'); } catch { return false; } finally { box.remove(); }
 }

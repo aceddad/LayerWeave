@@ -3,19 +3,22 @@
 import {ReactFlowProvider} from '@xyflow/react';
 import {useEffect} from 'react';
 import {useShallow} from 'zustand/react/shallow';
+import {keyStep, locateNote} from './actions';
 import {Flow} from './canvas/Flow';
 import {markReady} from './capture';
 import {Header} from './Header';
 import {CAPTURE, FULL} from './params';
 import {SidePanel} from './side/SidePanel';
-import {setState, useStore} from './store';
+import {waitingFor} from './model/notes';
+import {notesOf, setState, useStore} from './store';
 import {loadProjects, poll, report} from './sync';
 import {AssetsView} from './views/AssetsView';
 import {CutsView} from './views/CutsView';
 
 export function App() {
-  const {view, message, name, hasData} = useStore(useShallow((s) => ({
-    view: s.view, message: s.message, name: s.data?.project.name, hasData: !!s.data,
+  const {view, message, notice, name, hasData, waiting} = useStore(useShallow((s) => ({
+    view: s.view, message: s.message, notice: s.notice, name: s.data?.project.name, hasData: !!s.data,
+    waiting: waitingFor(notesOf(s)?.threads ?? [], s.me).length,
   })));
 
   useEffect(() => {
@@ -27,14 +30,18 @@ export function App() {
     return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => { document.title = hasData ? `${name || '项目'} · LayerWeave 视图` : 'LayerWeave 视图'; }, [name, hasData]);
+  // 标签页标题前面写上有几楼在等你回复，切到别的标签页也看得见
+  useEffect(() => {
+    const title = hasData ? `${name || '项目'} · LayerWeave 视图` : 'LayerWeave 视图';
+    document.title = waiting && !CAPTURE ? `(${waiting}) ${title}` : title;
+  }, [name, hasData, waiting]);
 
-  // Esc：取消圈出的一段和点选的层
+  // Esc：取消圈出的一段、点选的层、对准的批注；←/→/↑/↓、[ ]：键盘跳转
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape' || (e.target as HTMLElement).closest('textarea, input')) return;
-      setState({sel: null, targetLayer: null});
-      report();
+      if ((e.target instanceof Element && e.target.closest('textarea, input, select')) || e.ctrlKey || e.altKey || e.metaKey) return;
+      if (e.key === 'Escape') { setState({sel: null, targetLayer: null, noteFocus: null}); report(); return; }
+      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', '[', ']'].includes(e.key) && keyStep(e.key)) e.preventDefault();
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
@@ -49,6 +56,8 @@ export function App() {
         {view === 'assets' && <AssetsView />}
       </div>
       {message && <p className="message">{message}</p>}
+      {notice && <p className="notice" title="点一下打开这一楼" onClick={() => { setState({notice: null, side: 'notes'}); locateNote(notice.thread); }}>
+        💬 {notice.text}<button onClick={(e) => { e.stopPropagation(); setState({notice: null}); }}>×</button></p>}
     </div>
   );
 }

@@ -2,7 +2,7 @@
 
 [返回配置入口](../README.md)。
 
-基础约定、六种封装及 Title 派生示例放在这里，可按需继续分子目录。工具包登记的对象类型也放在这里，class 指向工具包，用 `requires` 写明依赖，例如视图工具的批注对象 note.toml（继承 text.toml）。对应 Python 类在 src/layerweave/models/objects/，读取与继承见 [配置说明](../../support/configuration/README.md)。
+基础约定、六种封装及 Title 派生示例放在这里，可按需继续分子目录。工具包登记的对象类型也放在这里，class 指向工具包，用 `requires` 写明依赖，例如视图工具的批注对象 note.toml（继承 text.toml），步骤见[工具包登记类型](../../tool/builtin/developer/TOOL_TYPES.md)。对应 Python 类在 src/layerweave/models/objects/，读取与继承见 [配置说明](../../support/configuration/README.md)。
 
 每份封装明确声明自己的 type 与 class，一个类只绑定一份配置。title.toml 继承 text.toml，绑定继承 Text 的独立 Title 类；沿用文字约定，不添加限制，也不需要新建标题层。
 

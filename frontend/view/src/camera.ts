@@ -4,7 +4,7 @@ import {NAMES} from './model/model';
 import {keyOf} from './model/model';
 import {sizeOf} from './model/layoutOps';
 import {params} from './params';
-import {activeBoard, getState, modelOf, setState} from './store';
+import {activeBoard, getState, modelOf, notesOf, setState} from './store';
 import type {Board} from './types';
 
 let flow: ReactFlowInstance | null = null;
@@ -60,10 +60,11 @@ export function focusRange(key: number, begin: number, end: number) {
   setView(NAMES + 12 - timeToX(b, begin), 16 - (b.y ?? 0), 1);
 }
 
-// 页面刚打开：按地址参数对准（截图工具就是这样指定拍哪里的）
+// 页面刚打开：按地址参数对准（截图工具就是这样指定拍哪里的）。明确给了范围的按范围，其次对准批注，再其次某块画板
 export function focusInitial() {
   const s = getState(), b = activeBoard(s);
   if (b && params.has('begin') && params.has('end')) focusRange(keyOf(b), Number(params.get('begin')), Number(params.get('end')));
+  else if (params.has('note')) focusNote(Number(params.get('note')));
   else if (b && params.has('board')) fitBoards([keyOf(b)]);
   else fitBoards();
   if (params.has('focus')) requestAnimationFrame(() => focusObject(Number(params.get('focus'))));
@@ -128,4 +129,70 @@ export function visibleRange(b: Board): [number, number] | undefined {
   const left = -x / zoom, right = (rect.width - x) / zoom;
   const t0 = Math.max(a, a + Math.max(0, left - (b.x ?? 0)) / pps), t1 = Math.min(e, a + (right - (b.x ?? 0) - TRACKS_X) / pps);
   return t1 > t0 ? [+t0.toFixed(3), +t1.toFixed(3)] : undefined;
+}
+
+// 把画布上的一块区域（世界坐标）放进画面中间；放得下就不放大到超过 1 倍
+function fitRect(x0: number, y0: number, x1: number, y1: number) {
+  const rect = paneRect(), pad = 60;
+  if (rect.height < 50) return;
+  const z = Math.max(0.05, Math.min(1, (rect.width - 2 * pad) / Math.max(1, x1 - x0), (rect.height - 2 * pad) / Math.max(1, y1 - y0)));
+  setView(rect.width / 2 - ((x0 + x1) / 2) * z, rect.height / 2 - ((y0 + y1) / 2) * z, z);
+}
+
+// 镜头对准一条批注（或它所在的楼）指的全部地方：对象、层（有时间段时只框那一段）。写给整个项目的批注显示全部画板
+export function focusNote(id: number): boolean {
+  const s = getState(), model = modelOf(s), notes = notesOf(s);
+  const thread = notes?.threads.find((t) => t.top.id === id || t.replies.some((r) => r.id === id));
+  if (!model || !thread || !pane) return false;
+  setState({noteFocus: thread.top.id, autoFit: false});
+  const {top} = thread, targets = top.targets.filter((t) => t.project === s.project);
+  if (!targets.length) { fitBoards(); return true; }
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  const add = (ax: number, ay: number, bx: number, by: number) => { x0 = Math.min(x0, ax); y0 = Math.min(y0, ay); x1 = Math.max(x1, bx); y1 = Math.max(y1, by); };
+  const world = (r: DOMRect) => { const a = toFlow(r.left, r.top), b = toFlow(r.right, r.bottom); return [a.x, a.y, b.x, b.y] as const; };
+  for (const t of targets) {
+    if (t.kind === 'object') {
+      pane.querySelectorAll(`.obj[data-id="${t.id}"]`).forEach((el) => add(...world(el.getBoundingClientRect())));
+      continue;
+    }
+    const layer = model.layer(t.id), b = layer && model.boardOf(s.boards, layer.root);
+    const row = [...pane.querySelectorAll<HTMLElement>('.lname')].find((el) => el.dataset.layers?.split(' ').includes(String(t.id)));
+    if (!b || !row) continue;
+    const [ax, ay, bx, by] = world(row.getBoundingClientRect());
+    if (top.span) {
+      const offset = model.offsetOf(s.boards, layer!.root!);
+      add(timeToX(b, top.span.begin + offset), ay, timeToX(b, top.span.end + offset), by);
+    } else add(ax, ay, Math.max(bx, (b.x ?? 0) + sizeOf(model, b).w), by);
+  }
+  if (!isFinite(x0)) {
+    setState({message: '这条批注指的地方现在不在画布上：可能已删除，或者在折叠、收起的层里'});
+    setTimeout(() => setState({message: ''}), 2500);
+    fitBoards();
+    return false;
+  }
+  fitRect(x0, y0, x1, y1);
+  return true;
+}
+
+// 键盘跳转用：已经在画面里就不动镜头，出去了才平移（不改缩放）；左边留出贴住视口的名字列
+function revealScreen(left: number, top: number, right: number, bottom: number) {
+  const p = paneRect(), {x, y, zoom} = viewport(), m = 40, leftEdge = p.left + NAMES * zoom + m;
+  let dx = 0, dy = 0;
+  if (left < leftEdge || right - left > p.right - m - leftEdge) dx = leftEdge - left;
+  else if (right > p.right - m) dx = p.right - m - right;
+  if (top < p.top + m) dy = p.top + m - top;
+  else if (bottom > p.bottom - m) dy = p.bottom - m - bottom;
+  if (dx || dy) { setView(x + dx, y + dy, zoom); setState({autoFit: false}); }
+}
+
+export function revealObject(id: number) {
+  const el = pane?.querySelector(`.obj[data-id="${id}"]`);
+  if (!el) return;
+  const r = el.getBoundingClientRect();
+  revealScreen(r.left, r.top, r.right, r.bottom);
+}
+
+export function revealTime(b: Board, t: number) {
+  const p = paneRect(), {x, zoom} = viewport(), sx = p.left + x + timeToX(b, t) * zoom;
+  revealScreen(sx, p.top + p.height / 2, sx + 1, p.top + p.height / 2);
 }

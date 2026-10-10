@@ -226,3 +226,18 @@ select { background: var(--panel); padding: 3px 6px; }
 body.capture .side .hint { display: none; }
 body.full, body.full #root, body.full .app, body.full .body { height: auto; overflow: visible; }
 body.full .cuts-view, body.full .grid, body.full .assets-view { overflow: visible; flex: none; }
+
+/* v8：批注提醒、对准的批注、空当说明 */
+.side-tabs .badge { font-style: normal; display: inline-block; min-width: 16px; margin-left: 4px; padding: 0 4px; border-radius: 8px; background: #ff6b6b; color: #fff; font-size: 11px; line-height: 16px; text-align: center; }
+.note-head { flex-wrap: wrap; }
+.wait-tag { white-space: nowrap; font-size: 10px; color: #3a2a00; background: #ffd23f; border-radius: 3px; padding: 0 4px; }
+.thread.focus { box-shadow: 0 0 0 2px #ff9f43; border-radius: 4px; }
+.obj.hot { outline: 2px dashed #ff9f43; outline-offset: 1px; z-index: 3; }
+.obj.sel.hot { outline-style: solid; }
+.lname.hot { box-shadow: inset 3px 0 0 #ff9f43; background: #2e261c; }
+.noteband.hot { background: rgba(255, 159, 67, .2); border-color: #ff9f43; }
+.gap-line { font-size: 12px; color: var(--dim); margin: 8px 0; padding: 3px 8px; border-left: 2px dashed #3a4152; }
+.gap-line b { color: #b8bfcc; font-weight: normal; margin-right: 4px; }
+.gap-line.between { border-left-color: #8a7a4a; color: #d8c890; }
+.notice { position: fixed; right: 16px; bottom: 16px; max-width: 420px; margin: 0; padding: 10px 12px; background: #2b2615; border: 1px solid #ffd23f; border-radius: 6px; color: #ffe9a8; z-index: 60; cursor: pointer; box-shadow: 0 4px 16px rgba(0, 0, 0, .4); }
+.notice button { margin-left: 8px; padding: 0 6px; }

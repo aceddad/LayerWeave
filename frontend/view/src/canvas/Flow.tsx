@@ -138,7 +138,7 @@ export function Flow() {
         <Background variant={BackgroundVariant.Dots} gap={24} size={1.2} color="#2b3140" />
         {!CAPTURE && <MiniMap position="top-right" pannable zoomable nodeColor="#2a3346" nodeStrokeColor="#44536e" maskColor="rgba(10, 12, 16, .6)" />}
         {!CAPTURE && <Panel position="bottom-left" className="help">
-          拖空白处平移（按住空格可在画板上拖）· 滚轮缩放 · Alt+滚轮：这块画板的时间 · 拖画板标题移动；拖到同单位画板的一行中间上下拼，拖到一段开头或结尾左右接 · 在尺子上拖：圈一段
+          拖空白处平移（按住空格可在画板上拖）· 滚轮缩放 · Alt+滚轮：这块画板的时间 · 拖画板标题移动；拖到同单位画板的一行中间上下拼，拖到一段开头或结尾左右接 · 在尺子上拖：圈一段 · ←/→ 前后对象（没选中时跳剪辑点）· ↑/↓ 上下轨道 · [ ] 接缝
         </Panel>}
       </ReactFlow>
     </div>

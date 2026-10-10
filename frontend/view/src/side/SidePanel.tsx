@@ -1,6 +1,8 @@
 // 右侧面板：此刻 / 改动 / 批注
+import {useShallow} from 'zustand/react/shallow';
 import {setSide} from '../actions';
-import {useStore} from '../store';
+import {waitingFor} from '../model/notes';
+import {notesOf, useStore} from '../store';
 import type {Side} from '../types';
 import {ChangesPanel} from './ChangesPanel';
 import {NotesPanel} from './NotesPanel';
@@ -13,11 +15,14 @@ const TABS: {side: Side; label: string; title: string}[] = [
 ];
 
 export function SidePanel() {
-  const side = useStore((s) => s.side);
+  const {side, waiting, me} = useStore(useShallow((s) => ({side: s.side, me: s.me, waiting: waitingFor(notesOf(s)?.threads ?? [], s.me).length})));
   return (
     <aside className="side">
       <nav className="side-tabs">
-        {TABS.map((t) => <button key={t.side} className={side === t.side ? 'on' : ''} title={t.title} onClick={() => setSide(t.side)}>{t.label}</button>)}
+        {TABS.map((t) => <button key={t.side} className={side === t.side ? 'on' : ''} title={t.title} onClick={() => setSide(t.side)}>
+          {t.label}
+          {t.side === 'notes' && waiting > 0 && <i className="badge" title={`有 ${waiting} 楼在等你（署名：${me}）回复`}>{waiting}</i>}
+        </button>)}
       </nav>
       {side === 'now' && <NowPanel />}
       {side === 'changes' && <ChangesPanel />}

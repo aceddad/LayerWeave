@@ -60,10 +60,19 @@ function Ruler({board, layout}: {board: Board; layout: BoardLayout}) {
 
 function Section({board, layout, sec}: {board: Board; layout: BoardLayout; sec: SectionLayout}) {
   const model = useModel()!;
-  const {selected, collapsed, targetLayer, frames, project} = useStore(useShallow((s) => ({
-    selected: s.selected, collapsed: s.collapsed, targetLayer: s.targetLayer, frames: s.frames, project: s.project!,
+  const {selected, collapsed, targetLayer, frames, project, noteFocus} = useStore(useShallow((s) => ({
+    selected: s.selected, collapsed: s.collapsed, targetLayer: s.targetLayer, frames: s.frames, project: s.project!, noteFocus: s.noteFocus,
   })));
   const marks = useMarks(), notes = useNotes();
+  // 对准的那条批注指着的对象和层：高亮
+  const focusTop = noteFocus != null ? notes?.threads.find((t) => t.top.id === noteFocus)?.top : undefined;
+  const hot = useMemo(() => new Set((focusTop?.targets ?? []).filter((t) => t.project === project).map((t) => `${t.kind}:${t.id}`)), [focusTop, project]);
+  // 层上的黄色带子：待处理的、指向一段时间的批注；对准的那条即使已处理也画出来
+  const bandsOf = (layerId: number) => {
+    const tops = (notes?.index.get(`layer:${layerId}`) ?? []).map((t) => t.top).filter((top) => top.span);
+    if (focusTop?.span && !tops.includes(focusTop) && hot.has(`layer:${layerId}`)) tops.push(focusTop);
+    return tops;
+  };
   const external = useMemo(() => externalLabels(model), [model]);
   const key = keyOf(board), many = rootsOf(board).length > 1, {a, pps, unit} = layout;
 
@@ -86,7 +95,7 @@ function Section({board, layout, sec}: {board: Board; layout: BoardLayout; sec: 
           const said = ids.flatMap((id) => notes?.index.get(`layer:${id}`) ?? []);
           const changed = ids.map((id) => marks.changedLayers.get(id)).filter(Boolean);
           return (
-            <div key={track.key} className={`lname${isRoot ? ' root' : ''}${targetLayer != null && ids.includes(targetLayer) ? ' picked' : ''}`}
+            <div key={track.key} className={`lname${isRoot ? ' root' : ''}${targetLayer != null && ids.includes(targetLayer) ? ' picked' : ''}${ids.some((id) => hot.has(`layer:${id}`)) ? ' hot' : ''}`}
                  data-layers={ids.join(' ')} title={track.tips || label}
                  style={{height, paddingLeft: 8 + 14 * track.depth}}
                  onClick={(e) => { if (!(e.target as HTMLElement).closest('.tog, button')) pickLayer(ids[0]); }}>
@@ -116,7 +125,7 @@ function Section({board, layout, sec}: {board: Board; layout: BoardLayout; sec: 
         {sec.tracks.map(({track, height, items}) => (
           <div key={track.key} className="track" style={{height}}>
             {items.map((it) => <ObjectBlock key={it.o.id} item={it} a={a} pps={pps} unit={unit} project={project} frames={frames}
-              selected={it.o.id === selected} mark={marks.changed.get(it.o.id)} notes={notes?.index.get(`object:${it.o.id}`)}
+              selected={it.o.id === selected} hot={hot.has(`object:${it.o.id}`)} mark={marks.changed.get(it.o.id)} notes={notes?.index.get(`object:${it.o.id}`)}
               external={external.get(it.o.id)} />)}
             {track.parts.flatMap(({layer, seg}) => (marks.ghosts.get(layer.id) ?? []).map((g) => (
               <div key={`g${g.id}`} className={`ghost ${g.action}`} data-ghost={g.id}
@@ -124,8 +133,8 @@ function Section({board, layout, sec}: {board: Board; layout: BoardLayout; sec: 
                    title={`#${g.id} ${g.label}：${g.action === 'delete' ? '删除前' : '移动前'}在这里（${fmt(g.begin, unit)} – ${fmt(g.end, unit)}）`}>
                 <span>{g.action === 'delete' ? '删除前' : '移动前'} #{g.id} {g.label}</span>
               </div>)))}
-            {track.parts.flatMap(({layer, seg}) => (notes?.index.get(`layer:${layer.id}`) ?? []).filter(({top}) => top.span).map(({top}) => (
-              <div key={`n${top.id}`} className="noteband" data-note={top.id} title={`批注 #${top.id}：${top.text}`}
+            {track.parts.flatMap(({layer, seg}) => bandsOf(layer.id).map((top) => (
+              <div key={`n${top.id}`} className={`noteband${top.id === noteFocus ? ' hot' : ''}`} data-note={top.id} title={`批注 #${top.id}：${top.text}`}
                    style={{left: (top.span!.begin + seg.offset - a) * pps, width: Math.max(4, (top.span!.end - top.span!.begin) * pps)}}>
                 <span>💬 {top.text}</span>
               </div>)))}

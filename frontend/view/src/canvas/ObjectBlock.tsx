@@ -12,10 +12,10 @@ import {Waveform} from './Waveform';
 
 interface Props {
   item: Item; a: number; pps: number; unit: string; project: number; frames: boolean;
-  selected: boolean; mark?: Mark; notes?: Thread[]; external?: string[];
+  selected: boolean; hot?: boolean; mark?: Mark; notes?: Thread[]; external?: string[];
 }
 
-export const ObjectBlock = memo(function ObjectBlock({item, a, pps, unit, project, frames, selected, mark, notes, external}: Props) {
+export const ObjectBlock = memo(function ObjectBlock({item, a, pps, unit, project, frames, selected, hot, mark, notes, external}: Props) {
   const o = item.o, k = kindOf(o), instant = o.end <= o.begin;
   const left = (item.begin - a) * pps, w = Math.max(instant ? 8 : 3, (o.end - o.begin) * pps);
   const missing = !!o.media && !o.media.available;
@@ -29,7 +29,7 @@ export const ObjectBlock = memo(function ObjectBlock({item, a, pps, unit, projec
   }
   const board = item.offset ? `（画板上 ${fmt(item.begin, unit)} – ${fmt(item.end, unit)}）` : '';
   const title = `#${o.id} ${o.name || ''}（${o.type}）\n${fmt(o.begin, unit)} – ${fmt(o.end, unit)}${board}${missing ? '\n文件不存在：' + o.media!.source : ''}`;
-  const classes = ['obj', k, instant && 'instant', missing && 'missing', selected && 'sel', mark && `chg chg-${mark.action}`].filter(Boolean).join(' ');
+  const classes = ['obj', k, instant && 'instant', missing && 'missing', selected && 'sel', hot && 'hot', mark && `chg chg-${mark.action}`].filter(Boolean).join(' ');
   return (
     <div className={classes} data-id={o.id} title={title}
          style={{left, width: w, top: PAD + item.lane * LANE, height: LANE - 4}}>

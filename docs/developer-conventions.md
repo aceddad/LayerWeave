@@ -24,6 +24,7 @@ python -m venv .venv
 |---|---|
 | 新增层或对象封装 | [模型](../src/layerweave/models/README.md)、[配置](../src/layerweave/configs/README.md)，参考 [Title](../examples/title.py) |
 | 新增或维护内部工具 | [工具开发](../src/layerweave/tool/builtin/developer/README.md)、[基础 API](../src/layerweave/support/API.md) |
+| 工具包登记自己的层或对象类型 | [工具包登记类型](../src/layerweave/tool/builtin/developer/TOOL_TYPES.md) |
 | 修改结构、事务或存储 | [基础支撑](../src/layerweave/support/README.md)、[表结构](../src/layerweave/support/storage/SCHEMA.md) |
 | 修改内容检测 | [检测包](../src/layerweave/tool/builtin/usage/validation/README.md) |
 | 编写或安装外置技能 | [工具区](../src/layerweave/tool/README.md)、[ZIP 安装](../src/layerweave/tool/builtin/developer/SKILLS.md) |

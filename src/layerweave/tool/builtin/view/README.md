@@ -19,9 +19,12 @@ python -m layerweave.tool.builtin.view.server DATABASE [--project 1] [--port 876
   - 拖动画板标题可以移动画板。拖到另一块画板的一行中间，提示拼在这一行的上方或下方；拖到某一段的开头或结尾附近，提示接在前面或后面；松手就拼上。单位不同、或者想把好几行的画板左右接时，会说明原因，松手只是摆在那里。
   - 每个根都有「拆出」：单独一行的在层名旁边，接续的在窄带的名牌上。拆出的画板放在原画板正下方；拼走的画板留下的空当会被下面的画板补上。拖到别的画板边缘附近会自动对齐。
 - **操作**：拖动空白处平移（按住空格也能在画板上拖）；在尺子上拖可以圈出一段（Esc 取消）；滚轮缩放画布；Alt+滚轮只缩放鼠标下那块画板的时间；画板标题上的 − 适应 ＋ 也是缩放时间。画板左边移出视口时，层名一列会贴在视口左边。顶栏的「全部」显示所有画板；右上角的小地图可以拖动、缩放。
-- **此刻**（右侧第一个标签）：点画板上任意位置，列出这一刻这块画板每层都有什么，视频会显示这一刻的画面；点色块会展开对象详情（含指向它的批注和它的关系）。播放头只在当前画板上，用这块画板的单位；落在接续的行上时，同时写出是哪一段的第几秒。
+- **键盘**：选中对象后，←/→ 选中同一轨道的前一个、后一个（左右接续时跨段接着走），↑/↓ 选中上一条、下一条轨道上离这一刻最近的对象；没选中对象时，←/→ 让播放头在剪辑点（对象的开头、结尾）之间跳。[ / ] 让播放头跳到上一个、下一个接缝。镜头只在目标出了画面时才跟过去。
+- **复制链接**（顶栏）：把现在看的位置写成一个地址——当前画板、看得见的那段时间、播放头、选中的对象、对准的批注。贴给 AI，它用 `view_screenshot --link` 就能拍到同一个画面；浏览器不让写剪贴板时，地址会显示出来让你手动复制。
+- **此刻**（右侧第一个标签）：点画板上任意位置，列出这一刻这块画板每层都有什么，视频会显示这一刻的画面；点色块会展开对象详情（含指向它的批注和它的关系）。这一刻没有对象的层写一行是哪种空："空着：6–9（3 秒）"是两个对象之间空着，"已经结束""还没开始"是在这层第一个对象之前或最后一个之后；整层都没有对象的容器层不写。播放头只在当前画板上，用这块画板的单位；落在接续的行上时，同时写出是哪一段的第几秒。
 - **改动**（右侧第二个标签）：列出最近 1～100 次操作改了什么——新建、删除、移动（前后位置）、改了哪些字段（information 里改了的键给出前后值）。打开时画布上标出改过的对象（角上的数字是倒数第几次操作），删除或移动之前的位置画成虚线框。点列表里的一条，镜头飞到那个对象或那个虚线框上。只读 changes 日志。
-- **批注**（右侧第三个标签）：按楼列出批注，可以只看待处理或已处理的楼。先选中一个对象、点一个层名，或者在尺子上圈出一段，再写，批注就指向那里；什么都不选就是写给整个项目。每条都能回复，回复按楼显示（"3 楼 回复 2 楼"）；勾上楼主表示整楼已处理；改、删、回复都在卡片里完成（不用浏览器弹窗）。画布上，有待处理批注指着的色块和层名标 💬，指向一段时间的批注画成黄色的带子；点批注里的目标，镜头飞过去。
+- **批注**（右侧第三个标签）：按楼列出批注，可以只看待处理、已处理或"等我回复"的楼。先选中一个对象、点一个层名，或者在尺子上圈出一段，再写，批注就指向那里；什么都不选就是写给整个项目。每条都能回复，回复按楼显示（"3 楼 回复 2 楼"）；勾上楼主表示整楼已处理；改、删、回复都在卡片里完成（不用浏览器弹窗）。画布上，有待处理批注指着的色块和层名标 💬，指向一段时间的批注画成黄色的带子；点批注里的目标，镜头飞过去；点楼主上的「定位」，镜头框住这一楼指的全部地方，目标标成橙色虚线。
+- **批注提醒**：按本机的署名（批注面板里填，默认「用户」）算"等我回复"的楼——还没处理、最后一句不是你说的，和 `view_note --waiting` 是同一条规则。批注标签上的红色数字、浏览器标签页标题前的 (2)、楼上的「等你回复」都是它。别人（比如 AI 用 `view_note`）写了新批注或回复时，右下角弹一条提示，点一下打开那一楼。
 - **关系线**：数据里的关联（bind）画成带箭头的线，跨画板也画；连到层的线接在层名上。平时只画选中对象的关系，顶栏勾上「关系线」画出全部。选中对象的详情里列出它的关系，点一条跳过去；另一头在别的项目时，色块角上标 ↗。
 - **接缝**（顶栏第二个标签）：同一条轨道里前后相接的图片和视频，把上一段的最后一帧和下一段的第一帧并排，写出两边的时间、是紧接还是中间空着；接续的两段之间也算。用来查衔接——比如上一段球落在地上，下一段却从桌上开始。点一个接缝回到画布上的那个位置。
 - **找对象**：顶栏的搜索框按名字、文字、文件名或 `#编号` 找，回车跳到下一个，Shift+回车上一个。
@@ -50,6 +53,7 @@ python -m layerweave.tool.builtin.view.server DATABASE [--project 1] [--port 876
 
 - 卸掉视图工具后，配置仍说明批注的样子、检测照常，批注能按普通记录读出；只是不能还原成 Python 实例。
 - 配置帮助查文字层时，批注对象只在"支持的对象类"里点名（继承文字对象，所以文字层也接受它），不展开详情；查批注层（`combined note`）才展开。
+- 别的工具包想这样登记自己的层（素材清单、待办……），步骤见[工具包登记类型](../developer/TOOL_TYPES.md)。
 
 ## 给 AI 用
 
@@ -57,7 +61,7 @@ python -m layerweave.tool.builtin.view.server DATABASE [--project 1] [--port 876
 |---|---|
 | `view_state` | 用户正在看哪儿：项目、当前画板、可见范围、播放头、选中的对象、圈出的一段、屏幕上的画板和层。用户说"这里""这段"时先读它 |
 | `view_note` | 读写批注：`list`（按楼；可只看 open / done 的楼，`--waiting 名字` 只看在等这个人回复的楼）、`add`（`--to object:16`、`--to layer:1 --span 6 8`，可以多个）、`reply 编号 正文`、`done` / `reopen`、`edit`、`remove`。自动建批注层、填字段、建关联 |
-| `view_screenshot` | 把视图截成 PNG：整张画布、某一块画板（`--board`，可加 `--begin --end` 放大一段）、接缝页（`--view cuts`）或素材网格；`--focus` 对准某个对象，`--changes N` 标出最近 N 次操作的改动，`--notes` 打开批注列表，`--links` 画出全部关系线，`--full-page` 把接缝页、素材页截成一整张长图。等页面把图片、封面、波形加载完才拍 |
+| `view_screenshot` | 把视图截成 PNG：整张画布、某一块画板（`--board`，可加 `--begin --end` 放大一段）、接缝页（`--view cuts`）或素材网格；`--focus` 对准某个对象，`--note` 对准某条批注（框住它指的地方，右侧标出这一楼），`--link` 按用户「复制链接」得到的地址拍，`--changes N` 标出最近 N 次操作的改动，`--notes` 打开批注列表，`--links` 画出全部关系线，`--full-page` 把接缝页、素材页截成一整张长图。等页面把图片、封面、波形加载完才拍 |
 | `view_layout` | 查看或调整画板：同单位的根上下拼（`merge --side above/below`）、左右接（`merge --side left/right`）或拆开（`split`）、移动（`move`）、恢复自动排版（`reset`）。和网页改的是同一份排版 |
 | `view_frame` | 取视频对象在某一刻的画面（JPEG），按时间轴全局时间或视频自身时间，`--last` 取最后一帧；需要 ffmpeg |
 
@@ -76,6 +80,8 @@ python -m layerweave.tool.builtin.view.layout DATABASE 1 split 19
 python -m layerweave.tool.builtin.view.layout DATABASE 1 merge 19 --to 1 --side above
 python -m layerweave.tool.builtin.view.layout DATABASE 1 merge 31 --to 1 --side right
 python -m layerweave.tool.builtin.view.screenshot DATABASE 1 输出.png --changes 5
+python -m layerweave.tool.builtin.view.screenshot DATABASE 1 输出.png --note 42
+python -m layerweave.tool.builtin.view.screenshot DATABASE 1 输出.png --link "http://127.0.0.1:8765/?project=1&board=1&begin=8&end=14&select=16"
 python -m layerweave.tool.builtin.view.screenshot DATABASE 1 接缝.png --view cuts --full-page
 python -m layerweave.tool.builtin.view.frame DATABASE 1 16 输出.jpg --at 3.75
 ```
@@ -83,7 +89,8 @@ python -m layerweave.tool.builtin.view.frame DATABASE 1 16 输出.jpg --at 3.75
 - 画板用根层编号来指：`--board 1` 是"根层 1 所在的那块画板"；子层跟着它的根走。
 - 位置、播放头、时间范围都用对应画板的单位；不同画板的单位可能不同（比如一块是秒，一块是帧）。
 - 左右接续的画板上，`--begin --end --playhead` 用画板上的连续时间；`view_layout` 返回的 `offset` 是每一段在画板上的起点（画板时间 = 这一段自己的时间 + offset），`view_state` 的 `playhead_at` 给出播放头落在哪一段、是那一段自己的第几秒。
-- 开工前先看 `view_note --waiting 自己的名字`：用户在网页上提的问题、回复都在那里，回复用 `reply`。
+- 开工前先看 `view_note --waiting 自己的名字`：用户在网页上提的问题、回复都在那里，回复用 `reply`。想看一条批注指的是哪里，用 `view_screenshot --note 编号`。
+- 用户贴来视图地址（「复制链接」）时，用 `view_screenshot --link 地址` 拍同一个画面；链接里的项目要和参数里的项目一致。
 - 用户圈出一段后，`view_state` 的 `selection` 给出那一段在哪个根上、那个根自己的起止；要给这一段写批注，用 `view_note add --to layer:根编号 --span 起点 终点`。
 - 改动的文字清单也可以用使用工具里的 `read_history`；视图的用处是把改动放回画面里看。
 - 截图自动查找 Chrome、Edge 或 Chromium，也可以用 `--browser` 或环境变量 `LAYERWEAVE_BROWSER` 指定。浏览器使用临时的独立配置，不会碰到用户正在用的浏览器；截图页面不记录状态、不改排版、不写批注。返回里的 `ready` 为 False 时，表示等待时间内没加载完，图里可能缺缩略图。
@@ -96,21 +103,23 @@ python -m layerweave.tool.builtin.view.frame DATABASE 1 16 输出.jpg --at 3.75
 ```sh
 cd frontend/view
 npm install          # 第一次
-npm run build        # 类型检查 + 编译，输出到 src/layerweave/tool/builtin/view/web/（提交这些文件）
+npm test             # 纯计算部分的单元测试（vitest）
+npm run build        # 类型检查 + 单元测试 + 编译，输出到 src/layerweave/tool/builtin/view/web/（提交这些文件）
 npm run dev          # 开发：接口转给已经在跑的视图服务（默认 127.0.0.1:8765，环境变量 LAYERWEAVE_VIEW 可改）
 ```
 
 | 目录 | 内容 |
 |---|---|
-| `src/model/` | 纯计算，不碰页面：画板分行分段、接续偏移、合并轨道、小行、画板尺寸（`model.ts`），排版操作（`layoutOps.ts`），批注成楼（`notes.ts`），改动标记（`changes.ts`），接缝（`cuts.ts`） |
-| `src/canvas/` | React Flow 画布（`Flow.tsx`）、画板节点（`BoardNode.tsx`）、对象色块、关系线、拖动拼接的判断（`drop.ts`） |
+| `src/model/` | 纯计算，不碰页面：画板分行分段、接续偏移、合并轨道、小行、画板尺寸（`model.ts`），排版操作（`layoutOps.ts`），拖动拼接的判断（`dropRule.ts`），批注成楼和"等谁回复"（`notes.ts`），改动标记（`changes.ts`），接缝（`cuts.ts`），空当（`gaps.ts`），键盘跳转（`navigate.ts`），复制链接（`link.ts`） |
+| `src/model/__tests__/` | 上面这些的单元测试，手写的小项目做输入（`fixtures.ts`），期望值都能心算 |
+| `src/canvas/` | React Flow 画布（`Flow.tsx`）、画板节点（`BoardNode.tsx`）、对象色块、关系线；`drop.ts` 从页面上找出鼠标落点，交给 `dropRule.ts` |
 | `src/side/` | 右侧面板：此刻、改动、批注 |
 | `src/views/` | 接缝页、素材页 |
 | `src/store.ts`、`sync.ts`、`camera.ts`、`actions.ts` | 状态；和服务同步（轮询、保存排版、报告"正在看哪儿"、写批注）；镜头；用户操作 |
 | `src/capture.ts`、`params.ts` | 截图约定：地址参数，以及加载完以后设 `window.__layerweaveReady` |
 
-改网页时保持后端接口和截图约定不变（地址参数、`record=0`、`__layerweaveReady`），`view_screenshot` 和测试就照常可用。画板尺寸由数据算出（`Model.boardLayout`），排版不依赖量页面。
+改网页时保持后端接口和截图约定不变（地址参数、`record=0`、`__layerweaveReady`），`view_screenshot` 和测试就照常可用。画板尺寸由数据算出（`Model.boardLayout`），排版不依赖量页面。新的计算放进 `src/model/` 并补单元测试；页面上的部分（拖动、镜头）在浏览器里试。
 
 ## 以后
-- 显示、隐藏、定位等视口操作，按配置里的 visibility 决定是否允许。
-- 交接楼、"用层当有序列表"的写法说明、大项目只画看得见的部分（记录在项目的想法清单里）。
+- 显隐：配置里的 visibility 只是"允许不允许显隐控制"，每个对象、层当前显不显示要单独存，现在还没有存的地方；和用户讨论中。
+- 播放（按播放头放视频和音频）、大项目只画看得见的部分：先放着。

@@ -5,14 +5,11 @@ import type {ChangeMarks} from './model/changes';
 import {Model} from './model/model';
 import {noteIndex, noteList, noteThreads} from './model/notes';
 import type {Note, Thread} from './model/notes';
-import type {Side as DropSide} from './model/layoutOps';
+import type {Drop} from './model/dropRule';
 import {numParam, params} from './params';
 import type {Board, ChangeOp, ProjectData, ProjectSummary, Side, View} from './types';
 
-export interface Drop {
-  targetKey: number; root: number; side: DropSide; ok: boolean; reason: string;
-  rowIndex: number; at: number | null;                    // at：左右接时接缝在画板上的时间
-}
+export type {Drop};
 
 export interface State {
   projects: ProjectSummary[];
@@ -24,6 +21,7 @@ export interface State {
   frames: boolean;
   live: boolean;
   message: string;
+  notice: {text: string; thread: number} | null;          // 右下角的提示：别人写了新批注或回复，点一下打开那一楼
   view: View;
   side: Side;
   active: number | null;                                  // 当前画板（用其中任一根层的编号表示）
@@ -39,8 +37,9 @@ export interface State {
   sel: {key: number; begin: number; end: number} | null;  // 在尺子上圈出的一段（画板时间）
   targetLayer: number | null;                             // 点层名选中的层：写批注时指向它
   wholeProject: boolean;
-  noteFilter: 'all' | 'open' | 'done';
-  noteUI: {edit: number | null; reply: number | null; del: number | null; drafts: Record<string, string>};
+  noteFilter: 'all' | 'open' | 'done' | 'waiting';
+  noteFocus: number | null;                               // 镜头对准的那条批注（地址参数 note、批注上的"定位"）：它的楼和目标高亮
+  me: string;                                             // 本机署名：写批注用，也用来算"等我回复"的楼
   canvasW: number;
   canvasH: number;
   dragging: boolean;
@@ -52,16 +51,16 @@ export interface State {
 const viewParam = params.get('view');
 export const useStore = create<State>((set) => ({
   projects: [], project: null, data: null, boards: [], serial: null, version: null,
-  frames: false, live: false, message: '',
+  frames: false, live: false, message: '', notice: null,
   view: viewParam === 'assets' || viewParam === 'cuts' ? viewParam : 'canvas',
-  side: params.get('side') === 'notes' ? 'notes' : params.has('changes') ? 'changes' : 'now',
+  side: params.get('side') === 'notes' || params.has('note') ? 'notes' : params.has('changes') ? 'changes' : 'now',
   active: numParam('board'), playhead: numParam('playhead'), selected: numParam('select'),
   collapsed: new Set(), only: params.has('layers') ? new Set(params.get('layers')!.split(',').map(Number)) : null,
   showHidden: false, assetKind: 'all',
   changeLimit: numParam('changes') || 10, changeOps: [],
   links: params.get('links') === '1',
   sel: null, targetLayer: null, wholeProject: false,
-  noteFilter: 'all', noteUI: {edit: null, reply: null, del: null, drafts: {}},
+  noteFilter: 'all', noteFocus: numParam('note'), me: localStorage.getItem('lw-author') || '用户',
   canvasW: Math.max(600, window.innerWidth - 340), canvasH: Math.max(400, window.innerHeight - 50),
   dragging: false, drop: null, autoFit: true,
   set: (patch) => set(patch as any),

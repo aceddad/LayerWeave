@@ -55,3 +55,8 @@ export function noteIndex(threads: Thread[], project: number): Map<string, Threa
   }
   return index;
 }
+
+// 等 name 回复的楼：还没处理、最后一句不是 name 说的（和 view_note --waiting 同一条规则）
+export const lastOf = (th: Thread) => th.replies[th.replies.length - 1] ?? th.top;
+export const waitingFor = (threads: Thread[], name: string) =>
+  threads.filter((th) => th.top.status === 'open' && lastOf(th).author !== name.trim());

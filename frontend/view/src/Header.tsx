@@ -1,7 +1,7 @@
-// 顶栏：项目、视图（画布 / 接缝 / 素材）、找对象、时钟、关系线开关、画布缩放、在线指示
+// 顶栏：项目、视图（画布 / 接缝 / 素材）、找对象、时钟、复制链接、关系线开关、画布缩放、在线指示
 import {useState} from 'react';
 import {useShallow} from 'zustand/react/shallow';
-import {selectObject, setView} from './actions';
+import {copyLink, selectObject, setView} from './actions';
 import {fitBoards, zoomBy} from './camera';
 import {keyOf} from './model/model';
 import {fmt} from './model/units';
@@ -60,6 +60,7 @@ export function Header() {
       <span className="find-count">{find.q && query.trim().toLowerCase() === find.q ? (find.hits.length ? `${find.at + 1}/${find.hits.length}` : '没找到') : ''}</span>
       <div className="spacer" />
       <span className="clock" title="播放头位置（当前画板的单位）">{playhead != null ? fmt(playhead, unit) : '—'}</span>
+      <button title="复制现在看的位置（画板、范围、播放头、选中的对象、对准的批注）。贴给 AI，它能拍到同样的画面" onClick={copyLink}>复制链接</button>
       {view === 'canvas' && <>
         <label className="toggle" title="画出全部关系线；不勾时只画选中对象的">
           <input type="checkbox" checked={links} onChange={(e) => setState({links: e.target.checked})} /> 关系线

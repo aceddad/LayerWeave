@@ -5,7 +5,7 @@ AI 看到的就是用户在视图里看到的：画板的排版用用户那份�
 
 python -m layerweave.tool.builtin.view.screenshot DATABASE PROJECT_ID 输出.png
        [--view canvas|cuts|assets] [--board 根层编号] [--begin 起点 --end 终点] [--layers 1 5] [--playhead 位置] [--select 对象编号]
-       [--focus 对象编号] [--changes 最近几次操作] [--notes] [--links] [--full-page]
+       [--focus 对象编号] [--note 批注编号] [--link 用户复制的链接] [--changes 最近几次操作] [--notes] [--links] [--full-page]
        [--width 1600 --height 900] [--browser 浏览器路径] [--wait-ms 20000]
 """
 import argparse
@@ -21,7 +21,7 @@ import sys
 import tempfile
 import threading
 import time
-from urllib.parse import urlencode, urlparse
+from urllib.parse import parse_qs, urlencode, urlparse
 from urllib.request import urlopen
 
 from .server import make_server
@@ -145,16 +145,29 @@ def _devtools_port(profile, deadline):
     raise RuntimeError("浏览器没有打开调试接口：确认 --browser 指向 Chrome、Edge 或 Chromium")
 
 
-def capture(database, project_id, output, *, view="canvas", board=None, begin=None, end=None, layers=None, playhead=None,
-            select=None, focus=None, changes=None, notes=False, links=False, full_page=False, width=1600, height=900, browser=None,
-            wait_ms=20000, state_root=None):
+# 页面认识的地址参数（截图约定见 README）；--link 只取这些
+LINK_KEYS = ("view", "board", "begin", "end", "playhead", "select", "focus", "note", "changes", "layers", "side", "links")
+
+
+def link_query(link, project_id):
+    """用户在视图里点「复制链接」得到的地址 → 页面参数。只取视图认识的参数；链接里的项目要和 project_id 一致。"""
+    query = {key: values[-1] for key, values in parse_qs(urlparse(str(link)).query).items() if values}
+    if "project" in query and str(query["project"]) != str(project_id):
+        raise ValueError(f"链接是项目 {query['project']} 的，参数给的是项目 {project_id}")
+    return {key: query[key] for key in LINK_KEYS if key in query}
+
+
+def capture(database, project_id, output, *, view=None, board=None, begin=None, end=None, layers=None, playhead=None,
+            select=None, focus=None, note=None, link=None, changes=None, notes=False, links=False, full_page=False,
+            width=1600, height=900, browser=None, wait_ms=20000, state_root=None):
+    query = link_query(link, project_id) if link else {}   # 先检查参数，再找浏览器、起服务
     browser = find_browser(browser)
     if browser is None:
         raise FileNotFoundError("找不到 Chrome、Edge 或 Chromium：用 --browser 或环境变量 LAYERWEAVE_BROWSER 指定浏览器路径")
     output = Path(output).resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
-    server, url = make_server(database, state_root=state_root, record_state=False)
-    query = {"project": project_id, "view": view if view in ("assets", "cuts") else "canvas", "record": 0, "capture": 1}
+    view = view or query.get("view") or "canvas"
+    query.update({"project": project_id, "view": view if view in ("assets", "cuts") else "canvas", "record": 0, "capture": 1})
     if links:
         query["links"] = 1
     if notes:
@@ -162,11 +175,12 @@ def capture(database, project_id, output, *, view="canvas", board=None, begin=No
     if full_page and view in ("assets", "cuts"):
         query["full"] = 1
     for key, value in (("board", board), ("begin", begin), ("end", end), ("playhead", playhead), ("select", select),
-                       ("focus", focus), ("changes", changes)):
+                       ("focus", focus), ("note", note), ("changes", changes)):
         if value is not None:
             query[key] = value
     if layers:
         query["layers"] = ",".join(str(i) for i in layers)
+    server, url = make_server(database, state_root=state_root, record_state=False)
     page = url + "?" + urlencode(query)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     if output.exists():
@@ -225,14 +239,14 @@ def _shoot(profile, page, output, width, height, wait_ms, full_page=False):
 
 COMMANDS = [{
     "name": "view_screenshot",
-    "summary": "把视图页面截成 PNG：整张画布、某一块画板（可指定时间范围）、接缝页或素材网格；可以对准对象、标出最近的改动、画出关系线",
+    "summary": "把视图页面截成 PNG：整张画布、某一块画板（可指定时间范围）、接缝页或素材网格；可以对准对象或批注、按用户复制的链接拍、标出最近的改动、画出关系线",
     "entrypoint": "layerweave.tool.builtin.view.screenshot:capture",
     "cli": "python -m layerweave.tool.builtin.view.screenshot",
     "read_only": True,
     "context": ["database", "project_id"],
     "parameters": {
         "output": {"type": "string", "required": True, "description": "由 AI 指定的 PNG 输出路径"},
-        "view": {"type": "string", "description": "canvas（画布）、cuts（接缝：前后相接的画面并排）或 assets（素材网格）", "default": "canvas"},
+        "view": {"type": "string", "description": "canvas（画布）、cuts（接缝：前后相接的画面并排）或 assets（素材网格）；省略时是画布，给了 link 时按链接"},
         "board": {"type": "integer", "description": "只拍这个根层所在的画板；省略时拍整张画布"},
         "begin": {"type": "number", "description": "画板显示的起点，用这块画板的单位；和 end 一起用"},
         "end": {"type": "number", "description": "画板显示的终点"},
@@ -240,6 +254,8 @@ COMMANDS = [{
         "playhead": {"type": "number", "description": "播放头位置（落在 board 指定的画板上，省略 board 时是第一块）；右侧会列出这一刻每层的内容"},
         "select": {"type": "integer", "description": "选中并展开详情的对象编号"},
         "focus": {"type": "integer", "description": "把镜头移到这个对象上（放在画面左上三分之一处）"},
+        "note": {"type": "integer", "description": "对准这条批注（回复也行，按它所在的楼）：镜头框住楼主指的对象、层或那一段时间并高亮，右侧打开批注列表、标出这一楼"},
+        "link": {"type": "string", "description": "用户在视图里点「复制链接」得到的地址；按它拍同一个位置（画板、范围、播放头、选中的对象、对准的批注）。其他参数会覆盖链接里的同名设置"},
         "changes": {"type": "integer", "description": "标出最近这么多次操作改过的对象和删除、移动前的位置，右侧列出改动"},
         "notes": {"type": "boolean", "description": "右侧打开批注列表（画布上的批注标记总是显示）", "default": False},
         "links": {"type": "boolean", "description": "画出全部关系线（bind）；不画时只画选中对象的", "default": False},
@@ -251,9 +267,12 @@ COMMANDS = [{
     "returns": "output、page（截图用的页面地址）、browser、size、ready（页面是否在等待时间内加载完；False 时图里可能缺缩略图）。",
     "examples": [{"cli": "python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/all.png"},
                  {"cli": "python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/t10.png --board 1 --begin 8 --end 14 --playhead 10"},
+                 {"cli": "python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/note42.png --note 42"},
+                 {"cli": "python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/user.png --link \"http://127.0.0.1:8765/?project=1&board=1&begin=8&end=14&select=16\""},
                  {"cli": "python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/changes.png --changes 5"},
                  {"cli": "python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/cuts.png --view cuts --full-page"}],
     "notes": ["截图页面不记录状态、不改排版；用户正在看哪儿请用 view_state，画板怎么排请用 view_layout。",
+              "用户贴来视图链接时用 --link；读到一条批注想看它指哪儿时用 --note。",
               "只读：起一个只监听本机的临时服务和一个独立配置的无界面浏览器，截完都关掉。",
               "左右接续的画板上，begin、end、playhead 用画板上的连续时间；view_layout 的 offset 是每一段的起点。",
               "接缝页列出同一条轨道里前后相接的图片和视频：上一段的最后一帧和下一段的第一帧并排，用来查衔接；--board、--begin、--end 可以缩小范围。"],
@@ -265,11 +284,13 @@ def main():
     p = argparse.ArgumentParser(description="视图截图（给 AI 看）", formatter_class=argparse.RawDescriptionHelpFormatter,
                                 epilog=help_examples(COMMANDS))
     p.add_argument("database", type=Path); p.add_argument("project_id", type=int); p.add_argument("output", type=Path)
-    p.add_argument("--view", choices=("canvas", "cuts", "assets"), default="canvas")
+    p.add_argument("--view", choices=("canvas", "cuts", "assets"), help="省略时是画布，给了 --link 时按链接")
     p.add_argument("--board", type=int, help="只拍这个根层所在的画板")
     p.add_argument("--begin", type=float); p.add_argument("--end", type=float)
     p.add_argument("--layers", type=int, nargs="+"); p.add_argument("--playhead", type=float); p.add_argument("--select", type=int)
     p.add_argument("--focus", type=int, help="把镜头移到这个对象上"); p.add_argument("--changes", type=int, help="标出最近几次操作的改动")
+    p.add_argument("--note", type=int, help="对准这条批注：框住它指的地方，右侧标出这一楼")
+    p.add_argument("--link", help="用户在视图里点「复制链接」得到的地址：按它拍同一个位置")
     p.add_argument("--notes", action="store_true", help="右侧打开批注列表")
     p.add_argument("--links", action="store_true", help="画出全部关系线"); p.add_argument("--full-page", action="store_true", help="接缝、素材页截整页")
     p.add_argument("--width", type=int, default=1600); p.add_argument("--height", type=int, default=900)
@@ -277,10 +298,10 @@ def main():
     a = p.parse_args()
     try:
         result = capture(a.database, a.project_id, a.output, view=a.view, board=a.board, begin=a.begin, end=a.end, layers=a.layers,
-                         playhead=a.playhead, select=a.select, focus=a.focus, changes=a.changes, notes=a.notes, links=a.links,
+                         playhead=a.playhead, select=a.select, focus=a.focus, note=a.note, link=a.link, changes=a.changes, notes=a.notes, links=a.links,
                          full_page=a.full_page, width=a.width, height=a.height,
                          browser=a.browser, wait_ms=a.wait_ms)
-    except (OSError, RuntimeError, subprocess.TimeoutExpired) as error:
+    except (OSError, RuntimeError, ValueError, subprocess.TimeoutExpired) as error:
         print(f"截图失败：{error}", file=sys.stderr)
         return 1
     print(json.dumps(result, ensure_ascii=False))

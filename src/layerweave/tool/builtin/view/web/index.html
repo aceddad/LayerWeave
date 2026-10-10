@@ -2,84 +2,12 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LayerWeave 视图</title>
-<link rel="stylesheet" href="style.css">
+  <script type="module" crossorigin src="./assets/index-BMVzxQM3.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-DiRmCyQS.css">
 </head>
 <body>
-<header id="bar">
-  <strong class="brand">LayerWeave</strong>
-  <select id="project" title="项目"></select>
-  <nav id="tabs">
-    <button data-view="canvas" class="on">画布</button>
-    <button data-view="cuts" title="同一条轨道里前后相接的画面：上一段的最后一帧和下一段的第一帧并排">接缝</button>
-    <button data-view="assets">素材</button>
-  </nav>
-  <input id="find" type="search" placeholder="找对象：名字、文字、文件名、#编号" title="回车找下一个，Shift+回车找上一个">
-  <span id="find-count"></span>
-  <div class="spacer"></div>
-  <span id="clock" title="播放头位置（当前画板的单位）">—</span>
-  <label class="canvas-only toggle" title="画出全部关系线；不勾时只画选中对象的"><input type="checkbox" id="links-toggle"> 关系线</label>
-  <div id="zoom" class="canvas-only">
-    <button data-zoom="out" title="缩小画布">−</button>
-    <button data-zoom="fit" title="显示全部画板">全部</button>
-    <button data-zoom="in" title="放大画布">＋</button>
-  </div>
-  <span id="live" title="数据库或排版变化后自动刷新">●</span>
-</header>
-
-<main id="canvas-view">
-  <section id="canvas">
-    <div id="world"></div>
-    <p class="help">拖动空白处或轨道：平移 · 滚轮：缩放画布 · Alt+滚轮：缩放这块画板的时间 · 拖画板标题：移动；拖到同单位画板的一行中间是上下拼（同时），拖到一段的开头或结尾是左右接（接续） · 「拆出」：拆成单独一块</p>
-  </section>
-  <aside id="now">
-    <nav id="side-tabs">
-      <button data-side="now" class="on">此刻</button>
-      <button data-side="changes" title="最近几次操作改了什么；打开时画布上会标出来">改动</button>
-      <button data-side="notes" title="批注：给人或 AI 留的意见、说明、待办">批注</button>
-    </nav>
-    <section id="now-pane">
-      <h2>此刻 <span id="now-time"></span></h2>
-      <div id="now-list"><p class="hint">点画板上的任意位置，查看那一刻这块画板每层都有什么；点色块查看对象详情。</p></div>
-    </section>
-    <section id="notes-pane" hidden>
-      <h2>批注 <small id="note-count"></small></h2>
-      <div id="note-compose">
-        <textarea id="note-text" rows="3" placeholder="写一条批注……（Ctrl+回车加上）"></textarea>
-        <div class="note-row"><span id="note-target"></span></div>
-        <div class="note-row"><label>署名 <input id="note-author" size="8"></label><span class="grow"></span><button id="note-add">加上</button></div>
-        <p class="hint">先选中一个对象、点一个层名，或者在尺子上拖出一段，批注就指向那里；什么都不选就是写给整个项目。每条都可以回复，回复按楼显示。</p>
-      </div>
-      <div class="note-row" id="note-filters">
-        <button data-filter="all" class="on">全部</button><button data-filter="open">待处理</button><button data-filter="done">已处理</button>
-        <span class="grow"></span><label class="toggle" title="批注层默认收起；勾上后在画布上也显示成一块画板"><input type="checkbox" id="show-hidden"> 画布上显示批注层</label>
-      </div>
-      <div id="note-list"></div>
-    </section>
-    <section id="changes-pane" hidden>
-      <h2>最近 <select id="chg-limit"><option>1</option><option>5</option><option selected>10</option><option>30</option><option>100</option></select> 次操作</h2>
-      <p class="hint legend"><i class="chg-n">1</i> 改过的对象（数字是倒数第几次操作）　<span class="ghost-key">虚线框</span> 删除或移动之前的位置</p>
-      <div id="chg-list"></div>
-    </section>
-  </aside>
-</main>
-
-<main id="cuts-view" hidden>
-  <div id="cuts"></div>
-</main>
-
-<main id="assets-view" hidden>
-  <div id="filters">
-    <button data-kind="all" class="on">全部</button>
-    <button data-kind="image">图片</button>
-    <button data-kind="video">视频</button>
-    <button data-kind="audio">音频</button>
-    <button data-kind="text">文字</button>
-  </div>
-  <div id="grid"></div>
-</main>
-
-<p id="message" hidden></p>
-<script type="module" src="app.js"></script>
+<div id="root"></div>
 </body>
 </html>

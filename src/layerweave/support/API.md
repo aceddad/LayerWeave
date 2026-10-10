@@ -4,6 +4,8 @@
 
 本页说明 LayerWeave 自身的 Python 读写接口。若要配置出图、生视频等外部服务的 API KEY、地址与模型，使用[KEY 与连接说明](../tool/builtin/developer/keys/README.md)；技能选择和调用顺序见[工具区](../tool/README.md#选择与定位技能)。
 
+首次用它开发自己的工具，可先读[AI 接入指南](../../../docs/build-with-layerweave.md)，从局部数据、自定义词条和一个批注示例开始，再按需查本页参数。
+
 ## 统一写会话
 
 一次事务中组合读取和修改：

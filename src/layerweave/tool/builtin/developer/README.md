@@ -6,6 +6,7 @@
 
 | 任务 | 阅读入口 |
 |---|---|
+| 用 LayerWeave 搭建自己的工具 | [AI 接入指南](../../../../../docs/build-with-layerweave.md)，按需读写、自定义配置与批注数据示例 |
 | 新增 Python 层类或对象类 | [模型](../../../models/README.md)和[配置](../../../configs/README.md)，参考 [Title](../../../../../examples/title.py) |
 | 新增内部工具 | 本页的开发流程、[公共 API](../../../support/API.md)、[命令声明](../shared/help/COMMANDS.md) |
 | 安装下载的技能 ZIP | [技能安装](SKILLS.md)，选择层目录或场景补充区 |

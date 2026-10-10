@@ -10,6 +10,7 @@
 | 子目录 README | 按该目录的实际用途介绍模块或作为一组说明的入口；不要求统一套导航模板 |
 | 使用说明 | 学会调用工具，理解输入、返回以及内容、编号、关联、失败和撤销的行为 |
 | 开发指南 | 准备开发环境、找到源码、选择扩充流程和验证方式 |
+| AI 接入指南 | 用 LayerWeave 开发自己的工具，说明自由扩展的位置、最小接入方式与实例 |
 | 架构说明 | 理解概念、模块之间的关系及设计边界 |
 | 实现说明 | 理解内部流程、函数协作、存储步骤和修改注意点 |
 | AGENTS.md | agent 的任务分流、必要阅读与工作要求 |
@@ -25,6 +26,7 @@
 | 主题 | 主要维护位置 |
 |---|---|
 | 模块边界与整体概念 | [架构说明](architecture.md) |
+| 按需借用内核、扩展工具与配置 | [AI 接入指南](build-with-layerweave.md)；参数细节继续由 API 和专题维护 |
 | Python 模型与扩充入口 | [模型说明](../src/layerweave/models/README.md)，字段声明在类及对应 TOML |
 | 配置继承、合并与类绑定 | [配置说明](../src/layerweave/support/configuration/README.md) |
 | Python 调用、输入与返回 | [公共 API](../src/layerweave/support/API.md) |

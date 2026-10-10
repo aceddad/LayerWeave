@@ -3,6 +3,7 @@
 软件自身的执行能力统称为“内部工具”，放在 src/layerweave/tool/builtin；供层原型 tools 引用的外置技能放在 src/layerweave/tool/skills。
 
 - 操作项目内容：从[使用工具](src/layerweave/tool/builtin/usage/README.md)选择操作，参数和示例由各工具 help 提供。
+- 借用 LayerWeave 开发自己的工具：先读[AI 接入指南](docs/build-with-layerweave.md)，按需选择数据、配置与工具能力。
 - 修改代码或增加封装：先读[开发指南](docs/developer-conventions.md)，再读对应配置、API 和实现专题。
 - 修改文档：读取[文档约定](docs/documentation.md)，保持主题有明确的主要维护位置。
 - 新增外置技能：读[工具区](src/layerweave/tool/README.md)，特殊场景另见[场景补充区](src/layerweave/tool/skills/scenarios/README.md)。技能自带 SKILL.md；实际绑定由 AI 按任务填写。

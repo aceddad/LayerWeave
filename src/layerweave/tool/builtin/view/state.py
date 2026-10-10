@@ -11,8 +11,8 @@ import os
 from pathlib import Path
 import tempfile
 
-FIELDS = {"project": int, "view": str, "board": dict, "range": list, "playhead": (int, float), "selected": dict,
-          "boards": list, "layers": list}
+FIELDS = {"project": int, "view": str, "board": dict, "range": list, "playhead": (int, float), "playhead_at": list,
+          "selected": dict, "boards": list, "layers": list}
 
 
 def state_path(database, root=None):
@@ -50,13 +50,19 @@ def describe(state):
     lines = [f"项目 {state.get('project')} · {view}视图 · {state['age_seconds']} 秒前更新"]
     board = state.get("board") or {}
     unit = board.get("unit") or ""
-    if board:
-        names = " ＋ ".join(f"{n or '层'}（{r}）" for n, r in zip(board.get("names") or [""] * len(board.get("roots", [])), board.get("roots", [])))
-        lines.append(f"当前画板：{names}，单位 {unit or '没有单位'}")
+    rows = board.get("rows") or [[r] for r in board.get("roots", [])]
+    names = board.get("names") or [[""] * len(row) for row in rows]
+    if rows:
+        if names and not isinstance(names[0], list):   # 旧格式：一列根
+            names = [[n] for n in names]
+        text = " ＋ ".join(" → ".join(f"{n or '层'}（{r}）" for n, r in zip(row_names, row)) for row_names, row in zip(names, rows))
+        lines.append(f"当前画板：{text}，单位 {unit or '没有单位'}（＋ 是上下拼、同时；→ 是左右接、接续）")
     if state.get("range"):
         lines.append(f"当前画板的可见范围：{state['range'][0]:g} – {state['range'][1]:g} {unit}".rstrip())
     if state.get("playhead") is not None:
         lines.append(f"播放头（在当前画板上）：{state['playhead']:g} {unit}".rstrip())
+        for at in state.get("playhead_at") or []:
+            lines.append(f"  对应 {at.get('name') or '根'}（{at.get('root')}）自己的 {at.get('local'):g} {unit}".rstrip())
     if state.get("selected"):
         s = state["selected"]
         lines.append(f"选中：对象 {s.get('id')}（层 {s.get('layer')}）{s.get('name') or ''}")
@@ -78,7 +84,8 @@ COMMANDS = [{
     "returns": "状态字典（含 age_seconds，表示多少秒前更新）；视图从未打开过时为 None。",
     "examples": [{"cli": "python -m layerweave.tool.builtin.view.state DATABASE --json"}],
     "notes": ["用户说「这里」「这段」时先读它；age_seconds 很大说明用户可能已经离开视图。",
-              "range 和 playhead 用当前画板（board）的单位；不同画板的单位可能不同。"],
+              "range 和 playhead 用当前画板（board）的单位；不同画板的单位可能不同。",
+              "左右接续的画板上，playhead 是连续时间；playhead_at 给出它落在哪个根、是那个根自己的第几秒（或帧）。"],
 }]
 
 

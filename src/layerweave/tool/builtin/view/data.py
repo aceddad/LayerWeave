@@ -1,4 +1,5 @@
 """视图读取：只读打开数据库，整理成网页需要的结构；素材文件只提供数据库里引用过的。"""
+import json
 from pathlib import Path
 import sqlite3
 
@@ -129,6 +130,54 @@ def project_view(connection, database, project_id):
         "roots": list(roots.values()),
         "layers": layers,
     }
+
+
+SLIM = ("name", "layer", "begin", "end", "father", "type", "config_ref")
+
+
+def _short(value, size=80):
+    text = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False)
+    return text if len(text) <= size else text[:size - 1] + "…"
+
+
+def _slim(record):
+    """改动前后只留认得出、定得了位的部分：名字、所在层、位置，以及文字或素材路径（截短）。"""
+    if record is None:
+        return None
+    out = {k: record.get(k) for k in SLIM if k in record}
+    info = record.get("information")
+    if isinstance(info, dict):
+        for key in ("text", "source"):
+            if isinstance(info.get(key), str):
+                out[key] = _short(info[key], 60)
+    return out
+
+
+def recent_changes(connection, project_id, limit=10):
+    """最近 limit 次涉及这个项目的操作，新的在前。每项改动给出种类、编号、动作、改之前和之后的名字与位置、
+    改了哪些字段；information 里改了的键给出前后值（截短）。只读日志，不碰业务表。"""
+    from layerweave.support.storage.log_reader import operation_page, operation_rows
+    _, page = operation_page(connection, project_id, limit=limit)
+    operations = []
+    for entry in page[:limit]:
+        rows = operation_rows(connection, entry["operation_id"])
+        items = []
+        for row in rows:
+            before, after, kind = row["before_data"], row["after_data"], row["kind"]
+            if kind in ("object", "layer") and row["project_id"] != project_id:
+                continue   # 跨项目搬移时，另一头的改动不画在这个项目上
+            item = {"kind": kind, "id": row["target_id"], "action": row["action"], "before": _slim(before), "after": _slim(after)}
+            if row["action"] == "update" and before and after:
+                item["fields"] = sorted(k for k in before.keys() | after.keys()
+                                        if k != "max_id" and before.get(k) != after.get(k))
+                old, new = before.get("information"), after.get("information")
+                if isinstance(old, dict) and isinstance(new, dict):
+                    item["information"] = [{"key": k, "before": _short(old.get(k)), "after": _short(new.get(k))}
+                                           for k in sorted(old.keys() | new.keys()) if old.get(k) != new.get(k)]
+            items.append(item)
+        operations.append({"operation_id": entry["operation_id"], "at": rows[0]["created_at"],
+                           "undo_of": rows[0]["undo_of"], "items": items})
+    return operations
 
 
 def media_path(connection, database, project_id, object_id):

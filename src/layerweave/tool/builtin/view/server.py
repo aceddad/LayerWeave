@@ -15,7 +15,7 @@ import re
 import threading
 from urllib.parse import parse_qs, urlparse
 
-from .data import extract_frame, find_ffmpeg, list_projects, media_path, open_readonly, project_roots, project_view
+from .data import extract_frame, find_ffmpeg, list_projects, media_path, open_readonly, project_roots, project_view, recent_changes
 from .layout import layout_serial, load_layout, reconcile, save_layout
 from .state import read_state, write_state
 
@@ -65,6 +65,10 @@ class ViewHandler(SimpleHTTPRequestHandler):
                 return self.send_json(data) if data else self.send_json({"error": "项目不存在"}, HTTPStatus.NOT_FOUND)
             if url.path == "/api/version":
                 return self.send_json({"version": self.version(), "layout": layout_serial(self.database, self.state_root)})
+            if match := re.fullmatch(r"/api/changes/(\d+)", url.path):
+                limit = max(1, min(100, int(parse_qs(url.query).get("limit", ["10"])[0])))
+                with closing(open_readonly(self.database)) as connection:
+                    return self.send_json(recent_changes(connection, int(match[1]), limit))
             if match := re.fullmatch(r"/api/layout/(\d+)", url.path):
                 with closing(open_readonly(self.database)) as connection:
                     roots = project_roots(connection, int(match[1]))

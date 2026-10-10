@@ -13,6 +13,8 @@
     <button data-view="canvas" class="on">画布</button>
     <button data-view="assets">素材</button>
   </nav>
+  <input id="find" type="search" placeholder="找对象：名字、文字、文件名、#编号" title="回车找下一个，Shift+回车找上一个">
+  <span id="find-count"></span>
   <div class="spacer"></div>
   <span id="clock" title="播放头位置（当前画板的单位）">—</span>
   <div id="zoom" class="canvas-only">
@@ -26,11 +28,22 @@
 <main id="canvas-view">
   <section id="canvas">
     <div id="world"></div>
-    <p class="help">拖动空白处或轨道：平移 · 滚轮：缩放画布 · Alt+滚轮：缩放这块画板的时间 · 拖画板标题：移动，拖到同单位的画板上就拼在一起 · 「拆出」：拆成单独一块</p>
+    <p class="help">拖动空白处或轨道：平移 · 滚轮：缩放画布 · Alt+滚轮：缩放这块画板的时间 · 拖画板标题：移动；拖到同单位画板的一行中间是上下拼（同时），拖到一段的开头或结尾是左右接（接续） · 「拆出」：拆成单独一块</p>
   </section>
   <aside id="now">
-    <h2>此刻 <span id="now-time"></span></h2>
-    <div id="now-list"><p class="hint">点画板上的任意位置，查看那一刻这块画板每层都有什么；点色块查看对象详情。</p></div>
+    <nav id="side-tabs">
+      <button data-side="now" class="on">此刻</button>
+      <button data-side="changes" title="最近几次操作改了什么；打开时画布上会标出来">改动</button>
+    </nav>
+    <section id="now-pane">
+      <h2>此刻 <span id="now-time"></span></h2>
+      <div id="now-list"><p class="hint">点画板上的任意位置，查看那一刻这块画板每层都有什么；点色块查看对象详情。</p></div>
+    </section>
+    <section id="changes-pane" hidden>
+      <h2>最近 <select id="chg-limit"><option>1</option><option>5</option><option selected>10</option><option>30</option><option>100</option></select> 次操作</h2>
+      <p class="hint legend"><i class="chg-n">1</i> 改过的对象（数字是倒数第几次操作）　<span class="ghost-key">虚线框</span> 删除或移动之前的位置</p>
+      <div id="chg-list"></div>
+    </section>
   </aside>
 </main>
 

@@ -195,7 +195,7 @@ assert r["layers"][0]["objects"][0]["id"] == obj.id and r["layers"][0]["depth"] 
 assert r["layers"][0]["objects"][0]["text"] == "hello"
 assert r["layers"][0]["root"] == r["roots"][0]["id"] == r["layers"][0]["id"], r["roots"]
 from layerweave.tool.builtin.view.layout import reconcile
-assert reconcile([{"id": 1, "key": "秒"}, {"id": 2, "key": "秒"}, {"id": 3, "key": None}], None)[0]["roots"] == [1, 2]
+assert reconcile([{"id": 1, "key": "秒"}, {"id": 2, "key": "秒"}, {"id": 3, "key": None}], None)[0]["rows"] == [[1], [2]]
 ''',
             "developer/keys": '''
 from layerweave.tool.builtin.developer.keys.service import manage_keys, get_key

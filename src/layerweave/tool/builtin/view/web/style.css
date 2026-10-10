@@ -56,6 +56,31 @@ main { flex: 1; min-height: 0; }
 .track { position: relative; border-bottom: 1px solid var(--line); }
 .board > .playhead { position: absolute; top: 34px; bottom: 0; width: 2px; background: var(--play); z-index: 2; pointer-events: none; display: none; }
 .dropmark { position: absolute; left: 0; right: 0; height: 4px; margin-top: -2px; background: var(--accent); z-index: 6; pointer-events: none; }
+.dropmark.v { right: auto; width: 4px; height: auto; margin: 0 0 0 -2px; color: var(--accent); font-size: 12px; white-space: nowrap;
+              text-indent: 8px; line-height: 20px; overflow: visible; }
+
+/* 左右接续：接缝和每一段的名字 */
+.seam { position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px dashed #8fa3c8; z-index: 1; pointer-events: none; }
+.segstrip { position: relative; border-bottom: 1px solid var(--line); background: rgba(143, 163, 200, .07); }
+.lname.strip { color: var(--dim); font-size: 11px; }
+.seg-chip { position: absolute; top: 2px; margin-left: 4px; white-space: nowrap; font-size: 11px; color: #dfe8ff; line-height: 18px;
+            background: rgba(30, 40, 60, .9); border: 1px solid #44536e; border-radius: 3px; padding: 0 4px; display: flex; gap: 6px; align-items: center; }
+.seg-chip small { color: var(--dim); }
+.seg-chip .split { margin: 0; line-height: 16px; }
+
+/* 改动标记 */
+.obj.chg { box-shadow: 0 0 0 2px #ffd23f inset; }
+.obj.chg-create { box-shadow: 0 0 0 2px #5be08b inset; }
+.chg-n { position: absolute; right: 2px; top: 2px; font-style: normal; font-size: 10px; line-height: 14px; min-width: 14px; text-align: center;
+         border-radius: 7px; background: #ffd23f; color: #1a1205; padding: 0 3px; z-index: 1; }
+.obj.chg-create .chg-n { background: #5be08b; }
+.chg-dot { font-style: normal; font-size: 10px; line-height: 14px; min-width: 14px; text-align: center; border-radius: 7px; background: #ffd23f; color: #1a1205; padding: 0 3px; flex: none; }
+.ghost { position: absolute; border: 2px dashed #ff8a8a; border-radius: 4px; background: rgba(255, 90, 90, .08); z-index: 1; overflow: hidden;
+         font-size: 10px; color: #ffb3b3; pointer-events: auto; }
+.ghost.move { border-color: #ffd23f; background: rgba(255, 210, 63, .08); color: #ffe48a; }
+.ghost span { position: absolute; left: 4px; bottom: 2px; white-space: nowrap; text-shadow: 0 1px 2px #000; }
+.flash { animation: flash 1.4s ease-out; }
+@keyframes flash { 0%, 40% { outline: 3px solid #fff; outline-offset: 2px; } 100% { outline: 3px solid transparent; outline-offset: 8px; } }
 .dropnote { position: absolute; left: 12px; top: 40px; z-index: 6; background: #3a1f24; color: #ffb3b3; border: 1px solid #ff6b6b;
             border-radius: 4px; padding: 4px 8px; pointer-events: none; }
 
@@ -72,6 +97,25 @@ main { flex: 1; min-height: 0; }
 
 #now { width: clamp(240px, 28vw, 340px); flex: none; border-left: 1px solid var(--line); background: var(--panel); overflow: auto; padding: 0 12px 16px; }
 #now h2 { font-size: 14px; margin: 12px 0; }
+#side-tabs { display: flex; gap: 4px; padding-top: 10px; }
+#now-pane[hidden], #changes-pane[hidden] { display: none; }
+#now h3.seg { color: #dfe8ff; }
+#find { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 3px 8px; width: 15em; }
+#find-count { color: var(--dim); font-size: 12px; min-width: 3em; }
+#changes-pane select { font-size: 13px; }
+.legend { font-size: 11px; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.legend .chg-n { position: static; }
+.ghost-key { border: 2px dashed #ff8a8a; border-radius: 3px; padding: 0 4px; }
+.op { margin-bottom: 12px; }
+.op-head { color: var(--dim); font-size: 12px; margin-bottom: 4px; display: flex; gap: 6px; align-items: center; }
+.op-head b { background: #ffd23f; color: #1a1205; border-radius: 7px; min-width: 16px; text-align: center; font-size: 11px; }
+.chg-item { border: 1px solid var(--line); border-left: 3px solid #ffd23f; border-radius: 4px; padding: 5px 8px; margin-bottom: 4px; background: var(--bg); }
+.chg-item.create { border-left-color: #5be08b; }
+.chg-item.delete { border-left-color: #ff8a8a; }
+.chg-item[data-focus] { cursor: pointer; }
+.chg-item[data-focus]:hover { border-color: var(--accent); }
+.chg-item .verb { color: var(--dim); }
+.chg-item .det { color: var(--dim); font-size: 11px; margin-top: 2px; word-break: break-all; }
 #now h3 { font-size: 12px; color: var(--dim); margin: 14px 0 6px; font-weight: normal; }
 .hint { color: var(--dim); }
 .card { border: 1px solid var(--line); border-radius: 6px; padding: 8px; margin-bottom: 8px; background: var(--bg); }

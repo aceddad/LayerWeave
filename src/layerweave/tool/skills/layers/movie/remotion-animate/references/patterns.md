@@ -23,9 +23,9 @@
 
 ## 字幕与原文
 - 字幕在渲染时从 `public/media/subtitles.srt` 读取，代码里不写内容。
-- 检查排版有两种办法：用 `Film-Layout` 入口，它把字换成占位符；或者用 text-redacted-layout 生成涂黑字体，排出来的位置和断行都与原字体完全一致。
+- 检查排版有两种办法：用 `Film-Layout` 入口，它把字换成占位符；或者用 [text-redacted-layout](../../../text/text-redacted-layout/SKILL.md) 生成涂黑字体，排出来的位置和断行都与原字体完全一致。
 - 带真字幕的版本（`Film-Subtitled`）由有权查看原文的人来导出。
 
 ## 审阅
 - 改完先渲关键几拍的静帧，用 `Film-Review` 入口，画面上会印出秒数、拍号和段名。
-- 整片导出后，用 video-timing 看状态和过渡，用 video-verify 核对帧数和音画偏移，用 video-master 出发布母版。
+- 整片导出后，用 [video-timing](../../video-timing/SKILL.md) 看状态和过渡，用 [video-verify](../../video-verify/SKILL.md) 核对帧数和音画偏移，用 [video-master](../../video-master/SKILL.md) 出发布母版。

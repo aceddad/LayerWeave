@@ -38,7 +38,7 @@ ffmpeg -hide_banner -y -t 补丁起点秒 -i 原片.mp4 -i 补丁段.mp4 -ss 补
 
 - 把 `-t`、`-ss` 写在输入前面，每段的时间戳都会从 0 开始，concat 才能无缝接上。
 - 补丁段的起止要落在整帧上（时间 = 帧号 ÷ 帧率）。音频直接用原片的整条音轨，不参与拼接。
-- 拼完用 video-verify 核对总帧数和音画偏移。
+- 拼完用 [video-verify](../video-verify/SKILL.md) 核对总帧数和音画偏移。
 
 ## 核对标注
 

@@ -2,11 +2,20 @@
 
 管理具名 KEY 条目及其环境变量名、服务地址、默认模型和 used 使用指引。技能、脚本、内部工具或其他程序都可读取同一条目。它是独立工具包，不需要业务数据库，不参与 changes 日志，也不执行使用方或修改环境变量。
 
+先按实际存放方式选择入口：
+
+| KEY 在哪里 | 如何使用 |
+|---|---|
+| 已在环境变量中 | 技能直接传 --key-env 变量名，无需 init 或 get_key；见[已有环境变量](#key-已在环境变量中) |
+| 希望由本地 JSON 管理 | 按[最短使用流程](#最短使用流程)登记，再由程序读取；见[本地 JSON 调用](#key-保存在本地-json) |
+
+登记 env_name 只保存变量名说明，不会读取、设置或同步环境变量。两种方式都由调用 AI 选择服务、模型和输出目录。
+
 ## 本地文件与示例
 
 默认真实文件是本机用户目录下的 `.layerweave/keys.json`；`--store` 或 Python 的 store 参数可以指定别的文件。文件是本地明文 JSON，供本人程序读取，不是加密密钥库。若放进源码仓库，使用已忽略的 keys.local.json，真实内容不要提交。
 
-包内 [example.json](example.json) 只有演示名称、空 KEY 和中文填写提示。你注册真实条目后，可导出保留自己名称及 used 的示例上传。当前自带 text-normalize 不需要 KEY，因此没有给它预设绑定。
+包内 [example.json](example.json) 只有演示名称、空 KEY 和中文填写提示，不预设任何技能专属绑定。你注册真实条目后，可导出保留自己名称及 used 的示例上传。出图、生视频等技能也由调用方自行选择连接。
 
 ```json
 {
@@ -76,6 +85,8 @@ export 的返回 data 就是模板字典；--output 写出的文件直接是模�
 
 ## 由调用方使用密钥
 
+以下 get_key 示例要求真实 KEY 已写入本地 JSON；它不会回退读取环境变量。
+
 ```python
 from layerweave.tool.builtin.developer.keys.service import get_key, manage_keys
 
@@ -90,9 +101,13 @@ get_key 是程序读取接口，不作为 CLI 查询输出。空密钥会明确�
 
 ## 把连接交给技能子进程
 
-AI 先用 connections 查看已登记的连接，按所需服务选择条目；used 提供使用指引，不限制选择。条目的 env_name、base_url、model 需要已经填写实际值。地址按技能要求填写，例如出图接口到 /v1，视频接口到 /v2；同一个 KEY 可用于多个调用方。
+### KEY 已在环境变量中
 
 KEY 已在环境变量里时，直接使用技能的 `--key-env 变量名`，不必存入 keys.json，也不调用 get_key。例如在生视频技能目录运行 `python scripts/video.py --key-env MY_VIDEO_KEY --base-url 服务地址/v2 ping`；出图技能同样支持 --key-env。通过 Python 启动子进程时，使用继承的环境或 child_env = dict(os.environ)，省略下例中调用 get_key 的那一行。仅登记 env_name 不会让 get_key 去读该环境变量。
+
+### KEY 保存在本地 JSON
+
+AI 先用 connections 查看已登记的连接，按所需服务选择条目；used 提供使用指引，不限制选择。条目的 env_name、base_url、model 需要已经填写实际值。地址按技能要求填写，例如出图接口到 /v1，视频接口到 /v2；同一个 KEY 可用于多个调用方。
 
 下面演示 KEY 已写入 keys.json 时如何调用出图技能。先由 AI 设置 entry_name（条目名）、project_dir（已存在的项目工作目录）、output_dir（本次选定的输出目录）、prompt_file（已写好的提示词文件）；三个路径使用 pathlib.Path 的绝对路径。输出目录由 AI 管理，没有固定的项目布局要求。
 

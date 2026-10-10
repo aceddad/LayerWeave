@@ -5,7 +5,7 @@ description: 用 three.js 胶囊木偶按摄影表做动作参考：关键姿势
 
 # 人偶动作参考
 
-组件在 `assets/Puppet.tsx`，配合 remotion-animate 模板使用。
+组件在 `assets/Puppet.tsx`，配合 [remotion-animate](../../movie/remotion-animate/SKILL.md) 模板使用。先按该技能建立工程；下面的 npm、静帧和渲染命令在工程目录执行。
 
 工程目录、审阅图目录和视频输出路径由调用的 AI 自行管理，渲染时显式传入本次选定的位置，建议使用绝对路径。
 
@@ -36,10 +36,10 @@ node scripts/render.mjs 人偶.mp4 --comp Puppet --gl angle --concurrency 2
 - 把自己的摄影表作为 `keys` 传进组件；相机用 `camera` 调整，包括视角、位置、注视点。示例 `KNEEL_KEYS` 是：站着停一下 → 低头 → 膝盖一软 → 砸到地上 → 跪住 → 上身瘫下去。
 
 ## 检查节奏
-用 video-timing 的 keys.py 看渲出来的视频：停住的段、到位点、方向转折都会列出来，可以和摄影表对照。实测示例摄影表：跪住（第 56–68 帧）、瘫下（第 92–119 帧）都被准确找出；第 30–34 帧那个只有 4 帧的低头停顿太短，被并进了前面站着的那一段。
+用 [video-timing](../../movie/video-timing/SKILL.md) 的 keys.py 看渲出来的视频：停住的段、到位点、方向转折都会列出来，可以和摄影表对照。实测示例摄影表：跪住（第 56–68 帧）、瘫下（第 92–119 帧）都被准确找出；第 30–34 帧那个只有 4 帧的低头停顿太短，被并进了前面站着的那一段。
 
 ## 当作生视频的参考视频
-用 video-generate 的参考视频模式，把人偶视频和角色图一起交给模型：
+进入 [video-generate](../../movie/video-generate/SKILL.md) 技能目录，按其连接说明配置服务，再用参考视频模式把人偶视频和角色图一起交给模型。输入与输出文件使用本次项目的实际路径：
 
 ```sh
 python scripts/video.py submit 输出.mp4 提示词.txt --ref-image 角色.png --ref-video 人偶.mp4 --duration 5

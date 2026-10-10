@@ -6,6 +6,7 @@
 - 修改代码或增加封装：先读[开发指南](docs/developer-conventions.md)，再读对应配置、API 和实现专题。
 - 修改文档：读取[文档约定](docs/documentation.md)，保持主题有明确的主要维护位置。
 - 新增外置技能：读[工具区](src/layerweave/tool/README.md)，特殊场景另见[场景补充区](src/layerweave/tool/skills/scenarios/README.md)。技能自带 SKILL.md；实际绑定由 AI 按任务填写。
+- 调用外部模型服务：读[KEY 与连接说明](src/layerweave/tool/builtin/developer/keys/README.md)，先区分已有环境变量和本地 JSON；输出目录由 AI 按项目安排。LayerWeave 自身的读写接口见[基础支撑 API](src/layerweave/support/API.md)。
 - 视图工作：读[视图边界](src/layerweave/tool/builtin/view/README.md)，开始实现时再建独立分支。
 
 ## 工作要求

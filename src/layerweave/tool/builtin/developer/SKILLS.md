@@ -15,7 +15,7 @@ python -m layerweave.tool.builtin.developer.skills.cli SKILL.zip --scenario --js
 - --scenario 安装到 tool/skills/scenarios/技能目录。
 - 两者必须选一个；层类型只用于确定目录，不要求先创建层实例或读取层 TOML。
 
-需要在源码中维护自带技能时，从仓库根加上 --skills-root src/layerweave/tool/skills；同一个参数也可以指定其他可写目录。安装后将返回的 route 按需要加入层的 tools，tier 和 when 由 AI 填写。安装器不自动绑定。
+需要在源码中维护自带技能时，从仓库根加上 --skills-root src/layerweave/tool/skills；同一个参数也可以指定其他可写目录。安装后将返回的 route 按需要加入层的 tools，tier 和 when 由 AI 填写。安装器不自动绑定。后续的技能选择、依赖准备、输出目录与 KEY 接入见[调用导引](../../README.md#选择与定位技能)。
 
 ## 压缩包与目录选择
 

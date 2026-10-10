@@ -46,7 +46,7 @@ python -m layerweave.tool.builtin.developer.keys.cli connections --json
 python -m layerweave.tool.builtin.developer.keys.cli export --output keys.example.json --json
 ```
 
-真实配置默认保存到用户目录的 .layerweave/keys.json，只在本机维护。示例保留名称和 used，清空 KEY，并以中文提示替代连接字段的值。录入密钥、增删改查和程序读取见[KEY 管理说明](keys/README.md)。
+上例用于本地 JSON 管理；KEY 已在环境变量中时，技能可直接用 --key-env，无需先 init。真实 JSON 配置默认保存到用户目录的 .layerweave/keys.json，只在本机维护。示例保留名称和 used，清空 KEY，并以中文提示替代连接字段的值。两种调用方式、录入密钥与程序读取见[KEY 管理说明](keys/README.md)。
 
 ## 开发内部工具
 

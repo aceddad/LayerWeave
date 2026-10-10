@@ -5,7 +5,7 @@ description: 让文字变成有重量的物体：把字体的真实轮廓导出�
 
 # 字形变形
 
-技法来自一部手书 PV 的动效小样（Pressure Study）。这里把它整理成通用的导出脚本和 React 组件，配合 remotion-animate 模板使用。
+技法来自一部手书 PV 的动效小样（Pressure Study）。这里把它整理成通用的导出脚本和 React 组件，配合 [remotion-animate](../../movie/remotion-animate/SKILL.md) 模板使用。字形导出命令在本技能目录执行，React 组件复制到所创建的工程中使用。
 
 依赖：导出脚本需要 `pip install -r requirements.txt`（fonttools）；组件只依赖 React。
 

@@ -14,7 +14,7 @@ LayerWeave 是一个用层、对象、关联和轴位置组织内容的 Python �
 
 ## 开始使用
 
-当前处于开发阶段，使用源码的本地可编辑安装。需要 Python 3.11+、SQLite 3.35+；运行时只使用标准库。建议先启用自己的 Python 虚拟环境，具体准备见[开发指南](docs/developer-conventions.md#准备环境)。
+当前通过源码的本地可编辑安装使用。需要 Python 3.11+、SQLite 3.35+；核心与内部工具运行时只使用标准库，外置技能的媒体依赖按需安装。建议先启用自己的 Python 虚拟环境，具体准备见[开发指南](docs/developer-conventions.md#准备环境)。
 
 取得源码后，在项目目录执行：
 
@@ -77,7 +77,7 @@ with TemporaryDirectory() as directory:
 
 ## 当前状态
 
-当前提供非可视化核心和内部工具，MCP 封装与界面尚未实现。图片、音视频等封装保存资源引用，实际媒体处理由相应扩展工具承担。
+当前无视图版本已完成核心、内部工具和技能接入的收尾，MCP 封装与 LayerWeave 界面尚未实现。图片、音视频等封装保存资源引用；自带 skills 提供部分媒体生成、处理和检查能力，由调用方按需使用。
 
 非可视化核心会继续独立维护；可视化实现将在单独分支推进。
 
@@ -87,6 +87,6 @@ with TemporaryDirectory() as directory:
 - [开发指南](docs/developer-conventions.md)：开发准备、源码位置、扩充与验证。
 - [架构说明](docs/architecture.md)：概念、模块关系与设计边界。
 - [示例索引](docs/examples.md)：可运行的完整场景。
-- [外置技能示例](src/layerweave/tool/README.md)：独立技能包的组织方式与层原型绑定写法。
+- [技能与外部服务](src/layerweave/tool/README.md)：查找技能、层原型绑定、KEY 接入和输出目录。
 
 安装后只使用 `layerweave` 顶层导入。自带配置与技能材料随包提供；示例在仓库 `examples/` 中以脚本运行。

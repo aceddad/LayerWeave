@@ -5,7 +5,7 @@ description: 用 Remotion（React）写代码动画：一条音轨当全局时�
 
 # Remotion 代码动画
 
-需要 Node.js 18 及以上。模板在 `assets/template/`，复制出来就是一个完整的工程。
+需要 Node.js 18 及以上。模板在 `assets/template/`，复制出来就是一个完整的工程。下面先在本技能目录复制模板，后续 npm、审阅和渲染命令均在新工程目录执行。
 
 工程位置、审阅静帧目录和视频输出路径由调用的 AI 按项目安排；复制模板和运行渲染脚本时显式指定，建议使用绝对路径。项目成果保存在 AI 选定的位置。
 
@@ -46,7 +46,7 @@ node scripts/render.mjs 成片.mp4 [--comp Film] [--frames 0-95] [--concurrency 
 
 - 先用静帧对关键的几拍，满意了再导出整片。
 - `--concurrency` 是同时渲染的浏览器标签数，默认取 CPU 核数的四分之一。机器吃紧时设为 1，并且一次只跑一个渲染。临时文件跟随系统的 TEMP/TMP 变量；系统盘紧张时，先把这两个变量指到别的盘再运行。
-- 导出的视频是全范围 bt601（`yuvj420p`），色彩不写标注。发布前用 video-master 转成 bt709 母版，再用 video-verify 核对。
+- 导出的视频是全范围 bt601（`yuvj420p`），色彩不写标注。发布前用 [video-master](../video-master/SKILL.md) 转成 bt709 母版，再用 [video-verify](../video-verify/SKILL.md) 核对。
 
 ## 写法要点
 详见 [references/patterns.md](references/patterns.md)。最重要的三条：

@@ -17,7 +17,8 @@ from layerweave.support.storage.database import SCHEMA_PATH
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = ROOT / "src/layerweave"
 PACKAGES = ("usage/records", "usage/query", "usage/editing", "usage/history", "usage/undo",
-            "usage/validation", "usage/text", "shared/help", "developer/database", "developer/skills", "developer/keys")
+            "usage/validation", "usage/text", "shared/help", "developer/database", "developer/skills", "developer/keys",
+            "view")   # visualization 分支：视图工具包
 
 FIXTURE = '''
 from layerweave.support.api import open_database, save_layer, save_object, transaction, read_record
@@ -186,6 +187,12 @@ with ZipFile("demo.zip","w") as archive:
 r = install_skill("demo.zip",layer="text")
 assert r["ok"], r
 assert Path(r["path"]).is_dir()
+''',
+            "view": '''
+from layerweave.tool.builtin.view.data import project_view, order_layers
+r = project_view(c, ":memory:", p)
+assert r["layers"][0]["objects"][0]["id"] == obj.id and r["layers"][0]["depth"] == 0, r
+assert r["layers"][0]["objects"][0]["text"] == "hello"
 ''',
             "developer/keys": '''
 from layerweave.tool.builtin.developer.keys.service import manage_keys, get_key

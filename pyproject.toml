@@ -23,3 +23,4 @@ namespaces = false
 "layerweave" = ["configs/**/*.toml", "configs/**/*.md", "tool/skills/**/*", "tool/README.md"]
 "layerweave.support.storage" = ["schema.sql"]
 "layerweave.tool.builtin.developer.keys" = ["example.json", "README.md"]
+"layerweave.tool.builtin.view" = ["web/*", "README.md"]

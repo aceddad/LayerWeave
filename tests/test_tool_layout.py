@@ -23,17 +23,19 @@ class ToolLayoutTests(unittest.TestCase):
                                 "config_help", "copy_object", "copy_subtree", "delete_subtree", "dispatch", "find_gaps",
                                 "find_objects", "initialize_database", "install_skill", "manage_keys", "insert_gap", "project_details", "project_overview",
                                 "query_relations", "read_history", "recheck", "set_duration", "shift_objects", "split_object",
-                                "transfer_objects", "transfer_subtree", "undo_operation"})
-        self.assertEqual(len(overview["items"]), 27)
+                                "transfer_objects", "transfer_subtree", "undo_operation",
+                                # visualization 分支：视图工具包
+                                "view_frame", "view_screenshot", "view_server", "view_state"})
+        self.assertEqual(len(overview["items"]), 31)
         self.assertTrue(all(set(item) == {"name", "summary", "read_only", "cli"} for item in overview["items"]))
         groups = {}
         for command in command_help(sorted(names))["items"]:
             group = command["source"].split("/")[0]
             groups[group] = groups.get(group, 0) + 1
-        self.assertEqual(groups, {"usage": 22, "shared": 2, "developer": 3})
+        self.assertEqual(groups, {"usage": 22, "shared": 2, "developer": 3, "view": 4})
         view = ROOT / "src/layerweave/tool/builtin/view"
         self.assertTrue(view.is_dir())
-        self.assertEqual(list(view.glob("*.py")), [])
+        self.assertTrue((view / "web" / "index.html").is_file())   # visualization 分支：视图网页随包分发
 
     def test_database_and_crud_execute_through_canonical_tools(self):
         with tempfile.TemporaryDirectory() as folder:

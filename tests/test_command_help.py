@@ -90,7 +90,9 @@ class CommandHelpTests(unittest.TestCase):
                 continue  # layerweave.support.api 的延迟包装；行为由对应工具测试覆盖。
             for parameter in command["parameters"]:
                 if parameter=="database":
-                    self.assertTrue("connection" in signature.parameters or command["name"]=="initialize_database")
+                    # 视图工具自己以只读方式打开数据库文件，入口直接接收 database 路径（visualization 分支）
+                    self.assertTrue("connection" in signature.parameters or "database" in signature.parameters
+                                    or command["name"]=="initialize_database")
                 else:
                     self.assertIn(parameter,signature.parameters,command["name"])
 

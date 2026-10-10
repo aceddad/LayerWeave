@@ -1,4 +1,4 @@
-"""视图服务：本机网页，只读查看项目的时间轴和素材。只监听 127.0.0.1，以只读方式打开数据库。
+"""视图服务：本机网页，只读查看项目——画布上每个根一块时间轴画板，另有素材预览。只监听 127.0.0.1，以只读方式打开数据库。
 
 python -m layerweave.tool.builtin.view.server DATABASE [--port 8765] [--project ID]
 然后用浏览器打开打印出来的地址。数据库被工具修改后，页面会在两秒内自动刷新。
@@ -15,7 +15,8 @@ import re
 import threading
 from urllib.parse import parse_qs, urlparse
 
-from .data import extract_frame, find_ffmpeg, list_projects, media_path, open_readonly, project_view
+from .data import extract_frame, find_ffmpeg, list_projects, media_path, open_readonly, project_roots, project_view
+from .layout import layout_serial, load_layout, reconcile, save_layout
 from .state import read_state, write_state
 
 WEB_ROOT = Path(__file__).with_name("web")
@@ -33,6 +34,12 @@ class ViewHandler(SimpleHTTPRequestHandler):
 
     def log_message(self, *args):
         pass
+
+    def handle(self):
+        try:
+            super().handle()
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+            pass   # 浏览器主动断开：换页、拖动视频、截图结束时都会有
 
     def end_headers(self):
         self.send_header("Cache-Control", "no-store")
@@ -57,7 +64,12 @@ class ViewHandler(SimpleHTTPRequestHandler):
                     data = project_view(connection, self.database, int(match[1]))
                 return self.send_json(data) if data else self.send_json({"error": "项目不存在"}, HTTPStatus.NOT_FOUND)
             if url.path == "/api/version":
-                return self.send_json({"version": self.version()})
+                return self.send_json({"version": self.version(), "layout": layout_serial(self.database, self.state_root)})
+            if match := re.fullmatch(r"/api/layout/(\d+)", url.path):
+                with closing(open_readonly(self.database)) as connection:
+                    roots = project_roots(connection, int(match[1]))
+                return self.send_json({"boards": load_layout(self.database, int(match[1]), roots, self.state_root),
+                                       "serial": layout_serial(self.database, self.state_root)})
             if url.path == "/api/state":
                 return self.send_json(read_state(self.database, self.state_root))
             if url.path == "/api/capabilities":
@@ -83,6 +95,8 @@ class ViewHandler(SimpleHTTPRequestHandler):
                 with closing(open_readonly(self.database)) as connection:
                     path = media_path(connection, self.database, int(match[1]), int(match[2]))
                 return self.send_file(path) if path else self.send_json({"error": "没有这个素材"}, HTTPStatus.NOT_FOUND)
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+            return
         except (ValueError, OSError, RuntimeError) as error:
             return self.send_json({"error": str(error)}, HTTPStatus.BAD_REQUEST)
         if url.path == "/":
@@ -90,17 +104,26 @@ class ViewHandler(SimpleHTTPRequestHandler):
         return super().do_GET()
 
     def do_POST(self):
-        if urlparse(self.path).path != "/api/state":
-            return self.send_json({"error": "只支持 /api/state"}, HTTPStatus.NOT_FOUND)
+        path = urlparse(self.path).path
+        layout = re.fullmatch(r"/api/layout/(\d+)", path)
+        if path != "/api/state" and not layout:
+            return self.send_json({"error": "只支持 /api/state 和 /api/layout/<项目>"}, HTTPStatus.NOT_FOUND)
         length = int(self.headers.get("Content-Length", 0))
         if length > 65536:
-            return self.send_json({"error": "状态过大"}, HTTPStatus.REQUEST_ENTITY_TOO_LARGE)
+            return self.send_json({"error": "内容过大"}, HTTPStatus.REQUEST_ENTITY_TOO_LARGE)
         try:
             payload = json.loads(self.rfile.read(length) or b"{}")
         except ValueError:
             return self.send_json({"error": "不是 JSON"}, HTTPStatus.BAD_REQUEST)
         if not self.record_state:
             return self.send_json({"recorded": False})
+        if layout:
+            # 网页传来整套画板；按数据库里现有的根校正后再存（单位不同的拼接会被拆开）
+            project_id = int(layout[1])
+            with closing(open_readonly(self.database)) as connection:
+                roots = project_roots(connection, project_id)
+            boards = save_layout(self.database, project_id, reconcile(roots, payload.get("boards")), self.state_root)
+            return self.send_json({"boards": boards, "serial": layout_serial(self.database, self.state_root)})
         return self.send_json(write_state(self.database, payload, self.state_root))
 
     def send_file(self, path):
@@ -170,7 +193,7 @@ def make_server(database, *, port=0, state_root=None, record_state=True):
 
 COMMANDS = [{
     "name": "view_server",
-    "summary": "在本机启动只读视图网页：时间轴、素材预览，数据库变化后自动刷新",
+    "summary": "在本机启动只读视图网页：画布上的时间轴画板、素材预览，数据库变化后自动刷新",
     "entrypoint": "layerweave.tool.builtin.view.server:serve",
     "cli": "python -m layerweave.tool.builtin.view.server",
     "read_only": True,

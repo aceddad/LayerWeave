@@ -10,31 +10,27 @@
   <strong class="brand">LayerWeave</strong>
   <select id="project" title="项目"></select>
   <nav id="tabs">
-    <button data-view="timeline" class="on">时间轴</button>
+    <button data-view="canvas" class="on">画布</button>
     <button data-view="assets">素材</button>
   </nav>
   <div class="spacer"></div>
-  <span id="clock" title="播放头位置">—</span>
-  <div id="zoom" class="timeline-only">
-    <button data-zoom="out" title="缩小">−</button>
-    <button data-zoom="fit" title="全部显示">适应</button>
-    <button data-zoom="in" title="放大">＋</button>
+  <span id="clock" title="播放头位置（当前画板的单位）">—</span>
+  <div id="zoom" class="canvas-only">
+    <button data-zoom="out" title="缩小画布">−</button>
+    <button data-zoom="fit" title="显示全部画板">全部</button>
+    <button data-zoom="in" title="放大画布">＋</button>
   </div>
-  <span id="live" title="数据库变化后自动刷新">●</span>
+  <span id="live" title="数据库或排版变化后自动刷新">●</span>
 </header>
 
-<main id="timeline-view">
-  <section id="tracks-wrap">
-    <div id="layer-names"></div>
-    <div id="scroller">
-      <div id="ruler"></div>
-      <div id="tracks"></div>
-      <div id="playhead"></div>
-    </div>
+<main id="canvas-view">
+  <section id="canvas">
+    <div id="world"></div>
+    <p class="help">拖动空白处或轨道：平移 · 滚轮：缩放画布 · Alt+滚轮：缩放这块画板的时间 · 拖画板标题：移动，拖到同单位的画板上就拼在一起 · 「拆出」：拆成单独一块</p>
   </section>
   <aside id="now">
     <h2>此刻 <span id="now-time"></span></h2>
-    <div id="now-list"><p class="hint">点时间轴上的任意位置，查看那一刻每层都有什么；点色块查看对象详情。</p></div>
+    <div id="now-list"><p class="hint">点画板上的任意位置，查看那一刻这块画板每层都有什么；点色块查看对象详情。</p></div>
   </aside>
 </main>
 

@@ -1,4 +1,4 @@
-"""用户正在看哪儿：视图把当前项目、时间范围、播放头和选中的对象记在本机用户目录，AI 读它就知道"这里"指哪里。
+"""用户正在看哪儿：视图把当前项目、当前画板、可见的时间范围、播放头和选中的对象记在本机用户目录，AI 读它就知道"这里"指哪里。
 不写业务数据库。每个数据库一份状态文件：~/.layerweave/view/<数据库路径的散列>.json
 
 python -m layerweave.tool.builtin.view.state DATABASE [--json]
@@ -11,7 +11,8 @@ import os
 from pathlib import Path
 import tempfile
 
-FIELDS = {"project": int, "view": str, "range": list, "playhead": (int, float), "selected": dict, "layers": list}
+FIELDS = {"project": int, "view": str, "board": dict, "range": list, "playhead": (int, float), "selected": dict,
+          "boards": list, "layers": list}
 
 
 def state_path(database, root=None):
@@ -45,15 +46,22 @@ def read_state(database, root=None):
 def describe(state):
     if state is None:
         return "视图还没有记录过状态：用户可能还没打开视图。"
-    view = {"timeline": "时间轴", "assets": "素材"}.get(state.get("view"), state.get("view", "?"))
+    view = {"canvas": "画布", "timeline": "画布", "assets": "素材"}.get(state.get("view"), state.get("view", "?"))
     lines = [f"项目 {state.get('project')} · {view}视图 · {state['age_seconds']} 秒前更新"]
+    board = state.get("board") or {}
+    unit = board.get("unit") or ""
+    if board:
+        names = " ＋ ".join(f"{n or '层'}（{r}）" for n, r in zip(board.get("names") or [""] * len(board.get("roots", [])), board.get("roots", [])))
+        lines.append(f"当前画板：{names}，单位 {unit or '没有单位'}")
     if state.get("range"):
-        lines.append(f"可见范围：{state['range'][0]:g} – {state['range'][1]:g}")
+        lines.append(f"当前画板的可见范围：{state['range'][0]:g} – {state['range'][1]:g} {unit}".rstrip())
     if state.get("playhead") is not None:
-        lines.append(f"播放头：{state['playhead']:g}")
+        lines.append(f"播放头（在当前画板上）：{state['playhead']:g} {unit}".rstrip())
     if state.get("selected"):
         s = state["selected"]
         lines.append(f"选中：对象 {s.get('id')}（层 {s.get('layer')}）{s.get('name') or ''}")
+    if state.get("boards"):
+        lines.append("屏幕上的画板（按根层编号）：" + "；".join("、".join(str(r) for r in roots) for roots in state["boards"]))
     if state.get("layers"):
         lines.append("可见的层：" + ", ".join(str(i) for i in state["layers"]))
     return "\n".join(lines)
@@ -61,7 +69,7 @@ def describe(state):
 
 COMMANDS = [{
     "name": "view_state",
-    "summary": "读取用户在视图里正在看的位置：项目、视图、可见范围、播放头、选中的对象",
+    "summary": "读取用户在视图里正在看的位置：项目、当前画板、可见范围、播放头、选中的对象",
     "entrypoint": "layerweave.tool.builtin.view.state:read_state",
     "cli": "python -m layerweave.tool.builtin.view.state",
     "read_only": True,
@@ -69,7 +77,8 @@ COMMANDS = [{
     "parameters": {},
     "returns": "状态字典（含 age_seconds，表示多少秒前更新）；视图从未打开过时为 None。",
     "examples": [{"cli": "python -m layerweave.tool.builtin.view.state DATABASE --json"}],
-    "notes": ["用户说「这里」「这段」时先读它；age_seconds 很大说明用户可能已经离开视图。"],
+    "notes": ["用户说「这里」「这段」时先读它；age_seconds 很大说明用户可能已经离开视图。",
+              "range 和 playhead 用当前画板（board）的单位；不同画板的单位可能不同。"],
 }]
 
 

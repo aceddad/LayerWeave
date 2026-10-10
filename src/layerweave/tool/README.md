@@ -14,7 +14,7 @@ builtin 存放 LayerWeave 自身的内部工具，skills 存放供层原型 `too
 python -m layerweave.tool.builtin.shared.help.config_help layers text image audio movie active
 ```
 
-SKILL.md 说明该技能需要的输入、依赖、输出及局限。脚本、参考资料、模板随技能放置；Python/Node/ffmpeg 等依赖由调用环境按需准备，安装 LayerWeave 或解压技能 ZIP 不会自动安装它们。技能中的 Remotion Studio 是外部制作工具，LayerWeave 本身仍是无视图版本。
+SKILL.md 说明该技能需要的输入、依赖、输出及局限。脚本、参考资料、模板随技能放置；Python/Node/ffmpeg 等依赖由调用环境按需准备，安装 LayerWeave 或解压技能 ZIP 不会自动安装它们。技能中的 Remotion Studio 是外部制作工具，不是 LayerWeave 的视图；LayerWeave 自己的只读视图见 [builtin/view](builtin/view/README.md)。
 
 | 使用方式 | 如何找到文件 |
 |---|---|
@@ -38,7 +38,7 @@ src/layerweave/tool/
     usage/                          records/query/editing/history/undo/validation/text
     developer/                      database/skills 等开发工具包
     shared/help/                    命令与封装帮助
-    view/                           未来视图，当前仅说明
+    view/                           只读视图网页与视图工具（截图、取帧、排版、正在看哪儿）
   skills/
     layers/                         按层原型归类的常规技能
       text/

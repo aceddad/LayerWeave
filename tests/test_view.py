@@ -1,4 +1,4 @@
-"""视图工具包：只读服务、素材白名单、Range、自动刷新标记、"正在看哪儿"、截图与取帧。"""
+"""视图工具包：只读服务、素材白名单、Range、自动刷新标记、画板排版、"正在看哪儿"、截图与取帧。"""
 
 from contextlib import closing
 import json
@@ -12,7 +12,8 @@ from urllib.request import Request, urlopen
 
 from layerweave.support.api import initialize_database, open_database, save_layer, save_object, transaction
 from layerweave.models import ImageLayer, Image, TextLayer, Text
-from layerweave.tool.builtin.view.data import find_ffmpeg, open_readonly
+from layerweave.tool.builtin.view.data import axis_key, find_ffmpeg, open_readonly
+from layerweave.tool.builtin.view.layout import arrange, layout_path, merge, reconcile, split
 from layerweave.tool.builtin.view.screenshot import capture, find_browser
 from layerweave.tool.builtin.view.server import make_server
 from layerweave.tool.builtin.view.state import read_state
@@ -41,7 +42,13 @@ class ViewTests(unittest.TestCase):
             save_object(c, self.project, self.missing)
             self.web = Image(layer=art.id, begin=5, end=6, information={"source": "https://example.com/x.png"})
             save_object(c, self.project, self.web)
-        self.main_layer, self.art_layer = main.id, art.id
+            voice = TextLayer(name="旁白", axis={"unit": "s"})            # 和主线同一种单位（写法不同）
+            save_layer(c, self.project, voice)
+            save_object(c, self.project, Text(layer=voice.id, begin=2, end=8, information={"text": "旁白"}))
+            board = TextLayer(name="分镜", axis={"unit": "帧", "precision": 1})
+            save_layer(c, self.project, board)
+            save_object(c, self.project, Text(layer=board.id, begin=0, end=48, information={"text": "镜头一"}))
+        self.main_layer, self.art_layer, self.voice, self.board = main.id, art.id, voice.id, board.id
         self.state_root = root / "state"
         self.server, self.url = make_server(self.database, state_root=self.state_root)
         threading.Thread(target=self.server.serve_forever, daemon=True).start()
@@ -58,9 +65,10 @@ class ViewTests(unittest.TestCase):
     def test_project_view_orders_layers_and_marks_media(self):
         self.assertEqual(self.json("/api/projects")[0]["name"], "视图测试")
         data = self.json(f"/api/project/{self.project}")
-        self.assertEqual([(l["name"], l["depth"]) for l in data["layers"]], [("主线", 0), ("原画", 1)])
-        self.assertEqual(data["unit"], "秒")
-        self.assertEqual(data["extent"], [0.0, 6.0])
+        self.assertEqual([(l["name"], l["depth"], l["root"]) for l in data["layers"]],
+                         [("主线", 0, self.main_layer), ("原画", 1, self.main_layer), ("旁白", 0, self.voice), ("分镜", 0, self.board)])
+        self.assertEqual([(r["id"], r["unit"], r["key"], r["extent"]) for r in data["roots"]],
+                         [(self.main_layer, "秒", "秒", [0, 6]), (self.voice, "s", "秒", [2, 8]), (self.board, "帧", "帧", [0, 48])])
         media = {o["id"]: o["media"] for o in data["layers"][1]["objects"]}
         self.assertTrue(media[self.image.id]["available"])
         self.assertEqual(media[self.image.id]["url"], f"/media/{self.project}/{self.image.id}")
@@ -70,6 +78,51 @@ class ViewTests(unittest.TestCase):
         with self.assertRaises(HTTPError) as error:
             self.get("/api/project/999")
         self.assertEqual(error.exception.code, 404)
+
+    def test_layout_groups_roots_by_unit_and_keeps_user_choices(self):
+        self.assertEqual([axis_key(a) for a in ({"unit": "秒"}, {"unit": " Seconds "}, {"unit": "frame"}, {"unit": "拍"}, {}, None)],
+                         ["秒", "秒", "帧", "拍", None, None])
+        roots = [{"id": 1, "key": "秒", "name": "a", "unit": "秒"}, {"id": 2, "key": "秒", "name": "b", "unit": "s"},
+                 {"id": 3, "key": "帧", "name": "c", "unit": "帧"}, {"id": 4, "key": None, "name": "d", "unit": ""},
+                 {"id": 5, "key": None, "name": "e", "unit": ""}]
+        self.assertEqual([b["roots"] for b in reconcile(roots, None)], [[1, 2], [3], [4], [5]])   # 没有单位的根各占一块
+        saved = [{"roots": [2], "x": 10, "y": 20, "pps": 50}, {"roots": [1, 3, 99], "x": 0, "y": 400}]
+        boards = reconcile(roots, saved)                      # 用户拆开的保持拆开；单位不同的被分开；已删除的根被去掉
+        self.assertEqual([b["roots"] for b in boards], [[2], [1], [3], [4], [5]])
+        self.assertEqual((boards[0]["x"], boards[0]["y"], boards[0]["pps"]), (10.0, 20.0, 50.0))
+        more = roots + [{"id": 6, "key": "秒", "name": "f", "unit": "秒"}]
+        self.assertEqual([b["roots"] for b in reconcile(more, saved)][0], [2, 6])   # 新根并进同单位的第一块
+        merge(boards, roots, 1, 2, "above")
+        self.assertEqual([b["roots"] for b in boards][:2], [[1, 2], [3]])
+        with self.assertRaisesRegex(ValueError, "单位不同"):
+            merge(boards, roots, 3, 1)
+        with self.assertRaisesRegex(ValueError, "单位不同"):
+            merge(boards, roots, 4, 5)                        # 没有单位的根不能拼
+        split(boards, 1)
+        self.assertEqual([b["roots"] for b in boards][:3], [[2], [1], [3]])
+        with self.assertRaisesRegex(ValueError, "已经单独"):
+            split(boards, 1)
+
+    def test_layout_is_shared_between_page_and_tool(self):
+        url = f"/api/layout/{self.project}"
+        layout = self.json(url)
+        self.assertEqual([b["roots"] for b in layout["boards"]], [[self.main_layer, self.voice], [self.board]])
+        self.assertFalse(layout_path(self.database, self.state_root).exists())     # 只读取时不写文件
+        before = self.json("/api/version")["layout"]
+        result = arrange(self.database, self.project, "split", root=self.voice, state_root=self.state_root)
+        self.assertEqual([[r["id"] for r in b["roots"]] for b in result["boards"]], [[self.main_layer], [self.voice], [self.board]])
+        self.assertNotEqual(self.json("/api/version")["layout"], before)          # 网页靠它发现 AI 改了排版
+        boards = [{"roots": [self.main_layer, self.voice, self.board], "x": 5, "y": 6}]  # 网页传来不合规的拼接
+        request = Request(self.url + url.lstrip("/"), data=json.dumps({"boards": boards}).encode(),
+                          headers={"Content-Type": "application/json"})
+        with urlopen(request, timeout=10) as response:
+            saved = json.loads(response.read())["boards"]
+        self.assertEqual([b["roots"] for b in saved], [[self.main_layer, self.voice], [self.board]])
+        self.assertEqual(self.json(url)["boards"], saved)
+        with self.assertRaisesRegex(ValueError, "不是这个项目的根层"):
+            arrange(self.database, self.project, "split", root=self.art_layer, state_root=self.state_root)
+        arrange(self.database, self.project, "reset", state_root=self.state_root)
+        self.assertEqual([b["x"] for b in self.json(url)["boards"]], [None, None])
 
     def test_media_is_whitelisted_and_supports_ranges(self):
         status, headers, body = self.get(f"/media/{self.project}/{self.image.id}")
@@ -117,18 +170,26 @@ class ViewTests(unittest.TestCase):
             other = json.dumps({"project": self.project, "playhead": 9}).encode()
             with urlopen(Request(url + "api/state", data=other), timeout=10) as response:
                 self.assertEqual(json.loads(response.read()), {"recorded": False})
+            boards = json.dumps({"boards": [{"roots": [self.voice]}]}).encode()
+            with urlopen(Request(url + f"api/layout/{self.project}", data=boards), timeout=10) as response:
+                self.assertEqual(json.loads(response.read()), {"recorded": False})
         finally:
             quiet.shutdown(); quiet.server_close()
         self.assertEqual(read_state(self.database, self.state_root)["playhead"], 2.5)
+        self.assertFalse(layout_path(self.database, self.state_root).exists())
 
     @unittest.skipIf(find_browser() is None, "本机没有 Chrome、Edge 或 Chromium")
     def test_screenshot_writes_png_without_touching_state(self):
         output = Path(self.temp.name) / "shots" / "t.png"
-        result = capture(self.database, self.project, output, playhead=2, width=1000, height=600, wait_ms=2000)
+        result = capture(self.database, self.project, output, board=self.board, playhead=2, width=1000, height=600,
+                         wait_ms=15000, state_root=self.state_root)
         self.assertTrue(output.is_file())
         self.assertEqual(output.read_bytes()[:8], b"\x89PNG\r\n\x1a\n")
         self.assertIn("record=0", result["page"])
+        self.assertIn(f"board={self.board}", result["page"])
+        self.assertTrue(result["ready"])                                           # 页面加载完才拍
         self.assertIsNone(read_state(self.database, self.state_root))
+        self.assertFalse(layout_path(self.database, self.state_root).exists())     # 截图页面不改排版
 
 
 if __name__ == "__main__":

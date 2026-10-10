@@ -40,6 +40,18 @@ def resolve_source(database, source):
     return path.resolve()
 
 
+UNIT_ALIASES = {"秒": {"秒", "s", "sec", "secs", "second", "seconds"}, "帧": {"帧", "f", "frame", "frames"}}
+
+
+def axis_key(axis):
+    """根层的轴按单位归类：单位相同（含常见同义写法，如 秒 / s）的根默认拼在同一块画板里。没有单位的根不参与拼接，返回 None。"""
+    unit = (axis or {}).get("unit") if isinstance(axis, dict) else None
+    if not isinstance(unit, str) or not unit.strip():
+        return None
+    unit = unit.strip().lower()
+    return next((name for name, aliases in UNIT_ALIASES.items() if unit in aliases), unit)
+
+
 def order_layers(layers):
     """按父子关系排成树的顺序并记录深度；成环或找不到根的层放在最后，depth 为 None。"""
     children = {}
@@ -57,16 +69,31 @@ def order_layers(layers):
     return ordered + [{**layer, "depth": None} for layer in layers if layer["id"] not in placed]
 
 
+def project_roots(connection, project_id):
+    """项目里的根层，按树的顺序：id、name、unit、key（拼接用的轴类别）。"""
+    layers = order_layers(read_record(connection, "layer", project_id=project_id))
+    return [{"id": l["id"], "name": l["name"], "unit": (l["axis"] or {}).get("unit", "") if isinstance(l["axis"], dict) else "",
+             "key": axis_key(l["axis"])} for l in layers if l["depth"] == 0]
+
+
 def list_projects(connection):
     return [{"id": row["id"], "name": row["name"], "tips": row["tips"]} for row in read_record(connection, "project")]
 
 
 def project_view(connection, database, project_id):
+    """网页要的整理结果：层按树的顺序，每层记下所属的根；roots 列出每个根的轴和自己子树的时间范围。"""
     details = read_project_details(connection, project_id)
     if details is None:
         return None
-    layers, begin, end = [], None, None
+    layers, roots, root_of = [], {}, {}
     for layer in order_layers(details["layers"]):
+        if layer["depth"] is not None:
+            root_of[layer["id"]] = layer["id"] if layer["depth"] == 0 else root_of[layer["father"]]
+        root = root_of.get(layer["id"])
+        if layer["depth"] == 0:
+            axis = layer["axis"] if isinstance(layer["axis"], dict) else {}
+            roots[layer["id"]] = {"id": layer["id"], "name": layer["name"], "axis": axis, "unit": axis.get("unit", ""),
+                                  "key": axis_key(axis), "begin": None, "end": None}
         objects = []
         for obj in layer["objects"]:
             info = obj["information"] if isinstance(obj["information"], dict) else {}
@@ -85,18 +112,21 @@ def project_view(connection, database, project_id):
                 "information": info,
             }
             objects.append(item)
-            if isinstance(obj["begin"], (int, float)) and isinstance(obj["end"], (int, float)):
-                begin = obj["begin"] if begin is None else min(begin, obj["begin"])
-                end = obj["end"] if end is None else max(end, obj["end"])
+            span = roots.get(root)
+            if span is not None and isinstance(obj["begin"], (int, float)) and isinstance(obj["end"], (int, float)):
+                span["begin"] = obj["begin"] if span["begin"] is None else min(span["begin"], obj["begin"])
+                span["end"] = obj["end"] if span["end"] is None else max(span["end"], obj["end"])
         layers.append({
             "id": layer["id"], "name": layer["name"], "type": layer["type"], "father": layer["father"],
-            "depth": layer["depth"], "axis": layer["axis"], "tips": layer["tips"], "objects": objects,
+            "depth": layer["depth"], "root": root, "axis": layer["axis"], "tips": layer["tips"], "objects": objects,
         })
-    root_axis = next((layer["axis"] for layer in layers if layer["father"] is None and layer["axis"]), None)
+    for span in roots.values():
+        begin = span.pop("begin") or 0
+        end = span.pop("end")
+        span["extent"] = [begin, end if end is not None and end > begin else begin + 10]
     return {
         "project": {"id": details["project"]["id"], "name": details["project"]["name"], "tips": details["project"]["tips"]},
-        "unit": (root_axis or {}).get("unit", ""),
-        "extent": [begin or 0, end if end is not None and end > (begin or 0) else (begin or 0) + 10],
+        "roots": list(roots.values()),
         "layers": layers,
     }
 

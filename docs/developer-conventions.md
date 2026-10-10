@@ -45,6 +45,8 @@ python -m venv .venv
 | docs | 整体设计、开发和文档约定、后续候选 |
 | output、scratch | 本地用户数据与交付物、可再生临时材料 |
 
+查现行源码时可使用 `rg 关键词 src/layerweave tests examples docs`。scratch 保留开发备份和临时材料，已被 Git 忽略；递归扫描时排除 scratch、build、.venv，避免把旧副本当作当前实现，不需要为了检索而清理备份。
+
 ## 实现原则
 
 1. 模型保存数据；不在构造与赋值时自动检查内容，不增加未经需要的资源解释。
@@ -53,6 +55,8 @@ python -m venv .venv
 4. 内容检测是可选公开能力。工具通过 layerweave.support.providers.optional_checker 请求默认提供者；没有提供者返回 not_run。基础支撑的 save 默认不接入检测，records 包提供带默认检测的保存函数。
 5. 新封装同时提供类与 TOML，保留 config_ref 和 layers/objects 分区。修改继承、身份或恢复时先阅读对应专题和测试。
 6. 写入结果与检查结果分开，复用 layerweave.support.feedback。当前未发布只维护新路径；不增设旧入口转接或 MCP 注册框架。
+
+配置允许自定义说明段；接近内置段名的拼写由内置检测提示，不自动替换。自定义检测需要在规则包里实现和登记，仅写 TOML 不会使它自动生效。新增配置时先按[合并约定](../src/layerweave/support/configuration/README.md#合并约定)判断继承、默认值和允许收紧的项目。
 
 ## 验证
 

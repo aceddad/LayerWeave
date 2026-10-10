@@ -47,7 +47,7 @@ COMMANDS = [{'name': 'dispatch',
   'parameters': {'request': {'type': 'object|array',
                              'description': '单条请求或请求列表；action=create/read/update/delete，kind=project/layer/object/bind/change',
                              'required': True}},
-  'returns': '标准操作结果、记录 data/results 和逐条 checks；change 仅支持 read。',
+  'returns': '数据库操作是否写入看 operation.status：committed/unchanged/failed/read；checks 只说明检查进度与问题。具体改动见 operation.changes，记录见 data/results；change 仅支持 read。',
   'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.records.cli DATABASE --request request.json',
                 'files': {'request.json': {'action': 'read', 'kind': 'project'}}}],
   'notes': ['写请求与业务日志同事务；配置和语义在提交后检查。']}]

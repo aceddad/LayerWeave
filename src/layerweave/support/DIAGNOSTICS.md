@@ -21,6 +21,7 @@
 field_type = "error"
 missing_field = "warn"
 field_typo = "warn"
+config_typo = "warn"
 
 # 只隐藏文字对象缺少 text 的提醒，类型错误仍使用全局 error。
 # 这是本封装的汇报偏好，不改变字段约定，也不传给 Title。
@@ -35,6 +36,8 @@ missing_field = "error"
 model/active 的 source 和 data 在各自封装里声明 optional=true，并随字段继承；缺省符合约定，不产生 missing_field，因而不需要本文件静音。提供了值仍检查类型。未声明 optional 时按 false 检查，产生的问题依照这里的等级汇报。none 只隐藏已有诊断，不负责表达字段是否可选。open=true 仍允许自定义键；未声明键像某个未填写字段时，field_typo 提供建议而不自动修改数据，包括可选字段。对应字段已经存在时不猜测笔误。
 
 ## 合并与展示
+
+config_typo 用于配置声明的疑似拼写错误，field 是完整声明路径（如 object.display.visiblity），source_ref 指向实际声明文件，suggestions 给出候选。汇报覆盖仍按对象/层当前使用的 config_ref 匹配，不继承父配置的覆盖。提示本身不代表检查未完成，也不自动修正声明。
 
 同一目标、同一种配置失败、同一失败配置路径，只报告一次原因，affected_checks 保留每个受影响的规则和检查目标。不同对象各自定位。合并不制造历史状态，也不把关联问题推断为旧问题。
 

@@ -56,3 +56,5 @@ python -m layerweave.tool.builtin.developer.keys.cli export --output keys.exampl
 4. 更新主要使用说明及可运行示例，执行与改动相符的检查。测试使用独立数据库。
 
 load/save、读取快照和检查器等能力直接由开发 API 提供，不逐个包装成新命令。具体事务、声明与验证要求见开发指南。
+
+命令行的 `--a-b` 对应 Python 的 `a_b`；argparse 默认完成这项映射，例如 --layer-ids 对应 layer_ids。COMMANDS 以 Python 参数名说明接口，CLI 示例使用命令行写法。

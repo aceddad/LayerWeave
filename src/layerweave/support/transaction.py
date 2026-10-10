@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from uuid import uuid4
 
 from .feedback import InputError, target
+from .storage.errors import commit
 
 
 @dataclass
@@ -100,5 +101,7 @@ def transaction(connection, *, writing=True, _operation_id=None):
             connection.execute("BEGIN IMMEDIATE" if writing else "BEGIN")
             yield session
             _check_parents(session)
+            # 显式提交让错误说明能读到失败现场；异常仍由 with connection 整体回滚。
+            commit(connection)
     finally:
         _active.reset(token)

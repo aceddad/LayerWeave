@@ -36,6 +36,8 @@ python -X utf8 -B -m layerweave.tool.builtin.developer.database.cli output/ai-pr
 - 父链无环由支撑在提交前保证；区间先后、轴设置、JSON 内容和封装规则交给可选检测，资源存在性不自动检查。
 - 外键由 SQLite 原有约束处理；失败时在回滚前读取失败现场，区分缺项目、缺所属层/父层以及删除仍被引用的实体。不会为成功写入额外查询这些引用，也不把其他 SQL 错误误报为外键问题。
 
+使用 write.defer_references() 时，外键可以延迟到提交才检查。若提交失败，errors.py 在回滚前用 foreign_key_check 列出失败记录：error.violations 包含各项 target、field、reference、message，顶层错误也保留第一项定位。数据、发号和日志仍一起回滚；这只补充失败说明，不改变是否允许写入的规则，也不在成功路径扫描全库。
+
 ## 编号身份
 
 项目使用独立编号；同一项目内，层与对象共用发号器，不同项目可以有相同的局部编号。层/对象的完整身份是 (project_id, id)，引用还携带 kind 区分实体种类；text/image 等封装 type 与 kind 分开。项目编号和全库独立的 bind 编号均不占 projects.max_id。
@@ -67,8 +69,7 @@ CDUR 请求由 records 包的 dispatch 翻译，最终通过支撑写会话执�
 ## 改动日志
 
 - 实际发生的 create、update、delete 各记录目标行的前后快照；read、空修改、无变化及目标不存在的操作不记日志。
-- JSON 值比较保留布尔、整数、浮点数的类型区别，覆盖嵌套字典和列表；字典键顺序不计为变化。同一比较方式用于日志和检测范围，避免已经改变数据却漏记日志、漏检。
-- UPDATE 前排除未变化字段；普通 SQL 数值列接受等值 int/float 的存储规范化。没有变化时不执行写语句。
+- 什么算改动，以实际存储的前后值为准，具体比较规则见下节。
 - 业务写入与日志同事务提交；数据或日志写入失败时，由事务调用方一起回滚。
 - operation_id 由支撑的统一入口生成 UUID，同一批操作共用，不占 projects.max_id；工具不自行发号或构造日志。
 - 日志没有实体外键，目标被删除后仍能查看历史。日志本身通过 read(kind="change") 查询。
@@ -80,9 +81,22 @@ src/layerweave/tool/builtin/usage/editing/tree_service.py 提供子树删除与�
 
 跨项目复制/剪切在同模块中复用上述内部步骤；目标项目重新发号并在根部落位，原 begin/end 数值精确保留。剪切还把外部入向关联的目标改为新身份，和源删除、目标创建一起记录。对象分割与插空档的共同计算和写入在 src/layerweave/tool/builtin/usage/editing/timeline.py，普通平移由编辑包内 _plan 执行。详见 [编辑工具](../../tool/builtin/usage/EDITING.md)。
 
+## 什么算改动
+
+普通 SQL 列和 JSON 内容按各自的存储语义比较：
+
+| 内容 | 比较方式与例子 |
+|---|---|
+| 普通 SQL 列 | 接受数据库类型规范化；数值列的 0 和 0.0 相等，不算变化 |
+| JSON 内容 | 保留实际类型，1、1.0、true 互相变更会记日志；嵌套字典/列表同样处理，字典键顺序不算变化 |
+
+SQL 数值列存的是坐标等数值，JSON 则是调用方的原始内容；将两者统一成严格类型比较，会把 SQL 的正常类型转换误判成修改。日志和检测范围均依据实际前后记录，保留 JSON 的类型变化。
+
+UPDATE 前会排除已经能判定无变化的字段；最终是否记日志，还要看数据库实际存下的结果。例如已有 name="1" 时传入 name=1，可能执行一次 UPDATE，SQLite 的 TEXT 类型仍将其保存为 "1"，因此结果为 unchanged、不产生改动日志。unchanged 不承诺“从未执行过 SQL 写语句”。
+
 ## 范围与验证
 
-目前已实现表结构、初始化与所属层迁移、发号、记录 CRUD、事务日志、分流、配置加载、模块化检测和完整读写。assembly.py 组合层/对象及关联的记录字典；layerweave.models.py 按配置还原派生实例；save.py 原子保存模型或记录字典。三者经 layerweave.support.api 对外提供稳定入口，底层 CRUD 仍返回单表记录。
+目前已实现表结构、初始化与所属层迁移、发号、记录 CRUD、事务日志、分流、配置加载、模块化检测和完整读写。assembly.py 组合层/对象及关联的记录字典；models.py 按配置还原派生实例；save.py 原子保存模型或记录字典。三者经 layerweave.support.api 对外提供稳定入口，底层 CRUD 仍返回单表记录。
 
 完成安装后，在项目根运行存储检查：
 

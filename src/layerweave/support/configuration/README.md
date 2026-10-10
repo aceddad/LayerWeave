@@ -26,7 +26,7 @@ config = Loader().load("objects/text.toml", "object")
 | objects | 保留父层要求，或收窄为它接受的对象类型的派生类型 |
 | type / class | 每份配置必须直接声明自己的类型标识与类绑定；不从父配置继承。一个类只绑定一份配置 |
 | name / version / when / note / example | 封装自身的说明与示例，可继承或自行声明 |
-| object.open | 已有父约定保持；当前基础对象为 true |
+| object.open | 仅接受布尔值；允许 true→false 收紧，禁止 false→true 放宽；省略时继承，基础对象为 true |
 
 例如从 layers/base.toml 新开一个不允许重叠的层：
 
@@ -60,6 +60,10 @@ axis_only_on_root = false
 
 汇报等级独立放在 [diagnostics.toml](../../configs/logging/diagnostics.toml)，未配置时默认 warn。路径覆盖只作用于指定封装、不继承；none 隐藏已经产生的问题，optional 则使合法缺省不产生问题。类型错误另行控制，见 [汇报配置说明](../DIAGNOSTICS.md)。open=true 允许额外键；疑似笔误仍可提示，包括指向可选字段的 src→source。空字符串/空字典是已填写。类型支持 str、int、float、dict、list、bool、None，以及用竖线组合的联合类型。float 接受整数坐标；bool 不作为数值类型。未实现的显式类型或规则报告未检查，普通说明字段不因未知而报错。
 
-内部有效配置含 _ref、_lineage 和 _contracts，分别记录配置路径、继承链与固定约定，用于兼容判断和合并。读取失败抛出 ConfigError，由检测器逐目标转为诊断，其他目标继续。缺少明确 class、同一类重复绑定多份配置均为配置错误；无关的损坏配置不会阻止有效目标读取。type 字符串以 TOML 为唯一来源，Layer 类不保存它。配置读取器不执行 class 导入；需要还原实例时，由 storage/layerweave.models.py 按需导入配置指定的类。
+open=false 让 information 中未声明的键产生 unknown_field；仍在提交后检测，不阻止写入。子封装可以新增声明字段，这些字段不算未知键。比如 Text 的派生封装可以声明 open=false 并增加 speaker，接受 text/speaker，报告其他键；它的后代不能再设为 true。
+
+自定义说明段保持原样，不因未知而禁止。内置检测会对接近内置段名的拼写，以及 display/defaults.display 中接近 visibility 的键给出 config_typo 建议，例如 object.constraints→object.constraint；不自动改名，不把 visibility 当作未实现的检测规则。source_ref 指出实际声明所在的父/子配置；汇报覆盖仍按记录自身 config_ref 匹配。详细检测入口见[检测专题](../../tool/builtin/usage/validation/RULES.md)。
+
+内部有效配置含 _ref、_lineage 和 _contracts，分别记录配置路径、继承链与固定约定，用于兼容判断和合并。读取失败抛出 ConfigError，由检测器逐目标转为诊断，其他目标继续。缺少明确 class、同一类重复绑定多份配置均为配置错误；无关的损坏配置不会阻止有效目标读取。type 字符串以 TOML 为唯一来源，Layer 类不保存它。配置读取器不执行 class 导入；需要还原实例时，由 [storage/models.py](../storage/models.py) 按需导入配置指定的类。
 
 Loader.refs(kind) 发现包括坏文件在内的配置路径，source(ref) 保留原文，find_configs(name, kind) 查找唯一名称的候选，accepts_object(layer_config, object_config) 提供统一兼容判断。Help 的查询整理在 src/layerweave/tool/builtin/shared/help/catalog.py；这些方法与既有解析过程共享调用内缓存。

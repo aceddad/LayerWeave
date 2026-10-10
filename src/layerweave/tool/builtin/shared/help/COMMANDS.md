@@ -53,19 +53,8 @@ COMMANDS = [{
 
 未来 MCP 可以复用这个只读目录进行展示和适配。当前没有新增 MCP 服务，也没有根据字符串名称自动执行 Python 函数；parameters 是接口说明数据，不是完整的 MCP 工具注册协议。
 
-## 插空档调用变化
+## 参数与业务说明的维护位置
 
-明确选择 --layer-id、--layer-ids、--project 之一；Python 对应 layer_id、layer_ids、whole_project=True。直属层不包含子层，子树包括所有后代，省略范围会报错。
+当前命令参数、默认值、JSON 文件示例以实时 command_help 和各工具 --help 为准，直接读取工具自己的 COMMANDS。本文维护发现方式与开发约定，不再复制各工具参数表。
 
-```json
-[
-  {"object_id": 8, "action": "split", "first_information": {"text": "前段"}, "second_information": {"text": "后段"}},
-  {"object_id": 9, "action": "keep"},
-  {"object_id": 10, "action": "stretch"},
-  {"object_id": 11, "action": "move"}
-]
-```
-
-这是 --contents-file 的完整列表格式，Python 参数为 crossing_actions。split 需要两段内容；keep 原样保留；stretch 只让终点后移；move 让起终点一起后移，使用本层实际插入长度。这三项不需要重新提供 information，不改编号或关联，不处理媒体内容。未写 action、但明确给出两段内容的旧文件仍按 split 兼容。旧 split_contents 参数仍可用，但不能与 crossing_actions 同传。
-
-缺少跨界处理时，required_crossings 列出需要决定的对象，allowed 为 split/keep/stretch/move；required_splits 暂保留为同一列表的兼容别名。未命中的处理项列入 unused_object_ids。data.kept/stretched/moved 分别列出三种跨界处理结果，data.shifted 仍为自动后移对象；data.gaps 描述插入位置和长度，不承诺整个区间无对象。
+业务含义与边界仍由专题解释。例如 split/keep/stretch/move 的选择和插空档范围见[范围编辑](../../usage/EDITING.md)，数据库的 operation.status 与 checks 分工见[反馈协议](../../usage/CRUD.md#操作与检测的反馈)。配置 help 的使用/开发两种阅读方式见[配置 help](CONFIG_HELP.md)。

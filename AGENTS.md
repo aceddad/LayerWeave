@@ -8,7 +8,7 @@
 - 新增外置技能：读[工具区](src/layerweave/tool/README.md)，技能自带 SKILL.md；实际绑定由 AI 按任务填写。
 - 视图工作：读[视图边界](src/layerweave/tool/builtin/view/README.md)，开始实现时再建独立分支。
 
-本轮包名与资源迁移进度见[迁移计划](docs/namespace-plan.md)。
+本轮体检修补进度见[修补计划](docs/review-10-plan.md)；已完成的包名迁移见[迁移计划](docs/namespace-plan.md)。
 
 ## 工作要求
 
@@ -18,5 +18,6 @@
 - 一份封装 TOML 对应一个 Python 类，保留 layers/objects 分区及 config_ref。不要为抽象而加入其他后端或新注册框架。
 - 默认工具通过可选提供者接入内容检测。未安装检测包应返回未检查；父链无环和其他结构保证不能依赖检测包。
 - 保留用户数据和无关改动；测试、示例用内存或专用临时数据库，不写 output 的实际数据库。
+- 查现行代码优先搜索 src/layerweave、tests、examples、docs；scratch 保留本地备份，不作为现行实现依据。不为清理搜索结果而删除或迁移它。
 - 修改持久化、执行入口或模块路径后运行完整回归和隔离验收，方法见开发指南。当前未发布，不保留旧路径转接。
 - 文档和 help 不在本轮加入 MCP 编排；main 保持无 GUI 依赖。

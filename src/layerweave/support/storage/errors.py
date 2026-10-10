@@ -60,3 +60,36 @@ def execute(connection, sql, parameters, *, kind, record, action):
             details.update(code="null_field", field=field)
         error.details = details
         raise
+
+
+def commit(connection):
+    """提交失败时，在上层回滚前解释延迟外键；成功路径不扫描引用。"""
+    try:
+        connection.commit()
+    except sqlite3.IntegrityError as error:
+        if getattr(error, "sqlite_errorcode", None) == sqlite3.SQLITE_CONSTRAINT_FOREIGNKEY:
+            violations = []
+            for table, rowid, parent, _ in connection.execute("PRAGMA foreign_key_check"):
+                if table not in {"layers", "objects"} or parent not in {"projects", "layers"}:
+                    continue
+                kind = table[:-1]
+                field = "father" if kind == "layer" else "layer"
+                project_id, id, layer_id = connection.execute(
+                    f'SELECT project_id, id, "{field}" FROM "{table}" WHERE rowid=?', (rowid,),
+                ).fetchone()
+                if parent == "projects":
+                    field, reference = "project_id", target("project", None, project_id)
+                    message = f"项目 {project_id} 不存在"
+                else:
+                    reference = target("layer", project_id, layer_id)
+                    label = "父层" if kind == "layer" else "所属层"
+                    message = f"{label} ({project_id}, {layer_id}) 不存在"
+                violations.append({"target": target(kind, project_id, id), "code": "missing_reference",
+                                   "field": field, "reference": reference,
+                                   "message": f"{kind} ({project_id}, {id})：{message}"})
+            if violations:
+                first = violations[0]
+                error.args = (f"无法提交：{first['message']}；共 {len(violations)} 处引用缺失",)
+                error.details = {key: first[key] for key in ("target", "code", "field", "reference")}
+                error.details["violations"] = violations
+        raise

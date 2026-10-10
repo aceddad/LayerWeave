@@ -41,8 +41,11 @@ def merge_definition(parent, raw):
     for section in ("rules", "constraint", "display"):
         contracts[section] = _fixed(contracts.get(section, {}), raw.get(section, {}), section)
         result[section] = {**defaults.get(section, {}), **contracts[section]}
-    if parent and "open" in parent and "open" in raw and not same_value(raw["open"], parent["open"]):
-        raise DefinitionError("object.open 改写父约定")
+    if "open" in raw:
+        if type(raw["open"]) is not bool:
+            raise DefinitionError("object.open 应为 true 或 false")
+        if parent and parent.get("open", True) is False and raw["open"] is True:
+            raise DefinitionError("object.open 放宽父约定：false → true")
     result["_contracts"] = contracts
     # options 是明确允许派生调整的选项，当前只有 axis_only_on_root。
     result["options"] = {**result.get("options", {}), **raw.get("options", {})}

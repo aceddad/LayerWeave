@@ -9,6 +9,7 @@ from layerweave.support.feedback import target as make_target
 from layerweave.support.positions import PositionMath
 from layerweave.support.channel import report
 from layerweave.tool.builtin.usage.validation.registry import RULES
+from layerweave.tool.builtin.usage.validation.declarations import spelling_hints
 from layerweave.support.diagnostics import prepare_diagnostics
 
 
@@ -125,6 +126,9 @@ def _execute(jobs, read_record, loader, modified=None):
                     except ConfigError:
                         configs[key] = {}
                 if key not in invalid_configs:
+                    for hint in spelling_hints(loader, configs[key], kind):
+                        detail = dict(hint)
+                        add(key, "configuration", detail.pop("message"), **detail)
                     known = {entry["setting"] for entry in RULES.values() if "setting" in entry
                              and (kind in entry["triggers"] if entry["scope"] == "self"
                                   else kind == ("layer" if entry["scope"] == "layer" else "bind"))}

@@ -17,14 +17,14 @@
 
 ```sh
 python -X utf8 -B -m layerweave.tool.builtin.shared.help.config_help
-python -X utf8 -B -m layerweave.tool.builtin.shared.help.config_help layers text image
-python -X utf8 -B -m layerweave.tool.builtin.shared.help.config_help objects Text Title objects/model.toml
-python -X utf8 -B -m layerweave.tool.builtin.shared.help.config_help combined TextLayer ImageLayer --json
+python -X utf8 -B -m layerweave.tool.builtin.shared.help.config_help combined text
 python -X utf8 -B -m layerweave.tool.builtin.shared.help.config_help objects model title --dev
-python -X utf8 -B -m layerweave.tool.builtin.shared.help.config_help objects title --raw
+# 查当前参数、可选值及默认值。
+python -X utf8 -B -m layerweave.tool.builtin.shared.help.command_help config_help --json
+python -X utf8 -B -m layerweave.tool.builtin.shared.help.config_help --help
 ```
 
-默认文字输出，--json 返回相应用途的结构化数据，使用版 JSON 也不会携带完整开发定义。--dev 选择开发版；--raw 让使用版详情也附带当前文件原文。开发版详情默认带原文，Python 可用 include_source=False 省略。总览不提供原文。父配置原文可按 lineage 中的路径另行查询。--config-root 指定配置根目录，其中包含 layers/、objects/ 和可选的 logging/diagnostics.toml。
+本文解释两种阅读方式和返回含义；参数说明由实时 help 从命令声明生成。使用版保持简洁，开发版详情默认附当前 TOML 原文；父配置原文可按 lineage 路径另行查询。配置根目录包含 layers/、objects/ 和可选的 logging/diagnostics.toml。
 
 Python 工具入口：
 

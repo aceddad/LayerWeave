@@ -13,6 +13,7 @@
 | [diagnostics.py](../../../../support/diagnostics.py) | 按独立配置指定汇报等级、合并同因诊断；不关闭规则 |
 | [runner.py](runner.py) | 合并批次变化、查询最终记录、选择目标、逐项执行与去重 |
 | [registry.py](registry.py) | 规则名、函数路径、触发字段与检查范围 |
+| [declarations.py](declarations.py) | 配置段名与 display 键的疑似拼写建议；保留原始声明 |
 | [rules/fields.py](rules/fields.py) | 共用类型判断与已声明字段检测 |
 | [rules/layers.py](rules/layers.py) | 层类型与配置一致性、父链、轴、装载对象兼容、重叠 |
 | [rules/objects.py](rules/objects.py) | 起止顺序与时长 |
@@ -51,6 +52,8 @@
 - 配置声明 optional=true 的字段允许缺省，检查时判为符合约定；提供了值仍检查类型。optional 随字段继承；未声明时按 false 检查缺失，产生 missing_field，不阻止保存、不自动补默认值。模型/动作的 source/data 声明为 optional=true。独立汇报配置决定 error/warn/none，路径覆盖不继承，缺少等级设置默认 warn。类型错误仍是 field_type。open=true 保留附加键；疑似 txt→text、src→source 或高相似度笔误产生 field_typo，正确字段已存在时不猜测，不自动改名。空字符串/空字典视为已提供；None 是已提供的值，是否接受由 type 决定。
 - 缺字段检查沿用现有增量范围：创建、修改 information、切换配置或主动复查时检查相关内容；仅修改 name/tips 不重复检查旧内容。行记录中未携带的 objects/bind 属于反查组合字段，不当作漏填。
 - 没有必填 text/source、文本长度、资源存在性、文件格式、树深度等附加限制。visibility 留给视图，不检查实例显隐。
+
+配置准备时会检查声明拼写：自定义段允许存在，与内置段名高度相似时给出 config_typo；display/defaults.display 的 visiblity 也会提示 visibility。提示不自动改名，合法的 visibility 不进入“尚未实现的检测声明”检查。规则段里真正未实现的检测仍明确报告未检查。open 可以 true→false 收紧；关闭后只报告 information 中没有声明的键，子封装仍可新增字段，不能 false→true 重新放宽。
 
 ## 反馈
 

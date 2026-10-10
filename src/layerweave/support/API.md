@@ -93,7 +93,7 @@ result = save_layer(connection, project_id, {
 
 错误可附 code、allowed、suggestions、candidates、reference 等修正线索；候选仅用于提示，不自动替换输入。format_feedback(result) 可将操作结果与各条诊断分别格式化成编译器式文字；format_issue(issue) 格式化单条诊断，也适用于主动复查和只读工具。这两个函数均从 layerweave.support.api 导入。JSON 返回不依赖字段顺序，原有 JSON/退出码保持不变。完整内存示例为 `python -X utf8 -B examples/feedback.py`。
 
-无变化的字段不会执行 UPDATE。JSON 内容按解码后的实际类型比较，`1`、`1.0`、`true` 互相变化会被记录；字典键顺序不影响结果。普通 SQL 数值列仍遵循存储的数值语义，例如 begin=1 与已有的 1.0 不产生额外修改。
+写入前先排除可判定无变化的字段，日志以实际存储的前后值为准。JSON 保留类型差异，普通 SQL 列接受数据库规范化；unchanged 不承诺从未执行 UPDATE。规则与 name=1 的例子见[什么算改动](storage/SCHEMA.md#什么算改动)。
 
 ## 配置与自定义类型
 - 每份层/对象封装 TOML 必须明确声明自己的 type 和 class；一个 Python 类在同一配置根目录内只绑定一份配置。class 使用类定义处的“模块:类”，不继承父配置的类绑定。

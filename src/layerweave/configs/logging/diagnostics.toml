@@ -5,6 +5,7 @@
 field_type = "error"
 missing_field = "warn"
 field_typo = "warn"
+config_typo = "warn"
 unknown_field = "error"
 field_check_unavailable = "error"
 configuration = "error"

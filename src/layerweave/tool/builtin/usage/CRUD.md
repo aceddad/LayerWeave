@@ -4,6 +4,8 @@
 
 通过 dispatch 或 layerweave.tool.builtin.usage.records.cli 读写记录。示例中的项目、层和对象编号须替换为实际值；CLI 完成可编辑安装后运行。
 
+判断本次数据库操作是否写入，先看 operation.status；checks 只说明检查进度及发现的问题，不能据此重试创建。committed 表示有变更已提交，unchanged 表示成功但无变更，failed 表示操作失败，read 表示只读成功。批次中具体改了哪些记录，再看 operation.changes 和 results；这套协议适用于数据库操作，不要求本地 KEY 或技能安装等文件工具采用同样的返回格式。
+
 ## 请求格式
 
 单次请求是一个字典；批量请求是这样的字典列表。列表内操作按顺序在同一事务执行，一项操作失败则整批回滚。
@@ -83,7 +85,7 @@ python -X utf8 -B -m layerweave.tool.builtin.usage.records.cli output/ai-product
 
 单次反馈包含 operation_id、operation、ok、action、kind、project_id、id、applied、data、checks。project 和 bind 的身份不使用项目号，顶层 project_id 为 null；它们的实际项目上下文见数据或日志。
 
-批次反馈包含 operation_id、operation、ok、applied、results、checks。失败时不返回已回滚的临时成功结果，并提供 error.request_index（从 0 开始）。operation_id 由入口用 uuid4().hex 生成，每次调用一个；同一批改动日志共用它。
+批次反馈包含 operation_id、operation、ok、applied、results、checks。失败时不返回已回滚的临时成功结果；能定位到单条请求时提供 error.request_index（从 0 开始），提交阶段的失败按具体目标或引用定位。operation_id 由入口用 uuid4().hex 生成，每次调用一个；同一批改动日志共用它。
 
 先用 operation.status 判断操作结果，再看 checks：
 

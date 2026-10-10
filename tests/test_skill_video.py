@@ -9,6 +9,7 @@ import re
 import sys
 import tempfile
 import unittest
+import urllib.error
 from unittest.mock import Mock, patch
 
 from layerweave.support.paths import SKILLS_ROOT
@@ -82,13 +83,98 @@ class VideoSkillTests(unittest.TestCase):
         self.assertIn("HTTP 200", self.stdout.getvalue())
         self.assertEqual(self.connection.call.call_args.args[0], "GET")
 
+    def test_ping_missing_task_is_expected_for_400_and_404(self):
+        responses = [
+            {"type": "error", "error": {"code": 2013, "message": "视频任务不存在"}},
+            {"base_resp": {"status_code": 2013, "status_msg": "视频任务不存在"}},
+            {"error": {"message": "Video task does not exist (2013)"}},
+            {"error": {"message": "Task not found"}},
+        ]
+        for status in (400, 404):
+            for result in responses:
+                with self.subTest(status=status, result=result):
+                    self.stdout.seek(0)
+                    self.stdout.truncate()
+                    self.connection.call.return_value = status, result
+                    self.main("ping")
+                    self.assertIn(f"连接正常：HTTP {status}", self.stdout.getvalue())
+                    self.assertEqual(self.connection.call.call_args.args[0], "GET")
+
+    def test_ping_auth_failure_takes_precedence_over_task_message(self):
+        for status in (401, 403):
+            self.connection.call.return_value = status, {"error": {"message": "视频任务不存在"}}
+            with self.subTest(status=status), self.assertRaisesRegex(SystemExit, f"鉴权失败：HTTP {status}"):
+                self.main("ping")
+
+    def test_ping_does_not_accept_generic_2013_or_route_not_found(self):
+        for status, result in ((400, {"error": {"code": 2013, "message": "invalid params: duration"}}),
+                               (404, {"message": "route not found"})):
+            self.connection.call.return_value = status, result
+            with self.subTest(status=status), self.assertRaisesRegex(SystemExit, f"连接探测失败：HTTP {status}"):
+                self.main("ping")
+
+    def test_environment_key_and_real_http_error_decoding_work_for_ping(self):
+        self.connection = self.video.Connection("https://example.invalid/v2", "LAYERWEAVE_TEST_VIDEO_KEY")
+        body = {"error": {"code": 2013, "message": "视频任务不存在"}}
+        response = urllib.error.HTTPError("https://example.invalid/v2", 400, "Bad Request", {},
+                                          io.BytesIO(json.dumps(body).encode()))
+        with patch.dict(os.environ, {"LAYERWEAVE_TEST_VIDEO_KEY": "fake-environment-key"}), \
+                patch.object(self.video.urllib.request, "urlopen", side_effect=response) as request, \
+                patch("layerweave.tool.builtin.developer.keys.service.get_key", side_effect=AssertionError("must not read store")):
+            self.main("--key-env", "LAYERWEAVE_TEST_VIDEO_KEY", "ping")
+        self.assertIn("连接正常：HTTP 400", self.stdout.getvalue())
+        self.assertEqual(request.call_args.args[0].get_header("Authorization"), "Bearer fake-environment-key")
+        self.assertNotIn("fake-environment-key", self.stdout.getvalue() + self.stderr.getvalue())
+
     def test_poll_http_errors_report_reason_and_do_not_sleep(self):
-        for status in (401, 403, 404, 429, 500):
+        for status in (400, 401, 403, 404, 429):
             self.connection.call.return_value = status, {"error": {"message": "test failure"}}
             with self.subTest(status=status), patch.object(self.video.time, "sleep") as sleep:
                 with self.assertRaisesRegex(SystemExit, f"查询任务 mock-task失败：HTTP {status}.*test failure"):
                     self.video.wait(self.connection, "mock-task", str(self.output))
                 sleep.assert_not_called()
+
+    def test_poll_recovers_after_server_and_network_errors_and_resets_failures(self):
+        self.connection.call.side_effect = [
+            (503, {"error": {"message": "temporarily unavailable"}}),
+            urllib.error.URLError("temporary network problem"),
+            (200, {"task": {"status": "processing"}}),
+            TimeoutError("temporary timeout"),
+            (502, {"error": {"message": "bad gateway"}}),
+            (200, {"task": {"id": "mock-task", "status": "succeeded",
+                            "content": {"url": "https://example.invalid/video.mp4"}}}),
+        ]
+        with patch.object(self.video.urllib.request, "urlopen", return_value=io.BytesIO(b"mock video")), \
+                patch.object(self.video.time, "sleep") as sleep, \
+                contextlib.redirect_stdout(self.stdout), contextlib.redirect_stderr(self.stderr):
+            self.video.wait(self.connection, "mock-task", str(self.output))
+        self.assertEqual(self.output.read_bytes(), b"mock video")
+        self.assertEqual(sleep.call_count, 5)
+        self.assertEqual(self.connection.call.call_count, 6)
+        self.assertTrue(all(call.args == ("GET", "/query/video_generation/mock-task") for call in self.connection.call.call_args_list))
+
+    def test_poll_retry_limit_preserves_last_reason_task_id_and_resume_command(self):
+        self.connection.call.side_effect = [
+            (503, {"error": {"message": "temporary failure"}}),
+            urllib.error.URLError("temporary failure"),
+            ConnectionResetError("temporary failure"),
+            (502, {"error": {"message": "last failure"}}),
+        ]
+        with patch.object(self.video.time, "sleep") as sleep, contextlib.redirect_stderr(self.stderr):
+            with self.assertRaises(SystemExit) as raised:
+                self.video.wait(self.connection, "mock-task", str(self.output))
+        self.assertEqual(self.connection.call.call_count, 4)
+        self.assertEqual(sleep.call_count, 3)
+        for value in ("连续 4 次失败", "HTTP 502", "last failure", "wait mock-task", "不要重新 submit"):
+            self.assertIn(value, str(raised.exception))
+
+    def test_poll_stops_on_4xx_even_after_a_retryable_failure(self):
+        self.connection.call.side_effect = [(503, {}), (404, {"error": {"message": "视频任务不存在"}})]
+        with patch.object(self.video.time, "sleep") as sleep, contextlib.redirect_stderr(self.stderr):
+            with self.assertRaisesRegex(SystemExit, "查询任务 mock-task失败：HTTP 404.*视频任务不存在"):
+                self.video.wait(self.connection, "mock-task", str(self.output))
+        self.assertEqual(self.connection.call.call_count, 2)
+        sleep.assert_called_once_with(10)
 
     def test_error_body_is_not_mistaken_for_pending_task(self):
         self.connection.call.return_value = 200, {"type": "error", "error": {"message": "test failure"}}

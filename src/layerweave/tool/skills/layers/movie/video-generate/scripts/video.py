@@ -3,7 +3,7 @@
 连接：--base-url 或环境变量 MINIMAX_BASE_URL（必须提供，写到 .../v2 这一级）；
       KEY 从 --key-env 指定的环境变量读取，默认 MINIMAX_API_KEY。不打印、不写文件。
 
-python scripts/video.py ping                                   # 用不存在的任务号探测响应，不生成；404 不证明连接可用
+python scripts/video.py ping                                   # 用不存在的任务号探测连接，明确的“任务不存在”是预期响应
 python scripts/video.py submit 输出.mp4 提示词.txt --first 首帧.png --last 尾帧.png [--duration 4] [--resolution 768P] [--model MiniMax-H3]
 python scripts/video.py submit 输出.mp4 提示词.txt --ref-image 角色.png [--ref-video 动作.mp4] [--ratio 16:9]
 python scripts/video.py wait <task_id> 输出.mp4                # 已提交的任务：继续等待并下载
@@ -66,12 +66,41 @@ def require_success(status, result, action):
         sys.exit(f"{action}失败：HTTP {status} {json.dumps(result, ensure_ascii=False)[:300]}")
 
 
+def task_not_found(result):
+    error = result.get("error") or result.get("base_resp") or result
+    if isinstance(error, dict):
+        message = next((str(error[name]) for name in ("message", "status_msg", "msg", "raw") if error.get(name)), "")
+    else:
+        message = str(error)
+    message = message.lower()
+    return "任务不存在" in message or ("task" in message and any(
+        phrase in message for phrase in ("not found", "does not exist", "not exist", "no such task")))
+
+
 def wait(connection, task_id, output, every=10, limit=1800):
     os.makedirs(os.path.dirname(os.path.abspath(output)), exist_ok=True)
     started = time.time()
+    failures = 0
     while time.time() - started < limit:
-        status, result = connection.call("GET", "/query/video_generation/" + task_id)
-        require_success(status, result, f"查询任务 {task_id}")
+        failure = None
+        try:
+            status, result = connection.call("GET", "/query/video_generation/" + task_id)
+        except (urllib.error.URLError, OSError) as error:
+            failure = f"{type(error).__name__}: {str(error)[:300]}"
+        else:
+            if 500 <= status < 600:
+                failure = f"HTTP {status} {json.dumps(result, ensure_ascii=False)[:300]}"
+            else:
+                require_success(status, result, f"查询任务 {task_id}")
+        if failure is not None:
+            failures += 1
+            if failures >= 4:
+                sys.exit(f"查询任务 {task_id} 连续 4 次失败：{failure}；"
+                         f'稍后可用 wait {task_id} "{output}" 继续，不要重新 submit。')
+            print(f"查询任务 {task_id} 暂时失败（{failures}/4）：{failure}；{every} 秒后重试", file=sys.stderr, flush=True)
+            time.sleep(every)
+            continue
+        failures = 0
         task = result.get("task", result)
         state = str(task.get("status", "")).lower()
         print(f"[{time.time() - started:4.0f}s] HTTP {status} {state}", file=sys.stderr, flush=True)
@@ -111,14 +140,19 @@ def main():
     waiting = commands.add_parser("wait", help="继续等待已提交的任务并下载")
     waiting.add_argument("task_id")
     waiting.add_argument("output", help="由调用 AI 指定的下载文件路径，可以与提交时不同")
-    commands.add_parser("ping", help="探测查询响应，不生成；404 不能证明地址和 KEY 可用")
+    commands.add_parser("ping", help="探测连接，不生成；400/404 且明确任务不存在视为正常")
     args = parser.parse_args()
     connection = Connection(args.base_url, args.key_env)
 
     if args.command == "ping":
         status, result = connection.call("GET", "/query/video_generation/000000000000000")
+        if status in (401, 403):
+            require_success(status, result, "连接探测鉴权")
+        if status in (400, 404) and task_not_found(result):
+            print(f"连接正常：HTTP {status}，任务不存在是本次探测的预期响应；{json.dumps(result, ensure_ascii=False)[:300]}")
+            return
         require_success(status, result, "连接探测")
-        print("HTTP", status, json.dumps(result, ensure_ascii=False)[:300])
+        print("连接正常：HTTP", status, json.dumps(result, ensure_ascii=False)[:300])
         return
     if args.command == "wait":
         wait(connection, args.task_id, args.output)

@@ -2,7 +2,7 @@
 
 开发者和修改代码的 AI 从这里准备环境、寻找源码和选择扩充方式。项目用途见[README](../README.md)，边界见[架构说明](architecture.md)。
 
-想用 LayerWeave 搭建自己的工具，先读[AI 接入指南](build-with-layerweave.md)：那里说明可自由决定的部分，以及从局部读写、自定义配置开始的方法。本页继续维护源码开发环境和验证流程。
+想用 LayerWeave 搭建自己的工具，先读[AI 开发指导](build-with-layerweave/README.md)：那里按篇介绍嵌套时序、有序管理以及可自由扩展的部分。本页继续维护源码开发环境和验证流程。
 
 ## 准备环境
 

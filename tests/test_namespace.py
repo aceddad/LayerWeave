@@ -49,7 +49,13 @@ assert undo_operation(c, changed["operation_id"])["ok"]
 assert read_object(c, p, title.id)["tips"] == ""
 assert read_support("combined", "text")["status"] == "completed"
 commands = command_help()
-assert len(commands["items"]) == 26 and commands["status"] == "completed", commands
+assert len(commands["items"]) == 27 and commands["status"] == "completed", commands
+from layerweave.tool.builtin.developer.keys.service import manage_keys, get_key
+key_store = Path.cwd() / "keys.local.json"
+assert manage_keys("init", store=key_store)["ok"]
+assert manage_keys("update", "example-key", data={"key":"test-only-key"}, store=key_store)["ok"]
+assert get_key("example-key", store=key_store) == "test-only-key"
+assert manage_keys("export", store=key_store)["data"]["example-key"]["key"] == ""
 skill = SKILLS_ROOT / "layers/text/text-normalize"
 assert (skill / "SKILL.md").is_file()
 normalized = subprocess.run([sys.executable,"-X","utf8","-B","-S",str(skill / "scripts/normalize_text.py")],

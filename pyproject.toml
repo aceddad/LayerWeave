@@ -22,3 +22,4 @@ namespaces = false
 [tool.setuptools.package-data]
 "layerweave" = ["configs/**/*.toml", "configs/**/*.md", "tool/skills/**/*"]
 "layerweave.support.storage" = ["schema.sql"]
+"layerweave.tool.builtin.developer.keys" = ["example.json"]

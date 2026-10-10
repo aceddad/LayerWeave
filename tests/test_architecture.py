@@ -17,7 +17,7 @@ from layerweave.support.storage.database import SCHEMA_PATH
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = ROOT / "src/layerweave"
 PACKAGES = ("usage/records", "usage/query", "usage/editing", "usage/history", "usage/undo",
-            "usage/validation", "usage/text", "shared/help", "developer/database", "developer/skills")
+            "usage/validation", "usage/text", "shared/help", "developer/database", "developer/skills", "developer/keys")
 
 FIXTURE = '''
 from layerweave.support.api import open_database, save_layer, save_object, transaction, read_record
@@ -186,6 +186,16 @@ with ZipFile("demo.zip","w") as archive:
 r = install_skill("demo.zip",layer="text")
 assert r["ok"], r
 assert Path(r["path"]).is_dir()
+''',
+            "developer/keys": '''
+from layerweave.tool.builtin.developer.keys.service import manage_keys, get_key
+store = "keys.local.json"
+assert manage_keys("init",store=store)["ok"]
+r = manage_keys("update","example-key",data={"key":"test-only-key", "used":["any-application"]},store=store)
+assert "key" not in r["data"] and r["data"]["key_configured"]
+assert get_key("example-key",store=store) == "test-only-key"
+assert manage_keys("export",store=store)["data"]["example-key"]["key"] == ""
+assert manage_keys("delete","example-key",store=store)["ok"]
 ''',
         }
         for package in PACKAGES:

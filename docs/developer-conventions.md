@@ -27,6 +27,7 @@ python -m venv .venv
 | 修改结构、事务或存储 | [基础支撑](../src/layerweave/support/README.md)、[表结构](../src/layerweave/support/storage/SCHEMA.md) |
 | 修改内容检测 | [检测包](../src/layerweave/tool/builtin/usage/validation/README.md) |
 | 编写或安装外置技能 | [工具区](../src/layerweave/tool/README.md)、[ZIP 安装](../src/layerweave/tool/builtin/developer/SKILLS.md) |
+| 管理本地 KEY 或接入其他模型服务的凭据 | [KEY 工具](../src/layerweave/tool/builtin/developer/keys/README.md)，不依赖业务数据库 |
 | 开发视图 | [视图边界](../src/layerweave/tool/builtin/view/README.md)；开始实现时建独立分支 |
 | 修改文档 | [文档约定](documentation.md) |
 

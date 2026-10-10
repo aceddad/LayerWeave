@@ -9,6 +9,7 @@
 | 新增 Python 层类或对象类 | [模型](../../../models/README.md)和[配置](../../../configs/README.md)，参考 [Title](../../../../../examples/title.py) |
 | 新增内部工具 | 本页的开发流程、[公共 API](../../../support/API.md)、[命令声明](../shared/help/COMMANDS.md) |
 | 安装下载的技能 ZIP | [技能安装](SKILLS.md)，选择层目录或场景补充区 |
+| 管理本地 API KEY 与连接说明 | [KEY 管理](keys/README.md)，used 可记录任意使用方，公开查询不显示密钥 |
 | 调整配置继承 | [配置读取与继承](../../../support/configuration/README.md) |
 | 新增检查规则 | [检测执行与扩展](../usage/validation/RULES.md) |
 | 调整诊断汇报 | [诊断配置](../../../support/DIAGNOSTICS.md) |
@@ -36,6 +37,16 @@ python -X utf8 -B -m layerweave.tool.builtin.developer.database.cli output/ai-pr
 ```
 
 [database.py](database/cli.py) 是命令入口；表结构、升级和发号实现仍在 support。升级行为见[存储说明](../../../support/storage/SCHEMA.md)。
+
+## 本地 KEY 与连接信息
+
+```sh
+python -m layerweave.tool.builtin.developer.keys.cli init --json
+python -m layerweave.tool.builtin.developer.keys.cli connections --json
+python -m layerweave.tool.builtin.developer.keys.cli export --output keys.example.json --json
+```
+
+真实配置默认保存到用户目录的 .layerweave/keys.json，只在本机维护。示例保留名称和 used，清空 KEY，并以中文提示替代连接字段的值。录入密钥、增删改查和程序读取见[KEY 管理说明](keys/README.md)。
 
 ## 开发内部工具
 

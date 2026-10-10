@@ -19,7 +19,10 @@ def check(wheel):
         assert all(name == "layerweave" or name.endswith(".dist-info") for name in roots), roots
         metadata = next(name for name in names if name.endswith(".dist-info/top_level.txt"))
         assert archive.read(metadata).decode().splitlines() == ["layerweave"]
-        resources = [package / "support/storage/schema.sql"]
+        key_template = json.loads(archive.read("layerweave/tool/builtin/developer/keys/example.json"))
+        assert all(record["key"] == "" for record in key_template.values())
+        assert not any(name.endswith(("/keys.local.json", "/keys.json")) for name in names)
+        resources = [package / "support/storage/schema.sql", package / "tool/builtin/developer/keys/example.json"]
         resources += [p for folder in ("configs", "tool/skills") for p in (package / folder).rglob("*")
                       if p.is_file() and "__pycache__" not in p.parts]
         for path in resources:
@@ -55,8 +58,8 @@ assert {str(ROOT)!r} not in sys.path
                              env=env, capture_output=True, text=True, encoding="utf-8", timeout=30)
         assert run.returncode == 0, run.stdout + run.stderr
         data = json.loads(run.stdout)
-        assert data["status"] == "completed" and len(data["items"]) == 26, data
-        print("ordinary install CLI: 26 commands discovered, no editable source fallback")
+        assert data["status"] == "completed" and len(data["items"]) == 27, data
+        print("ordinary install CLI: 27 commands discovered, no editable source fallback")
 
 
 if __name__ == "__main__":

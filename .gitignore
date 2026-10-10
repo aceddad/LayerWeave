@@ -14,3 +14,5 @@ output/*
 .env
 .env.*
 !.env.example
+keys.local.json
+.keys.local.json.*.tmp

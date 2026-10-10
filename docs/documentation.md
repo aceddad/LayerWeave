@@ -39,6 +39,7 @@
 | 配置 help 的使用/开发模式 | [配置 help 专题](../src/layerweave/tool/builtin/shared/help/CONFIG_HELP.md) |
 | 外置技能的存放与绑定示例 | [外置工具](../src/layerweave/tool/README.md)；各技能的能力说明维护在包内 SKILL.md |
 | 技能 ZIP 的安装参数与文件处理 | [安装说明](../src/layerweave/tool/builtin/developer/SKILLS.md) |
+| 本地 KEY、连接说明与去除私有内容的示例 | [KEY 管理](../src/layerweave/tool/builtin/developer/keys/README.md) |
 
 ## 写法与示例
 

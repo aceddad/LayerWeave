@@ -38,7 +38,7 @@ src/layerweave/tool/
     usage/                          records/query/editing/history/undo/validation/text
     developer/                      database/skills 等开发工具包
     shared/help/                    命令与封装帮助
-    view/                           只读视图网页与视图工具（截图、取帧、排版、正在看哪儿）
+    view/                           视图网页与视图工具（截图、取帧、排版、批注、正在看哪儿），自带批注层
   skills/
     layers/                         按层原型归类的常规技能
       text/

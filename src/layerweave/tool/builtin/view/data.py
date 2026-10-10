@@ -5,6 +5,8 @@ import sqlite3
 
 from layerweave.support.api import read_project_details, read_record
 
+from .notes import LAYER_REF as NOTE_LAYER_REF
+
 IMAGE = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".svg"}
 VIDEO = {".mp4", ".webm", ".mov", ".m4v", ".mkv"}
 AUDIO = {".mp3", ".wav", ".ogg", ".m4a", ".flac", ".aac"}
@@ -87,6 +89,7 @@ def project_view(connection, database, project_id):
     if details is None:
         return None
     layers, roots, root_of = [], {}, {}
+    hidden = _hidden_by_default({layer["config_ref"] for layer in details["layers"]})
     for layer in order_layers(details["layers"]):
         if layer["depth"] is not None:
             root_of[layer["id"]] = layer["id"] if layer["depth"] == 0 else root_of[layer["father"]]
@@ -120,6 +123,7 @@ def project_view(connection, database, project_id):
         layers.append({
             "id": layer["id"], "name": layer["name"], "type": layer["type"], "father": layer["father"],
             "depth": layer["depth"], "root": root, "axis": layer["axis"], "tips": layer["tips"], "objects": objects,
+            "role": "note" if layer["config_ref"] == NOTE_LAYER_REF else None, "hidden": hidden.get(layer["config_ref"], False),
         })
     for span in roots.values():
         begin = span.pop("begin") or 0
@@ -179,6 +183,18 @@ def recent_changes(connection, project_id, limit=10):
         operations.append({"operation_id": entry["operation_id"], "at": rows[0]["created_at"],
                            "undo_of": rows[0]["undo_of"], "items": items})
     return operations
+
+
+def _hidden_by_default(refs):
+    """层配置里 display.default_visible = false 的，视图默认收起（比如批注层）。读不到的配置按显示处理。"""
+    from layerweave.support.configuration.loader import Loader
+    loader, out = Loader(), {}
+    for ref in refs:
+        try:
+            out[ref] = loader.load(ref, "layer").get("display", {}).get("default_visible") is False
+        except Exception:   # 配置缺失或损坏：照常显示，问题由检测工具报告
+            out[ref] = False
+    return out
 
 
 def project_binds(connection, project_id):

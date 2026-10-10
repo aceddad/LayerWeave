@@ -27,11 +27,14 @@ const S = {
   kind: 'all', frames: false, drag: null, justDragged: false,
   autoFit: true,                                        // 用户自己平移、缩放之前，窗口大小变了就重新铺满
   size: null,                                           // 上次排画板时的画布尺寸
-  side: params.has('changes') ? 'changes' : 'now',      // 右侧面板：此刻 / 改动；改动打开时画布上标出改过的对象
+  side: params.get('side') === 'notes' ? 'notes' : params.has('changes') ? 'changes' : 'now',   // 右侧面板：此刻 / 改动 / 批注
   changes: Number(params.get('changes')) || 10,         // 看最近几次操作
   changeOps: [], changed: new Map(), changedLayers: new Map(), ghosts: new Map(),
   find: {q: '', hits: [], at: -1},
   links: params.get('links') === '1',                   // 画出全部关系线；关掉时只画选中对象的
+  showHidden: false,                                    // 在画布上显示默认收起的层（比如批注层）
+  sel: null,                                            // 在尺子上圈出的一段：{key: 画板, begin, end}（画板时间）
+  noteFilter: 'all', noteMap: new Map(), wholeProject: false,
 };
 const KIND = (o) => (o.media ? o.media.kind : o.text != null ? 'text' : 'other');
 
@@ -198,6 +201,7 @@ function visibleTracks(row) {
   for (const t of rowTracks(row)) {
     if (t.parent != null && hidden.has(t.parent)) { hidden.add(t.key); continue; }
     if (S.only && !t.parts.some((p) => S.only.has(p.layer.id))) continue;
+    if (!S.showHidden && t.parts.every((p) => p.layer.hidden)) continue;
     out.push(t);
     if (S.collapsed.has(`${row[0]}|${t.key}`)) hidden.add(t.key);
   }
@@ -223,6 +227,7 @@ const cover = (o, t) => (S.frames ? img(frameUrl(o, t)) : `<video muted preload=
 // ---------- 画布与画板 ----------
 function render() {
   if (!S.data) return;
+  indexNotes();
   document.title = `${S.data.project.name || '项目'} · LayerWeave 视图`;
   $('#canvas-view').hidden = S.view !== 'canvas';
   $('#assets-view').hidden = S.view !== 'assets';
@@ -245,6 +250,7 @@ function renderCanvas() {
 
 function boardHtml(b) {
   if (SOLO && b !== activeBoard()) return '';
+  if (!S.showHidden && rootsOf(b).every((r) => layerById(r)?.hidden)) return '';   // 配置里默认收起的层（批注层）
   const [a, e] = extentOf(b), pps = ppsOf(b), unit = unitOf(b), W = (e - a) * pps + 40;
   const secs = b.rows.map((row, i) => sectionHtml(b, row, i, a, pps, W)).filter(Boolean);
   if (!secs.length) return '';
@@ -255,6 +261,7 @@ function boardHtml(b) {
     <div class="rrow"><div class="corner stick">${esc(unit)}</div><div class="ruler" style="width:${W}px">${ticks(a, e, pps, unit)}</div></div>
     ${secs.join('')}
     <div class="playhead"></div>
+    <div class="selband" hidden></div>
   </div>`;
 }
 
@@ -273,7 +280,10 @@ function sectionHtml(b, row, ri, a, pps, W) {
     const label = isRoot ? row.map(nameOf).join(' → ') : (t.name || t.type);
     const split = isRoot && many && !chain ? `<button class="split" data-split="${row[0]}" title="把这个根拆出去，单独成一块画板">拆出</button>` : '';
     names.push(`<div class="lname${isRoot ? ' root' : ''}" data-layers="${t.parts.map((p) => p.layer.id).join(' ')}" style="height:${h}px;padding-left:${8 + 14 * t.depth}px" title="${esc(t.tips || label)}">${tog}<span class="lt">${esc(t.type)}</span><span class="nm">${esc(label)}</span>${layerMark(t.parts)}${split}</div>`);
-    const ghosts = marksOn() ? t.parts.flatMap(({layer, seg}) => (S.ghosts.get(layer.id) || []).map((g) => ghostHtml(g, seg.offset, a, pps, unit))).join('') : '';
+    const ghosts = (marksOn() ? t.parts.flatMap(({layer, seg}) => (S.ghosts.get(layer.id) || []).map((g) => ghostHtml(g, seg.offset, a, pps, unit))).join('') : '')
+      + t.parts.flatMap(({layer, seg}) => (S.noteMap.get(`layer:${layer.id}`) || []).filter((n) => n.span)
+        .map((n) => `<div class="noteband" data-note="${n.id}" style="left:${(n.span.begin + seg.offset - a) * pps}px;width:${Math.max(4, (n.span.end - n.span.begin) * pps)}px"
+          title="${esc(`批注 #${n.id}：${n.text}`)}"><span>💬 ${esc(n.text)}</span></div>`)).join('');
     lines.push(`<div class="track" data-layers="${t.parts.map((p) => p.layer.id).join(',')}" style="height:${h}px">${items.map((it, i) => block(it, ln[i], a, pps, unit)).join('')}${ghosts}</div>`);
   }
   if (chain) {                                         // 接续的一行上方多一条窄带：每一段叫什么、从画板上哪里开始
@@ -301,6 +311,8 @@ function block(it, lane, a, pps, unit) {
     else if (k === 'audio') inner = `<canvas data-wave="${o.media.url}"></canvas>`;
   }
   const label = o.text ?? o.name ?? '';
+  const said = S.noteMap.get(`object:${o.id}`) || [];
+  const noted = said.length ? `<i class="note-n" title="${esc(said.map((n) => `#${n.id} ${n.text}`).join('\n'))}">💬${said.length}</i>` : '';
   const outside = externalBinds('object', o.id);
   const ext = outside.length ? `<i class="ext" title="${esc(outside.map((b) => refLabel(b.other) + (b.tips ? '：' + b.tips : '')).join('\n'))}">↗ ${outside.length}</i>` : '';
   const board = it.offset ? `（画板上 ${fmt(it.begin, unit)} – ${fmt(it.end, unit)}）` : '';
@@ -308,7 +320,7 @@ function block(it, lane, a, pps, unit) {
   const ch = marksOn() ? S.changed.get(o.id) : null;
   const badge = ch ? `<i class="chg-n" title="${ch.n === 1 ? '最近一次' : `倒数第 ${ch.n} 次`}操作${ch.action === 'create' ? '新建' : '修改'}">${ch.n}</i>` : '';
   return `<div class="obj ${k}${instant ? ' instant' : ''}${missing ? ' missing' : ''}${o.id === S.selected ? ' sel' : ''}${ch ? ` chg chg-${ch.action}` : ''}" data-id="${o.id}"
-    style="left:${left}px;width:${w}px;top:${PAD + lane * LANE}px;height:${LANE - 4}px" title="${esc(title)}">${inner}<span class="lab">${esc(label || o.type)}</span>${badge}${ext}</div>`;
+    style="left:${left}px;width:${w}px;top:${PAD + lane * LANE}px;height:${LANE - 4}px" title="${esc(title)}">${inner}<span class="lab">${esc(label || o.type)}</span>${badge}${ext}${noted}</div>`;
 }
 
 const SEC_STEPS = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 1800, 3600];
@@ -346,6 +358,20 @@ function positionBoards() {
 function afterBoards(scope) {
   $$('.obj canvas[data-wave]', scope).forEach((c) => drawWave(c, c.dataset.wave));
   placePlayheads();
+  placeSelection();
+}
+
+// 在尺子上拖出来的一段：画成一条半透明的带子，写批注时用作"写给哪里"
+function placeSelection() {
+  for (const el of $$('#world .board')) {
+    const b = boardFor(el), band = $('.selband', el);
+    if (!band) continue;
+    band.hidden = !S.sel || S.sel.key !== keyOf(b);
+    if (band.hidden) continue;
+    const [a] = extentOf(b), pps = ppsOf(b);
+    band.style.left = NAMES + (S.sel.begin - a) * pps + 'px';
+    band.style.width = Math.max(2, (S.sel.end - S.sel.begin) * pps) + 'px';
+  }
 }
 
 function rerenderBoard(b) {
@@ -471,6 +497,9 @@ canvas.addEventListener('pointerdown', (e) => {
     const el = head.closest('.board'), b = boardFor(el);
     if (!b || keyOf(b) === 0) return;
     S.drag = {mode: 'board', b, el, x0: b.x, y0: b.y, cx: e.clientX, cy: e.clientY, moved: false, pointer: e.pointerId};
+  } else if (e.button === 0 && e.target.closest('#world .ruler')) {
+    const b = boardFor(e.target.closest('.board')), r = e.target.closest('.ruler').getBoundingClientRect();
+    S.drag = {mode: 'range', b, left: r.left, cx: e.clientX, cy: e.clientY, moved: false, pointer: e.pointerId};
   } else {
     S.drag = {mode: 'pan', x0: S.cam.x, y0: S.cam.y, cx: e.clientX, cy: e.clientY, moved: false, pointer: e.pointerId};
   }
@@ -486,6 +515,14 @@ canvas.addEventListener('pointermove', (e) => {
     d.mode === 'board' ? d.el.classList.add('dragging') : canvas.classList.add('panning');
   }
   if (d.mode === 'pan') { S.cam.x = d.x0 + dx; S.cam.y = d.y0 + dy; applyCamera(false); return; }
+  if (d.mode === 'range') {
+    const [a] = extentOf(d.b), pps = ppsOf(d.b), at = (x) => +(a + (x - d.left) / S.cam.z / pps).toFixed(3);
+    const t0 = at(d.cx), t1 = at(e.clientX);
+    S.sel = {key: keyOf(d.b), begin: Math.min(t0, t1), end: Math.max(t0, t1)};
+    S.wholeProject = false;
+    placeSelection();
+    return;
+  }
   d.b.x = d.x0 + dx / S.cam.z; d.b.y = d.y0 + dy / S.cam.z;
   snap(d);
   d.el.style.left = d.b.x + 'px'; d.el.style.top = d.b.y + 'px';
@@ -502,6 +539,7 @@ canvas.addEventListener('pointerup', () => {
   S.justDragged = true;
   setTimeout(() => (S.justDragged = false), 0);
   if (d.mode === 'pan') { S.autoFit = false; return report(); }
+  if (d.mode === 'range') { renderSide(); return report(); }
   d.el.classList.remove('dragging');
   showDrop(null);
   if (d.drop?.ok) mergeBoards(d.b, d.drop.target, d.drop.root, d.drop.side, {x: d.x0, y: d.y0, w: d.el.offsetWidth, h: d.el.offsetHeight});
@@ -678,6 +716,12 @@ function ghostHtml(g, offset, a, pps, unit) {
 }
 
 function layerMark(parts) {
+  const said = parts.flatMap((p) => (S.noteMap.get(`layer:${p.layer.id}`) || []));
+  const noted = said.length ? `<i class="note-dot" title="${esc(said.map((n) => `#${n.id} ${n.text}`).join('\n'))}">💬${said.length}</i>` : '';
+  return noted + changeMark(parts);
+}
+
+function changeMark(parts) {
   if (!marksOn()) return '';
   const hits = parts.map((p) => S.changedLayers.get(p.layer.id)).filter(Boolean);
   if (!hits.length) return '';
@@ -835,12 +879,122 @@ function drawLinks() {
   svg.innerHTML = `<defs>${['', '-hot'].map((k) => `<marker id="arrow${k}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrow${k}"/></marker>`).join('')}</defs>${out.join('')}`;
 }
 
-// ---------- 右侧面板：此刻 / 改动 ----------
+// ---------- 批注：视图工具自带的批注层，一层就是一个有序列表 ----------
+// 批注层（role = note）里的对象，按顺序；每条指向哪里来自它发出的关联
+function noteList() {
+  return allLayers().filter((l) => l.role === 'note').flatMap((l) => l.objects)
+    .sort((p, q) => p.begin - q.begin || p.id - q.id)
+    .map((o) => ({id: o.id, index: o.begin, text: o.information?.text ?? '', author: o.information?.author || '',
+                  status: o.information?.status === 'done' ? 'done' : 'open', span: o.information?.span || null,
+                  targets: (S.data.binds || []).filter((b) => sameRef(b.source, 'object', o.id)).map((b) => b.target)}));
+}
+// 待处理的批注按"指向谁"建索引，画布上的💬标记用
+function indexNotes() {
+  S.noteMap = new Map();
+  for (const n of noteList()) {
+    if (n.status !== 'open') continue;
+    for (const t of n.targets) {
+      if (t.project !== S.project) continue;
+      const key = `${t.kind}:${t.id}`;
+      if (!S.noteMap.has(key)) S.noteMap.set(key, []);
+      S.noteMap.get(key).push(n);
+    }
+  }
+}
+const refExists = (t) => t.project !== S.project || (t.kind === 'object' ? !!objectById(t.id) : !!layerById(t.id));
+
+// 圈出的一段落在哪个根上：画板第一行在起点处的那一段，换成那个根自己的时间
+function selectionInfo() {
+  if (!S.sel) return null;
+  const b = S.boards.find((x) => keyOf(x) === S.sel.key);
+  if (!b) return null;
+  const seg = segmentAt(b.rows[0], S.sel.begin) || segmentsOf(b.rows[0])[0];
+  return {root: seg.root, name: nameOf(seg.root), begin: +(S.sel.begin - seg.offset).toFixed(3), end: +(S.sel.end - seg.offset).toFixed(3)};
+}
+// 新批注写给哪里：圈出的一段 > 选中的对象 > 整个项目
+function composeTarget() {
+  const sel = !S.wholeProject && selectionInfo();
+  if (sel) return {kind: 'span', ...sel, label: `${sel.name} 的 ${fmt(sel.begin, unitOfRoot(sel.root))} – ${fmt(sel.end, unitOfRoot(sel.root))}`};
+  const o = !S.wholeProject && S.selected != null ? objectById(S.selected) : null;
+  if (o) return {kind: 'object', id: o.id, label: refLabel({kind: 'object', project: S.project, id: o.id})};
+  return {kind: 'project', label: '整个项目'};
+}
+
+function renderNotes() {
+  const all = noteList(), list = all.filter((n) => S.noteFilter === 'all' || n.status === S.noteFilter);
+  const t = composeTarget();
+  $('#note-compose').hidden = !RECORD;
+  $('#note-target').innerHTML = `写给：<b>${esc(t.label)}</b>${t.kind !== 'project' ? ' <a href="#" id="note-whole">改成整个项目</a>' : ''}`;
+  $('#note-author').value ||= localStorage.getItem('lw-author') || '用户';
+  $('#show-hidden').checked = S.showHidden;
+  $$('#note-filters button').forEach((b) => b.classList.toggle('on', b.dataset.filter === S.noteFilter));
+  const open = all.filter((n) => n.status === 'open').length;
+  $('#note-count').textContent = `${all.length} 条，待处理 ${open}`;
+  $('#note-list').innerHTML = list.length ? list.map(noteHtml).join('') : '<p class="hint">还没有批注。选中一个对象，或者在尺子上拖出一段，再写。</p>';
+}
+
+function noteHtml(n) {
+  const where = n.targets.length ? n.targets.map((t) => {
+    const unit = t.kind === 'layer' ? unitOfRoot(layerById(t.id)?.root) : '';
+    const span = n.span && t.kind === 'layer' ? ` 的 ${fmt(n.span.begin, unit)} – ${fmt(n.span.end, unit)}` : '';
+    const reply = t.kind === 'object' && objectById(t.id)?.layer.role === 'note' ? '回复 ' : '';
+    return `<span class="note-target${refExists(t) ? '' : ' gone'}" data-ref="${t.kind}:${t.project}:${t.id}">${reply}${esc(refLabel(t))}${span}</span>`;
+  }).join('') : '<span class="note-target whole">整个项目</span>';
+  const edit = RECORD ? `<button data-edit="${n.id}" title="改正文">改</button><button data-remove="${n.id}" title="删除这条批注（可以用撤销工具撤回）">删</button>` : '';
+  return `<div class="note ${n.status}" data-note="${n.id}">
+    <div class="note-head"><label title="勾上表示已处理"><input type="checkbox" data-done="${n.id}"${n.status === 'done' ? ' checked' : ''}${RECORD ? '' : ' disabled'}> ${n.index + 1}</label>
+      ${n.author ? `<b>${esc(n.author)}</b>` : ''}<small>#${n.id}</small><span class="grow"></span>${edit}</div>
+    <div class="note-text">${esc(n.text)}</div>
+    <div class="note-where">→ ${where}</div>
+  </div>`;
+}
+
+// 选中对象的详情里，列出指向它的批注
+function notesOnHtml(id) {
+  const said = noteList().filter((n) => n.targets.some((t) => sameRef(t, 'object', id)));
+  if (!said.length) return '';
+  return `<div class="rels"><div class="rels-head">批注</div>${said.map((n) => `<div class="rel" data-open-note="${n.id}">💬 ${esc(n.text)}<small>${n.status === 'done' ? '已处理' : '待处理'}${n.author ? ' · ' + esc(n.author) : ''}</small></div>`).join('')}</div>`;
+}
+
+async function noteAction(body) {
+  try {
+    const res = await fetch(`/api/notes/${S.project}`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
+    const data = await res.json();
+    if (!res.ok || data.error || data.recorded === false) { toast('批注没有写进去：' + (data.error || '这个页面只读')); return null; }
+    await loadProject(S.project);
+    S.version = (await api('/api/version')).version;     // 自己写的不用再被轮询重读一遍
+    return data;
+  } catch (error) { toast('批注没有写进去：' + error.message); return null; }
+}
+
+// 镜头移到批注指的地方：对象就选中它；层上的一段就圈出那一段
+function goToTarget(kind, project, id, span) {
+  if (project !== S.project) return toast('这条批注指向别的项目');
+  if (kind === 'object') { const o = objectById(id); return o ? selectObject(o) : toast('目标已删除'); }
+  const layer = layerById(id), b = layer && boardOf(layer.root);
+  if (!b) return toast('目标已删除，或者在收起的层里');
+  if (S.view !== 'canvas') { S.view = 'canvas'; render(); }
+  S.active = keyOf(b);
+  const offset = offsetOf(layer.root), el = elOf(b);
+  if (span) { S.sel = {key: keyOf(b), begin: span.begin + offset, end: span.end + offset}; S.playhead = S.sel.begin; }
+  placeSelection(); placePlayheads();
+  if (el) {
+    const [a] = extentOf(b), [cw] = canvasSize();
+    const wx = b.x + NAMES + ((span ? span.begin + offset : a) - a) * ppsOf(b);
+    if (S.cam.z < 0.6) S.cam.z = 0.8;
+    S.cam.x = cw / 3 - wx * S.cam.z; S.cam.y = 40 - b.y * S.cam.z; S.autoFit = false;
+    applyCamera();
+  }
+  renderSide(); report();
+}
+
+// ---------- 右侧面板：此刻 / 改动 / 批注 ----------
 function renderSide() {
   $$('#side-tabs button').forEach((b) => b.classList.toggle('on', b.dataset.side === S.side));
   $('#now-pane').hidden = S.side !== 'now';
   $('#changes-pane').hidden = S.side !== 'changes';
-  if (S.side === 'changes') renderChanges(); else renderNow();
+  $('#notes-pane').hidden = S.side !== 'notes';
+  if (S.side === 'changes') renderChanges(); else if (S.side === 'notes') renderNotes(); else renderNow();
 }
 
 function renderNow() {
@@ -886,14 +1040,14 @@ function card(o, full, local) {
     : `<video muted controls preload="metadata" src="${o.media.url}" data-at="${offset}"></video>`;
   else if (k === 'audio') body = `<canvas data-wave="${o.media.url}" data-mark="${onClip && o.end > o.begin ? offset / (o.end - o.begin) : ''}"></canvas><audio controls preload="none" src="${o.media.url}" style="width:100%"></audio>`;
   if (o.text != null) body += `<div class="txt">${esc(o.text)}</div>`;
-  const info = full ? `${relationsHtml('object', o.id)}<pre>${esc(JSON.stringify(o.information, null, 1))}</pre>${o.tips ? `<pre>备注：${esc(o.tips)}</pre>` : ''}` : '';
+  const info = full ? `${notesOnHtml(o.id)}${relationsHtml('object', o.id)}<pre>${esc(JSON.stringify(o.information, null, 1))}</pre>${o.tips ? `<pre>备注：${esc(o.tips)}</pre>` : ''}` : '';
   return `<div class="card${o.id === S.selected ? ' sel' : ''}"><div class="meta">#${o.id} ${esc(o.name)} · ${esc(o.type)} · ${fmt(o.begin, unit)} – ${fmt(o.end, unit)}</div>${body}${info}</div>`;
 }
 
 // ---------- 素材（资源管理器式预览） ----------
 function renderAssets() {
   $$('#filters button').forEach((b) => b.classList.toggle('on', b.dataset.kind === S.kind));
-  const items = allObjects().filter((o) => (S.kind === 'all' ? KIND(o) !== 'other' : KIND(o) === S.kind));
+  const items = allObjects().filter((o) => o.layer.role !== 'note' && (S.kind === 'all' ? KIND(o) !== 'other' : KIND(o) === S.kind));
   $('#grid').innerHTML = items.length ? items.map(tile).join('') : '<p class="hint">没有这类素材。</p>';
   $$('#grid canvas[data-wave]').forEach((c) => drawWave(c, c.dataset.wave));
 }
@@ -965,6 +1119,7 @@ function report() {
       board: act ? {rows: act.rows, names: act.rows.map((row) => row.map(nameOf)), unit: unitOf(act)} : undefined,
       range: canvasView && act ? visibleRange(act) : undefined,
       playhead: S.playhead ?? undefined, playhead_at: at,
+      selection: selectionInfo() || undefined,
       selected: sel ? {id: sel.id, layer: sel.layer.id, name: sel.name} : undefined,
       boards: canvasView ? shown.map(rootsOf) : undefined,
       layers: (canvasView ? shown : S.boards).flatMap((b) => b.rows.flatMap((row) => visibleTracks(row).flatMap((t) => t.parts.map((p) => p.layer.id)))),
@@ -1010,7 +1165,7 @@ $('#find').addEventListener('keydown', (e) => {
   const q = e.target.value.trim().toLowerCase();
   if (!q) return;
   if (q !== S.find.q) {
-    S.find = {q, at: -1, hits: allObjects().filter((o) => [o.name, o.text, o.media?.source, `#${o.id}`].some((v) => v && String(v).toLowerCase().includes(q)))};
+    S.find = {q, at: -1, hits: allObjects().filter((o) => o.layer.role !== 'note' && [o.name, o.text, o.media?.source, `#${o.id}`].some((v) => v && String(v).toLowerCase().includes(q)))};
   }
   const n = S.find.hits.length;
   $('#find-count').textContent = n ? '' : '没找到';
@@ -1044,6 +1199,8 @@ canvas.addEventListener('click', (e) => {
     saveLayout();
     return report();
   }
+  const band = e.target.closest('.noteband');
+  if (band) { S.side = 'notes'; renderSide(); $(`#note-list [data-note="${band.dataset.note}"]`)?.scrollIntoView({block: 'center'}); }
   const area = e.target.closest('.tracks, .ruler');
   if (!area) return;
   const b = boardFor(area.closest('.board'));
@@ -1053,9 +1210,50 @@ canvas.addEventListener('click', (e) => {
   const obj = e.target.closest('.obj');
   if (obj) S.selected = Number(obj.dataset.id);
   else if (!e.target.closest('.ruler')) S.selected = null;
+  if (e.target.closest('.ruler')) S.sel = null;           // 只是点一下尺子：放下播放头，取消圈出的一段
+  S.wholeProject = false;
+  placeSelection();
   $$('.obj.sel').forEach((n) => n.classList.remove('sel'));
   if (S.selected != null) $(`#world .obj[data-id="${S.selected}"]`)?.classList.add('sel');
   placePlayheads(); renderSide(); drawLinks(); report();
+});
+
+$('#note-add').addEventListener('click', async () => {
+  const text = $('#note-text').value.trim();
+  if (!text) return toast('先写点什么');
+  const t = composeTarget(), author = $('#note-author').value.trim();
+  const body = {action: 'add', text, author};
+  if (t.kind === 'object') body.targets = [{kind: 'object', id: t.id}];
+  if (t.kind === 'span') { body.targets = [{kind: 'layer', id: t.root}]; body.span = {begin: t.begin, end: t.end}; }
+  localStorage.setItem('lw-author', author);
+  if (await noteAction(body)) { $('#note-text').value = ''; S.wholeProject = false; }
+});
+$('#note-text').addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) $('#note-add').click(); });
+$('#notes-pane').addEventListener('click', async (e) => {
+  if (e.target.id === 'note-whole') { e.preventDefault(); S.wholeProject = true; return renderNotes(); }
+  if (e.target.dataset.filter) { S.noteFilter = e.target.dataset.filter; return renderNotes(); }
+  if (e.target.dataset.edit) {
+    const n = noteList().find((x) => x.id === Number(e.target.dataset.edit));
+    const text = prompt('改成：', n?.text ?? '');
+    if (text != null && text.trim() && text !== n.text) await noteAction({action: 'edit', note: n.id, text: text.trim()});
+    return;
+  }
+  if (e.target.dataset.remove) {
+    if (confirm('删除这条批注？删除会记进改动记录，可以用撤销工具撤回。')) await noteAction({action: 'remove', note: Number(e.target.dataset.remove)});
+    return;
+  }
+  const ref = e.target.closest('[data-ref]');
+  if (ref) {
+    const [kind, project, id] = ref.dataset.ref.split(':'), n = noteList().find((x) => x.id === Number(ref.closest('[data-note]').dataset.note));
+    goToTarget(kind, Number(project), Number(id), kind === 'layer' ? n?.span : null);
+  }
+});
+$('#notes-pane').addEventListener('change', async (e) => {
+  if (e.target.dataset.done) await noteAction({action: e.target.checked ? 'done' : 'reopen', note: Number(e.target.dataset.done)});
+  if (e.target.id === 'show-hidden') { S.showHidden = e.target.checked; if (S.view === 'canvas') renderCanvas(); }
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && S.sel && !e.target.closest('textarea, input')) { S.sel = null; placeSelection(); renderSide(); report(); }
 });
 
 $('#links-toggle').checked = S.links;
@@ -1067,6 +1265,8 @@ $('#cuts').addEventListener('click', (e) => {
 $('#now-list').addEventListener('click', (e) => {
   const rel = e.target.closest('.rel[data-goto]');
   if (rel) selectObject(objectById(Number(rel.dataset.goto)));
+  const note = e.target.closest('[data-open-note]');
+  if (note) { S.side = 'notes'; renderSide(); $(`#note-list [data-note="${note.dataset.openNote}"]`)?.scrollIntoView({block: 'center'}); }
 });
 
 $('#grid').addEventListener('click', (e) => {

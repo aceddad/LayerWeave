@@ -17,6 +17,7 @@ from urllib.parse import parse_qs, urlparse
 
 from .data import extract_frame, find_ffmpeg, list_projects, media_path, open_readonly, project_roots, project_view, recent_changes
 from .layout import layout_serial, load_layout, reconcile, save_layout
+from .note import add_note, remove_note, update_note
 from .state import read_state, write_state
 
 WEB_ROOT = Path(__file__).with_name("web")
@@ -111,8 +112,9 @@ class ViewHandler(SimpleHTTPRequestHandler):
     def do_POST(self):
         path = urlparse(self.path).path
         layout = re.fullmatch(r"/api/layout/(\d+)", path)
-        if path != "/api/state" and not layout:
-            return self.send_json({"error": "只支持 /api/state 和 /api/layout/<项目>"}, HTTPStatus.NOT_FOUND)
+        notes = re.fullmatch(r"/api/notes/(\d+)", path)
+        if path != "/api/state" and not layout and not notes:
+            return self.send_json({"error": "只支持 /api/state、/api/layout/<项目>、/api/notes/<项目>"}, HTTPStatus.NOT_FOUND)
         length = int(self.headers.get("Content-Length", 0))
         if length > 65536:
             return self.send_json({"error": "内容过大"}, HTTPStatus.REQUEST_ENTITY_TOO_LARGE)
@@ -122,6 +124,8 @@ class ViewHandler(SimpleHTTPRequestHandler):
             return self.send_json({"error": "不是 JSON"}, HTTPStatus.BAD_REQUEST)
         if not self.record_state:
             return self.send_json({"recorded": False})
+        if notes:
+            return self.write_note(int(notes[1]), payload)
         if layout:
             # 网页传来整套画板；按数据库里现有的根校正后再存（单位不同的拼接会被拆开）
             project_id = int(layout[1])
@@ -130,6 +134,29 @@ class ViewHandler(SimpleHTTPRequestHandler):
             boards = save_layout(self.database, project_id, reconcile(roots, payload.get("boards")), self.state_root)
             return self.send_json({"boards": boards, "serial": layout_serial(self.database, self.state_root)})
         return self.send_json(write_state(self.database, payload, self.state_root))
+
+    def write_note(self, project_id, payload):
+        """视图唯一的写入：只写批注层，走 note.py（写会话、改动日志、可撤销）。"""
+        action = payload.get("action")
+        try:
+            if action == "add":
+                targets = [(t["kind"], int(t.get("project", project_id)), int(t["id"])) for t in payload.get("targets", [])
+                           if t.get("kind") in ("object", "layer")]
+                span = payload.get("span")
+                result = add_note(self.database, project_id, payload.get("text", ""), targets=targets,
+                                  span=(span["begin"], span["end"]) if isinstance(span, dict) else None,
+                                  author=payload.get("author") or None)
+            elif action in ("done", "reopen"):
+                result = update_note(self.database, project_id, int(payload["note"]), status="done" if action == "done" else "open")
+            elif action == "edit":
+                result = update_note(self.database, project_id, int(payload["note"]), text=payload.get("text"))
+            elif action == "remove":
+                result = remove_note(self.database, project_id, int(payload["note"]))
+            else:
+                return self.send_json({"error": f"不认识的动作：{action}"}, HTTPStatus.BAD_REQUEST)
+        except (ValueError, KeyError, TypeError) as error:
+            return self.send_json({"error": str(error)}, HTTPStatus.BAD_REQUEST)
+        return self.send_json(result)
 
     def send_file(self, path):
         size = path.stat().st_size

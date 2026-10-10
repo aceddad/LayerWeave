@@ -1,0 +1,28 @@
+# 批注对象封装：一条批注。从文字对象派生，正文仍在 information.text。
+# 随视图工具包分发；对象记录的 config_ref 是 ../tool/builtin/view/notes/objects/note.toml。
+
+[object]
+type    = "note"
+version = 1
+name    = "批注"
+class   = "layerweave.tool.builtin.view.notes.models:Note"
+extends = "../../../../../configs/objects/text.toml"   # 继承文字对象
+note    = "批注正文在 information.text；它说的是哪里，用从这条批注发出的关联表达"
+
+# 约定：
+# - 位置表示顺序：第 n 条占 [n, n+1)，不表示画面时间。
+# - 说的是哪里：从批注发出关联，指向对象或层，可以指好几个，也可以跨项目。没有关联就是对整个项目的意见。
+# - 说的是一段空白时间：关联到那个时间轴的根层，并在 span 里写那一段（用那个根的单位）。
+# - 回复：一条批注关联到另一条批注。
+# - 目标被删除后关联仍在，视图显示"目标已删除"，批注本身保留。
+[object.information]
+status = { type = "str", optional = true, note = "open（待处理，缺省时也按待处理）或 done（已处理）" }
+author = { type = "str", optional = true, note = "谁写的，例如 用户、Claude、astra" }
+span   = { type = "dict", optional = true, note = "关联指向层时，那个层时间轴上的一段：{ begin = 起点, end = 终点 }" }
+
+[object.example]
+name        = ""
+layer       = 1
+begin       = 0
+end         = 1
+information = { text = "这里的球应该落在桌子下面", status = "open", author = "用户" }

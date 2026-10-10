@@ -5,7 +5,7 @@ AI 看到的就是用户在视图里看到的：画板的排版用用户那份�
 
 python -m layerweave.tool.builtin.view.screenshot DATABASE PROJECT_ID 输出.png
        [--view canvas|cuts|assets] [--board 根层编号] [--begin 起点 --end 终点] [--layers 1 5] [--playhead 位置] [--select 对象编号]
-       [--focus 对象编号] [--changes 最近几次操作] [--links] [--full-page]
+       [--focus 对象编号] [--changes 最近几次操作] [--notes] [--links] [--full-page]
        [--width 1600 --height 900] [--browser 浏览器路径] [--wait-ms 20000]
 """
 import argparse
@@ -146,7 +146,7 @@ def _devtools_port(profile, deadline):
 
 
 def capture(database, project_id, output, *, view="canvas", board=None, begin=None, end=None, layers=None, playhead=None,
-            select=None, focus=None, changes=None, links=False, full_page=False, width=1600, height=900, browser=None,
+            select=None, focus=None, changes=None, notes=False, links=False, full_page=False, width=1600, height=900, browser=None,
             wait_ms=20000, state_root=None):
     browser = find_browser(browser)
     if browser is None:
@@ -157,6 +157,8 @@ def capture(database, project_id, output, *, view="canvas", board=None, begin=No
     query = {"project": project_id, "view": view if view in ("assets", "cuts") else "canvas", "record": 0, "capture": 1}
     if links:
         query["links"] = 1
+    if notes:
+        query["side"] = "notes"
     if full_page and view in ("assets", "cuts"):
         query["full"] = 1
     for key, value in (("board", board), ("begin", begin), ("end", end), ("playhead", playhead), ("select", select),
@@ -239,6 +241,7 @@ COMMANDS = [{
         "select": {"type": "integer", "description": "选中并展开详情的对象编号"},
         "focus": {"type": "integer", "description": "把镜头移到这个对象上（放在画面左上三分之一处）"},
         "changes": {"type": "integer", "description": "标出最近这么多次操作改过的对象和删除、移动前的位置，右侧列出改动"},
+        "notes": {"type": "boolean", "description": "右侧打开批注列表（画布上的批注标记总是显示）", "default": False},
         "links": {"type": "boolean", "description": "画出全部关系线（bind）；不画时只画选中对象的", "default": False},
         "full_page": {"type": "boolean", "description": "接缝页、素材页按内容高度截整页（最多 16000 像素）", "default": False},
         "width": {"type": "integer", "default": 1600}, "height": {"type": "integer", "default": 900},
@@ -267,13 +270,14 @@ def main():
     p.add_argument("--begin", type=float); p.add_argument("--end", type=float)
     p.add_argument("--layers", type=int, nargs="+"); p.add_argument("--playhead", type=float); p.add_argument("--select", type=int)
     p.add_argument("--focus", type=int, help="把镜头移到这个对象上"); p.add_argument("--changes", type=int, help="标出最近几次操作的改动")
+    p.add_argument("--notes", action="store_true", help="右侧打开批注列表")
     p.add_argument("--links", action="store_true", help="画出全部关系线"); p.add_argument("--full-page", action="store_true", help="接缝、素材页截整页")
     p.add_argument("--width", type=int, default=1600); p.add_argument("--height", type=int, default=900)
     p.add_argument("--browser"); p.add_argument("--wait-ms", type=int, default=20000)
     a = p.parse_args()
     try:
         result = capture(a.database, a.project_id, a.output, view=a.view, board=a.board, begin=a.begin, end=a.end, layers=a.layers,
-                         playhead=a.playhead, select=a.select, focus=a.focus, changes=a.changes, links=a.links,
+                         playhead=a.playhead, select=a.select, focus=a.focus, changes=a.changes, notes=a.notes, links=a.links,
                          full_page=a.full_page, width=a.width, height=a.height,
                          browser=a.browser, wait_ms=a.wait_ms)
     except (OSError, RuntimeError, subprocess.TimeoutExpired) as error:

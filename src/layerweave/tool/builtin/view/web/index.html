@@ -36,10 +36,25 @@
     <nav id="side-tabs">
       <button data-side="now" class="on">此刻</button>
       <button data-side="changes" title="最近几次操作改了什么；打开时画布上会标出来">改动</button>
+      <button data-side="notes" title="批注：给人或 AI 留的意见、说明、待办">批注</button>
     </nav>
     <section id="now-pane">
       <h2>此刻 <span id="now-time"></span></h2>
       <div id="now-list"><p class="hint">点画板上的任意位置，查看那一刻这块画板每层都有什么；点色块查看对象详情。</p></div>
+    </section>
+    <section id="notes-pane" hidden>
+      <h2>批注 <small id="note-count"></small></h2>
+      <div id="note-compose">
+        <textarea id="note-text" rows="3" placeholder="写一条批注……（Ctrl+回车加上）"></textarea>
+        <div class="note-row"><span id="note-target"></span></div>
+        <div class="note-row"><label>署名 <input id="note-author" size="8"></label><span class="grow"></span><button id="note-add">加上</button></div>
+        <p class="hint">先选中一个对象，或者在尺子上拖出一段，批注就指向那里；什么都不选就是写给整个项目。</p>
+      </div>
+      <div class="note-row" id="note-filters">
+        <button data-filter="all" class="on">全部</button><button data-filter="open">待处理</button><button data-filter="done">已处理</button>
+        <span class="grow"></span><label class="toggle" title="批注层默认收起；勾上后在画布上也显示成一块画板"><input type="checkbox" id="show-hidden"> 画布上显示批注层</label>
+      </div>
+      <div id="note-list"></div>
     </section>
     <section id="changes-pane" hidden>
       <h2>最近 <select id="chg-limit"><option>1</option><option>5</option><option selected>10</option><option>30</option><option>100</option></select> 次操作</h2>

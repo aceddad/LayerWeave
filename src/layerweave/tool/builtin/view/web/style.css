@@ -188,3 +188,36 @@ body.capture #canvas .help { display: none; }
 /* 截整页：接缝、素材页按内容的高度排，截图工具再把窗口拉到这么高 */
 body.full { height: auto; overflow: visible; }
 body.full main, body.full #cuts-view, body.full #grid { overflow: visible; flex: none; }
+
+/* 批注 */
+#notes-pane[hidden] { display: none; }
+#notes-pane h2 small { color: var(--dim); font-weight: normal; font-size: 12px; }
+#note-compose[hidden] { display: none; }
+#note-compose textarea { width: 100%; font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 6px; resize: vertical; }
+#note-compose input { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 2px 6px; }
+.note-row { display: flex; align-items: center; gap: 6px; margin: 6px 0; font-size: 12px; }
+.note-row .grow, .note-head .grow { flex: 1; }
+#note-target a { color: var(--accent); }
+#note-filters button { padding: 1px 8px; font-size: 12px; }
+.note { border: 1px solid var(--line); border-left: 3px solid #ffd23f; border-radius: 4px; padding: 6px 8px; margin-bottom: 6px; background: var(--bg); }
+.note.done { border-left-color: #3a4152; opacity: .7; }
+.note.done .note-text { text-decoration: line-through; text-decoration-color: rgba(216, 219, 226, .4); }
+.note-head { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--dim); }
+.note-head b { color: var(--text); }
+.note-head button { padding: 0 6px; font-size: 11px; }
+.note-text { margin: 4px 0; white-space: pre-wrap; }
+.note-where { font-size: 11px; color: var(--dim); display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.note-target { cursor: pointer; color: #9fd0ff; border: 1px solid #2c3d55; border-radius: 3px; padding: 0 4px; }
+.note-target:hover { border-color: var(--accent); }
+.note-target.gone { color: #ffb3b3; border-color: #5a2f35; text-decoration: line-through; }
+.note-target.whole { cursor: default; color: var(--dim); }
+.obj .note-n { position: absolute; left: 2px; top: 2px; font-style: normal; font-size: 10px; line-height: 14px; padding: 0 3px; border-radius: 7px;
+               background: #fff3c4; color: #3a2a00; z-index: 1; }
+.note-dot { font-style: normal; font-size: 10px; line-height: 14px; padding: 0 3px; border-radius: 7px; background: #fff3c4; color: #3a2a00; flex: none; }
+.noteband { position: absolute; top: 0; bottom: 0; background: rgba(255, 210, 63, .14); border-left: 2px solid #ffd23f; border-right: 2px solid #ffd23f;
+            z-index: 1; cursor: pointer; overflow: hidden; }
+.noteband span { position: absolute; left: 4px; bottom: 2px; font-size: 10px; color: #ffe48a; white-space: nowrap; text-shadow: 0 1px 2px #000; }
+.board > .selband { position: absolute; top: 34px; bottom: 0; background: rgba(79, 179, 255, .16); border-left: 2px solid var(--accent);
+                    border-right: 2px solid var(--accent); z-index: 2; pointer-events: none; }
+.board > .selband[hidden] { display: none; }
+.ruler { cursor: col-resize; }

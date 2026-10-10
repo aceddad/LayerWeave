@@ -12,7 +12,7 @@ from pathlib import Path
 import tempfile
 
 FIELDS = {"project": int, "view": str, "board": dict, "range": list, "playhead": (int, float), "playhead_at": list,
-          "selected": dict, "boards": list, "layers": list}
+          "selected": dict, "selection": dict, "boards": list, "layers": list}
 
 
 def state_path(database, root=None):
@@ -66,6 +66,10 @@ def describe(state):
     if state.get("selected"):
         s = state["selected"]
         lines.append(f"选中：对象 {s.get('id')}（层 {s.get('layer')}）{s.get('name') or ''}")
+    if state.get("selection"):
+        s = state["selection"]
+        lines.append(f"圈出的一段：{s.get('name') or '根'}（{s.get('root')}）自己的 {s.get('begin'):g} – {s.get('end'):g} {unit}".rstrip()
+                     + "（写批注时用 --to layer:根编号 --span 起点 终点）")
     if state.get("boards"):
         lines.append("屏幕上的画板（按根层编号）：" + "；".join("、".join(str(r) for r in roots) for roots in state["boards"]))
     if state.get("layers"):

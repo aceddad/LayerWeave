@@ -1,0 +1,26 @@
+# 批注层封装：视图工具自带的层，用一个层当"有序列表"来管理信息。
+# 配置和类都随视图工具包分发；层记录的 config_ref 是从 configs/ 到这里的相对路径（../tool/builtin/view/notes/layers/note.toml）。
+# 卸掉视图工具后，数据仍能按普通记录读出，只是检测会报告找不到这份配置——说明这个层的主人不在了。
+
+[layer]
+type    = "note"
+version = 1
+name    = "批注层"
+class   = "layerweave.tool.builtin.view.notes.models:NoteLayer"
+extends = "../../../../../configs/layers/text.toml"   # 继承文字层
+objects = "text"     # 核心按类型只在 configs/objects/ 里找对象配置，这里无法收窄到批注对象；约定只放批注对象（notes/objects/note.toml）
+when    = "视图工具的批注容器：按顺序存放给人或 AI 的意见、说明、待办，每条用关联指向它说的东西"
+tools   = []         # 不挂外置技能
+
+# 约定（由视图工具维护，工具和 AI 照此读写）：
+# - 一个项目一个，是根层（father 为空），名字默认「批注」；第一次写批注时由视图工具创建，不改项目创建流程。
+# - 轴固定为 { unit = "条", precision = 1 }：第 n 条批注占 [n, n+1)，新的接在最后；移动对象就是调整顺序。
+
+[layer.display]
+default_visible = false   # 视图默认把这个层收起来，不单独开画板；visibility（允许显隐控制）沿用文字层
+
+[layer.example]
+name    = "批注"
+axis    = { unit = "条", precision = 1 }
+tips    = "视图工具的批注容器"
+objects = []

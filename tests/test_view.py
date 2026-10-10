@@ -10,10 +10,12 @@ import unittest
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
-from layerweave.support.api import initialize_database, open_database, save_layer, save_object, transaction
+from layerweave.support.api import initialize_database, open_database, read_record, save_layer, save_object, transaction
 from layerweave.models import ImageLayer, Image, Movie, TextLayer, Text
 from layerweave.tool.builtin.view.data import axis_key, extract_frame, find_ffmpeg, open_readonly
 from layerweave.tool.builtin.view.layout import arrange, chain_offsets, layout_path, merge, reconcile, split
+from layerweave.tool.builtin.view.note import add_note, list_notes, note, remove_note, update_note
+from layerweave.tool.builtin.view.notes import AXIS, LAYER_REF, OBJECT_REF
 from layerweave.tool.builtin.view.screenshot import capture, find_browser
 from layerweave.tool.builtin.view.server import make_server
 from layerweave.tool.builtin.view.state import read_state
@@ -186,6 +188,86 @@ class ViewTests(unittest.TestCase):
             save_object(c, self.project, clip)
         status, headers, body = self.get(f"/frame/{self.project}/{clip.id}?t=end")
         self.assertEqual((status, headers["Content-Type"]), (200, "image/jpeg"))
+
+    def test_note_layer_types_ship_with_the_view_package(self):
+        from layerweave.support.configuration.loader import Loader
+        from layerweave.tool.builtin.view.notes.models import Note, NoteLayer
+        loader = Loader()
+        layer, obj = loader.load(LAYER_REF, "layer"), loader.load(OBJECT_REF, "object")
+        self.assertEqual((layer["type"], obj["type"]), ("note", "note"))
+        self.assertIn("layers/text.toml", layer["_lineage"])                            # 继承核心的文字层
+        self.assertEqual(layer["display"], {"visibility": True, "default_visible": False})
+        self.assertTrue(loader.accepts_object(layer, obj))
+        self.assertEqual(set(obj["information"]), {"text", "status", "author", "span"})
+        self.assertTrue(issubclass(NoteLayer, TextLayer) and issubclass(Note, Text))
+        self.assertTrue((Path(loader.root) / LAYER_REF).resolve().is_file())
+
+    def test_notes_are_an_ordered_list_that_points_at_things(self):
+        from layerweave.support.api import load_layer
+        from layerweave.tool.builtin.usage.validation.recheck import recheck
+        first = add_note(self.database, self.project, "球应该落在桌子下面", targets=[("object", self.project, self.image.id)],
+                         author="用户")
+        second = add_note(self.database, self.project, "这两秒空着", targets=[("layer", self.project, self.main_layer)], span=(5, 3))
+        whole = add_note(self.database, self.project, "整体再紧一点")
+        reply = add_note(self.database, self.project, "已改", targets=[("object", self.project, first["note"])], author="Claude")
+        self.assertEqual([first["index"], second["index"], whole["index"], reply["index"]], [0, 1, 2, 3])   # 接在最后
+        self.assertEqual(len({first["layer"], second["layer"], whole["layer"]}), 1)                   # 只建一个批注层
+        with closing(open_readonly(self.database)) as c:
+            notes = list_notes(c, self.project)
+            layer = read_record(c, "layer", project_id=self.project, id=first["layer"])
+        self.assertEqual((layer["type"], layer["config_ref"], layer["father"], layer["axis"]), ("note", LAYER_REF, None, AXIS))
+        self.assertEqual([n["text"] for n in notes], ["球应该落在桌子下面", "这两秒空着", "整体再紧一点", "已改"])
+        self.assertEqual(notes[0]["targets"][0]["id"], self.image.id)
+        self.assertEqual(notes[1]["span"], {"begin": 3.0, "end": 5.0})
+        self.assertEqual(notes[2]["targets"], [])
+        self.assertEqual(notes[3]["targets"][0]["id"], first["note"])                                  # 回复：关联到另一条批注
+        update_note(self.database, self.project, first["note"], status="done")
+        update_note(self.database, self.project, whole["note"], text="整体再紧一点点")
+        with closing(open_readonly(self.database)) as c:
+            self.assertEqual([n["id"] for n in list_notes(c, self.project, "done")], [first["note"]])
+            self.assertEqual(list_notes(c, self.project)[2]["text"], "整体再紧一点点")
+        remove_note(self.database, self.project, first["note"])                                        # 删掉它，连同发出的关联
+        with closing(open_readonly(self.database)) as c:
+            notes = list_notes(c, self.project)
+            self.assertNotIn(first["note"], [n["id"] for n in notes])
+            self.assertEqual(notes[-1]["targets"][0]["exists"], False)                                  # 回复还在，目标已删除
+            self.assertEqual(read_record(c, "bind", filters={"source_id": first["note"], "source_kind": "object"}), [])
+        with closing(open_database(self.database)) as c:
+            self.assertEqual(type(load_layer(c, self.project, first["layer"])).__name__, "NoteLayer")
+            issues = recheck(c, self.project)["issues"]
+            # 唯一的提醒：回复指向的那条批注被删了。回复保留，检测如实报告关联端点不存在
+            self.assertEqual([(i["code"], i["severity"]) for i in issues], [("bind_reference_missing", "warn")])
+        data = self.json(f"/api/project/{self.project}")
+        flags = {l["name"]: (l["role"], l["hidden"]) for l in data["layers"]}
+        self.assertEqual((flags["批注"], flags["主线"]), (("note", True), (None, False)))
+        for bad, message in (({"targets": [("object", self.project, 999)]}, "没有对象"), ({"span": (1, 2)}, "span"),
+                             ({}, None)):
+            with self.subTest(bad=bad), self.assertRaisesRegex(ValueError, message or "正文"):
+                add_note(self.database, self.project, "x" if message else "  ", **bad)
+        with self.assertRaisesRegex(ValueError, "不是这个项目批注层里的批注"):
+            update_note(self.database, self.project, self.image.id, status="done")
+        self.assertIn("整体再紧一点点", note(self.database, self.project)["text"])
+
+    def test_page_writes_notes_only_when_allowed(self):
+        body = json.dumps({"action": "add", "text": "页面写的", "targets": [{"kind": "object", "id": self.image.id}],
+                           "author": "用户"}).encode()
+        request = Request(self.url + f"api/notes/{self.project}", data=body, headers={"Content-Type": "application/json"})
+        with urlopen(request, timeout=10) as response:
+            written = json.loads(response.read())
+        self.assertIn("operation_id", written)
+        quiet, url = make_server(self.database, state_root=self.state_root, record_state=False)   # 截图用的服务不写
+        threading.Thread(target=quiet.serve_forever, daemon=True).start()
+        try:
+            with urlopen(Request(url + f"api/notes/{self.project}", data=body), timeout=10) as response:
+                self.assertEqual(json.loads(response.read()), {"recorded": False})
+        finally:
+            quiet.shutdown(); quiet.server_close()
+        with closing(open_readonly(self.database)) as c:
+            self.assertEqual([n["text"] for n in list_notes(c, self.project)], ["页面写的"])
+        bad = Request(self.url + f"api/notes/{self.project}", data=json.dumps({"action": "add", "text": ""}).encode())
+        with self.assertRaises(HTTPError) as error:
+            urlopen(bad, timeout=10)
+        self.assertEqual(error.exception.code, 400)
 
     def test_media_is_whitelisted_and_supports_ranges(self):
         status, headers, body = self.get(f"/media/{self.project}/{self.image.id}")

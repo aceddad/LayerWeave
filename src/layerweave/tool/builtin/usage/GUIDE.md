@@ -37,7 +37,7 @@ object_count 只计本层直接装载的对象，不重复计算子层对象。d
 
 概览只读，不返回对象正文或轴详情；需要内容时使用详细展开。
 
-从 src/ 目录查看自己的项目：
+完成安装后，从项目根目录查看自己的项目；在其他目录运行时，相对数据库路径按当前工作目录解释：
 
 ```sh
 python -X utf8 -B -m layerweave.tool.builtin.usage.query.project_overview output/ai-production.sqlite3 1
@@ -243,7 +243,7 @@ result = copy_object(connection, project_id, object_id, layer_id=target_layer_id
 
 ### 位置与对象命令行
 
-从 src/ 目录运行，默认返回标准操作与检测 JSON。在子命令之前加 `--text` 可逐条显示写入结果与诊断，例如 `python -X utf8 -B -m layerweave.tool.builtin.usage.editing.positions output/ai-production.sqlite3 1 --text duration 2 4`。成功和无变化操作退出码为 0，操作失败为 1；检测报告问题不会把已经成功写入的操作改成失败。
+以下例子从项目根目录运行，默认返回标准操作与检测 JSON。在子命令之前加 `--text` 可逐条显示写入结果与诊断，例如 `python -X utf8 -B -m layerweave.tool.builtin.usage.editing.positions output/ai-production.sqlite3 1 --text duration 2 4`。成功和无变化操作退出码为 0，操作失败为 1；检测报告问题不会把已经成功写入的操作改成失败。
 
 ```sh
 python -X utf8 -B -m layerweave.tool.builtin.usage.editing.positions output/ai-production.sqlite3 1 arrange 1 --start 0

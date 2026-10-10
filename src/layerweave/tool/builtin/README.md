@@ -13,4 +13,4 @@
 
 默认写工具可选接入 validation 包；没有它时写入照常完成、checks.status 为 not_run。共用 CLI、help 示例排版和静态发现位于 support，卸掉帮助包不会破坏其他工具的 --help。
 
-完成[本地安装](../../../../docs/developer-conventions.md#准备环境)后，从任意工作目录执行 python -m layerweave.tool.builtin.shared.help.command_help 可查询已安装命令。此轮不新增 MCP 分组或执行接口。
+完成[本地安装](../../../../docs/developer-conventions.md#准备环境)后，从任意工作目录执行 python -m layerweave.tool.builtin.shared.help.command_help 可查询已安装命令。MCP 分组与适配留到对应封装阶段。

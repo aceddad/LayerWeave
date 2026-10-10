@@ -4,6 +4,6 @@
 
 identity_key 与 reference 表达身份和普通引用：层/对象保留项目编号，project/bind 使用独立编号。它们只组织数据，不查询端点或增加绑定限制。
 
-encapsulation.merge_definition 合并纯字典约定：父约定不放宽，optional 可以由 true 收紧为 false；说明和允许的默认项按已有规则合并。layerweave.support.configuration.Loader 使用这份语义读取 TOML，没有另一套合并实现。
+encapsulation.merge_definition 合并纯字典约定：父约定不放宽，optional 和 open 可以由 true 收紧为 false；具体继承行为见[合并约定](../support/configuration/README.md#合并约定)。layerweave.support.configuration.Loader 使用这份语义读取 TOML，没有另一套合并实现。
 
 类导入按需进行，仅使用合并函数不会预加载模型。身份范围、关系和支撑保证见[架构](../../../docs/architecture.md)。

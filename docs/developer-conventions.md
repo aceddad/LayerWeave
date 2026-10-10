@@ -30,15 +30,16 @@ python -m venv .venv
 | 管理本地 KEY 或接入其他模型服务的凭据 | [KEY 工具](../src/layerweave/tool/builtin/developer/keys/README.md)，不依赖业务数据库 |
 | 开发视图 | [视图边界](../src/layerweave/tool/builtin/view/README.md)；开始实现时建独立分支 |
 | 修改文档 | [文档约定](documentation.md) |
+| 查看尚未实现的候选方向 | [后续可能更新](FUTURE.md)；视图边界单独维护 |
 
 ## 源码位置
 
 | 目录 | 职责 |
 |---|---|
-| src/layerweave/core、src/layerweave/models | 抽象结构、纯合并语义、按需导入的基础及派生类 |
+| [src/layerweave/core](../src/layerweave/core/README.md)、[src/layerweave/models](../src/layerweave/models/README.md) | 抽象结构、纯合并语义、按需导入的基础及派生类 |
 | src/layerweave/configs/layers、src/layerweave/configs/objects | 与 Python 类对应的封装约定 |
 | src/layerweave/configs/logging | 诊断汇报等级；不保存数据库操作历史 |
-| src/layerweave/support | 存储与配置适配、统一写入、实例装配、CLI 和静态发现 |
+| [src/layerweave/support](../src/layerweave/support/README.md) | 存储与配置适配、统一写入、实例装配、CLI 和静态发现 |
 | src/layerweave/tool/builtin | 可独立增减的完整工具包，按 usage/developer/view/shared 分类 |
 | src/layerweave/tool/skills | 外置技能，供层配置中的 tools 引用 |
 | examples、tests | 可运行例子、行为回归与隔离验收 |

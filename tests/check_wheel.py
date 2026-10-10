@@ -2,6 +2,8 @@
 import json
 import os
 from pathlib import Path
+import posixpath
+import re
 import subprocess
 import sys
 import tempfile
@@ -22,13 +24,23 @@ def check(wheel):
         key_template = json.loads(archive.read("layerweave/tool/builtin/developer/keys/example.json"))
         assert all(record["key"] == "" for record in key_template.values())
         assert not any(name.endswith(("/keys.local.json", "/keys.json")) for name in names)
-        resources = [package / "support/storage/schema.sql", package / "tool/builtin/developer/keys/example.json"]
+        resources = [package / "support/storage/schema.sql", package / "tool/README.md", package / "tool/builtin/developer/keys/example.json",
+                     package / "tool/builtin/developer/keys/README.md"]
         resources += [p for folder in ("configs", "tool/skills") for p in (package / folder).rglob("*")
                       if p.is_file() and "__pycache__" not in p.parts]
         for path in resources:
             member = "layerweave/" + path.relative_to(package).as_posix()
             assert member in names, f"Missing package resource: {member}"
             assert archive.read(member) == path.read_bytes(), f"Outdated resource: {member}"
+        for name in names:
+            if not name.startswith("layerweave/tool/skills/") or not name.endswith(".md"):
+                continue
+            text = re.sub(r"```.*?```", "", archive.read(name).decode("utf-8"), flags=re.S)
+            for destination in re.findall(r"\]\(([^)]+)\)", text):
+                if "://" in destination or destination.startswith("#"):
+                    continue
+                linked = posixpath.normpath(posixpath.join(posixpath.dirname(name), destination.split("#")[0]))
+                assert linked in names, f"Missing installed skill guide: {name} -> {destination}"
         assert not any(name.startswith(tuple(prefix + "/" for prefix in (*COMMON_NAMES, "tests", "scratch"))) for name in names)
         print(f"wheel contents: one import root; {len(resources)} resources match source")
 

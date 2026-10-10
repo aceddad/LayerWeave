@@ -10,7 +10,10 @@ class   = "layerweave.models.layers.text:TextLayer"  # 对应的 Python 类
 extends = "base.toml"                     # 对应 Layer 的基础配置
 objects = "text"                         # 对应文字对象配置；按对象配置 type 唯一定位
 when    = "组织文本内容，例如主线说明、歌词、笔记"
-tools = []  # 外置技能引用；每项写 route（位置）、tier（分类）、when（使用时机），供 AI 阅读
+tools = [  # 外置技能引用；每项写 route（位置）、tier（分类）、when（使用时机），供 AI 阅读
+  { route = "src/layerweave/tool/skills/layers/text/glyph-deform/SKILL.md", tier = "层级", when = "文字要作为有重量的物体受力、切开、碎裂，做动态字体时" },
+  { route = "src/layerweave/tool/skills/layers/text/text-redacted-layout/SKILL.md", tier = "层级", when = "不方便显示原文（歌词等）却要检查排版、闪烁和源码里有没有写死原文时；闪烁扫描属于可用级" },
+]
 
 [layer.constraint]
 overlap = true                            # 允许文字对象在轴上的区间重叠

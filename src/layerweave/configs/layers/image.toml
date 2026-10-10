@@ -10,7 +10,10 @@ class   = "layerweave.models.layers.image:ImageLayer"
 extends = "base.toml"
 objects = "image"
 when    = "组织图片资源，例如原画、背景、角色参考"
-tools = []  # 外置技能引用；每项写 route（位置）、tier（分类）、when（使用时机），供 AI 阅读
+tools = [  # 外置技能引用；每项写 route（位置）、tier（分类）、when（使用时机），供 AI 阅读
+  { route = "src/layerweave/tool/skills/layers/image/image-generate/SKILL.md", tier = "层级", when = "需要新图、同一角色的新姿势，或要求构图和姿势精确服从 SVG／代码草图时" },
+  { route = "src/layerweave/tool/skills/layers/image/image-halftone/SKILL.md", tier = "层级", when = "想把插画转成网点，融进图形化画面，或需要逐点动画数据时" },
+]
 
 [layer.constraint]
 overlap = true                # 允许对象在轴上的区间重叠，不控制显隐

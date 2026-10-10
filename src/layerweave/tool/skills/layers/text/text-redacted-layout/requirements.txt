@@ -1,0 +1,4 @@
+fonttools
+av
+numpy
+Pillow

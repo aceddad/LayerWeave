@@ -1,0 +1,6 @@
+# Demucs 依赖 PyTorch：NumPy 2 需要 torch>=2.3；用较旧的 torch 时需 numpy<2
+demucs
+librosa
+numpy
+scipy
+soundfile

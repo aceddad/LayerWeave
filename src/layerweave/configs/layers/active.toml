@@ -10,7 +10,9 @@ class   = "layerweave.models.layers.active:ActiveLayer"
 extends = "base.toml"
 objects = "active"
 when    = "组织动作资源或动作数据，使用 bind 说明其作用对象"
-tools = []  # 外置技能引用；每项写 route（位置）、tier（分类）、when（使用时机），供 AI 阅读
+tools = [  # 外置技能引用；每项写 route（位置）、tier（分类）、when（使用时机），供 AI 阅读
+  { route = "src/layerweave/tool/skills/layers/active/puppet-motion/SKILL.md", tier = "可用", when = "需要按摄影表定动作顺序和停顿，或给生视频模型做参考视频时；构图跟随尚未验证" },
+]
 
 [layer.constraint]
 overlap = true                # 允许对象在轴上的区间重叠，不控制显隐

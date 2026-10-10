@@ -10,7 +10,9 @@ class   = "layerweave.models.layers.audio:AudioLayer"
 extends = "base.toml"
 objects = "audio"
 when    = "组织音频资源，例如音乐、人声、音效"
-tools = []  # 外置技能引用；每项写 route（位置）、tier（分类）、when（使用时机），供 AI 阅读
+tools = [  # 外置技能引用；每项写 route（位置）、tier（分类）、when（使用时机），供 AI 阅读
+  { route = "src/layerweave/tool/skills/layers/audio/audio-cues/SKILL.md", tier = "层级", when = "需要分轨、拍子网格和卡点表，让画面落在拍子上时；各轨起音事件属于可用级，关键处回到音频确认" },
+]
 
 [layer.constraint]
 overlap = true                # 允许对象在轴上的区间重叠，不控制显隐

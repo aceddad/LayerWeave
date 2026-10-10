@@ -10,7 +10,13 @@ class   = "layerweave.models.layers.movie:MovieLayer"
 extends = "base.toml"
 objects = "movie"
 when    = "组织视频资源，例如素材片段、预览、成片"
-tools = []  # 外置技能引用；每项写 route（位置）、tier（分类）、when（使用时机），供 AI 阅读
+tools = [  # 外置技能引用；每项写 route（位置）、tier（分类）、when（使用时机），供 AI 阅读
+  { route = "src/layerweave/tool/skills/layers/movie/remotion-animate/SKILL.md", tier = "层级", when = "用代码做动画（图形、点阵、字幕、合成素材），按音轨节拍驱动并导出视频时" },
+  { route = "src/layerweave/tool/skills/layers/movie/video-generate/SKILL.md", tier = "层级", when = "已有首尾两张关键帧，需要模型补出中间的动作时" },
+  { route = "src/layerweave/tool/skills/layers/movie/video-master/SKILL.md", tier = "层级", when = "成片导出后、上传前转成发布母版，或只替换其中一段时" },
+  { route = "src/layerweave/tool/skills/layers/movie/video-verify/SKILL.md", tier = "层级", when = "每次导出成片或母版后，核对帧数、音画偏移、色彩标注时" },
+  { route = "src/layerweave/tool/skills/layers/movie/video-timing/SKILL.md", tier = "可用", when = "需要读懂一段视频的状态、过渡、停顿和节奏时；结果作参考，关键处原速确认" },
+]
 
 [layer.constraint]
 overlap = true                # 允许对象在轴上的区间重叠，不控制显隐

@@ -3,6 +3,7 @@
 from collections import Counter
 import json
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -23,6 +24,9 @@ class ConfigHelpTests(unittest.TestCase):
         self.root = Path(self.temp.name)
         self.configs = self.root / "configs"
         shutil.copytree(DEFAULT_ROOT, self.configs)
+        # 技能声明相关的用例以"文字层未声明 tools"为基线；仓库自带的 text.toml 已绑定技能，这里在副本中清空。
+        text = self.configs / "layers/text.toml"
+        text.write_text(re.sub(r"tools = \[[^\]]*\]", "tools = []", text.read_text(encoding="utf-8"), count=1), encoding="utf-8")
 
     def query(self, view="overview", targets=None, **kwargs):
         kwargs.setdefault("audience", "developer")

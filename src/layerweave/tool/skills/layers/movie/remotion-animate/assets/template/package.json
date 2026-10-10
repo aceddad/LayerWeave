@@ -1,0 +1,25 @@
+{
+  "name": "remotion-animate-template",
+  "version": "0.1.0",
+  "private": true,
+  "description": "代码动画工程模板：一条音轨当全局时钟，分段场景，SVG 与 Canvas 绘制",
+  "dependencies": {
+    "@remotion/bundler": "4.0.531",
+    "@remotion/cli": "4.0.531",
+    "@remotion/media": "4.0.531",
+    "@remotion/renderer": "4.0.531",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "remotion": "4.0.531"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.7",
+    "typescript": "5.9.3"
+  },
+  "scripts": {
+    "dev": "remotion studio",
+    "check": "tsc --noEmit",
+    "stills": "node scripts/stills.mjs",
+    "render": "node scripts/render.mjs"
+  }
+}

@@ -87,3 +87,47 @@ key = get_key("example-key")
 ```
 
 get_key 是程序读取接口，不作为 CLI 查询输出。空密钥会明确报告尚未填写。不同调用方可以复用同一条记录，也可以选择与 env_name 不同的变量名；used 只帮助 AI 了解已登记的用途。
+
+## 把连接交给技能子进程
+
+AI 先用 connections 查看已登记的连接，按所需服务选择条目；used 提供使用指引，不限制选择。条目的 env_name、base_url、model 需要已经填写实际值。地址按技能要求填写，例如出图接口到 /v1，视频接口到 /v2；同一个 KEY 可用于多个调用方。
+
+下面演示如何调用出图技能。先由 AI 设置 entry_name（条目名）、project_dir（已存在的项目工作目录）、output_dir（本次选定的输出目录）、prompt_file（已写好的提示词文件）；三个路径使用 pathlib.Path 的绝对路径。输出目录由 AI 管理，没有固定的项目布局要求。
+
+```python
+import os
+import subprocess
+import sys
+
+from layerweave.support.paths import SKILLS_ROOT
+from layerweave.tool.builtin.developer.keys.service import get_key, manage_keys
+
+connection = manage_keys("read", entry_name)["data"]
+child_env = dict(os.environ)
+child_env[connection["env_name"]] = get_key(entry_name)
+output_dir.mkdir(parents=True, exist_ok=True)
+
+subprocess.run([
+    sys.executable, "-X", "utf8", "-B",
+    str(SKILLS_ROOT / "layers/image/image-generate/scripts/generate.py"),
+    str(output_dir / "画面.png"), str(prompt_file),
+    "--key-env", connection["env_name"],
+    "--base-url", connection["base_url"],
+    "--model", connection["model"],
+], cwd=project_dir, env=child_env, check=True)
+```
+
+视频生成使用同样的步骤，但要先选好视频服务的条目，并将上面的 subprocess.run 替换为：
+
+```python
+subprocess.run([
+    sys.executable, "-X", "utf8", "-B",
+    str(SKILLS_ROOT / "layers/movie/video-generate/scripts/video.py"),
+    "--base-url", connection["base_url"],
+    "--key-env", connection["env_name"],
+    "submit", str(output_dir / "片段.mp4"), str(prompt_file),
+    "--model", connection["model"],
+], cwd=project_dir, env=child_env, check=True)
+```
+
+KEY 只进入这次子进程的环境，不修改全局环境或写进命令参数；不要打印 child_env。模型可在调用参数里换成该任务需要的模型。使用自定义 KEY 文件时，给 manage_keys 和 get_key 传入同一个 store。脚本仍可直接用已有环境变量调用，不要求安装或使用本管理工具。

@@ -83,7 +83,7 @@ def _format_entry(item):
     if item["status"] == "unavailable":
         lines.append("  状态：配置不可用")
     else:
-        for name, label in (("when", "用途"), ("note", "说明"), ("not_for", "适用边界")):
+        for name, label in (("requires", "依赖的工具包"), ("when", "用途"), ("note", "说明"), ("not_for", "适用边界")):
             if definition.get(name):
                 lines.append(f"  {label}：{definition[name]}")
         if "tools" in definition:
@@ -93,7 +93,8 @@ def _format_entry(item):
         if "accepted_objects" in item:
             lines.append("  支持的对象类：")
             for obj in item["accepted_objects"]:
-                lines.append(f"    - {_identity(obj)} · {obj['config_ref']}")
+                owner = f" · 由 {obj['requires']} 登记" if obj.get("requires") else ""
+                lines.append(f"    - {_identity(obj)} · {obj['config_ref']}{owner}")
             if not item["accepted_objects"]:
                 lines.append("    （没有可列出的对象类）")
             if not item["accepted_objects_complete"]:

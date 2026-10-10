@@ -35,6 +35,8 @@ const S = {
   showHidden: false,                                    // 在画布上显示默认收起的层（比如批注层）
   sel: null,                                            // 在尺子上圈出的一段：{key: 画板, begin, end}（画板时间）
   noteFilter: 'all', noteMap: new Map(), wholeProject: false,
+  targetLayer: null,                                    // 点层名选中的层：写批注时指向它
+  noteUI: {edit: null, reply: null, del: null, drafts: {}},   // 批注卡片上正在改、回复、确认删除的那一条，以及没写完的草稿
 };
 const KIND = (o) => (o.media ? o.media.kind : o.text != null ? 'text' : 'other');
 
@@ -279,7 +281,8 @@ function sectionHtml(b, row, ri, a, pps, W) {
     const tog = t.hasChildren ? `<span class="tog" data-tog="${esc(ck)}">${S.collapsed.has(ck) ? '▸' : '▾'}</span>` : '<span class="tog"></span>';
     const label = isRoot ? row.map(nameOf).join(' → ') : (t.name || t.type);
     const split = isRoot && many && !chain ? `<button class="split" data-split="${row[0]}" title="把这个根拆出去，单独成一块画板">拆出</button>` : '';
-    names.push(`<div class="lname${isRoot ? ' root' : ''}" data-layers="${t.parts.map((p) => p.layer.id).join(' ')}" style="height:${h}px;padding-left:${8 + 14 * t.depth}px" title="${esc(t.tips || label)}">${tog}<span class="lt">${esc(t.type)}</span><span class="nm">${esc(label)}</span>${layerMark(t.parts)}${split}</div>`);
+    const picked = S.targetLayer != null && t.parts.some((p) => p.layer.id === S.targetLayer) ? ' picked' : '';
+    names.push(`<div class="lname${isRoot ? ' root' : ''}${picked}" data-layers="${t.parts.map((p) => p.layer.id).join(' ')}" style="height:${h}px;padding-left:${8 + 14 * t.depth}px" title="${esc(t.tips || label)}">${tog}<span class="lt">${esc(t.type)}</span><span class="nm">${esc(label)}</span>${layerMark(t.parts)}${split}</div>`);
     const ghosts = (marksOn() ? t.parts.flatMap(({layer, seg}) => (S.ghosts.get(layer.id) || []).map((g) => ghostHtml(g, seg.offset, a, pps, unit))).join('') : '')
       + t.parts.flatMap(({layer, seg}) => (S.noteMap.get(`layer:${layer.id}`) || []).filter((n) => n.span)
         .map((n) => `<div class="noteband" data-note="${n.id}" style="left:${(n.span.begin + seg.offset - a) * pps}px;width:${Math.max(4, (n.span.end - n.span.begin) * pps)}px"
@@ -312,7 +315,7 @@ function block(it, lane, a, pps, unit) {
   }
   const label = o.text ?? o.name ?? '';
   const said = S.noteMap.get(`object:${o.id}`) || [];
-  const noted = said.length ? `<i class="note-n" title="${esc(said.map((n) => `#${n.id} ${n.text}`).join('\n'))}">💬${said.length}</i>` : '';
+  const noted = said.length ? `<i class="note-n" title="${esc(said.map((n) => `#${n.id} ${n.text}${n.replyCount ? `（${n.replyCount} 条回复）` : ''}`).join('\n'))}">💬${said.length}</i>` : '';
   const outside = externalBinds('object', o.id);
   const ext = outside.length ? `<i class="ext" title="${esc(outside.map((b) => refLabel(b.other) + (b.tips ? '：' + b.tips : '')).join('\n'))}">↗ ${outside.length}</i>` : '';
   const board = it.offset ? `（画板上 ${fmt(it.begin, unit)} – ${fmt(it.end, unit)}）` : '';
@@ -520,6 +523,7 @@ canvas.addEventListener('pointermove', (e) => {
     const t0 = at(d.cx), t1 = at(e.clientX);
     S.sel = {key: keyOf(d.b), begin: Math.min(t0, t1), end: Math.max(t0, t1)};
     S.wholeProject = false;
+    if (S.targetLayer != null) { S.targetLayer = null; $$('.lname.picked').forEach((n) => n.classList.remove('picked')); }
     placeSelection();
     return;
   }
@@ -879,25 +883,44 @@ function drawLinks() {
   svg.innerHTML = `<defs>${['', '-hot'].map((k) => `<marker id="arrow${k}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrow${k}"/></marker>`).join('')}</defs>${out.join('')}`;
 }
 
-// ---------- 批注：视图工具自带的批注层，一层就是一个有序列表 ----------
-// 批注层（role = note）里的对象，按顺序；每条指向哪里来自它发出的关联
+// ---------- 批注：视图工具登记的批注层，一层就是一个有序列表；回复成楼 ----------
+// 批注层（role = note）里的对象，按顺序；每条指向哪里来自它发出的关联；指向另一条批注的就是回复
 function noteList() {
-  return allLayers().filter((l) => l.role === 'note').flatMap((l) => l.objects)
+  const list = allLayers().filter((l) => l.role === 'note').flatMap((l) => l.objects)
     .sort((p, q) => p.begin - q.begin || p.id - q.id)
     .map((o) => ({id: o.id, index: o.begin, text: o.information?.text ?? '', author: o.information?.author || '',
                   status: o.information?.status === 'done' ? 'done' : 'open', span: o.information?.span || null,
                   targets: (S.data.binds || []).filter((b) => sameRef(b.source, 'object', o.id)).map((b) => b.target)}));
+  const byId = new Map(list.map((n) => [n.id, n]));
+  for (const n of list) n.replyTo = n.targets.find((t) => t.kind === 'object' && t.project === S.project && byId.has(t.id))?.id ?? null;
+  for (const n of list) {                               // 顺着回复往上找到楼主
+    let top = n;
+    const seen = new Set();
+    while (top.replyTo != null && !seen.has(top.id)) { seen.add(top.id); top = byId.get(top.replyTo); }
+    n.thread = top.id;
+  }
+  return list;
 }
-// 待处理的批注按"指向谁"建索引，画布上的💬标记用
+// 按楼分组：楼主在前，回复按写的先后；楼主的状态代表整楼
+function noteThreads(list = noteList()) {
+  const groups = new Map();
+  for (const n of list) {
+    if (!groups.has(n.thread)) groups.set(n.thread, []);
+    groups.get(n.thread).push(n);
+  }
+  return [...groups.values()].map((group) => ({top: group.find((n) => n.id === n.thread) || group[0], replies: group.filter((n) => n.id !== n.thread)}));
+}
+// 待处理的楼主按"指向谁"建索引，画布上的💬标记用（回复指向批注，不算）
 function indexNotes() {
   S.noteMap = new Map();
-  for (const n of noteList()) {
-    if (n.status !== 'open') continue;
-    for (const t of n.targets) {
+  for (const {top, replies} of noteThreads()) {
+    if (top.status !== 'open') continue;
+    top.replyCount = replies.length;
+    for (const t of top.targets) {
       if (t.project !== S.project) continue;
       const key = `${t.kind}:${t.id}`;
       if (!S.noteMap.has(key)) S.noteMap.set(key, []);
-      S.noteMap.get(key).push(n);
+      S.noteMap.get(key).push(top);
     }
   }
 }
@@ -911,49 +934,77 @@ function selectionInfo() {
   const seg = segmentAt(b.rows[0], S.sel.begin) || segmentsOf(b.rows[0])[0];
   return {root: seg.root, name: nameOf(seg.root), begin: +(S.sel.begin - seg.offset).toFixed(3), end: +(S.sel.end - seg.offset).toFixed(3)};
 }
-// 新批注写给哪里：圈出的一段 > 选中的对象 > 整个项目
+// 新批注写给哪里：圈出的一段 > 点选的层 > 选中的对象 > 整个项目
 function composeTarget() {
   const sel = !S.wholeProject && selectionInfo();
   if (sel) return {kind: 'span', ...sel, label: `${sel.name} 的 ${fmt(sel.begin, unitOfRoot(sel.root))} – ${fmt(sel.end, unitOfRoot(sel.root))}`};
+  const layer = !S.wholeProject && S.targetLayer != null ? layerById(S.targetLayer) : null;
+  if (layer) return {kind: 'layer', id: layer.id, label: refLabel({kind: 'layer', project: S.project, id: layer.id})};
   const o = !S.wholeProject && S.selected != null ? objectById(S.selected) : null;
   if (o) return {kind: 'object', id: o.id, label: refLabel({kind: 'object', project: S.project, id: o.id})};
   return {kind: 'project', label: '整个项目'};
 }
 
 function renderNotes() {
-  const all = noteList(), list = all.filter((n) => S.noteFilter === 'all' || n.status === S.noteFilter);
+  const focus = document.activeElement?.dataset?.draft;  // 重画前记下正在写的框，画完放回去，轮询刷新也不打断
+  const all = noteThreads(), shown = all.filter(({top}) => S.noteFilter === 'all' || top.status === S.noteFilter);
   const t = composeTarget();
   $('#note-compose').hidden = !RECORD;
   $('#note-target').innerHTML = `写给：<b>${esc(t.label)}</b>${t.kind !== 'project' ? ' <a href="#" id="note-whole">改成整个项目</a>' : ''}`;
   $('#note-author').value ||= localStorage.getItem('lw-author') || '用户';
   $('#show-hidden').checked = S.showHidden;
   $$('#note-filters button').forEach((b) => b.classList.toggle('on', b.dataset.filter === S.noteFilter));
-  const open = all.filter((n) => n.status === 'open').length;
-  $('#note-count').textContent = `${all.length} 条，待处理 ${open}`;
-  $('#note-list').innerHTML = list.length ? list.map(noteHtml).join('') : '<p class="hint">还没有批注。选中一个对象，或者在尺子上拖出一段，再写。</p>';
+  $('#note-count').textContent = `${all.length} 楼，待处理 ${all.filter(({top}) => top.status === 'open').length}`;
+  $('#note-list').innerHTML = shown.length ? shown.map((th) => threadHtml(th, all.indexOf(th) + 1)).join('')
+    : '<p class="hint">还没有批注。选中一个对象、点一个层名，或者在尺子上拖出一段，再写。</p>';
+  if (focus) {
+    const box = $(`#note-list [data-draft="${focus}"]`);
+    if (box) { box.focus(); box.setSelectionRange(box.value.length, box.value.length); }
+  }
 }
 
-function noteHtml(n) {
-  const where = n.targets.length ? n.targets.map((t) => {
+function threadHtml({top, replies}, number) {
+  const floors = new Map([[top.id, 1], ...replies.map((r, i) => [r.id, i + 2])]);
+  return `<div class="thread ${top.status}">${noteHtml(top, {number, floors})}${replies.map((r) => noteHtml(r, {floors, top})).join('')}</div>`;
+}
+
+function targetsHtml(n) {
+  return n.targets.length ? n.targets.map((t) => {
     const unit = t.kind === 'layer' ? unitOfRoot(layerById(t.id)?.root) : '';
     const span = n.span && t.kind === 'layer' ? ` 的 ${fmt(n.span.begin, unit)} – ${fmt(n.span.end, unit)}` : '';
-    const reply = t.kind === 'object' && objectById(t.id)?.layer.role === 'note' ? '回复 ' : '';
-    return `<span class="note-target${refExists(t) ? '' : ' gone'}" data-ref="${t.kind}:${t.project}:${t.id}">${reply}${esc(refLabel(t))}${span}</span>`;
+    return `<span class="note-target${refExists(t) ? '' : ' gone'}" data-ref="${t.kind}:${t.project}:${t.id}">${esc(refLabel(t))}${span}</span>`;
   }).join('') : '<span class="note-target whole">整个项目</span>';
-  const edit = RECORD ? `<button data-edit="${n.id}" title="改正文">改</button><button data-remove="${n.id}" title="删除这条批注（可以用撤销工具撤回）">删</button>` : '';
-  return `<div class="note ${n.status}" data-note="${n.id}">
-    <div class="note-head"><label title="勾上表示已处理"><input type="checkbox" data-done="${n.id}"${n.status === 'done' ? ' checked' : ''}${RECORD ? '' : ' disabled'}> ${n.index + 1}</label>
-      ${n.author ? `<b>${esc(n.author)}</b>` : ''}<small>#${n.id}</small><span class="grow"></span>${edit}</div>
-    <div class="note-text">${esc(n.text)}</div>
-    <div class="note-where">→ ${where}</div>
+}
+
+// 一条批注：楼主带勾选框和指向；回复写几楼、回复谁。改、删、回复都在卡片里完成，不用浏览器弹窗
+function noteHtml(n, {number, floors, top}) {
+  const ui = S.noteUI, isTop = !top;
+  const head = isTop
+    ? `<label title="勾上表示整楼已处理"><input type="checkbox" data-done="${n.id}"${n.status === 'done' ? ' checked' : ''}${RECORD ? '' : ' disabled'}> 第 ${number} 楼</label>`
+    : `<span class="floor">${floors.get(n.id)} 楼</span>${n.replyTo !== top.id && floors.has(n.replyTo) ? `<span class="reply-to">回复 ${floors.get(n.replyTo)} 楼</span>` : ''}`;
+  let actions = '';
+  if (RECORD) actions = ui.del === n.id
+    ? `<span class="confirm">删除这条${isTop && floors.size > 1 ? '（回复会留下）' : ''}？</span><button data-remove-yes="${n.id}">删除</button><button data-cancel>取消</button>`
+    : `<button data-reply="${n.id}">回复</button><button data-edit="${n.id}">改</button><button data-remove="${n.id}">删</button>`;
+  const editing = ui.edit === n.id;
+  const body = editing
+    ? `<textarea class="note-box" data-draft="edit:${n.id}" rows="3">${esc(ui.drafts[`edit:${n.id}`] ?? n.text)}</textarea>
+       <div class="note-row"><span class="grow"></span><button data-cancel>取消</button><button data-save="${n.id}">保存</button></div>`
+    : `<div class="note-text">${esc(n.text)}</div>`;
+  const reply = ui.reply === n.id
+    ? `<div class="note-replybox"><textarea class="note-box" data-draft="reply:${n.id}" rows="2" placeholder="回复 ${isTop ? '楼主' : floors.get(n.id) + ' 楼'}……（Ctrl+回车发送）">${esc(ui.drafts[`reply:${n.id}`] ?? '')}</textarea>
+       <div class="note-row"><span class="grow"></span><button data-cancel>取消</button><button data-send="${n.id}">发送</button></div></div>` : '';
+  return `<div class="note ${isTop ? n.status : 'reply'}" data-note="${n.id}">
+    <div class="note-head">${head}${n.author ? `<b>${esc(n.author)}</b>` : ''}<small>#${n.id}</small><span class="grow"></span>${actions}</div>
+    ${body}${isTop ? `<div class="note-where">→ ${targetsHtml(n)}</div>` : ''}${reply}
   </div>`;
 }
 
-// 选中对象的详情里，列出指向它的批注
+// 选中对象的详情里，列出指向它的批注（楼主）
 function notesOnHtml(id) {
-  const said = noteList().filter((n) => n.targets.some((t) => sameRef(t, 'object', id)));
+  const said = noteThreads().filter(({top}) => top.targets.some((t) => sameRef(t, 'object', id)));
   if (!said.length) return '';
-  return `<div class="rels"><div class="rels-head">批注</div>${said.map((n) => `<div class="rel" data-open-note="${n.id}">💬 ${esc(n.text)}<small>${n.status === 'done' ? '已处理' : '待处理'}${n.author ? ' · ' + esc(n.author) : ''}</small></div>`).join('')}</div>`;
+  return `<div class="rels"><div class="rels-head">批注</div>${said.map(({top, replies}) => `<div class="rel" data-open-note="${top.id}">💬 ${esc(top.text)}<small>${top.status === 'done' ? '已处理' : '待处理'}${top.author ? ' · ' + esc(top.author) : ''}${replies.length ? ` · ${replies.length} 条回复` : ''}</small></div>`).join('')}</div>`;
 }
 
 async function noteAction(body) {
@@ -1199,6 +1250,15 @@ canvas.addEventListener('click', (e) => {
     saveLayout();
     return report();
   }
+  const lname = e.target.closest('#world .lname');
+  if (lname && !e.target.closest('.tog, button')) {
+    const id = Number(lname.dataset.layers.split(' ')[0]);
+    S.targetLayer = S.targetLayer === id ? null : id;
+    if (S.targetLayer != null) { S.sel = null; placeSelection(); }
+    $$('.lname.picked').forEach((n) => n.classList.remove('picked'));
+    if (S.targetLayer != null) $$(`#world .lname[data-layers~="${S.targetLayer}"]`).forEach((n) => n.classList.add('picked'));
+    return renderSide();
+  }
   const band = e.target.closest('.noteband');
   if (band) { S.side = 'notes'; renderSide(); $(`#note-list [data-note="${band.dataset.note}"]`)?.scrollIntoView({block: 'center'}); }
   const area = e.target.closest('.tracks, .ruler');
@@ -1212,6 +1272,7 @@ canvas.addEventListener('click', (e) => {
   else if (!e.target.closest('.ruler')) S.selected = null;
   if (e.target.closest('.ruler')) S.sel = null;           // 只是点一下尺子：放下播放头，取消圈出的一段
   S.wholeProject = false;
+  if (S.targetLayer != null) { S.targetLayer = null; $$('.lname.picked').forEach((n) => n.classList.remove('picked')); }
   placeSelection();
   $$('.obj.sel').forEach((n) => n.classList.remove('sel'));
   if (S.selected != null) $(`#world .obj[data-id="${S.selected}"]`)?.classList.add('sel');
@@ -1223,37 +1284,66 @@ $('#note-add').addEventListener('click', async () => {
   if (!text) return toast('先写点什么');
   const t = composeTarget(), author = $('#note-author').value.trim();
   const body = {action: 'add', text, author};
-  if (t.kind === 'object') body.targets = [{kind: 'object', id: t.id}];
+  if (t.kind === 'object' || t.kind === 'layer') body.targets = [{kind: t.kind, id: t.id}];
   if (t.kind === 'span') { body.targets = [{kind: 'layer', id: t.root}]; body.span = {begin: t.begin, end: t.end}; }
   localStorage.setItem('lw-author', author);
   if (await noteAction(body)) { $('#note-text').value = ''; S.wholeProject = false; }
 });
 $('#note-text').addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) $('#note-add').click(); });
+
+const noteAuthor = () => { const a = $('#note-author').value.trim(); localStorage.setItem('lw-author', a); return a; };
+function closeNoteUI(keep) {
+  const ui = S.noteUI;
+  for (const key of Object.keys(ui.drafts)) if (key !== keep) delete ui.drafts[key];
+  ui.edit = ui.reply = ui.del = null;
+}
+async function saveEdit(id) {
+  const text = (S.noteUI.drafts[`edit:${id}`] ?? '').trim();
+  if (!text) return toast('正文不能为空');
+  if (await noteAction({action: 'edit', note: id, text})) { closeNoteUI(); renderNotes(); }
+}
+async function sendReply(id) {
+  const text = (S.noteUI.drafts[`reply:${id}`] ?? '').trim();
+  if (!text) return toast('先写点什么');
+  if (await noteAction({action: 'add', text, author: noteAuthor(), targets: [{kind: 'object', id}]})) { closeNoteUI(); renderNotes(); }
+}
 $('#notes-pane').addEventListener('click', async (e) => {
+  const d = e.target.dataset, ui = S.noteUI;
   if (e.target.id === 'note-whole') { e.preventDefault(); S.wholeProject = true; return renderNotes(); }
-  if (e.target.dataset.filter) { S.noteFilter = e.target.dataset.filter; return renderNotes(); }
-  if (e.target.dataset.edit) {
-    const n = noteList().find((x) => x.id === Number(e.target.dataset.edit));
-    const text = prompt('改成：', n?.text ?? '');
-    if (text != null && text.trim() && text !== n.text) await noteAction({action: 'edit', note: n.id, text: text.trim()});
-    return;
+  if (d.filter) { S.noteFilter = d.filter; return renderNotes(); }
+  if (d.reply) { closeNoteUI(); ui.reply = Number(d.reply); renderNotes(); return $(`#note-list [data-draft="reply:${d.reply}"]`)?.focus(); }
+  if (d.edit) {
+    closeNoteUI(); ui.edit = Number(d.edit);
+    ui.drafts[`edit:${d.edit}`] = noteList().find((n) => n.id === ui.edit)?.text ?? '';
+    renderNotes(); return $(`#note-list [data-draft="edit:${d.edit}"]`)?.focus();
   }
-  if (e.target.dataset.remove) {
-    if (confirm('删除这条批注？删除会记进改动记录，可以用撤销工具撤回。')) await noteAction({action: 'remove', note: Number(e.target.dataset.remove)});
-    return;
-  }
+  if (d.remove) { closeNoteUI(); ui.del = Number(d.remove); return renderNotes(); }
+  if ('cancel' in d) { closeNoteUI(); return renderNotes(); }
+  if (d.removeYes) { if (await noteAction({action: 'remove', note: Number(d.removeYes)})) { closeNoteUI(); renderNotes(); } return; }
+  if (d.save) return saveEdit(Number(d.save));
+  if (d.send) return sendReply(Number(d.send));
   const ref = e.target.closest('[data-ref]');
   if (ref) {
     const [kind, project, id] = ref.dataset.ref.split(':'), n = noteList().find((x) => x.id === Number(ref.closest('[data-note]').dataset.note));
     goToTarget(kind, Number(project), Number(id), kind === 'layer' ? n?.span : null);
   }
 });
+$('#notes-pane').addEventListener('input', (e) => { if (e.target.dataset.draft) S.noteUI.drafts[e.target.dataset.draft] = e.target.value; });
+$('#notes-pane').addEventListener('keydown', (e) => {
+  const key = e.target.dataset?.draft;
+  if (!key) return;
+  const [kind, id] = key.split(':');
+  if (e.key === 'Escape') { closeNoteUI(); renderNotes(); }
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) kind === 'edit' ? saveEdit(Number(id)) : sendReply(Number(id));
+});
 $('#notes-pane').addEventListener('change', async (e) => {
   if (e.target.dataset.done) await noteAction({action: e.target.checked ? 'done' : 'reopen', note: Number(e.target.dataset.done)});
   if (e.target.id === 'show-hidden') { S.showHidden = e.target.checked; if (S.view === 'canvas') renderCanvas(); }
 });
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && S.sel && !e.target.closest('textarea, input')) { S.sel = null; placeSelection(); renderSide(); report(); }
+  if (e.key === 'Escape' && (S.sel || S.targetLayer != null) && !e.target.closest('textarea, input')) {
+    S.sel = null; S.targetLayer = null; placeSelection(); $$('.lname.picked').forEach((n) => n.classList.remove('picked')); renderSide(); report();
+  }
 });
 
 $('#links-toggle').checked = S.links;

@@ -44,7 +44,7 @@ class ConfigHelpTests(unittest.TestCase):
         self.assertEqual({item["config_ref"] for item in result["items"]},
                          {path.relative_to(self.configs).as_posix() for path in (self.configs / "layers").rglob("*.toml")})
         text = next(item for item in result["items"] if item["summary"]["type"] == "text")
-        self.assertEqual({item["type"] for item in text["accepted_objects"]}, {"text", "title"})
+        self.assertEqual({item["type"] for item in text["accepted_objects"]}, {"text", "title", "note"})   # note：视图工具登记的批注对象，继承文字对象
         self.assertTrue(all("definition" not in item for item in result["items"]))
         self.assertTrue(all("information" not in item for item in text["accepted_objects"]))
         self.assertNotIn("logging/diagnostics.toml", [item["config_ref"] for item in result["items"]])
@@ -122,8 +122,13 @@ class ConfigHelpTests(unittest.TestCase):
         result = self.query("combined", ["text", "Layer"])
         self.assertEqual(len(result["items"]), 2)
         refs = [item["config_ref"] for item in result["object_details"]]
-        expected = {obj["config_ref"] for layer in result["items"] for obj in layer["accepted_objects"]}
+        # 工具包登记的派生类型（requires 与层不同）只在支持列表里点名，不在别的层下展开详情
+        expected = {obj["config_ref"] for layer in result["items"] for obj in layer["accepted_objects"]
+                    if not obj.get("requires") or obj["requires"] == layer.get("summary", {}).get("requires")}
         self.assertEqual(set(refs), expected)
+        self.assertIn("objects/note.toml", {obj["config_ref"] for obj in result["items"][0]["accepted_objects"]})
+        self.assertNotIn("objects/note.toml", refs)
+        self.assertIn("objects/note.toml", [item["config_ref"] for item in self.query("combined", "note")["object_details"]])
         self.assertEqual(len(refs), len(set(refs)))
         self.assertTrue(all("definition" in item for item in result["object_details"]))
         self.assertIn("共用的说明只展开一次", format_help(result))

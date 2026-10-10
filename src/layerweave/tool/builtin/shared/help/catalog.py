@@ -13,7 +13,7 @@ from layerweave.support.diagnostics import DiagnosticPolicy, prepare_diagnostics
 VIEWS = ("overview", "layers", "objects", "combined")
 AUDIENCES = ("usage", "developer")
 INTERNAL_KEYS = {"_ref", "_lineage", "_contracts"}
-SUMMARY_KEYS = ("type", "name", "class", "when", "note", "not_for", "tools")
+SUMMARY_KEYS = ("type", "name", "class", "requires", "when", "note", "not_for", "tools")
 
 
 def _json_value(value):
@@ -163,7 +163,13 @@ def read_support(view="overview", targets=None, *, config_root=DEFAULT_ROOT, aud
             items.append(catalog.entry(ref, kind, detail=view != "overview", target=target))
     result = {"view": view, "audience": audience, "items": items}
     if view == "combined":
-        refs = dict.fromkeys(obj["config_ref"] for item in items for obj in item.get("accepted_objects", []))
+        # 工具包登记的派生类型（声明了 requires）只在支持列表里点名；详情在查它所属的层（requires 相同）时才展开，免得基础层的说明越来越长
+        refs = {}
+        for item in items:
+            layer = catalog.load(item["config_ref"], "layer") if item.get("status") != "unavailable" else None
+            for obj in item.get("accepted_objects", []):
+                if not obj.get("requires") or obj["requires"] == (layer or {}).get("requires"):
+                    refs.setdefault(obj["config_ref"])
         result["object_details"] = [catalog.entry(ref, "object", detail=True) for ref in refs]
     if view != "overview":
         kinds = {item["kind"] for item in [*items, *result.get("object_details", [])]}

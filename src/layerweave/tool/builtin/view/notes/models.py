@@ -1,4 +1,4 @@
-"""批注层和批注对象的 Python 类：行为沿用文字层、文字对象，约定写在 layers/note.toml、objects/note.toml。"""
+"""批注层和批注对象的 Python 类：行为沿用文字层、文字对象；配置和约定在 configs/layers/note.toml、configs/objects/note.toml。"""
 from layerweave.models.layers.text import TextLayer
 from layerweave.models.objects.text import Text
 

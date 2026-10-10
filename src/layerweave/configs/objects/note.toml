@@ -1,19 +1,20 @@
-# 批注对象封装：一条批注。从文字对象派生，正文仍在 information.text。
-# 随视图工具包分发；对象记录的 config_ref 是 ../tool/builtin/view/notes/objects/note.toml。
+# 批注对象封装：一条批注，由视图工具登记。从文字对象派生，正文仍在 information.text。
+# 配置放在核心的配置目录里；Python 类和读写入口在视图工具包里（requires）。
 
 [object]
-type    = "note"
-version = 1
-name    = "批注"
-class   = "layerweave.tool.builtin.view.notes.models:Note"
-extends = "../../../../../configs/objects/text.toml"   # 继承文字对象
-note    = "批注正文在 information.text；它说的是哪里，用从这条批注发出的关联表达"
+type     = "note"
+version  = 1
+name     = "批注"
+class    = "layerweave.tool.builtin.view.notes.models:Note"
+extends  = "text.toml"                        # 继承文字对象
+requires = "layerweave.tool.builtin.view"     # 依赖的工具包
+note     = "批注正文在 information.text；它说的是哪里，用从这条批注发出的关联表达"
 
 # 约定：
 # - 位置表示顺序：第 n 条占 [n, n+1)，不表示画面时间。
 # - 说的是哪里：从批注发出关联，指向对象或层，可以指好几个，也可以跨项目。没有关联就是对整个项目的意见。
 # - 说的是一段空白时间：关联到那个时间轴的根层，并在 span 里写那一段（用那个根的单位）。
-# - 回复：一条批注关联到另一条批注。
+# - 回复：一条批注关联到另一条批注，视图按楼层显示；楼主的 status 代表整楼。
 # - 目标被删除后关联仍在，视图显示"目标已删除"，批注本身保留。
 [object.information]
 status = { type = "str", optional = true, note = "open（待处理，缺省时也按待处理）或 done（已处理）" }

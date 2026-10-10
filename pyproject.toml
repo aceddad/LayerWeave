@@ -24,4 +24,3 @@ namespaces = false
 "layerweave.support.storage" = ["schema.sql"]
 "layerweave.tool.builtin.developer.keys" = ["example.json", "README.md"]
 "layerweave.tool.builtin.view" = ["web/*", "README.md"]
-"layerweave.tool.builtin.view.notes" = ["layers/*.toml", "objects/*.toml"]

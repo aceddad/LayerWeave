@@ -221,3 +221,19 @@ body.full main, body.full #cuts-view, body.full #grid { overflow: visible; flex:
                     border-right: 2px solid var(--accent); z-index: 2; pointer-events: none; }
 .board > .selband[hidden] { display: none; }
 .ruler { cursor: col-resize; }
+
+/* 批注成楼 */
+.thread { margin-bottom: 10px; }
+.thread .note { margin-bottom: 0; border-radius: 0; }
+.thread .note:first-child { border-radius: 4px 4px 0 0; }
+.thread .note:last-child { border-radius: 0 0 4px 4px; }
+.thread .note:only-child { border-radius: 4px; }
+.note.reply { margin-left: 14px; border-left-color: #3b4f6b; border-top: none; background: #191c23; }
+.thread.done .note.reply { opacity: .7; }
+.note .floor { color: var(--dim); }
+.note .reply-to { color: #9fd0ff; font-size: 11px; }
+.note .confirm { color: #ffb3b3; font-size: 11px; }
+.note-box { width: 100%; font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--accent); border-radius: 4px; padding: 5px; resize: vertical; margin-top: 4px; }
+.note-replybox { margin-top: 4px; }
+.lname { cursor: pointer; }
+.lname.picked { box-shadow: inset 3px 0 0 #ffd23f; background: #2a2a1f; }

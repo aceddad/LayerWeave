@@ -1,0 +1,27 @@
+# 批注层封装：由视图工具登记的层类型，用一个层当"有序列表"来管理信息。
+# 配置放在核心的配置目录里，供 AI 和工具按类型查找；Python 类和读写入口在视图工具包里（requires）。
+# 卸掉视图工具后，这份配置仍然说明数据的样子，检测照常；只是不能再还原成 Python 实例。
+
+[layer]
+type     = "note"
+version  = 1
+name     = "批注层"
+class    = "layerweave.tool.builtin.view.notes.models:NoteLayer"
+extends  = "text.toml"                        # 继承文字层
+objects  = "note"                             # 只装批注对象（objects/note.toml，继承文字对象）
+requires = "layerweave.tool.builtin.view"     # 依赖的工具包：类和读写入口（view_note）都在那里
+when     = "视图工具的批注容器：按顺序存放给人或 AI 的意见、说明、待办，每条用关联指向它说的东西"
+tools    = []                                 # 不挂外置技能
+
+# 约定（由视图工具维护，工具和 AI 照此读写）：
+# - 一个项目一个，是根层（father 为空），名字默认「批注」；第一次写批注时由视图工具创建，不改项目创建流程。
+# - 轴固定为 { unit = "条", precision = 1 }：第 n 条批注占 [n, n+1)，新的接在最后；移动对象就是调整顺序。
+
+[layer.display]
+default_visible = false   # 视图默认把这个层收起来，不单独开画板；visibility（允许显隐控制）沿用文字层
+
+[layer.example]
+name    = "批注"
+axis    = { unit = "条", precision = 1 }
+tips    = "视图工具的批注容器"
+objects = []

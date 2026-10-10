@@ -9,11 +9,11 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from tool.builtin.usage.records.dispatch import dispatch
-from support.api import open_database
-from support.storage import crud
-from support.storage.database import SCHEMA_PATH
-from tool.builtin.usage.query.project_overview import format_overview, project_overview
+from layerweave.tool.builtin.usage.records.dispatch import dispatch
+from layerweave.support.api import open_database
+from layerweave.support.storage import crud
+from layerweave.support.storage.database import SCHEMA_PATH
+from layerweave.tool.builtin.usage.query.project_overview import format_overview, project_overview
 
 
 class ProjectOverviewTests(unittest.TestCase):
@@ -137,7 +137,7 @@ class ProjectOverviewTests(unittest.TestCase):
                 self.connection.backup(copy)
             finally:
                 copy.close()
-            command = [sys.executable, "-X", "utf8", "-B", "-m", "tool.builtin.usage.query.project_overview"]
+            command = [sys.executable, "-X", "utf8", "-B", "-m", "layerweave.tool.builtin.usage.query.project_overview"]
             result = subprocess.run([*command, str(database), str(self.project_id), "--json"],
                                     capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(result.returncode, 0, result.stderr)

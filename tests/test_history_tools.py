@@ -8,17 +8,17 @@ import sys
 import tempfile
 import unittest
 
-from tool.builtin.usage.records.dispatch import dispatch
-from support.api import initialize_database, open_database, read_record
-from tool.builtin.usage.history.service import read_history
-from tool.builtin.usage.validation.recheck import recheck
-from tool.builtin.usage.records.save import save_layer, save_object
-from tool.builtin.usage.undo.service import undo_operation
-from support.configuration.loader import DEFAULT_ROOT
-from support.storage.database import SCHEMA_PATH, upgrade_history
-from tool.builtin.usage.history.cli import format_history
-from tool.builtin.usage.validation.cli import format_recheck
-from tool.builtin.usage.undo.cli import format_undo
+from layerweave.tool.builtin.usage.records.dispatch import dispatch
+from layerweave.support.api import initialize_database, open_database, read_record
+from layerweave.tool.builtin.usage.history.service import read_history
+from layerweave.tool.builtin.usage.validation.recheck import recheck
+from layerweave.tool.builtin.usage.records.save import save_layer, save_object
+from layerweave.tool.builtin.usage.undo.service import undo_operation
+from layerweave.support.configuration.loader import DEFAULT_ROOT
+from layerweave.support.storage.database import SCHEMA_PATH, upgrade_history
+from layerweave.tool.builtin.usage.history.cli import format_history
+from layerweave.tool.builtin.usage.validation.cli import format_recheck
+from layerweave.tool.builtin.usage.undo.cli import format_undo
 
 
 class HistoryToolsTests(unittest.TestCase):
@@ -357,11 +357,11 @@ class HistoryToolsTests(unittest.TestCase):
         obj = save_object(c, pid, {"config_ref": "objects/text.toml", "layer": layer, "information": {"text": "test"}})
         commands = [("validation", [str(pid), "--layer-ids", str(layer)]), ("history", ["--project-id", str(pid)]), ("undo", [obj["operation_id"]])]
         for module, args in commands:
-            run = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", f"tool.builtin.usage.{module}.cli", str(path), *args, "--json"], capture_output=True, text=True, encoding="utf-8")
+            run = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", f"layerweave.tool.builtin.usage.{module}.cli", str(path), *args, "--json"], capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(run.returncode, 0, run.stderr)
             result = json.loads(run.stdout)
             self.assertIsInstance(result, dict)
-        run = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", "tool.builtin.usage.undo.cli", str(path), result["operation_id"]], capture_output=True, text=True, encoding="utf-8")
+        run = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", "layerweave.tool.builtin.usage.undo.cli", str(path), result["operation_id"]], capture_output=True, text=True, encoding="utf-8")
         self.assertEqual(run.returncode, 0, run.stderr)
         self.assertIn("写入成功", run.stdout)
 

@@ -10,12 +10,12 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from support.configuration.loader import DEFAULT_ROOT
-from tool.builtin.usage.records.dispatch import dispatch
-from support.storage import crud
-from support.storage.database import SCHEMA_PATH, open_database
-from tool.builtin.usage.validation.registry import RULES
-from tool.builtin.usage.validation.runner import check_changes, validate
+from layerweave.support.configuration.loader import DEFAULT_ROOT
+from layerweave.tool.builtin.usage.records.dispatch import dispatch
+from layerweave.support.storage import crud
+from layerweave.support.storage.database import SCHEMA_PATH, open_database
+from layerweave.tool.builtin.usage.validation.registry import RULES
+from layerweave.tool.builtin.usage.validation.runner import check_changes, validate
 
 
 class ValidationTests(unittest.TestCase):
@@ -114,7 +114,7 @@ class ValidationTests(unittest.TestCase):
         self.assertFalse(result["applied"])
         self.assertFalse(result["ok"])
         self.assertEqual(result["error"]["code"], "father_cycle")
-        with patch("tool.builtin.usage.validation.rules.layers.no_cycle", side_effect=AssertionError("must not traverse")):
+        with patch("layerweave.tool.builtin.usage.validation.rules.layers.no_cycle", side_effect=AssertionError("must not traverse")):
             result = self.call("update", "layer", id=self.layer_id, data={"tips": "note"})
             self.assertEqual(result["checks"]["issues"], [])
 
@@ -132,7 +132,7 @@ class ValidationTests(unittest.TestCase):
 
     def test_overlap_batch_deduplicates_rule_but_preserves_distinct_pairs(self):
         layer_id = self.track()
-        with patch("tool.builtin.usage.validation.rules.layers.overlap", wraps=__import__("tool.builtin.usage.validation.rules.layers", fromlist=["overlap"]).overlap) as check:
+        with patch("layerweave.tool.builtin.usage.validation.rules.layers.overlap", wraps=__import__("layerweave.tool.builtin.usage.validation.rules.layers", fromlist=["overlap"]).overlap) as check:
             result = dispatch(self.connection, [
                 {"action": "create", "kind": "object", "project_id": self.project,
                  "data": {"layer": layer_id, "config_ref": "objects/text.toml", "begin": 1, "end": 4}}
@@ -194,7 +194,7 @@ class ValidationTests(unittest.TestCase):
         self.assertEqual(result["checks"]["status"], "partial")
         self.assertTrue(self.issues(result, "begin_le_end"))
         self.assertTrue(self.issues(result, "configuration"))
-        with patch("tool.builtin.usage.validation.rules.fields.check", side_effect=RuntimeError("broken rule")):
+        with patch("layerweave.tool.builtin.usage.validation.rules.fields.check", side_effect=RuntimeError("broken rule")):
             result = self.obj(begin=5, end=1)
         self.assertEqual(result["checks"]["status"], "partial")
         self.assertTrue(self.issues(result, "begin_le_end"))
@@ -212,12 +212,12 @@ class ValidationTests(unittest.TestCase):
 
     def test_lazy_imports_and_required_python_layer(self):
         code = '''import sys
-import models
-assert "models.objects.active" not in sys.modules
-from models import Text, Layer
-assert "models.objects.active" not in sys.modules
-assert "models.layers.active" not in sys.modules
-assert "tool.builtin.usage.validation.rules.layers" not in sys.modules
+import layerweave.models
+assert "layerweave.models.objects.active" not in sys.modules
+from layerweave.models import Text, Layer
+assert "layerweave.models.objects.active" not in sys.modules
+assert "layerweave.models.layers.active" not in sys.modules
+assert "layerweave.tool.builtin.usage.validation.rules.layers" not in sys.modules
 obj = Text(layer=1)
 assert obj.return_self() is obj
 try:
@@ -231,7 +231,7 @@ else:
         self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_new_rule_uses_registry_without_changing_runner(self):
-        self.write("objects/title.toml", '[object]\ntype="title"\nclass="models.objects.title:Title"\nextends="text.toml"\n[object.rules]\ntext_nonempty=true\n')
+        self.write("objects/title.toml", '[object]\ntype="title"\nclass="layerweave.models.objects.title:Title"\nextends="text.toml"\n[object.rules]\ntext_nonempty=true\n')
         module = Path(self.temp.name) / "custom_rule.py"
         module.write_text('def check(record, config, read_record):\n    return [{"severity":"error", "field":"information.text", "message":"标题不能为空"}] if record["information"].get("text") == "" else []\n', encoding="utf-8")
         sys.path.insert(0, self.temp.name)
@@ -247,7 +247,7 @@ else:
                 self.assertEqual(result["checks"]["issues"], [])
 
     def test_default_checker_import_failure_preserves_operation_result(self):
-        with patch.dict(sys.modules, {"tool.builtin.usage.validation.runner": None}):
+        with patch.dict(sys.modules, {"layerweave.tool.builtin.usage.validation.runner": None}):
             result = dispatch(self.connection, {"action": "create", "kind": "object", "project_id": self.project,
                                                "data": {"layer": self.layer_id, "config_ref": "objects/text.toml"}})
         self.assertTrue(result["ok"])

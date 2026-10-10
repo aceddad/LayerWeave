@@ -1,17 +1,19 @@
 # LayerWeave 工作导引
 
-软件自身的执行能力统称为“内部工具”，放在 tool/builtin；供层原型 tools 引用的外置技能放在 tool/skills。
+软件自身的执行能力统称为“内部工具”，放在 src/layerweave/tool/builtin；供层原型 tools 引用的外置技能放在 src/layerweave/tool/skills。
 
-- 操作项目内容：从[使用工具](tool/builtin/usage/README.md)选择操作，参数和示例由各工具 help 提供。
+- 操作项目内容：从[使用工具](src/layerweave/tool/builtin/usage/README.md)选择操作，参数和示例由各工具 help 提供。
 - 修改代码或增加封装：先读[开发指南](docs/developer-conventions.md)，再读对应配置、API 和实现专题。
 - 修改文档：读取[文档约定](docs/documentation.md)，保持主题有明确的主要维护位置。
-- 新增外置技能：读[工具区](tool/README.md)，技能自带 SKILL.md；实际绑定由 AI 按任务填写。
-- 视图工作：读[视图边界](tool/builtin/view/README.md)，开始实现时再建独立分支。
+- 新增外置技能：读[工具区](src/layerweave/tool/README.md)，技能自带 SKILL.md；实际绑定由 AI 按任务填写。
+- 视图工作：读[视图边界](src/layerweave/tool/builtin/view/README.md)，开始实现时再建独立分支。
+
+本轮包名与资源迁移进度见[迁移计划](docs/namespace-plan.md)。
 
 ## 工作要求
 
-- 核心与模型保持简单。core 表达抽象结构与封装语义，support 提供存储和配置适配，tool/builtin 提供可替换能力；依赖方向见[架构](docs/architecture.md)。
-- 所有受支持的写入走 support.api.transaction 或 run_operation，包括恢复。工具不执行 SQL 写入，不自行发号、提交或拼装日志。
+- 核心与模型保持简单。core 表达抽象结构与封装语义，support 提供存储和配置适配，src/layerweave/tool/builtin 提供可替换能力；依赖方向见[架构](docs/architecture.md)。
+- 所有受支持的写入走 layerweave.support.api.transaction 或 run_operation，包括恢复。工具不执行 SQL 写入，不自行发号、提交或拼装日志。
 - 一个完整工具包是增减单位；业务辅助代码留在包内。不引用另一个可卸载包的私有实现。共用 CLI 和声明发现来自 support。
 - 一份封装 TOML 对应一个 Python 类，保留 layers/objects 分区及 config_ref。不要为抽象而加入其他后端或新注册框架。
 - 默认工具通过可选提供者接入内容检测。未安装检测包应返回未检查；父链无环和其他结构保证不能依赖检测包。

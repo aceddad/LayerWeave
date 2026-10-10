@@ -7,15 +7,15 @@ import sys
 import tempfile
 import unittest
 
-from models import Text, TextLayer, Title
-from tool.builtin.usage.records.dispatch import dispatch
-from support.api import load_layer, load_object, open_database, read_layer
-from tool.builtin.usage.records.save import save_layer, save_object
-from tool.builtin.usage.validation.runner import validate
-from support.configuration.loader import ConfigError, DEFAULT_ROOT, Loader
-from support.storage import crud
-from support.storage.database import SCHEMA_PATH
-from tool.builtin.usage.text.collect import collect_text
+from layerweave.models import Text, TextLayer, Title
+from layerweave.tool.builtin.usage.records.dispatch import dispatch
+from layerweave.support.api import load_layer, load_object, open_database, read_layer
+from layerweave.tool.builtin.usage.records.save import save_layer, save_object
+from layerweave.tool.builtin.usage.validation.runner import validate
+from layerweave.support.configuration.loader import ConfigError, DEFAULT_ROOT, Loader
+from layerweave.support.storage import crud
+from layerweave.support.storage.database import SCHEMA_PATH
+from layerweave.tool.builtin.usage.text.collect import collect_text
 
 
 class EncapsulationIdentityTests(unittest.TestCase):
@@ -106,13 +106,13 @@ class EncapsulationIdentityTests(unittest.TestCase):
 
     def test_explicit_reference_does_not_bypass_duplicate_class_binding(self):
         (self.configs / "objects/duplicate.toml").write_text(
-            '[object]\ntype="duplicate"\nextends="text.toml"\nclass="models.objects.text:Text"\n', encoding="utf-8")
+            '[object]\ntype="duplicate"\nextends="text.toml"\nclass="layerweave.models.objects.text:Text"\n', encoding="utf-8")
         for ref in ("objects/text.toml", "objects/duplicate.toml"):
             with self.subTest(ref=ref), self.assertRaisesRegex(ConfigError, "只绑定一份配置"):
                 Loader(self.configs).load(ref, "object")
 
     def test_import_alias_cannot_restore_as_a_separate_encapsulation(self):
-        (self.root / "identity_alias.py").write_text('from models import Text\n', encoding="utf-8")
+        (self.root / "identity_alias.py").write_text('from layerweave.models import Text\n', encoding="utf-8")
         sys.path.insert(0, str(self.root))
         self.addCleanup(sys.path.remove, str(self.root))
         self.addCleanup(sys.modules.pop, "identity_alias", None)

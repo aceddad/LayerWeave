@@ -8,7 +8,7 @@ import sys
 import tempfile
 import unittest
 
-from support.commands import command_help
+from layerweave.support.commands import command_help
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -31,21 +31,23 @@ class ToolLayoutTests(unittest.TestCase):
             group = command["source"].split("/")[0]
             groups[group] = groups.get(group, 0) + 1
         self.assertEqual(groups, {"usage": 22, "shared": 2, "developer": 2})
-        self.assertEqual(list((ROOT / "tool/builtin/view").glob("*.py")), [])
+        view = ROOT / "src/layerweave/tool/builtin/view"
+        self.assertTrue(view.is_dir())
+        self.assertEqual(list(view.glob("*.py")), [])
 
     def test_database_and_crud_execute_through_canonical_tools(self):
         with tempfile.TemporaryDirectory() as folder:
             database = Path(folder) / "tools.sqlite3"
             base = [sys.executable, "-X", "utf8", "-B", "-m"]
-            initialized = subprocess.run([*base, "tool.builtin.developer.database.cli", str(database)],
+            initialized = subprocess.run([*base, "layerweave.tool.builtin.developer.database.cli", str(database)],
                                          capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(initialized.returncode, 0, initialized.stderr)
-            created = subprocess.run([*base, "tool.builtin.usage.records.cli", str(database)],
+            created = subprocess.run([*base, "layerweave.tool.builtin.usage.records.cli", str(database)],
                                      input=json.dumps({"action": "create", "kind": "project", "data": {"name": "示例项目"}}),
                                      capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(created.returncode, 0, created.stderr)
             self.assertTrue(json.loads(created.stdout)["ok"])
-            read = subprocess.run([*base, "tool.builtin.usage.records.cli", str(database)],
+            read = subprocess.run([*base, "layerweave.tool.builtin.usage.records.cli", str(database)],
                                   input=json.dumps({"action": "read", "kind": "project"}),
                                   capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(read.returncode, 0, read.stderr)
@@ -53,7 +55,7 @@ class ToolLayoutTests(unittest.TestCase):
 
     def test_current_documentation_links_resolve_after_moves(self):
         documents = [ROOT / "README.md", ROOT / "AGENTS.md"]
-        for directory in ("src", "docs", "configs", "tool"):
+        for directory in ("src", "docs", "examples"):
             documents.extend((ROOT / directory).rglob("*.md"))
         broken = []
         for document in documents:

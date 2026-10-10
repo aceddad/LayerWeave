@@ -3,9 +3,9 @@
 import sqlite3
 import unittest
 
-from tool.builtin.usage.records.dispatch import dispatch
-from support.storage import crud
-from support.storage.database import SCHEMA_PATH, open_database, require_object_layer
+from layerweave.tool.builtin.usage.records.dispatch import dispatch
+from layerweave.support.storage import crud
+from layerweave.support.storage.database import SCHEMA_PATH, open_database, require_object_layer
 
 
 class MigrationTests(unittest.TestCase):

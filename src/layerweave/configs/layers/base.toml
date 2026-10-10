@@ -1,0 +1,47 @@
+# Layer 基础约定
+# 字段说明对应当前 Python 类；规则由独立检测通道在提交后执行。
+# rules 是固定约定；检测问题逐条报告，不撤销已经提交的数据。
+
+[layer]
+type    = "Layer"                     # 这类层的名称
+version = 1                           # 这份配置的版本
+name    = "基础层"                    # 配置的显示名，与实例 name 分开
+class   = "layerweave.models.layers.base:Layer"   # 对应的 Python 类
+objects = "Object"                    # 基础对象配置名称；按 objects/ 下配置 type 唯一定位
+when    = "组织上下文、层间关系，并装载对象"
+tools = []  # 外置技能引用；每项写 route（位置）、tier（分类）、when（使用时机），供 AI 阅读
+
+[layer.fields]
+id      = { type = "int | None", note = "项目内层编号，初始为 None；与本项目对象共用编号，本类不分配编号；完整身份还需项目上下文" }
+name    = { type = "str", default = "", note = "创建时传入的名字，可以重名" }
+father  = { type = "int | None", note = "父层编号，初始为 None；为空表示根层，非空编号由数据库保证指向同项目实际父层" }
+axis    = { type = "dict | None", note = "可选的轴说明，初始为 None；默认仅根层可填写。precision 为正数步长，供写入和检查落点，无精度时默认 1e-6；单位不自动换算" }
+tips    = { type = "str", default = "", note = "自由备注" }
+bind    = { type = "list", default = [], note = "发出的关联字典列表；新建可提供 target_kind、target_project_id、target_id 和 tips；保存时补齐来源与关联 id，读回保留完整引用；允许相互引用" }
+objects = { type = "list", default = [], note = "实际装载 Object 或其子类的实例；每个层独立持有列表，不自动改写对象的 layer" }
+
+[layer.methods]
+return_self = "无参数，返回当前实例本身；子类可直接继承"
+
+# 基础固定约定；SQL 外键已负责的存在性条件不在这里重复执行。
+# 后续封装继承这些约定；同一目标的同一项检查只执行一次。
+[layer.rules]
+no_cycle           = true   # 检查 father 关系是否成环；bind 不受这一条限制
+
+# defaults 是未定值时的默认设置；具体封装在 constraint/display 明确声明后成为固定约定。
+[layer.options]
+axis_only_on_root = true   # 明确可调：设为 false 后，子层可声明自己的轴；根不必填写轴
+
+[layer.defaults.constraint]
+overlap = true             # 默认允许层内对象在轴上的区间重叠；不控制显隐
+
+[layer.defaults.display]
+visibility = true          # 默认允许显隐控制；需要固定显示的封装可设为 false
+# 实例当前的显示状态由外部视图管理；false 不表示当前隐藏或不进入视图。
+
+# 空层的创建参数示例。新实例不填 id，由保存入口分配编号。
+[layer.example]
+name    = "主线"
+axis    = { unit = "秒", precision = 0.001 }
+tips    = "记录各段的意图"
+objects = []

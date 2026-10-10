@@ -2,6 +2,8 @@
 
 本文件保留本次重构的边界与验收记录。现行边界以[架构说明](architecture.md)为准，开发与运行方式见[开发指南](developer-conventions.md)。
 
+这是第一轮三层拆分的历史记录，下方目录与类路径描述对应当时布局。后续统一到 layerweave 的路径调整及验收见[包名迁移计划](namespace-plan.md)。
+
 ## 已确认的边界
 
 - 抽象核心保留 Layer/Object、身份、关系、封装与继承语义，不依赖 SQLite、TOML 读取或工具。现有 models/layers 与 models/objects 分区保留。

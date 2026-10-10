@@ -11,13 +11,13 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from support.commands import command_help
-from tool.builtin.usage.records.dispatch import dispatch
-from tool.builtin.usage.editing.timeline import insert_gap, split_object
-from support.api import open_database
-from support.storage.database import SCHEMA_PATH
-from support.commands import DEFAULT_SOURCE_ROOT, help_examples
-from tool.builtin.shared.help.command_help import format_commands
+from layerweave.support.commands import command_help
+from layerweave.tool.builtin.usage.records.dispatch import dispatch
+from layerweave.tool.builtin.usage.editing.timeline import insert_gap, split_object
+from layerweave.support.api import open_database
+from layerweave.support.storage.database import SCHEMA_PATH
+from layerweave.support.commands import DEFAULT_SOURCE_ROOT, help_examples
+from layerweave.tool.builtin.shared.help.command_help import format_commands
 
 
 class CommandHelpTests(unittest.TestCase):
@@ -35,7 +35,7 @@ class CommandHelpTests(unittest.TestCase):
                 self.assertIn(path.relative_to(DEFAULT_SOURCE_ROOT).as_posix(), covered)
 
     def test_details_resolve_aliases_and_include_inputs_outputs_examples(self):
-        result = command_help(["split","split_object","tool.builtin.usage.editing.timeline:split_object","insert_gap"])
+        result = command_help(["split","split_object","layerweave.tool.builtin.usage.editing.timeline:split_object","insert_gap"])
         self.assertEqual(len(result["items"]),2)
         split,gap = result["items"]
         self.assertIn("object_id", split["parameters"])
@@ -87,7 +87,7 @@ class CommandHelpTests(unittest.TestCase):
             function=getattr(importlib.import_module(module),name)
             signature=inspect.signature(function)
             if any(p.kind==p.VAR_KEYWORD for p in signature.parameters.values()):
-                continue  # support.api 的延迟包装；行为由对应工具测试覆盖。
+                continue  # layerweave.support.api 的延迟包装；行为由对应工具测试覆盖。
             for parameter in command["parameters"]:
                 if parameter=="database":
                     self.assertTrue("connection" in signature.parameters or command["name"]=="initialize_database")
@@ -136,7 +136,7 @@ class CommandHelpTests(unittest.TestCase):
         self.assertEqual(len(result["data"]["moved"]),1)
 
     def test_command_help_cli_json_and_invalid_root(self):
-        base=[sys.executable,"-X","utf8","-B","-m","tool.builtin.shared.help.command_help"]
+        base=[sys.executable,"-X","utf8","-B","-m","layerweave.tool.builtin.shared.help.command_help"]
         run=subprocess.run([*base,"split","gaps","--json"],capture_output=True,text=True,encoding="utf-8")
         self.assertEqual(run.returncode,0,run.stderr)
         self.assertEqual(len(json.loads(run.stdout)["items"]),2)

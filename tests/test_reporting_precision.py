@@ -7,15 +7,15 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from models import Text, TextLayer
-from support.api import diagnostic_report, format_feedback, load_object, open_database, read_object
-from tool.builtin.usage.records.dispatch import dispatch
-from tool.builtin.usage.records.save import save_layer, save_object
-from tool.builtin.usage.validation.runner import validate
-from support.configuration.loader import DEFAULT_ROOT
-from support.storage import crud
-from support.storage.database import SCHEMA_PATH
-from tool.builtin.usage.text.collect import collect_text
+from layerweave.models import Text, TextLayer
+from layerweave.support.api import diagnostic_report, format_feedback, load_object, open_database, read_object
+from layerweave.tool.builtin.usage.records.dispatch import dispatch
+from layerweave.tool.builtin.usage.records.save import save_layer, save_object
+from layerweave.tool.builtin.usage.validation.runner import validate
+from layerweave.support.configuration.loader import DEFAULT_ROOT
+from layerweave.support.storage import crud
+from layerweave.support.storage.database import SCHEMA_PATH
+from layerweave.tool.builtin.usage.text.collect import collect_text
 
 
 class ReportingPrecisionTests(unittest.TestCase):
@@ -76,8 +76,8 @@ class ReportingPrecisionTests(unittest.TestCase):
 
     def test_rule_switch_and_reporting_level_are_independent(self):
         self.policy.write_text('[levels]\nbegin_le_end="none"\n', encoding="utf-8")
-        from tool.builtin.usage.validation.rules.objects import begin_le_end
-        with patch("tool.builtin.usage.validation.rules.objects.begin_le_end", wraps=begin_le_end) as check:
+        from layerweave.tool.builtin.usage.validation.rules.objects import begin_le_end
+        with patch("layerweave.tool.builtin.usage.validation.rules.objects.begin_le_end", wraps=begin_le_end) as check:
             result = self.obj(begin=3, end=1)
         self.assertTrue(check.called)
         self.assertFalse(any(i["rule"] == "begin_le_end" for i in result["checks"]["issues"]))
@@ -85,7 +85,7 @@ class ReportingPrecisionTests(unittest.TestCase):
         base = self.configs / "objects/base.toml"
         base.write_text(base.read_text(encoding="utf-8").replace("begin_le_end       = true", "begin_le_end       = false"), encoding="utf-8")
         self.policy.write_text('[levels]\nbegin_le_end="error"\n', encoding="utf-8")
-        with patch("tool.builtin.usage.validation.rules.objects.begin_le_end", wraps=begin_le_end) as check:
+        with patch("layerweave.tool.builtin.usage.validation.rules.objects.begin_le_end", wraps=begin_le_end) as check:
             self.obj(begin=5, end=4)
         self.assertFalse(check.called)
 
@@ -157,7 +157,7 @@ class ReportingPrecisionTests(unittest.TestCase):
         self.assertEqual(self.obj(frame, end=0.1+0.2)["data"]["end"], 0.3)
 
     def test_core_crud_and_model_backfill_use_actual_coordinates(self):
-        from support.api import transaction
+        from layerweave.support.api import transaction
         with transaction(self.c) as write:
             row, change = crud.create(self.c, "object", {"layer": self.layer, "config_ref": "objects/text.toml",
                                       "begin": 0.0004, "end": 0.1+0.2}, project_id=self.p, operation_id=write.operation_id)

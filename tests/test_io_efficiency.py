@@ -7,12 +7,12 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from models import Text, TextLayer
-from tool.builtin.usage.records.dispatch import dispatch
-from support.api import open_database, read_layer
-from tool.builtin.usage.records.save import save_layer, save_object
-from support.configuration.loader import DEFAULT_ROOT
-from support.storage.database import SCHEMA_PATH
+from layerweave.models import Text, TextLayer
+from layerweave.tool.builtin.usage.records.dispatch import dispatch
+from layerweave.support.api import open_database, read_layer
+from layerweave.tool.builtin.usage.records.save import save_layer, save_object
+from layerweave.support.configuration.loader import DEFAULT_ROOT
+from layerweave.support.storage.database import SCHEMA_PATH
 
 
 class IOEfficiencyTests(unittest.TestCase):
@@ -56,7 +56,7 @@ class IOEfficiencyTests(unittest.TestCase):
             first = save_object(self.connection, self.project_id, Text(layer=layer.id), config_root=configs)
             self.assertTrue(first["ok"], first)
             (configs / "objects/other.toml").write_text(
-                '[object]\ntype="other"\nextends="text.toml"\nclass="models.objects.text:Text"\n', encoding="utf-8")
+                '[object]\ntype="other"\nextends="text.toml"\nclass="layerweave.models.objects.text:Text"\n', encoding="utf-8")
             second = save_object(self.connection, self.project_id, Text(layer=layer.id), config_root=configs)
             self.assertFalse(second["ok"])
             self.assertIn("只绑定一份配置", second["error"]["message"])

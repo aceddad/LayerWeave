@@ -10,13 +10,13 @@ import sys
 import tempfile
 import unittest
 
-from models import Text, TextLayer, Title
-from tool.builtin.usage.records.dispatch import dispatch
-from support.api import initialize_database, load_layer, load_object, open_database, read_layer, read_object
-from tool.builtin.usage.records.save import save_layer, save_object
-from support.configuration.loader import DEFAULT_ROOT
-from support.storage import crud
-from support.storage.database import SCHEMA_PATH
+from layerweave.models import Text, TextLayer, Title
+from layerweave.tool.builtin.usage.records.dispatch import dispatch
+from layerweave.support.api import initialize_database, load_layer, load_object, open_database, read_layer, read_object
+from layerweave.tool.builtin.usage.records.save import save_layer, save_object
+from layerweave.support.configuration.loader import DEFAULT_ROOT
+from layerweave.support.storage import crud
+from layerweave.support.storage.database import SCHEMA_PATH
 
 
 class IOTests(unittest.TestCase):
@@ -217,7 +217,7 @@ class IOTests(unittest.TestCase):
 
     def test_new_python_subclass_is_loaded_from_config_without_core_changes(self):
         module_name = "layerweave_example_types"
-        (self.root / f"{module_name}.py").write_text('from models.objects.text import Text\nclass Dialogue(Text):\n    pass\n', encoding="utf-8")
+        (self.root / f"{module_name}.py").write_text('from layerweave.models.objects.text import Text\nclass Dialogue(Text):\n    pass\n', encoding="utf-8")
         sys.path.insert(0, str(self.root))
         self.addCleanup(sys.path.remove, str(self.root))
         self.addCleanup(sys.modules.pop, module_name, None)
@@ -230,7 +230,7 @@ class IOTests(unittest.TestCase):
         self.assertIsInstance(load_object(self.connection, self.project_id, obj.id, config_root=self.configs), Dialogue)
 
     def test_all_six_types_survive_database_reopen_and_full_cli_read(self):
-        import models
+        from layerweave import models
         path = self.root / "round-trip.sqlite3"
         initialize_database(path)
         with closing(open_database(path)) as connection:
@@ -250,7 +250,7 @@ class IOTests(unittest.TestCase):
                 self.assertIsInstance(loaded, getattr(models, prefix + "Layer"))
                 self.assertIsInstance(loaded.objects[0], getattr(models, prefix))
                 self.assertEqual(loaded.objects[0].information["arbitrary"]["unicode"], "中文")
-        result = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", "tool.builtin.usage.records.cli", str(path)],
+        result = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", "layerweave.tool.builtin.usage.records.cli", str(path)],
                                 input=json.dumps({"action": "read", "kind": "layer", "project_id": project_id, "id": ids[0][0], "full": True}),
                                 text=True, encoding="utf-8", capture_output=True)
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -260,6 +260,6 @@ class IOTests(unittest.TestCase):
 
     def test_api_import_does_not_load_all_models_or_rules(self):
         result = subprocess.run([sys.executable, "-X", "utf8", "-B", "-c",
-            'import sys; import support.api; assert "models.objects.active" not in sys.modules; assert "tool.builtin.usage.validation.runner" not in sys.modules'],
+            'import sys; import layerweave.support.api; assert "layerweave.models.objects.active" not in sys.modules; assert "layerweave.tool.builtin.usage.validation.runner" not in sys.modules'],
             text=True, capture_output=True)
         self.assertEqual(result.returncode, 0, result.stderr)

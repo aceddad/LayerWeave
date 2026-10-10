@@ -8,15 +8,15 @@ import sys
 import tempfile
 import unittest
 
-from tool.builtin.usage.editing.tree_service import copy_subtree, delete_subtree
-from tool.builtin.usage.records.dispatch import dispatch
-from support.api import initialize_database, open_database, read_record
-from tool.builtin.usage.undo.service import undo_operation
-from support.configuration.loader import DEFAULT_ROOT
-from support.storage import crud
-from support.storage.database import SCHEMA_PATH
-from tool.builtin.usage.validation.runner import check_changes
-from tool.builtin.usage.editing.subtrees import format_subtree
+from layerweave.tool.builtin.usage.editing.tree_service import copy_subtree, delete_subtree
+from layerweave.tool.builtin.usage.records.dispatch import dispatch
+from layerweave.support.api import initialize_database, open_database, read_record
+from layerweave.tool.builtin.usage.undo.service import undo_operation
+from layerweave.support.configuration.loader import DEFAULT_ROOT
+from layerweave.support.storage import crud
+from layerweave.support.storage.database import SCHEMA_PATH
+from layerweave.tool.builtin.usage.validation.runner import check_changes
+from layerweave.tool.builtin.usage.editing.subtrees import format_subtree
 
 
 class SubtreeToolTests(unittest.TestCase):
@@ -299,7 +299,7 @@ class SubtreeToolTests(unittest.TestCase):
         self.assertEqual(self.c.execute("PRAGMA foreign_key_check").fetchall(), [])
 
     def test_deep_tree_uses_iterative_traversal(self):
-        from support.api import transaction
+        from layerweave.support.api import transaction
         parent = self.root
         with transaction(self.c) as write:
             for _ in range(1100):
@@ -319,7 +319,7 @@ class SubtreeToolTests(unittest.TestCase):
             c = open_database(path)
             self.c.backup(c)
             c.close()
-            command = [sys.executable, "-X", "utf8", "-B", "-m", "tool.builtin.usage.editing.subtrees", str(path), str(self.p)]
+            command = [sys.executable, "-X", "utf8", "-B", "-m", "layerweave.tool.builtin.usage.editing.subtrees", str(path), str(self.p)]
             copied = subprocess.run([*command, "copy", str(self.root), "--name", "歌词副本", "--json"], capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(copied.returncode, 0, copied.stderr)
             result = json.loads(copied.stdout)

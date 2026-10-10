@@ -18,27 +18,27 @@
 
 ## 放置与主要说明
 
-工具用法集中在 tool/builtin/usage，共用 help 说明放在 tool/builtin/shared；support 保存基础支撑 API 和适配实现说明，工具包保存自己的业务实现说明，docs 保存整体设计和开发约定。
+工具用法集中在 src/layerweave/tool/builtin/usage，共用 help 说明放在 src/layerweave/tool/builtin/shared；support 保存基础支撑 API 和适配实现说明，工具包保存自己的业务实现说明，docs 保存整体设计和开发约定。
 
 一项语义只在一个主要位置详细维护。其他文档可以给必要的简述或最小例子，并链接完整说明；不复制整套参数表和边界规则。
 
 | 主题 | 主要维护位置 |
 |---|---|
 | 模块边界与整体概念 | [架构说明](architecture.md) |
-| Python 模型与扩充入口 | [模型说明](../src/models/README.md)，字段声明在类及对应 TOML |
-| 配置继承、合并与类绑定 | [配置说明](../src/support/configuration/README.md) |
-| Python 调用、输入与返回 | [公共 API](../src/support/API.md) |
-| JSON CRUD 请求和操作/检查反馈 | [请求协议](../tool/builtin/usage/CRUD.md) |
-| 数据表、编号、持久化与日志写入 | [存储专题](../src/support/storage/SCHEMA.md) |
-| 历史与恢复、子树、范围编辑的使用行为 | usage 的 [HISTORY](../tool/builtin/usage/HISTORY.md)、[SUBTREES](../tool/builtin/usage/SUBTREES.md)、[EDITING](../tool/builtin/usage/EDITING.md) |
-| 这些工具的实现流程 | 工具包的 [HISTORY](../tool/builtin/usage/undo/IMPLEMENTATION.md)、[SUBTREES](../tool/builtin/usage/editing/TREES.md)、[EDITING](../tool/builtin/usage/editing/IMPLEMENTATION.md)；参数与业务规则链接到使用说明 |
-| 检测时点、执行和新增规则 | [检测专题](../tool/builtin/usage/validation/RULES.md) |
-| 汇报等级和配置覆盖 | [诊断专题](../src/support/DIAGNOSTICS.md) |
-| 通用查询与位置工具用法 | [使用手册](../tool/builtin/usage/GUIDE.md) |
-| 命令声明、发现及 CLI 示例 | [命令专题](../tool/builtin/shared/help/COMMANDS.md) |
-| 配置 help 的使用/开发模式 | [配置 help 专题](../tool/builtin/shared/help/CONFIG_HELP.md) |
-| 外置技能的存放与绑定示例 | [外置工具](../tool/README.md)；各技能的能力说明维护在包内 SKILL.md |
-| 技能 ZIP 的安装参数与文件处理 | [安装说明](../tool/builtin/developer/SKILLS.md) |
+| Python 模型与扩充入口 | [模型说明](../src/layerweave/models/README.md)，字段声明在类及对应 TOML |
+| 配置继承、合并与类绑定 | [配置说明](../src/layerweave/support/configuration/README.md) |
+| Python 调用、输入与返回 | [公共 API](../src/layerweave/support/API.md) |
+| JSON CRUD 请求和操作/检查反馈 | [请求协议](../src/layerweave/tool/builtin/usage/CRUD.md) |
+| 数据表、编号、持久化与日志写入 | [存储专题](../src/layerweave/support/storage/SCHEMA.md) |
+| 历史与恢复、子树、范围编辑的使用行为 | usage 的 [HISTORY](../src/layerweave/tool/builtin/usage/HISTORY.md)、[SUBTREES](../src/layerweave/tool/builtin/usage/SUBTREES.md)、[EDITING](../src/layerweave/tool/builtin/usage/EDITING.md) |
+| 这些工具的实现流程 | 工具包的 [HISTORY](../src/layerweave/tool/builtin/usage/undo/IMPLEMENTATION.md)、[SUBTREES](../src/layerweave/tool/builtin/usage/editing/TREES.md)、[EDITING](../src/layerweave/tool/builtin/usage/editing/IMPLEMENTATION.md)；参数与业务规则链接到使用说明 |
+| 检测时点、执行和新增规则 | [检测专题](../src/layerweave/tool/builtin/usage/validation/RULES.md) |
+| 汇报等级和配置覆盖 | [诊断专题](../src/layerweave/support/DIAGNOSTICS.md) |
+| 通用查询与位置工具用法 | [使用手册](../src/layerweave/tool/builtin/usage/GUIDE.md) |
+| 命令声明、发现及 CLI 示例 | [命令专题](../src/layerweave/tool/builtin/shared/help/COMMANDS.md) |
+| 配置 help 的使用/开发模式 | [配置 help 专题](../src/layerweave/tool/builtin/shared/help/CONFIG_HELP.md) |
+| 外置技能的存放与绑定示例 | [外置工具](../src/layerweave/tool/README.md)；各技能的能力说明维护在包内 SKILL.md |
+| 技能 ZIP 的安装参数与文件处理 | [安装说明](../src/layerweave/tool/builtin/developer/SKILLS.md) |
 
 ## 写法与示例
 

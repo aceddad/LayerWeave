@@ -3,7 +3,7 @@
 import json
 import unittest
 
-from support.storage.database import SCHEMA_PATH, allocate_id, open_database
+from layerweave.support.storage.database import SCHEMA_PATH, allocate_id, open_database
 
 
 class StorageSchemaTests(unittest.TestCase):

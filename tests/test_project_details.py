@@ -9,10 +9,10 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from tool.builtin.usage.records.dispatch import dispatch
-from support.api import open_database, read_record, read_project_details
-from support.storage.database import SCHEMA_PATH
-from tool.builtin.usage.query.project_details import format_details, project_details
+from layerweave.tool.builtin.usage.records.dispatch import dispatch
+from layerweave.support.api import open_database, read_record, read_project_details
+from layerweave.support.storage.database import SCHEMA_PATH
+from layerweave.tool.builtin.usage.query.project_details import format_details, project_details
 
 
 class ProjectDetailsTests(unittest.TestCase):
@@ -323,13 +323,13 @@ class ProjectDetailsTests(unittest.TestCase):
                 self.connection.backup(copy)
             finally:
                 copy.close()
-            result = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", "tool.builtin.usage.query.project_details", str(path),
+            result = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", "layerweave.tool.builtin.usage.query.project_details", str(path),
                                      str(self.project_id), "--begin", "3", "--end", "4", "--json"], capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(result.returncode, 0, result.stderr)
             data = json.loads(result.stdout)
             self.assertEqual(data["counts"]["objects"], 2)
             self.assertIn("完整正文", format_details(data))
-            command = [sys.executable, "-X", "utf8", "-B", "-m", "tool.builtin.usage.query.project_details", str(path), str(self.project_id)]
+            command = [sys.executable, "-X", "utf8", "-B", "-m", "layerweave.tool.builtin.usage.query.project_details", str(path), str(self.project_id)]
             multi = subprocess.run([*command, "--layer-ids", "1", "4", "999", "--begin", "3", "--end", "4", "--compact", "--json"],
                                    capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(multi.returncode, 0, multi.stderr)

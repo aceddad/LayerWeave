@@ -11,8 +11,8 @@ import unittest
 from unittest.mock import patch
 import zipfile
 
-from support.feedback import InputError
-from tool.builtin.developer.skills.cli import install_skill
+from layerweave.support.feedback import InputError
+from layerweave.tool.builtin.developer.skills.cli import install_skill
 
 
 class SkillInstallTests(unittest.TestCase):
@@ -40,7 +40,7 @@ class SkillInstallTests(unittest.TestCase):
             ("release/demo/assets/raw.bin", bytes(range(256))),
             ("release/README.md", "outside"),
         ])
-        with patch("tool.builtin.developer.skills.cli.PROJECT_ROOT", self.base):
+        with patch("pathlib.Path.cwd", return_value=self.base):
             result = self.install(archive, layer="text")
         destination = self.skills / "layers/text/demo"
         self.assertEqual(result, {"ok": True, "name": "demo", "path": str(destination),
@@ -48,6 +48,13 @@ class SkillInstallTests(unittest.TestCase):
         self.assertEqual((destination / "scripts/run.py").read_bytes(), script)
         self.assertEqual((destination / "assets/raw.bin").read_bytes(), bytes(range(256)))
         self.assertFalse((destination / "README.md").exists())
+
+    def test_default_destination_is_current_workspace_not_installed_package(self):
+        archive = self.archive([("demo/SKILL.md", "new skill")])
+        with patch("pathlib.Path.cwd", return_value=self.base):
+            result = install_skill(archive, scenario=True)
+        self.assertEqual(Path(result["path"]), self.skills / "scenarios/demo")
+        self.assertEqual(result["route"], "tool/skills/scenarios/demo/SKILL.md")
 
     def test_flat_zip_uses_archive_stem_and_nested_reference_is_part_of_skill(self):
         archive = self.archive([("SKILL.md", "flat"), ("references/example/SKILL.md", "example")], "plain.skill")
@@ -165,7 +172,7 @@ class SkillInstallTests(unittest.TestCase):
 
     def test_cli_json_success_and_conflict_do_not_touch_database_or_bindings(self):
         archive = self.archive([("demo/SKILL.md", "plain text")])
-        command = [sys.executable, "-X", "utf8", "-B", "-m", "tool.builtin.developer.skills.cli", str(archive),
+        command = [sys.executable, "-X", "utf8", "-B", "-m", "layerweave.tool.builtin.developer.skills.cli", str(archive),
                    "--scenario", "--skills-root", str(self.skills), "--json"]
         installed = subprocess.run(command, capture_output=True, text=True, encoding="utf-8")
         self.assertEqual(installed.returncode, 0, installed.stderr)

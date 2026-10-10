@@ -10,10 +10,10 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from support.api import diagnostic_report
-from tool.builtin.shared.help.catalog import read_support
-from support.configuration.loader import DEFAULT_ROOT, Loader
-from tool.builtin.shared.help.config_help import config_help, format_help
+from layerweave.support.api import diagnostic_report
+from layerweave.tool.builtin.shared.help.catalog import read_support
+from layerweave.support.configuration.loader import DEFAULT_ROOT, Loader
+from layerweave.tool.builtin.shared.help.config_help import config_help, format_help
 
 
 class ConfigHelpTests(unittest.TestCase):
@@ -106,10 +106,10 @@ class ConfigHelpTests(unittest.TestCase):
         self.assertIn("层支持详情", format_help(result))
 
     def test_object_batch_resolves_paths_types_and_class_names_without_duplicates(self):
-        result = self.query("objects", ["Text", "objects/text.toml", "text", "models.objects.title:Title", "image"])
+        result = self.query("objects", ["Text", "objects/text.toml", "text", "layerweave.models.objects.title:Title", "image"])
         self.assertEqual([item["config_ref"] for item in result["items"]], ["objects/text.toml", "objects/title.toml", "objects/image.toml"])
         title = result["items"][1]
-        self.assertEqual(title["definition"]["class"], "models.objects.title:Title")
+        self.assertEqual(title["definition"]["class"], "layerweave.models.objects.title:Title")
         self.assertIn("text", title["definition"]["information"])
         self.assertIn("layer", title["definition"]["fields"])
         self.assertEqual(title["lineage"], ["objects/base.toml", "objects/text.toml", "objects/title.toml"])
@@ -253,7 +253,7 @@ objects="dialogue"
         self.assertNotIn("source", result["items"][0])
 
     def test_cli_four_modes_json_raw_and_no_database_argument(self):
-        command = [sys.executable, "-X", "utf8", "-B", "-m", "tool.builtin.shared.help.config_help"]
+        command = [sys.executable, "-X", "utf8", "-B", "-m", "layerweave.tool.builtin.shared.help.config_help"]
         for args in ([], ["layers", "text", "image"], ["objects", "Text", "Title", "--raw"], ["combined", "text", "audio"]):
             result = subprocess.run([*command, *args, "--config-root", str(self.configs), "--json"], capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(result.returncode, 0, result.stderr)
@@ -268,6 +268,6 @@ objects="dialogue"
         self.assertEqual(json.loads(failed.stdout)["status"], "failed")
 
     def test_api_and_help_do_not_import_encapsulation_modules(self):
-        script = 'import sys\nfrom tool.builtin.shared.help.catalog import read_support\nr=read_support("combined", ["text", "image"])\nassert r["status"]=="completed"\nassert not any(n.startswith("models.") for n in sys.modules)\n'
+        script = 'import sys\nfrom layerweave.tool.builtin.shared.help.catalog import read_support\nr=read_support("combined", ["text", "image"])\nassert r["status"]=="completed"\nassert not any(n.startswith("layerweave.models.") for n in sys.modules)\n'
         result = subprocess.run([sys.executable, "-X", "utf8", "-B", "-c", script], capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)

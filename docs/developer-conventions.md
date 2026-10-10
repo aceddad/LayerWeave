@@ -11,47 +11,47 @@ Windows PowerShell 中，在项目根执行：
 ```powershell
 python -m venv .venv
 .venv/Scripts/python.exe -m pip install -e .
-.venv/Scripts/python.exe -X utf8 -B -m examples.read_write
+.venv/Scripts/python.exe -X utf8 -B examples/read_write.py
 ```
 
 下文的 python 指已安装本项目的解释器。启用虚拟环境后可以直接使用 python；未启用时使用上面的完整路径。其他系统使用各自虚拟环境的 Python 执行同样的 pip 和模块命令。
 
-命令可以从其他工作目录运行。数据库、--data-file 等调用参数中的相对路径相对于调用目录；默认配置、内置包发现及外置技能目录相对于安装的源码目录。移动整个源码目录后重新执行可编辑安装。
+命令可以从其他工作目录运行。数据库、--data-file 等调用参数中的相对路径相对于调用目录；默认 TOML、内置工具与自带 skills 从 layerweave 包内定位；ZIP 安装默认写当前工作目录的 tool/skills，或由 --skills-root 指定。移动整个源码目录后重新执行可编辑安装。
 
 ## 按任务寻找入口
 
 | 要做什么 | 入口 |
 |---|---|
-| 新增层或对象封装 | [模型](../src/models/README.md)、[配置](../configs/README.md)，参考 [Title](../src/examples/title.py) |
-| 新增或维护内部工具 | [工具开发](../tool/builtin/developer/README.md)、[基础 API](../src/support/API.md) |
-| 修改结构、事务或存储 | [基础支撑](../src/support/README.md)、[表结构](../src/support/storage/SCHEMA.md) |
-| 修改内容检测 | [检测包](../tool/builtin/usage/validation/README.md) |
-| 编写或安装外置技能 | [工具区](../tool/README.md)、[ZIP 安装](../tool/builtin/developer/SKILLS.md) |
-| 开发视图 | [视图边界](../tool/builtin/view/README.md)；开始实现时建独立分支 |
+| 新增层或对象封装 | [模型](../src/layerweave/models/README.md)、[配置](../src/layerweave/configs/README.md)，参考 [Title](../examples/title.py) |
+| 新增或维护内部工具 | [工具开发](../src/layerweave/tool/builtin/developer/README.md)、[基础 API](../src/layerweave/support/API.md) |
+| 修改结构、事务或存储 | [基础支撑](../src/layerweave/support/README.md)、[表结构](../src/layerweave/support/storage/SCHEMA.md) |
+| 修改内容检测 | [检测包](../src/layerweave/tool/builtin/usage/validation/README.md) |
+| 编写或安装外置技能 | [工具区](../src/layerweave/tool/README.md)、[ZIP 安装](../src/layerweave/tool/builtin/developer/SKILLS.md) |
+| 开发视图 | [视图边界](../src/layerweave/tool/builtin/view/README.md)；开始实现时建独立分支 |
 | 修改文档 | [文档约定](documentation.md) |
 
 ## 源码位置
 
 | 目录 | 职责 |
 |---|---|
-| src/core、src/models | 抽象结构、纯合并语义、按需导入的基础及派生类 |
-| configs/layers、configs/objects | 与 Python 类对应的封装约定 |
-| configs/logging | 诊断汇报等级；不保存数据库操作历史 |
-| src/support | 存储与配置适配、统一写入、实例装配、CLI 和静态发现 |
-| tool/builtin | 可独立增减的完整工具包，按 usage/developer/view/shared 分类 |
-| tool/skills | 外置技能，供层配置中的 tools 引用 |
-| src/examples、tests | 可运行例子、行为回归与隔离验收 |
+| src/layerweave/core、src/layerweave/models | 抽象结构、纯合并语义、按需导入的基础及派生类 |
+| src/layerweave/configs/layers、src/layerweave/configs/objects | 与 Python 类对应的封装约定 |
+| src/layerweave/configs/logging | 诊断汇报等级；不保存数据库操作历史 |
+| src/layerweave/support | 存储与配置适配、统一写入、实例装配、CLI 和静态发现 |
+| src/layerweave/tool/builtin | 可独立增减的完整工具包，按 usage/developer/view/shared 分类 |
+| src/layerweave/tool/skills | 外置技能，供层配置中的 tools 引用 |
+| examples、tests | 可运行例子、行为回归与隔离验收 |
 | docs | 整体设计、开发和文档约定、后续候选 |
 | output、scratch | 本地用户数据与交付物、可再生临时材料 |
 
 ## 实现原则
 
 1. 模型保存数据；不在构造与赋值时自动检查内容，不增加未经需要的资源解释。
-2. 新工具使用 support.api 的读取、transaction/run_operation、实例保存和位置计算。一个操作内先读后写共用同一写会话，不嵌套操作入口，不复制 SQL、发号或日志。
-3. 包内业务代码随包一起增减；不借用另一个可卸载包的私有函数。共用 CLI 使用 support.cli；每个命令在本模块声明字面量 COMMANDS，发现和示例排版来自 support.commands。
-4. 内容检测是可选公开能力。工具通过 support.providers.optional_checker 请求默认提供者；没有提供者返回 not_run。基础支撑的 save 默认不接入检测，records 包提供带默认检测的保存函数。
+2. 新工具使用 layerweave.support.api 的读取、transaction/run_operation、实例保存和位置计算。一个操作内先读后写共用同一写会话，不嵌套操作入口，不复制 SQL、发号或日志。
+3. 包内业务代码随包一起增减；不借用另一个可卸载包的私有函数。共用 CLI 使用 layerweave.support.cli；每个命令在本模块声明字面量 COMMANDS，发现和示例排版来自 layerweave.support.commands。
+4. 内容检测是可选公开能力。工具通过 layerweave.support.providers.optional_checker 请求默认提供者；没有提供者返回 not_run。基础支撑的 save 默认不接入检测，records 包提供带默认检测的保存函数。
 5. 新封装同时提供类与 TOML，保留 config_ref 和 layers/objects 分区。修改继承、身份或恢复时先阅读对应专题和测试。
-6. 写入结果与检查结果分开，复用 support.feedback。当前未发布只维护新路径；不增设旧入口转接或 MCP 注册框架。
+6. 写入结果与检查结果分开，复用 layerweave.support.feedback。当前未发布只维护新路径；不增设旧入口转接或 MCP 注册框架。
 
 ## 验证
 
@@ -61,6 +61,15 @@ python -m venv .venv
 python -X utf8 -B -m unittest discover -s tests -v
 ```
 
-test_architecture.py 验证核心单独运行、无工具的支撑读写和 Title 往返、每次仅一个工具包的实际调用、外部目录启动，以及统一写入口的结构保证。隔离进程使用临时副本与 -S，不能借回完整仓库。
+test_namespace.py 验证宿主同名模块不会干扰公开导入、保存和还原。test_architecture.py 验证核心单独运行、无工具的支撑读写和 Title 往返、每次仅一个工具包的实际调用、外部目录启动，以及统一写入口的结构保证。隔离进程使用临时副本与 -S，不能借回完整仓库。
 
-按改动影响运行[示例](examples.md)。测试和例子不写 output 内的实际数据库。维护说明与命令链接，并明确区分语法检查和实际执行；具体文档规则统一见[文档约定](documentation.md)。
+涉及打包与资源时，还需普通安装验收（不是向 PyPI 发布）：
+
+```sh
+python -m pip wheel --no-deps --wheel-dir scratch/namespace-dist .
+python tests/check_wheel.py scratch/namespace-dist/layerweave-0.1.0-py3-none-any.whl
+```
+
+check_wheel.py 将 wheel 用 pip 安装到临时目标，以禁用 site 的独立进程验证；源码目录不参与导入。它检查只有 layerweave 顶层包、同名模块冲突、默认配置、数据库 schema 和技能正文/脚本。临时目录自动清理，不写用户数据库。
+
+按改动影响从项目根运行[示例](examples.md)。测试和例子不写 output 内的实际数据库。维护说明与命令链接，并明确区分语法检查和实际执行；具体文档规则统一见[文档约定](documentation.md)。

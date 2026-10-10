@@ -10,9 +10,9 @@ import tempfile
 import unittest
 from uuid import UUID, uuid4
 
-from tool.builtin.usage.records.dispatch import dispatch
-from support.storage import crud
-from support.storage.database import SCHEMA_PATH, initialize_database, open_database
+from layerweave.tool.builtin.usage.records.dispatch import dispatch
+from layerweave.support.storage import crud
+from layerweave.support.storage.database import SCHEMA_PATH, initialize_database, open_database
 
 
 class CrudTests(unittest.TestCase):
@@ -289,7 +289,7 @@ class CrudTests(unittest.TestCase):
         self.assertEqual(crud.read(self.connection, "project"), [])
 
     def test_low_level_functions_share_caller_transaction_and_operation_id(self):
-        from support.api import transaction
+        from layerweave.support.api import transaction
         with self.assertRaisesRegex(ValueError, "cancel batch"):
             with transaction(self.connection) as write:
                 project = write.create("project", {"name": "composed"})
@@ -306,7 +306,7 @@ class CrudTests(unittest.TestCase):
             path = Path(file.name)
         self.addCleanup(path.unlink)
         initialize_database(path)
-        command = [sys.executable, "-X", "utf8", "-B", "-m", "tool.builtin.usage.records.cli", str(path)]
+        command = [sys.executable, "-X", "utf8", "-B", "-m", "layerweave.tool.builtin.usage.records.cli", str(path)]
         cwd = Path(__file__).resolve().parents[1] / "src"
         result = subprocess.run(command, input=json.dumps({
             "action": "create", "kind": "project", "data": {"name": "CLI 项目"},

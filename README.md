@@ -20,7 +20,7 @@ LayerWeave 是一个用层、对象、关联和轴位置组织内容的 Python �
 
 ```sh
 python -m pip install -e .
-python -X utf8 -B -m examples.read_write
+python -X utf8 -B examples/read_write.py
 ```
 
 该示例使用临时数据库，演示写入、关闭重开、装载 Python 对象和再次保存。
@@ -28,8 +28,8 @@ python -X utf8 -B -m examples.read_write
 也可以直接查询命令和可用封装，这两个入口无需数据库：
 
 ```sh
-python -X utf8 -B -m tool.builtin.shared.help.command_help
-python -X utf8 -B -m tool.builtin.shared.help.config_help combined text
+python -X utf8 -B -m layerweave.tool.builtin.shared.help.command_help
+python -X utf8 -B -m layerweave.tool.builtin.shared.help.config_help combined text
 ```
 
 ## 示例：连续追加两句字幕
@@ -41,11 +41,11 @@ from contextlib import closing
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from models import TextLayer
-from tool.builtin.usage.records.dispatch import dispatch
-from support.api import initialize_database, open_database, read_layer
-from tool.builtin.usage.records.save import save_layer
-from tool.builtin.usage.editing.objects import append_object
+from layerweave.models import TextLayer
+from layerweave.tool.builtin.usage.records.dispatch import dispatch
+from layerweave.support.api import initialize_database, open_database, read_layer
+from layerweave.tool.builtin.usage.records.save import save_layer
+from layerweave.tool.builtin.usage.editing.objects import append_object
 
 with TemporaryDirectory() as directory:
     database = initialize_database(Path(directory) / "demo.sqlite3")
@@ -73,7 +73,7 @@ with TemporaryDirectory() as directory:
 [2, 4) 世界
 ```
 
-编号由接口返回，追加工具计算位置。示例结束后临时数据会清理；实际项目使用自己的数据库路径。更多调用见[使用说明](tool/builtin/usage/README.md)。
+编号由接口返回，追加工具计算位置。示例结束后临时数据会清理；实际项目使用自己的数据库路径。更多调用见[使用说明](src/layerweave/tool/builtin/usage/README.md)。
 
 ## 当前状态
 
@@ -83,8 +83,10 @@ with TemporaryDirectory() as directory:
 
 ## 更多资料
 
-- [使用说明](tool/builtin/usage/README.md)：各类操作、参数与返回。
+- [使用说明](src/layerweave/tool/builtin/usage/README.md)：各类操作、参数与返回。
 - [开发指南](docs/developer-conventions.md)：开发准备、源码位置、扩充与验证。
 - [架构说明](docs/architecture.md)：概念、模块关系与设计边界。
 - [示例索引](docs/examples.md)：可运行的完整场景。
-- [外置技能示例](tool/README.md)：独立技能包的组织方式与层原型绑定写法。
+- [外置技能示例](src/layerweave/tool/README.md)：独立技能包的组织方式与层原型绑定写法。
+
+安装后只使用 `layerweave` 顶层导入。自带配置与技能材料随包提供；示例在仓库 `examples/` 中以脚本运行。

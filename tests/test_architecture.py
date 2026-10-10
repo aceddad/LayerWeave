@@ -9,19 +9,20 @@ import tempfile
 import textwrap
 import unittest
 
-from support.api import open_database, run_operation, transaction
-from support.feedback import InputError
-from support.storage.database import SCHEMA_PATH
+from layerweave.support.api import open_database, run_operation, transaction
+from layerweave.support.feedback import InputError
+from layerweave.support.storage.database import SCHEMA_PATH
 
 
 ROOT = Path(__file__).resolve().parents[1]
+PACKAGE = ROOT / "src/layerweave"
 PACKAGES = ("usage/records", "usage/query", "usage/editing", "usage/history", "usage/undo",
             "usage/validation", "usage/text", "shared/help", "developer/database", "developer/skills")
 
 FIXTURE = '''
-from support.api import open_database, save_layer, save_object, transaction, read_record
-from support.storage.database import SCHEMA_PATH
-from models import TextLayer, Title
+from layerweave.support.api import open_database, save_layer, save_object, transaction, read_record
+from layerweave.support.storage.database import SCHEMA_PATH
+from layerweave.models import TextLayer, Title
 c = open_database(":memory:")
 c.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
 with transaction(c) as write:
@@ -39,17 +40,20 @@ class IsolationTests(unittest.TestCase):
     def isolated(self, code, *, package=None, core_only=False):
         with tempfile.TemporaryDirectory(prefix="layerweave-isolated-") as folder:
             root = Path(folder)
+            package_root = root / "src/layerweave"
+            package_root.mkdir(parents=True)
+            shutil.copy2(PACKAGE / "__init__.py", package_root / "__init__.py")
             for name in ("core", "models") if core_only else ("core", "models", "support"):
-                shutil.copytree(ROOT / "src" / name, root / "src" / name,
+                shutil.copytree(PACKAGE / name, package_root / name,
                                 ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
             if not core_only:
-                shutil.copytree(ROOT / "configs", root / "configs")
+                shutil.copytree(PACKAGE / "configs", package_root / "configs")
             if package is not None:
-                dest = root / "tool/builtin" / package
-                shutil.copytree(ROOT / "tool/builtin" / package, dest,
+                dest = package_root / "tool/builtin" / package
+                shutil.copytree(PACKAGE / "tool/builtin" / package, dest,
                                 ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
                 for parent in dest.parents:
-                    if parent == root:
+                    if parent == package_root:
                         break
                     (parent / "__init__.py").touch()
             outside = root / "unrelated-cwd"
@@ -63,8 +67,8 @@ class IsolationTests(unittest.TestCase):
     def test_core_and_models_without_support_configs_or_tools(self):
         self.isolated('''
             import sys
-            from core import Layer, Object, DefinitionError, merge_definition, identity_key, reference
-            from models import Text, Title
+            from layerweave.core import Layer, Object, DefinitionError, merge_definition, identity_key, reference
+            from layerweave.models import Text, Title
             layer = Layer(id=1, objects=[Title(layer=1, information={"text": "hello"})])
             assert layer.return_self() is layer
             assert isinstance(layer.objects[0], Text)
@@ -80,13 +84,14 @@ class IsolationTests(unittest.TestCase):
                 pass
             else:
                 raise AssertionError("must not weaken inherited contract")
-            assert not any(n.split(".")[0] in {"sqlite3", "tomllib", "support", "tool"} for n in sys.modules)
+            assert not any(n == p or n.startswith(p + ".") for n in sys.modules
+                           for p in ("sqlite3", "tomllib", "layerweave.support", "layerweave.tool"))
         ''', core_only=True)
 
     def test_foundation_roundtrip_and_raw_reads_without_any_tools(self):
         self.isolated(FIXTURE + '''
-from support.api import load_object, load_layer
-from support.commands import command_help
+from layerweave.support.api import load_object, load_layer
+from layerweave.support.commands import command_help
 import sys
 assert command_help() == {"view":"overview", "status":"completed", "items":[], "issues":[]}
 assert type(load_object(c, p, obj.id)) is Title
@@ -102,43 +107,43 @@ except ValueError:
     pass
 else:
     raise AssertionError("class restoration must report missing config")
-assert not any(n == "tool" or n.startswith("tool.") for n in sys.modules)
+assert not any(n == "layerweave.tool" or n.startswith("layerweave.tool.") for n in sys.modules)
 ''')
 
     def test_each_complete_package_works_alone(self):
         actions = {
             "usage/records": '''
-from tool.builtin.usage.records.dispatch import dispatch
-from tool.builtin.usage.records.save import save_object
+from layerweave.tool.builtin.usage.records.dispatch import dispatch
+from layerweave.tool.builtin.usage.records.save import save_object
 r = dispatch(c, {"action": "update", "kind": "object", "project_id": p, "id": obj.id, "data": {"tips": "ok"}})
 assert r["ok"] and r["checks"]["status"] == "not_run", r
 assert save_object(c, p, Title(layer=layer.id, information={"text": "second"}))["ok"]
 ''',
             "usage/query": '''
-from tool.builtin.usage.query.project_overview import project_overview
-from tool.builtin.usage.query.project_details import project_details
-from tool.builtin.usage.query.free_ranges import find_gaps
+from layerweave.tool.builtin.usage.query.project_overview import project_overview
+from layerweave.tool.builtin.usage.query.project_details import project_details
+from layerweave.tool.builtin.usage.query.free_ranges import find_gaps
 assert project_overview(c,p)["counts"]["objects"] == 1
 assert project_details(c,p)["layers"][0]["objects"][0]["id"] == obj.id
 assert find_gaps(c,p,layer.id,begin=0,end=4) is not None
 ''',
             "usage/editing": '''
-from tool.builtin.usage.editing.timeline import split_object
-from tool.builtin.usage.editing.objects import append_object
-from tool.builtin.usage.editing.tree_service import copy_subtree
+from layerweave.tool.builtin.usage.editing.timeline import split_object
+from layerweave.tool.builtin.usage.editing.objects import append_object
+from layerweave.tool.builtin.usage.editing.tree_service import copy_subtree
 r = split_object(c,p,obj.id,first_information={"text":"one"},cuts=[{"at":1,"information":{"text":"two"}}])
 assert r["ok"] and r["checks"]["status"] == "not_run", r
 assert append_object(c,p,layer.id,{"config_ref":"objects/text.toml","information":{"text":"three"}},duration=1)["ok"]
 assert copy_subtree(c,p,layer.id)["ok"]
 ''',
             "usage/history": '''
-from tool.builtin.usage.history.service import read_history
+from layerweave.tool.builtin.usage.history.service import read_history
 r = read_history(c,p)
 assert r["operation_count"] == 3, r
 assert read_history(c,operation_id=saved_object["operation_id"])["items"][0]["changes"][0]["after"]["id"] == obj.id
 ''',
             "usage/undo": '''
-from tool.builtin.usage.undo.service import undo_operation
+from layerweave.tool.builtin.usage.undo.service import undo_operation
 r = undo_operation(c,saved_object["operation_id"])
 assert r["ok"] and r["checks"]["status"] == "not_run", r
 assert read_record(c,"object",project_id=p,id=obj.id) is None
@@ -146,26 +151,26 @@ assert undo_operation(c,r["operation_id"])["ok"]
 assert read_record(c,"object",project_id=p,id=obj.id)["id"] == obj.id
 ''',
             "usage/validation": '''
-from tool.builtin.usage.validation.recheck import recheck
+from layerweave.tool.builtin.usage.validation.recheck import recheck
 r = recheck(c,p)
 assert r["status"] == "completed", r
-from support.providers import optional_checker
-from support.api import run_operation
+from layerweave.support.providers import optional_checker
+from layerweave.support.api import run_operation
 r = run_operation(c,lambda write: write.update("object",obj.id,{"information":{"text":1}},project_id=p),checker=optional_checker())
 assert r["ok"] and r["checks"]["issues"], r
 ''',
             "usage/text": '''
-from tool.builtin.usage.text.collect import collect_text
+from layerweave.tool.builtin.usage.text.collect import collect_text
 assert collect_text(c,p,layer.id)["text"] == "hello"
 ''',
             "shared/help": '''
-from tool.builtin.shared.help.catalog import read_support
-from tool.builtin.shared.help.config_help import format_help
+from layerweave.tool.builtin.shared.help.catalog import read_support
+from layerweave.tool.builtin.shared.help.config_help import format_help
 r = read_support("combined", "text")
 assert r["status"] == "completed" and "objects/title.toml" in format_help(r), r
 ''',
             "developer/database": '''
-from tool.builtin.developer.database.cli import main
+from layerweave.tool.builtin.developer.database.cli import main
 import sys
 from pathlib import Path
 sys.argv = ["database", "new.sqlite3"]
@@ -175,7 +180,7 @@ assert Path("new.sqlite3").is_file()
             "developer/skills": '''
 from pathlib import Path
 from zipfile import ZipFile
-from tool.builtin.developer.skills.cli import install_skill
+from layerweave.tool.builtin.developer.skills.cli import install_skill
 with ZipFile("demo.zip","w") as archive:
     archive.writestr("demo/SKILL.md", "example")
 r = install_skill("demo.zip",layer="text")
@@ -187,7 +192,7 @@ assert Path(r["path"]).is_dir()
             with self.subTest(package=package):
                 # CLI wrappers and shared examples must also load with every other package absent.
                 code = FIXTURE + actions[package] + '''
-from support.commands import command_help
+from layerweave.support.commands import command_help
 from importlib import import_module
 import shlex
 import sys
@@ -208,17 +213,17 @@ for item in overview["items"]:
 
     def test_installed_imports_and_cli_from_outside_repository(self):
         with tempfile.TemporaryDirectory() as folder:
-            result = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", "tool.builtin.shared.help.command_help", "--json"],
+            result = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", "layerweave.tool.builtin.shared.help.command_help", "--json"],
                                     cwd=folder, capture_output=True, text=True, encoding="utf-8", timeout=30)
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn("split_object", result.stdout)
 
     def test_foundation_has_no_import_dependency_on_builtin_tools(self):
-        for path in (ROOT / "src/support").rglob("*.py"):
+        for path in (PACKAGE / "support").rglob("*.py"):
             tree = ast.parse(path.read_text(encoding="utf-8-sig"))
             for node in ast.walk(tree):
                 names = [node.module or ""] if isinstance(node, ast.ImportFrom) else [n.name for n in node.names] if isinstance(node, ast.Import) else []
-                self.assertFalse(any(n == "tool" or n.startswith("tool.") for n in names), str(path))
+                self.assertFalse(any(n == "layerweave.tool" or n.startswith("layerweave.tool.") for n in names), str(path))
 
 
 class WriteGateTests(unittest.TestCase):
@@ -270,7 +275,7 @@ class WriteGateTests(unittest.TestCase):
         self.assertTrue(run_operation(self.c, work)["ok"])
 
     def test_raw_mutation_requires_gate_and_same_operation(self):
-        from support import records
+        from layerweave.support import records
         with self.assertRaises(RuntimeError):
             records.create(self.c,"project",{},operation_id="invented")
         with transaction(self.c) as write:

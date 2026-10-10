@@ -10,12 +10,15 @@ requires-python = ">=3.11"
 dependencies = []
 
 [tool.setuptools]
-package-dir = {"" = "src", "tool" = "tool"}
+package-dir = {"" = "src"}
+include-package-data = false
 
 [tool.setuptools.packages.find]
-where = ["src", "."]
-include = ["core*", "models*", "support*", "examples*", "tool", "tool.builtin*"]
+where = ["src"]
+include = ["layerweave", "layerweave.*"]
+exclude = ["layerweave.configs*", "layerweave.tool.skills*"]
 namespaces = false
 
 [tool.setuptools.package-data]
-"support.storage" = ["schema.sql"]
+"layerweave" = ["configs/**/*.toml", "configs/**/*.md", "tool/skills/**/*"]
+"layerweave.support.storage" = ["schema.sql"]

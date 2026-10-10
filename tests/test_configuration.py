@@ -5,7 +5,7 @@ import shutil
 import tempfile
 import unittest
 
-from support.configuration.loader import ConfigError, DEFAULT_ROOT, Loader
+from layerweave.support.configuration.loader import ConfigError, DEFAULT_ROOT, Loader
 
 
 class ConfigurationTests(unittest.TestCase):

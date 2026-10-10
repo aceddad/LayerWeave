@@ -1,0 +1,46 @@
+# Object 基础约定
+# 字段说明对应当前 Python 类；规则由独立检测通道在提交后执行。
+# rules 是固定约定；检测问题逐条报告，不撤销已经提交的数据。
+
+[object]
+type    = "Object"                       # 对象配置名称；不代表实例上具有 type 属性
+version = 1                              # 这份配置的版本
+name    = "基础对象"                     # 配置的显示名，与实例 name 分开
+class   = "layerweave.models.objects.base:Object"   # 对应的 Python 类
+note    = "承载具体内容及其在轴上的位置"
+open    = true                           # 基础约定允许 information 中使用任意键
+
+[object.fields]
+id          = { type = "int | None", note = "项目内对象编号，初始为 None；与本项目层共用编号，本类不分配编号；完整身份还需项目上下文" }
+name        = { type = "str", default = "", note = "创建时传入的名字，可以重名" }
+layer       = { type = "int", note = "必传的所属层编号；数据库保证非空且层实际存在；赋值不自动装载进 objects" }
+begin       = { type = "float", default = 0.0, note = "开始位置，单位按所在模块的轴理解；本类不自动取整，保存时由公共执行层按轴精度落点" }
+end         = { type = "float", default = 0.0, note = "结束位置；持续区间为 [begin,end)，相等时单独占用该点；本类不自动取整，保存时由公共执行层按轴精度落点" }
+information = { type = "dict", default = {}, note = "具体内容或内容的引用；每个实例独立持有字典" }
+tips        = { type = "str", default = "", note = "自由备注" }
+bind        = { type = "list", default = [], note = "发出的关联字典列表；新建可提供 target_kind、target_project_id、target_id 和 tips；保存时补齐来源与关联 id，读回保留完整引用；允许相互引用" }
+
+[object.methods]
+return_self = "无参数，返回当前实例本身；子类可直接继承"
+
+# 基础固定约定；SQL 外键已负责的存在性条件不在这里重复执行。
+# 后续封装继承这些约定；同一目标的同一项检查只执行一次。
+[object.rules]
+begin_le_end       = true   # 检查开始位置是否不晚于结束位置
+
+# defaults 是未定值时的默认设置；具体封装在 constraint/display 明确声明后成为固定约定。
+[object.defaults.constraint]
+duration = "any"            # 默认允许有时长，也允许瞬间
+
+[object.defaults.display]
+visibility = true           # 默认允许显隐控制；需要固定显示的封装可设为 false
+# 实例当前的显示状态由外部视图管理；false 不表示当前隐藏或不进入视图。
+
+# 对象的创建参数示例，假设已存在编号为 1 的层。
+# 创建后由调用方将此对象实例放入该层的 objects。
+[object.example]
+name        = "一条说明"
+layer       = 1
+begin       = 0.0
+end         = 1.0
+information = { note = "这一段的意图" }

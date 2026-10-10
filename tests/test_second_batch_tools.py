@@ -13,13 +13,13 @@ import tempfile
 from threading import Barrier
 import unittest
 
-from tool.builtin.usage.records.dispatch import dispatch
-from support.api import open_database, read_record
-from support.configuration.loader import DEFAULT_ROOT
-from support.storage.database import SCHEMA_PATH
-from tool.builtin.usage.validation.runner import check_changes
-from tool.builtin.usage.editing.objects import append_object, copy_object
-from tool.builtin.usage.editing.positions import align_objects, arrange_objects, set_duration, shift_objects
+from layerweave.tool.builtin.usage.records.dispatch import dispatch
+from layerweave.support.api import open_database, read_record
+from layerweave.support.configuration.loader import DEFAULT_ROOT
+from layerweave.support.storage.database import SCHEMA_PATH
+from layerweave.tool.builtin.usage.validation.runner import check_changes
+from layerweave.tool.builtin.usage.editing.objects import append_object, copy_object
+from layerweave.tool.builtin.usage.editing.positions import align_objects, arrange_objects, set_duration, shift_objects
 
 
 class SecondBatchToolsTests(unittest.TestCase):
@@ -300,18 +300,18 @@ class SecondBatchToolsTests(unittest.TestCase):
             return subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", module,
                                    str(database), str(self.project_id), *map(str, args)],
                                   capture_output=True, text=True, encoding="utf-8")
-        moved = run("tool.builtin.usage.editing.positions", "shift", "--ids", source, "--offset", 2)
+        moved = run("layerweave.tool.builtin.usage.editing.positions", "shift", "--ids", source, "--offset", 2)
         self.assertEqual(moved.returncode, 0, moved.stderr)
         self.assertEqual(json.loads(moved.stdout)["results"][0]["data"]["begin"], 3)
-        noop = run("tool.builtin.usage.editing.positions", "shift", "--ids", source, "--offset", 0)
+        noop = run("layerweave.tool.builtin.usage.editing.positions", "shift", "--ids", source, "--offset", 0)
         self.assertEqual(noop.returncode, 0)
         self.assertFalse(json.loads(noop.stdout)["applied"])
-        failed = run("tool.builtin.usage.editing.positions", "duration", 999, 1)
+        failed = run("layerweave.tool.builtin.usage.editing.positions", "duration", 999, 1)
         self.assertEqual(failed.returncode, 1)
         self.assertFalse(json.loads(failed.stdout)["ok"])
-        appended = run("tool.builtin.usage.editing.objects", "append", self.layer_id, 2, "--data-file", data_file)
+        appended = run("layerweave.tool.builtin.usage.editing.objects", "append", self.layer_id, 2, "--data-file", data_file)
         self.assertEqual(appended.returncode, 0, appended.stderr)
         self.assertEqual(json.loads(appended.stdout)["data"]["begin"], 5)
-        copied = run("tool.builtin.usage.editing.objects", "copy", source, "--append")
+        copied = run("layerweave.tool.builtin.usage.editing.objects", "copy", source, "--append")
         self.assertEqual(copied.returncode, 0, copied.stderr)
         self.assertEqual(json.loads(copied.stdout)["data"]["begin"], 7)

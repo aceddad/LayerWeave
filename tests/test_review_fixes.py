@@ -7,13 +7,13 @@ import sys
 import tempfile
 import unittest
 
-from support.commands import command_help
-from tool.builtin.usage.records.dispatch import dispatch
-from tool.builtin.usage.editing.timeline import insert_gap
-from support.api import open_database, query_objects, read_record
-from tool.builtin.usage.undo.service import undo_operation
-from support.storage.database import SCHEMA_PATH
-from tool.builtin.usage.editing.gaps import format_gap
+from layerweave.support.commands import command_help
+from layerweave.tool.builtin.usage.records.dispatch import dispatch
+from layerweave.tool.builtin.usage.editing.timeline import insert_gap
+from layerweave.support.api import open_database, query_objects, read_record
+from layerweave.tool.builtin.usage.undo.service import undo_operation
+from layerweave.support.storage.database import SCHEMA_PATH
+from layerweave.tool.builtin.usage.editing.gaps import format_gap
 
 
 class ReviewFixTests(unittest.TestCase):
@@ -221,7 +221,7 @@ class ReviewFixTests(unittest.TestCase):
             payload = Path(folder)/"actions.json"
             payload.write_text(json.dumps([{"object_id":self.a,"action":"move"}, {"object_id":self.b,"action":"stretch"},
                                            {"object_id":self.c_image,"action":"keep"}]),encoding="utf-8")
-            command = [sys.executable,"-X","utf8","-B","-m","tool.builtin.usage.editing.gaps",str(db),str(self.p),"10","2",
+            command = [sys.executable,"-X","utf8","-B","-m","layerweave.tool.builtin.usage.editing.gaps",str(db),str(self.p),"10","2",
                        "--layer-ids",str(self.root),"--contents-file",str(payload),"--json"]
             run = subprocess.run(command,capture_output=True,text=True,encoding="utf-8")
             self.assertEqual(run.returncode,0,run.stderr)
@@ -293,7 +293,7 @@ class ReviewFixTests(unittest.TestCase):
             c = open_database(db)
             self.c.backup(c)
             c.close()
-            base = [sys.executable,"-X","utf8","-B","-m","tool.builtin.usage.editing.gaps",str(db),str(self.p),"10","2"]
+            base = [sys.executable,"-X","utf8","-B","-m","layerweave.tool.builtin.usage.editing.gaps",str(db),str(self.p),"10","2"]
             run = subprocess.run([*base,"--json"],capture_output=True,text=True,encoding="utf-8")
             self.assertEqual(run.returncode,2)
             payload = Path(folder)/"keep.json"

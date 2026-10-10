@@ -6,15 +6,15 @@ import shutil
 import tempfile
 import unittest
 
-from tool.builtin.usage.records.dispatch import dispatch
-from support.api import open_database, read_record
-from tool.builtin.usage.validation.runner import validate
-from support.configuration.loader import DEFAULT_ROOT
-from support.storage.database import SCHEMA_PATH
-from tool.builtin.usage.validation.runner import check_changes
-from tool.builtin.usage.editing.objects import append_object, copy_object
-from tool.builtin.usage.editing.positions import align_objects, arrange_objects, set_duration, shift_objects
-from tool.builtin.usage.text.collect import collect_text
+from layerweave.tool.builtin.usage.records.dispatch import dispatch
+from layerweave.support.api import open_database, read_record
+from layerweave.tool.builtin.usage.validation.runner import validate
+from layerweave.support.configuration.loader import DEFAULT_ROOT
+from layerweave.support.storage.database import SCHEMA_PATH
+from layerweave.tool.builtin.usage.validation.runner import check_changes
+from layerweave.tool.builtin.usage.editing.objects import append_object, copy_object
+from layerweave.tool.builtin.usage.editing.positions import align_objects, arrange_objects, set_duration, shift_objects
+from layerweave.tool.builtin.usage.text.collect import collect_text
 
 
 class MissingFieldsPrecisionTests(unittest.TestCase):

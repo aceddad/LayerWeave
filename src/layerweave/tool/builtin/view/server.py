@@ -83,7 +83,8 @@ class ViewHandler(SimpleHTTPRequestHandler):
                     path = media_path(connection, self.database, int(match[1]), int(match[2]))
                 if not path:
                     return self.send_json({"error": "没有这个素材"}, HTTPStatus.NOT_FOUND)
-                seconds = round(float(parse_qs(url.query).get("t", ["0"])[0]), 2)
+                at = parse_qs(url.query).get("t", ["0"])[0]
+                seconds = "end" if at == "end" else round(float(at), 2)   # end：最后一帧
                 key = (str(path), path.stat().st_mtime_ns, seconds)
                 if key not in FRAMES:
                     if len(FRAMES) > 400:

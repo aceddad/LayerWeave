@@ -11,8 +11,8 @@ from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 from layerweave.support.api import initialize_database, open_database, save_layer, save_object, transaction
-from layerweave.models import ImageLayer, Image, TextLayer, Text
-from layerweave.tool.builtin.view.data import axis_key, find_ffmpeg, open_readonly
+from layerweave.models import ImageLayer, Image, Movie, TextLayer, Text
+from layerweave.tool.builtin.view.data import axis_key, extract_frame, find_ffmpeg, open_readonly
 from layerweave.tool.builtin.view.layout import arrange, chain_offsets, layout_path, merge, reconcile, split
 from layerweave.tool.builtin.view.screenshot import capture, find_browser
 from layerweave.tool.builtin.view.server import make_server
@@ -48,6 +48,10 @@ class ViewTests(unittest.TestCase):
             board = TextLayer(name="分镜", axis={"unit": "帧", "precision": 1})
             save_layer(c, self.project, board)
             save_object(c, self.project, Text(layer=board.id, begin=0, end=48, information={"text": "镜头一"}))
+            with transaction(c) as write:
+                write.create("bind", {"source_kind": "object", "source_project_id": self.project, "source_id": self.image.id,
+                                      "target_kind": "layer", "target_project_id": self.project, "target_id": main.id,
+                                      "tips": "这张图属于主线"})
         self.main_layer, self.art_layer, self.voice, self.board = main.id, art.id, voice.id, board.id
         self.state_root = root / "state"
         self.server, self.url = make_server(self.database, state_root=self.state_root)
@@ -75,6 +79,9 @@ class ViewTests(unittest.TestCase):
         self.assertFalse(media[self.missing.id]["available"])
         self.assertIsNone(media[self.web.id]["url"])           # 网址不经本机服务提供
         self.assertEqual(data["layers"][0]["objects"][0]["text"], "第一段")
+        self.assertEqual(data["binds"], [{"id": data["binds"][0]["id"], "tips": "这张图属于主线",
+                                          "source": {"kind": "object", "project": self.project, "id": self.image.id},
+                                          "target": {"kind": "layer", "project": self.project, "id": self.main_layer}}])
         with self.assertRaises(HTTPError) as error:
             self.get("/api/project/999")
         self.assertEqual(error.exception.code, 404)
@@ -163,6 +170,23 @@ class ViewTests(unittest.TestCase):
         self.assertEqual(len(self.json(f"/api/changes/{self.project}?limit=1")), 1)
         self.assertEqual(self.json("/api/changes/999"), [])
 
+    @unittest.skipIf(find_ffmpeg() is None, "本机没有 ffmpeg")
+    def test_frames_can_be_taken_from_the_end_of_a_video(self):
+        import subprocess
+        video = Path(self.temp.name) / "media" / "red_blue.mp4"      # 前半秒红、后半秒蓝
+        subprocess.run([find_ffmpeg(), "-v", "error", "-f", "lavfi", "-i", "color=c=red:s=64x48:d=0.5:r=10",
+                        "-f", "lavfi", "-i", "color=c=blue:s=64x48:d=0.5:r=10", "-filter_complex", "[0][1]concat=n=2:v=1",
+                        "-pix_fmt", "yuv420p", str(video)], check=True, capture_output=True)
+        first, last, beyond = (extract_frame(video, t, width=64) for t in (0, "end", 99))
+        self.assertEqual(last, beyond)                                 # 超出时长时取最后一帧，而不是退回开头
+        self.assertNotEqual(first, last)
+        self.assertEqual(last[:2], bytes([0xFF, 0xD8]))
+        with closing(open_database(self.database)) as c:
+            clip = Movie(layer=self.art_layer, begin=6, end=7, information={"source": "media/red_blue.mp4"})
+            save_object(c, self.project, clip)
+        status, headers, body = self.get(f"/frame/{self.project}/{clip.id}?t=end")
+        self.assertEqual((status, headers["Content-Type"]), (200, "image/jpeg"))
+
     def test_media_is_whitelisted_and_supports_ranges(self):
         status, headers, body = self.get(f"/media/{self.project}/{self.image.id}")
         self.assertEqual((status, body), (200, self.png))
@@ -230,6 +254,11 @@ class ViewTests(unittest.TestCase):
         self.assertTrue(result["ready"])                                           # 页面加载完才拍
         self.assertIsNone(read_state(self.database, self.state_root))
         self.assertFalse(layout_path(self.database, self.state_root).exists())     # 截图页面不改排版
+        cuts = capture(self.database, self.project, Path(self.temp.name) / "shots" / "cuts.png", view="cuts", full_page=True,
+                       links=True, width=900, height=400, wait_ms=15000, state_root=self.state_root)
+        self.assertTrue(cuts["ready"])
+        self.assertIn("view=cuts", cuts["page"])
+        self.assertIn("full=1", cuts["page"])
 
 
 if __name__ == "__main__":

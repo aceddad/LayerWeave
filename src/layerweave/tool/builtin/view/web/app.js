@@ -10,14 +10,16 @@ if (CAPTURE) document.body.classList.add('capture');
 const LAZY = CAPTURE ? 'eager' : 'lazy';                 // 无界面截图时图片要立刻加载，懒加载在那里不一定触发
 const DECODE = CAPTURE ? 'sync' : 'async';
 const SOLO = CAPTURE && params.has('board');            // 截某一块画板时，别的画板不进画面，免得混进不相干的刻度
+if (CAPTURE && params.get('full') === '1') document.body.classList.add('full');   // 截整页：接缝、素材页不限高度
 
 const NAMES = 200, ROW = 46, LANE = 40, PAD = 3, GAP = 48, STRIP = 24;
 
 const S = {
   projects: [], data: null, project: null,
-  view: params.get('view') === 'assets' ? 'assets' : 'canvas',
+  view: ['assets', 'cuts'].includes(params.get('view')) ? params.get('view') : 'canvas',
   boards: [], serial: null, version: null,              // boards：[{rows: [[根, 根…], …], x, y, pps}]，来自服务端的排版
   cam: {x: 32, y: 32, z: 1}, tickZ: 1,                  // 画布镜头：屏幕坐标 = 世界坐标 × z + (x, y)
+  applied: {x: 0, y: 0, z: 1},                          // 实际写进页面的镜头（cam 改了还没 applyCamera 时两者不同）
   active: params.has('board') ? Number(params.get('board')) : null,   // 当前画板，用其中任一根层的编号表示
   playhead: params.has('playhead') ? Number(params.get('playhead')) : null,   // 当前画板上的时间（左右接续时是连续时间）
   selected: params.has('select') ? Number(params.get('select')) : null,
@@ -29,6 +31,7 @@ const S = {
   changes: Number(params.get('changes')) || 10,         // 看最近几次操作
   changeOps: [], changed: new Map(), changedLayers: new Map(), ghosts: new Map(),
   find: {q: '', hits: [], at: -1},
+  links: params.get('links') === '1',                   // 画出全部关系线；关掉时只画选中对象的
 };
 const KIND = (o) => (o.media ? o.media.kind : o.text != null ? 'text' : 'other');
 
@@ -223,16 +226,17 @@ function render() {
   document.title = `${S.data.project.name || '项目'} · LayerWeave 视图`;
   $('#canvas-view').hidden = S.view !== 'canvas';
   $('#assets-view').hidden = S.view !== 'assets';
+  $('#cuts-view').hidden = S.view !== 'cuts';
   $$('.canvas-only').forEach((e) => (e.style.visibility = S.view === 'canvas' ? '' : 'hidden'));
   $$('#tabs button').forEach((b) => b.classList.toggle('on', b.dataset.view === S.view));
-  if (S.view === 'canvas') renderCanvas(); else renderAssets();
+  if (S.view === 'canvas') renderCanvas(); else if (S.view === 'cuts') renderCuts(); else renderAssets();
   renderSide();
 }
 
 function renderCanvas() {
   S.tickZ = S.cam.z;
   S.size = canvasSize();
-  $('#world').innerHTML = S.boards.map(boardHtml).join('');
+  $('#world').innerHTML = S.boards.map(boardHtml).join('') + '<svg id="links"></svg>';
   placeAuto();
   positionBoards();
   afterBoards($('#world'));
@@ -268,7 +272,7 @@ function sectionHtml(b, row, ri, a, pps, W) {
     const tog = t.hasChildren ? `<span class="tog" data-tog="${esc(ck)}">${S.collapsed.has(ck) ? '▸' : '▾'}</span>` : '<span class="tog"></span>';
     const label = isRoot ? row.map(nameOf).join(' → ') : (t.name || t.type);
     const split = isRoot && many && !chain ? `<button class="split" data-split="${row[0]}" title="把这个根拆出去，单独成一块画板">拆出</button>` : '';
-    names.push(`<div class="lname${isRoot ? ' root' : ''}" style="height:${h}px;padding-left:${8 + 14 * t.depth}px" title="${esc(t.tips || label)}">${tog}<span class="lt">${esc(t.type)}</span><span class="nm">${esc(label)}</span>${layerMark(t.parts)}${split}</div>`);
+    names.push(`<div class="lname${isRoot ? ' root' : ''}" data-layers="${t.parts.map((p) => p.layer.id).join(' ')}" style="height:${h}px;padding-left:${8 + 14 * t.depth}px" title="${esc(t.tips || label)}">${tog}<span class="lt">${esc(t.type)}</span><span class="nm">${esc(label)}</span>${layerMark(t.parts)}${split}</div>`);
     const ghosts = marksOn() ? t.parts.flatMap(({layer, seg}) => (S.ghosts.get(layer.id) || []).map((g) => ghostHtml(g, seg.offset, a, pps, unit))).join('') : '';
     lines.push(`<div class="track" data-layers="${t.parts.map((p) => p.layer.id).join(',')}" style="height:${h}px">${items.map((it, i) => block(it, ln[i], a, pps, unit)).join('')}${ghosts}</div>`);
   }
@@ -293,16 +297,18 @@ function block(it, lane, a, pps, unit) {
   let inner = '';
   if (!missing && o.media?.url) {
     if (k === 'image') inner = img(o.media.url);
-    else if (k === 'video') inner = cover(o, 0.1);
+    else if (k === 'video') inner = S.frames && w >= 150 ? `<span class="ends">${img(frameUrl(o, 0.05))}${img(frameUrl(o, lastAt(o, unit)))}</span>` : cover(o, 0.1);
     else if (k === 'audio') inner = `<canvas data-wave="${o.media.url}"></canvas>`;
   }
   const label = o.text ?? o.name ?? '';
+  const outside = externalBinds('object', o.id);
+  const ext = outside.length ? `<i class="ext" title="${esc(outside.map((b) => refLabel(b.other) + (b.tips ? '：' + b.tips : '')).join('\n'))}">↗ ${outside.length}</i>` : '';
   const board = it.offset ? `（画板上 ${fmt(it.begin, unit)} – ${fmt(it.end, unit)}）` : '';
   const title = `#${o.id} ${o.name || ''}（${o.type}）\n${fmt(o.begin, unit)} – ${fmt(o.end, unit)}${board}${missing ? '\n文件不存在：' + o.media.source : ''}`;
   const ch = marksOn() ? S.changed.get(o.id) : null;
   const badge = ch ? `<i class="chg-n" title="${ch.n === 1 ? '最近一次' : `倒数第 ${ch.n} 次`}操作${ch.action === 'create' ? '新建' : '修改'}">${ch.n}</i>` : '';
   return `<div class="obj ${k}${instant ? ' instant' : ''}${missing ? ' missing' : ''}${o.id === S.selected ? ' sel' : ''}${ch ? ` chg chg-${ch.action}` : ''}" data-id="${o.id}"
-    style="left:${left}px;width:${w}px;top:${PAD + lane * LANE}px;height:${LANE - 4}px" title="${esc(title)}">${inner}<span class="lab">${esc(label || o.type)}</span>${badge}</div>`;
+    style="left:${left}px;width:${w}px;top:${PAD + lane * LANE}px;height:${LANE - 4}px" title="${esc(title)}">${inner}<span class="lab">${esc(label || o.type)}</span>${badge}${ext}</div>`;
 }
 
 const SEC_STEPS = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 1800, 3600];
@@ -334,6 +340,7 @@ function placeAuto() {
 
 function positionBoards() {
   for (const b of S.boards) { const el = elOf(b); if (el) { el.style.left = b.x + 'px'; el.style.top = b.y + 'px'; } }
+  drawLinks();
 }
 
 function afterBoards(scope) {
@@ -353,6 +360,7 @@ function rerenderBoard(b) {
 function applyCamera(announce = true) {
   const {x, y, z} = S.cam;
   $('#world').style.transform = `translate(${x}px, ${y}px) scale(${z})`;
+  S.applied = {x, y, z};
   $('#canvas').style.backgroundPosition = `${x}px ${y}px`;
   $('#canvas').style.backgroundSize = `${24 * z}px ${24 * z}px`;
   if (Math.abs(Math.log(z / S.tickZ)) > 0.2) {          // 缩放后刻度太密或太疏：重排刻度
@@ -360,6 +368,7 @@ function applyCamera(announce = true) {
     for (const b of S.boards) { const el = elOf(b); if (el) { const [a, e] = extentOf(b); $('.ruler', el).innerHTML = ticks(a, e, ppsOf(b), unitOf(b)); } }
   }
   $$('#world .board').forEach(stick);
+  drawLinks();                                          // 层名会随镜头贴边，连到层的线要跟着重画
   if (announce) report();
 }
 
@@ -435,7 +444,7 @@ function focusObject(id, ghost = false) {
 function selectObject(o, fly = true) {
   S.selected = o.id; S.active = o.layer.root; S.playhead = +(o.begin + offsetOf(o.layer.root)).toFixed(6);
   if (S.view !== 'canvas') { S.view = 'canvas'; render(); }
-  else { $$('.obj.sel').forEach((n) => n.classList.remove('sel')); $(`#world .obj[data-id="${o.id}"]`)?.classList.add('sel'); placePlayheads(); renderSide(); }
+  else { $$('.obj.sel').forEach((n) => n.classList.remove('sel')); $(`#world .obj[data-id="${o.id}"]`)?.classList.add('sel'); placePlayheads(); renderSide(); drawLinks(); }
   if (fly) focusObject(o.id);
   report();
 }
@@ -481,6 +490,7 @@ canvas.addEventListener('pointermove', (e) => {
   snap(d);
   d.el.style.left = d.b.x + 'px'; d.el.style.top = d.b.y + 'px';
   stick(d.el);
+  drawLinks();
   showDrop(d.drop = dropTarget(e.clientX, e.clientY, d.b));
 });
 canvas.addEventListener('pointercancel', () => { if (S.drag?.mode === 'board') { S.drag.el.classList.remove('dragging'); showDrop(null); saveLayout(); } S.drag = null; canvas.classList.remove('panning'); });
@@ -703,6 +713,128 @@ function changeItem(it) {
   return `<div class="chg-item ${it.action}"${focus}><span class="verb">${verb}${what}</span> #${it.id} ${esc(label)}${details.length ? `<div class="det">${details.join('<br>')}</div>` : ''}</div>`;
 }
 
+// ---------- 视频片段：首帧、尾帧 ----------
+// 片段里最后一帧的时间：单位是秒时按对象长度算（片段只用了文件前一段时也对）；否则取文件的最后一帧
+const lastAt = (o, unit) => (isSec(unit) && o.end > o.begin ? Math.max(0, o.end - o.begin - 0.04) : 'end');
+
+// ---------- 接缝：同一条轨道里前后相接的两个画面，并排看上一段的最后一帧和下一段的第一帧 ----------
+function cutList() {
+  const cuts = [];
+  for (const b of S.boards) {
+    if (params.has('board') && !rootsOf(b).includes(Number(params.get('board')))) continue;
+    b.rows.forEach((row, ri) => {
+      for (const t of visibleTracks(row)) {
+        const items = t.parts.flatMap(({layer, seg}) => layer.objects.filter((o) => ['image', 'video'].includes(KIND(o)))
+          .map((o) => ({o, layer, seg, begin: o.begin + seg.offset, end: o.end + seg.offset})))
+          .sort((p, q) => p.begin - q.begin || p.end - q.end || p.o.id - q.o.id);
+        const ln = lanes(items), last = [];
+        items.forEach((it, i) => {                        // 和画布一样按小行排；同一小行里前后相邻的两个就是一个接缝
+          const prev = last[ln[i]];
+          if (prev) cuts.push({board: b, row, ri, track: t, a: prev, b: it, gap: it.begin - prev.end});
+          last[ln[i]] = it;
+        });
+      }
+    });
+  }
+  const lo = params.has('begin') ? Number(params.get('begin')) : -Infinity, hi = params.has('end') ? Number(params.get('end')) : Infinity;
+  return cuts.filter((c) => c.b.begin >= lo && c.b.begin <= hi);
+}
+
+function renderCuts() {
+  const cuts = cutList(), groups = new Map();
+  for (const c of cuts) {
+    const key = `${keyOf(c.board)}|${c.ri}|${c.track.key}`;
+    if (!groups.has(key)) groups.set(key, {c, list: []});
+    groups.get(key).list.push(c);
+  }
+  $('#cuts').innerHTML = cuts.length ? [...groups.values()].map(({c, list}) => {
+    const where = c.row.map(nameOf).join(' → ') + (c.track.key ? ' · ' + (c.track.name || c.track.type) : '');
+    return `<section class="cut-group"><h3>${esc(where)} <small>${list.length} 个接缝</small></h3>${list.map(cutHtml).join('')}</section>`;
+  }).join('') : '<p class="hint">没有接缝：同一条轨道里至少要有前后两个图片或视频。</p>';
+}
+
+function cutHtml(c) {
+  const unit = unitOfRoot(c.a.seg.root);
+  const shot = (it, end) => {
+    const o = it.o, k = KIND(o), u = unitOfRoot(it.seg.root);
+    if (o.media && !o.media.available) return `<div class="shot missing">文件不存在<br>${esc(o.media.source)}</div>`;
+    if (!o.media?.url) return '<div class="shot missing">没有素材</div>';
+    if (k === 'image') return `<div class="shot">${img(o.media.url)}</div>`;
+    const t = end ? lastAt(o, u) : 0.05;
+    return `<div class="shot">${S.frames ? img(frameUrl(o, t)) : `<video muted preload="metadata" src="${o.media.url}#t=${t === 'end' ? 9999 : t}"></video>`}</div>`;
+  };
+  const what = (it, end) => (KIND(it.o) === 'video' ? (end ? '最后一帧' : '第一帧') : '图片');
+  const when = (it, t) => fmt(t - it.seg.offset, unitOfRoot(it.seg.root)) + (it.seg.offset ? `（画板 ${fmt(t, unit)}）` : '');
+  const gap = Math.abs(c.gap) < 1e-6 ? '紧接' : c.gap > 0 ? `中间空 ${fmtSpan(c.gap, unit)}` : `叠了 ${fmtSpan(-c.gap, unit)}`;
+  const cross = c.a.seg.root !== c.b.seg.root ? `<small class="cross">跨段：${esc(nameOf(c.a.seg.root))} → ${esc(nameOf(c.b.seg.root))}</small>` : '';
+  const name = (it) => `#${it.o.id} ${esc(it.o.name || (it.o.media?.source || '').split(/[\\/]/).pop())}`;
+  return `<div class="cut" data-goto="${c.b.o.id}">
+    <figure>${shot(c.a, true)}<figcaption>${name(c.a)} 的${what(c.a, true)}<br><small>结束于 ${when(c.a, c.a.end)}</small></figcaption></figure>
+    <div class="cut-mid"><b>→</b><small>${gap}</small>${cross}</div>
+    <figure>${shot(c.b, false)}<figcaption>${name(c.b)} 的${what(c.b, false)}<br><small>开始于 ${when(c.b, c.b.begin)}</small></figcaption></figure>
+  </div>`;
+}
+const fmtSpan = (d, unit) => (isSec(unit) ? `${+d.toFixed(2)} 秒` : `${+d.toFixed(3)}${unit ? ' ' + unit : ''}`);
+
+// ---------- 关系线：数据里的 bind，画在画布上 ----------
+const sameRef = (ref, kind, id) => ref.kind === kind && ref.project === S.project && ref.id === id;
+function refLabel(ref) {
+  if (ref.project !== S.project) return `项目 ${ref.project} 的${ref.kind === 'layer' ? '层' : '对象'} #${ref.id}`;
+  if (ref.kind === 'layer') return `层 #${ref.id} ${layerById(ref.id)?.name || ''}`;
+  const o = objectById(ref.id);
+  return o ? `#${o.id} ${o.name || o.text || ''}（${o.layer.name || '层 ' + o.layer.id}）` : `对象 #${ref.id}（已不存在）`;
+}
+// 这个对象或层的关系里，另一头在别的项目的
+function externalBinds(kind, id) {
+  return (S.data?.binds || []).flatMap((b) => (sameRef(b.source, kind, id) && b.target.project !== S.project ? [{...b, other: b.target}]
+    : sameRef(b.target, kind, id) && b.source.project !== S.project ? [{...b, other: b.source}] : []));
+}
+function relationsHtml(kind, id) {
+  const rows = (S.data?.binds || []).flatMap((b) => (sameRef(b.source, kind, id) ? [['→', b.target, b.tips]] : sameRef(b.target, kind, id) ? [['←', b.source, b.tips]] : []));
+  if (!rows.length) return '';
+  return `<div class="rels"><div class="rels-head">关系</div>${rows.map(([dir, ref, tips]) => {
+    const go = ref.kind === 'object' && ref.project === S.project && objectById(ref.id) ? ` data-goto="${ref.id}"` : '';
+    return `<div class="rel"${go}><b>${dir}</b> ${esc(refLabel(ref))}${tips ? `<small>${esc(tips)}</small>` : ''}</div>`;
+  }).join('')}</div>`;
+}
+function endpoint(ref) {
+  if (ref.project !== S.project) return null;
+  if (ref.kind === 'object') return $(`#world .obj[data-id="${ref.id}"]`);
+  if (ref.kind === 'layer') return $(`#world .lname[data-layers~="${ref.id}"] .nm`);
+  return null;
+}
+function drawLinks() {
+  const svg = $('#links');
+  if (!svg || S.view !== 'canvas' || !S.data) return;
+  const c = canvas.getBoundingClientRect(), {x, y, z} = S.applied;
+  const box = (el) => { const r = el.getBoundingClientRect(); return {x: (r.left - c.left - x) / z, y: (r.top - c.top - y) / z, w: r.width / z, h: r.height / z}; };
+  const hot = (b) => S.selected != null && (sameRef(b.source, 'object', S.selected) || sameRef(b.target, 'object', S.selected));
+  const out = [];
+  for (const b of S.data.binds || []) {
+    if (!S.links && !hot(b)) continue;
+    const se = endpoint(b.source), te = endpoint(b.target);
+    if (!se || !te) continue;
+    const p = box(se), q = box(te);
+    const sy = p.y + p.h / 2, ty = q.y + q.h / 2, gap = q.x + q.w / 2 - (p.x + p.w / 2);
+    let sx, tx, c1, c2;
+    if (Math.abs(gap) < 60) {                           // 上下几乎对齐（比如两个层名）：从左边绕过去
+      sx = p.x; tx = q.x;
+      c1 = c2 = Math.min(p.x, q.x) - 60;
+    } else {                                            // 从源的右边连到目标的左边；目标在左边时反过来
+      const right = gap > 0, dx = (right ? 1 : -1);
+      sx = right ? p.x + p.w : p.x; tx = right ? q.x : q.x + q.w;
+      const bend = Math.max(40, Math.abs(tx - sx) / 2) * dx;
+      c1 = sx + bend; c2 = tx - bend;
+    }
+    const d = `M${sx},${sy} C${c1},${sy} ${c2},${ty} ${tx},${ty}`;
+    const cls = hot(b) ? 'link hot' : 'link';
+    out.push(`<path class="${cls}" d="${d}" marker-end="url(#arrow${hot(b) ? '-hot' : ''})"><title>${esc(refLabel(b.source))} → ${esc(refLabel(b.target))}${b.tips ? '\n' + esc(b.tips) : ''}</title></path>`);
+    const lx = Math.abs(gap) < 60 ? c1 : (sx + tx) / 2;
+    if (hot(b) && b.tips) out.push(`<text class="link-tip" x="${lx}" y="${(sy + ty) / 2 - 6}">${esc(b.tips)}</text>`);
+  }
+  svg.innerHTML = `<defs>${['', '-hot'].map((k) => `<marker id="arrow${k}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrow${k}"/></marker>`).join('')}</defs>${out.join('')}`;
+}
+
 // ---------- 右侧面板：此刻 / 改动 ----------
 function renderSide() {
   $$('#side-tabs button').forEach((b) => b.classList.toggle('on', b.dataset.side === S.side));
@@ -754,7 +886,7 @@ function card(o, full, local) {
     : `<video muted controls preload="metadata" src="${o.media.url}" data-at="${offset}"></video>`;
   else if (k === 'audio') body = `<canvas data-wave="${o.media.url}" data-mark="${onClip && o.end > o.begin ? offset / (o.end - o.begin) : ''}"></canvas><audio controls preload="none" src="${o.media.url}" style="width:100%"></audio>`;
   if (o.text != null) body += `<div class="txt">${esc(o.text)}</div>`;
-  const info = full ? `<pre>${esc(JSON.stringify(o.information, null, 1))}</pre>${o.tips ? `<pre>备注：${esc(o.tips)}</pre>` : ''}` : '';
+  const info = full ? `${relationsHtml('object', o.id)}<pre>${esc(JSON.stringify(o.information, null, 1))}</pre>${o.tips ? `<pre>备注：${esc(o.tips)}</pre>` : ''}` : '';
   return `<div class="card${o.id === S.selected ? ' sel' : ''}"><div class="meta">#${o.id} ${esc(o.name)} · ${esc(o.type)} · ${fmt(o.begin, unit)} – ${fmt(o.end, unit)}</div>${body}${info}</div>`;
 }
 
@@ -923,7 +1055,18 @@ canvas.addEventListener('click', (e) => {
   else if (!e.target.closest('.ruler')) S.selected = null;
   $$('.obj.sel').forEach((n) => n.classList.remove('sel'));
   if (S.selected != null) $(`#world .obj[data-id="${S.selected}"]`)?.classList.add('sel');
-  placePlayheads(); renderSide(); report();
+  placePlayheads(); renderSide(); drawLinks(); report();
+});
+
+$('#links-toggle').checked = S.links;
+$('#links-toggle').addEventListener('change', (e) => { S.links = e.target.checked; drawLinks(); });
+$('#cuts').addEventListener('click', (e) => {
+  const cut = e.target.closest('[data-goto]');
+  if (cut) selectObject(objectById(Number(cut.dataset.goto)));
+});
+$('#now-list').addEventListener('click', (e) => {
+  const rel = e.target.closest('.rel[data-goto]');
+  if (rel) selectObject(objectById(Number(rel.dataset.goto)));
 });
 
 $('#grid').addEventListener('click', (e) => {

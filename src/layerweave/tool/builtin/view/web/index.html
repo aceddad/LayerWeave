@@ -11,12 +11,14 @@
   <select id="project" title="项目"></select>
   <nav id="tabs">
     <button data-view="canvas" class="on">画布</button>
+    <button data-view="cuts" title="同一条轨道里前后相接的画面：上一段的最后一帧和下一段的第一帧并排">接缝</button>
     <button data-view="assets">素材</button>
   </nav>
   <input id="find" type="search" placeholder="找对象：名字、文字、文件名、#编号" title="回车找下一个，Shift+回车找上一个">
   <span id="find-count"></span>
   <div class="spacer"></div>
   <span id="clock" title="播放头位置（当前画板的单位）">—</span>
+  <label class="canvas-only toggle" title="画出全部关系线；不勾时只画选中对象的"><input type="checkbox" id="links-toggle"> 关系线</label>
   <div id="zoom" class="canvas-only">
     <button data-zoom="out" title="缩小画布">−</button>
     <button data-zoom="fit" title="显示全部画板">全部</button>
@@ -45,6 +47,10 @@
       <div id="chg-list"></div>
     </section>
   </aside>
+</main>
+
+<main id="cuts-view" hidden>
+  <div id="cuts"></div>
 </main>
 
 <main id="assets-view" hidden>

@@ -129,6 +129,7 @@ def project_view(connection, database, project_id):
         "project": {"id": details["project"]["id"], "name": details["project"]["name"], "tips": details["project"]["tips"]},
         "roots": list(roots.values()),
         "layers": layers,
+        "binds": project_binds(connection, project_id),
     }
 
 
@@ -180,6 +181,19 @@ def recent_changes(connection, project_id, limit=10):
     return operations
 
 
+def project_binds(connection, project_id):
+    """这个项目里所有关联：从这里发出的，以及别的项目指向这里的。两端写成 {kind, project, id}。"""
+    found = {}
+    for field in ("source_project_id", "target_project_id"):
+        for row in read_record(connection, "bind", filters={field: project_id}):
+            found[row["id"]] = {
+                "id": row["id"], "tips": row["tips"],
+                "source": {"kind": row["source_kind"], "project": row["source_project_id"], "id": row["source_id"]},
+                "target": {"kind": row["target_kind"], "project": row["target_project_id"], "id": row["target_id"]},
+            }
+    return [found[key] for key in sorted(found)]
+
+
 def media_path(connection, database, project_id, object_id):
     """只返回该对象 information.source 指向、且确实存在的本地文件。"""
     row = read_record(connection, "object", project_id=project_id, id=object_id)
@@ -201,16 +215,18 @@ def find_ffmpeg():
 
 
 def extract_frame(path, seconds, *, width=640, ffmpeg=None):
-    """返回视频在 seconds 秒处那一帧的 JPEG 字节；超出时长时取最后一帧附近。"""
+    """返回视频在 seconds 秒处那一帧的 JPEG 字节。seconds 为 "end" 时取最后一帧；超出时长时也取最后一帧。"""
     import subprocess
     ffmpeg = ffmpeg or find_ffmpeg()
     if ffmpeg is None:
         raise FileNotFoundError("找不到 ffmpeg：请安装并加入 PATH，或用环境变量 FFMPEG 指定")
-    seconds = max(0.0, float(seconds))
-    for at in (seconds, max(0.0, seconds - 0.5), 0.0):
-        result = subprocess.run([ffmpeg, "-v", "error", "-ss", f"{at:.3f}", "-i", str(path), "-frames:v", "1",
-                                 "-vf", f"scale={width}:-2", "-f", "image2pipe", "-vcodec", "mjpeg", "-q:v", "4", "-"],
-                                capture_output=True, timeout=60)
+    output = ["-vf", f"scale={width}:-2", "-f", "image2pipe", "-vcodec", "mjpeg", "-q:v", "4", "-"]
+    attempts = [] if seconds == "end" else [["-ss", f"{max(0.0, float(seconds)):.3f}", "-i", str(path), "-frames:v", "1"]]
+    # 从结尾往前 0.5 秒开始解到底，留最后一张：比按时长倒推更准（时长和最后一帧的时间常常差一点）
+    attempts += [["-sseof", "-0.5", "-i", str(path)], ["-ss", "0", "-i", str(path), "-frames:v", "1"]]
+    for seek in attempts:
+        result = subprocess.run([ffmpeg, "-v", "error", *seek, *output], capture_output=True, timeout=60)
         if result.returncode == 0 and result.stdout:
-            return result.stdout
+            data = result.stdout
+            return data[data.rfind(bytes([0xFF, 0xD8])):]   # 解出好几张时只要最后一张（JPEG 以 FFD8 开头）
     raise RuntimeError(f"ffmpeg 没能取出画面：{result.stderr.decode('utf-8', 'replace')[-200:]}")

@@ -4,8 +4,8 @@ AI 看到的就是用户在视图里看到的：画板的排版用用户那份�
 页面把图片、视频封面、波形都加载完才举手，截图工具通过浏览器调试接口等到它再拍，不会拍到还没出图的空色块。
 
 python -m layerweave.tool.builtin.view.screenshot DATABASE PROJECT_ID 输出.png
-       [--view canvas|assets] [--board 根层编号] [--begin 起点 --end 终点] [--layers 1 5] [--playhead 位置] [--select 对象编号]
-       [--focus 对象编号] [--changes 最近几次操作]
+       [--view canvas|cuts|assets] [--board 根层编号] [--begin 起点 --end 终点] [--layers 1 5] [--playhead 位置] [--select 对象编号]
+       [--focus 对象编号] [--changes 最近几次操作] [--links] [--full-page]
        [--width 1600 --height 900] [--browser 浏览器路径] [--wait-ms 20000]
 """
 import argparse
@@ -146,14 +146,19 @@ def _devtools_port(profile, deadline):
 
 
 def capture(database, project_id, output, *, view="canvas", board=None, begin=None, end=None, layers=None, playhead=None,
-            select=None, focus=None, changes=None, width=1600, height=900, browser=None, wait_ms=20000, state_root=None):
+            select=None, focus=None, changes=None, links=False, full_page=False, width=1600, height=900, browser=None,
+            wait_ms=20000, state_root=None):
     browser = find_browser(browser)
     if browser is None:
         raise FileNotFoundError("找不到 Chrome、Edge 或 Chromium：用 --browser 或环境变量 LAYERWEAVE_BROWSER 指定浏览器路径")
     output = Path(output).resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
     server, url = make_server(database, state_root=state_root, record_state=False)
-    query = {"project": project_id, "view": "assets" if view == "assets" else "canvas", "record": 0, "capture": 1}
+    query = {"project": project_id, "view": view if view in ("assets", "cuts") else "canvas", "record": 0, "capture": 1}
+    if links:
+        query["links"] = 1
+    if full_page and view in ("assets", "cuts"):
+        query["full"] = 1
     for key, value in (("board", board), ("begin", begin), ("end", end), ("playhead", playhead), ("select", select),
                        ("focus", focus), ("changes", changes)):
         if value is not None:
@@ -172,7 +177,7 @@ def capture(database, project_id, output, *, view="canvas", board=None, begin=No
                                         "--remote-debugging-port=0", f"--window-size={width},{height}", "about:blank"],
                                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             try:
-                ready = _shoot(profile, page, output, width, height, wait_ms)
+                ready = _shoot(profile, page, output, width, height, wait_ms, "full" in query)
             finally:
                 try:
                     process.wait(timeout=10)   # Edge 的启动器早就退出了；真正的浏览器由 Browser.close 关掉
@@ -184,7 +189,7 @@ def capture(database, project_id, output, *, view="canvas", board=None, begin=No
     return {"output": str(output), "page": page, "browser": browser, "size": [width, height], "ready": ready}
 
 
-def _shoot(profile, page, output, width, height, wait_ms):
+def _shoot(profile, page, output, width, height, wait_ms, full_page=False):
     port, browser_path = _devtools_port(profile, time.time() + 30)
     root = DevTools(f"ws://127.0.0.1:{port}{browser_path}")
     try:
@@ -199,6 +204,11 @@ def _shoot(profile, page, output, width, height, wait_ms):
                 time.sleep(0.25)
                 result = tab.call("Runtime.evaluate", expression="window.__layerweaveReady === true", returnByValue=True)
                 ready = result.get("result", {}).get("value") is True
+            if full_page:   # 整页：把窗口拉到内容的高度再拍（最多 16000 像素）
+                result = tab.call("Runtime.evaluate", expression="document.documentElement.scrollHeight", returnByValue=True)
+                tall = min(16000, max(height, int(result.get("result", {}).get("value") or height)))
+                tab.call("Emulation.setDeviceMetricsOverride", width=width, height=tall, deviceScaleFactor=1, mobile=False)
+                time.sleep(0.5)
             output.write_bytes(base64.b64decode(tab.call("Page.captureScreenshot", format="png")["data"]))
         finally:
             tab.close()
@@ -213,14 +223,14 @@ def _shoot(profile, page, output, width, height, wait_ms):
 
 COMMANDS = [{
     "name": "view_screenshot",
-    "summary": "把视图页面截成 PNG：整张画布、某一块画板（可指定时间范围）或素材网格；可以对准某个对象、标出最近的改动",
+    "summary": "把视图页面截成 PNG：整张画布、某一块画板（可指定时间范围）、接缝页或素材网格；可以对准对象、标出最近的改动、画出关系线",
     "entrypoint": "layerweave.tool.builtin.view.screenshot:capture",
     "cli": "python -m layerweave.tool.builtin.view.screenshot",
     "read_only": True,
     "context": ["database", "project_id"],
     "parameters": {
         "output": {"type": "string", "required": True, "description": "由 AI 指定的 PNG 输出路径"},
-        "view": {"type": "string", "description": "canvas（画布）或 assets（素材网格）", "default": "canvas"},
+        "view": {"type": "string", "description": "canvas（画布）、cuts（接缝：前后相接的画面并排）或 assets（素材网格）", "default": "canvas"},
         "board": {"type": "integer", "description": "只拍这个根层所在的画板；省略时拍整张画布"},
         "begin": {"type": "number", "description": "画板显示的起点，用这块画板的单位；和 end 一起用"},
         "end": {"type": "number", "description": "画板显示的终点"},
@@ -229,6 +239,8 @@ COMMANDS = [{
         "select": {"type": "integer", "description": "选中并展开详情的对象编号"},
         "focus": {"type": "integer", "description": "把镜头移到这个对象上（放在画面左上三分之一处）"},
         "changes": {"type": "integer", "description": "标出最近这么多次操作改过的对象和删除、移动前的位置，右侧列出改动"},
+        "links": {"type": "boolean", "description": "画出全部关系线（bind）；不画时只画选中对象的", "default": False},
+        "full_page": {"type": "boolean", "description": "接缝页、素材页按内容高度截整页（最多 16000 像素）", "default": False},
         "width": {"type": "integer", "default": 1600}, "height": {"type": "integer", "default": 900},
         "browser": {"type": "string", "description": "浏览器路径；省略时自动查找 Chrome、Edge、Chromium"},
         "wait_ms": {"type": "integer", "description": "最多等页面把图片、视频封面、波形加载完多久", "default": 20000},
@@ -236,10 +248,12 @@ COMMANDS = [{
     "returns": "output、page（截图用的页面地址）、browser、size、ready（页面是否在等待时间内加载完；False 时图里可能缺缩略图）。",
     "examples": [{"cli": "python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/all.png"},
                  {"cli": "python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/t10.png --board 1 --begin 8 --end 14 --playhead 10"},
-                 {"cli": "python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/changes.png --changes 5"}],
+                 {"cli": "python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/changes.png --changes 5"},
+                 {"cli": "python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/cuts.png --view cuts --full-page"}],
     "notes": ["截图页面不记录状态、不改排版；用户正在看哪儿请用 view_state，画板怎么排请用 view_layout。",
               "只读：起一个只监听本机的临时服务和一个独立配置的无界面浏览器，截完都关掉。",
-              "左右接续的画板上，begin、end、playhead 用画板上的连续时间；view_layout 的 offset 是每一段的起点。"],
+              "左右接续的画板上，begin、end、playhead 用画板上的连续时间；view_layout 的 offset 是每一段的起点。",
+              "接缝页列出同一条轨道里前后相接的图片和视频：上一段的最后一帧和下一段的第一帧并排，用来查衔接；--board、--begin、--end 可以缩小范围。"],
 }]
 
 
@@ -248,17 +262,19 @@ def main():
     p = argparse.ArgumentParser(description="视图截图（给 AI 看）", formatter_class=argparse.RawDescriptionHelpFormatter,
                                 epilog=help_examples(COMMANDS))
     p.add_argument("database", type=Path); p.add_argument("project_id", type=int); p.add_argument("output", type=Path)
-    p.add_argument("--view", choices=("canvas", "assets"), default="canvas")
+    p.add_argument("--view", choices=("canvas", "cuts", "assets"), default="canvas")
     p.add_argument("--board", type=int, help="只拍这个根层所在的画板")
     p.add_argument("--begin", type=float); p.add_argument("--end", type=float)
     p.add_argument("--layers", type=int, nargs="+"); p.add_argument("--playhead", type=float); p.add_argument("--select", type=int)
     p.add_argument("--focus", type=int, help="把镜头移到这个对象上"); p.add_argument("--changes", type=int, help="标出最近几次操作的改动")
+    p.add_argument("--links", action="store_true", help="画出全部关系线"); p.add_argument("--full-page", action="store_true", help="接缝、素材页截整页")
     p.add_argument("--width", type=int, default=1600); p.add_argument("--height", type=int, default=900)
     p.add_argument("--browser"); p.add_argument("--wait-ms", type=int, default=20000)
     a = p.parse_args()
     try:
         result = capture(a.database, a.project_id, a.output, view=a.view, board=a.board, begin=a.begin, end=a.end, layers=a.layers,
-                         playhead=a.playhead, select=a.select, focus=a.focus, changes=a.changes, width=a.width, height=a.height,
+                         playhead=a.playhead, select=a.select, focus=a.focus, changes=a.changes, links=a.links,
+                         full_page=a.full_page, width=a.width, height=a.height,
                          browser=a.browser, wait_ms=a.wait_ms)
     except (OSError, RuntimeError, subprocess.TimeoutExpired) as error:
         print(f"截图失败：{error}", file=sys.stderr)

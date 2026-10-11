@@ -187,14 +187,27 @@ export async function foldAction(layers: number[], action: 'fold' | 'unfold' | '
   } catch (error) { toast('折叠没有存下来：' + (error as Error).message); return false; }
 }
 
-// 视图的写入之一：批注。写完重读项目；自己写的不用再被轮询重读一遍
+// 视图的写入之一：批注。写完重读项目；自己写的不用再被轮询重读一遍。
+// 同样的请求还没回来时再点一次（双击"发送"、按钮和 Ctrl+回车一起）直接忽略，免得同一句话发两楼
+const sending = new Set<string>();
 export async function noteAction(body: Record<string, unknown>): Promise<boolean> {
   const s = getState();
   if (s.project == null) return false;
+  const key = JSON.stringify(body);
+  if (sending.has(key)) return false;
+  sending.add(key);
   try {
-    const res = await api.note(s.project, body);
+    return await sendNote(s.project, body);
+  } finally {
+    sending.delete(key);
+  }
+}
+
+async function sendNote(project: number, body: Record<string, unknown>): Promise<boolean> {
+  try {
+    const res = await api.note(project, body);
     if (res.error || res.recorded === false) { toast('批注没有写进去：' + (res.error ?? '这个页面只读')); return false; }
-    await loadProject(s.project);
+    await loadProject(project);
     setState({version: (await api.version()).version});
     return true;
   } catch (error) { toast('批注没有写进去：' + (error as Error).message); return false; }

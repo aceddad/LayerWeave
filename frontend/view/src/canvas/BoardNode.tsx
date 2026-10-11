@@ -2,14 +2,15 @@
 // 拖动只能抓标题（dragHandle = .bhead）；尺子上拖是圈一段；Alt+滚轮缩放这块画板的时间。
 import {Handle, Position, useStore as useFlowStore, useUpdateNodeInternals} from '@xyflow/react';
 import type {Node, NodeProps} from '@xyflow/react';
-import {memo, useEffect, useLayoutEffect, useMemo, useRef} from 'react';
+import {memo, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import type {RefObject} from 'react';
 import {useShallow} from 'zustand/react/shallow';
-import {clickBoard, pickLayer, splitRoot, toggleFold} from '../actions';
+import {clickBoard, pickLayer, setFoldTips, splitRoot, toggleFold, unfoldForAI} from '../actions';
 import {timeZoom, toFlow, xToTime} from '../camera';
 import {decimalsOf, fmtLength} from '../model/gaps';
 import {externalLabels} from '../model/labels';
-import type {BoardLayout, FoldInfo, SectionLayout} from '../model/model';
+import type {BoardLayout, FoldInfo, FoldMark, SectionLayout} from '../model/model';
+import {RECORD, VIEWER} from '../params';
 import {LANE, NAMES, PAD, keyOf, rootsOf} from '../model/model';
 import {fmt, ticks} from '../model/units';
 import {activeBoard, setState, useMarks, useModel, useNotes, useStore} from '../store';
@@ -72,6 +73,38 @@ function Gaps({gaps, a, pps, decimals, unit}: {gaps: {from: number; to: number}[
   })}</>;
 }
 
+const THEM = VIEWER === 'user' ? 'AI' : '用户';           // 对方
+const MINE = VIEWER === 'user';                           // 网页（人这边）才能改折叠
+
+// 自己这边折叠的轨道：一条带边框的细条，写明收了什么、谁收的、为什么；网页上可以写备注、点一下展开
+function FoldBar({fold, notes, layers}: {fold: FoldInfo; notes: number; layers: number[]}) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const save = async () => { if (draft != null && await setFoldTips(layers, draft)) setDraft(null); };
+  return (
+    <div className="foldbar" title={MINE ? '点一下展开' : `${fold.by} 折叠的`}
+         onClick={(e) => { e.stopPropagation(); if (MINE && draft == null) toggleFold(layers, false); }}>
+      ▸ 已折叠{fold.below ? ` · 下面 ${fold.below} 层` : ''} · {fold.objects} 个对象{notes > 0 && ` · 💬 ${notes} 楼待处理`}
+      <small>（{fold.by} 折叠的{fold.tips && draft == null ? '：' + fold.tips : ''}）</small>
+      {MINE && RECORD && (draft == null
+        ? <a className="foldtips" onClick={(e) => { e.stopPropagation(); setDraft(fold.tips); }}>{fold.tips ? '改备注' : '写备注'}</a>
+        : <input className="foldtips-box nodrag" autoFocus value={draft} placeholder="为什么收起来（回车保存，Esc 取消）"
+                 onClick={(e) => e.stopPropagation()} onChange={(e) => setDraft(e.target.value)}
+                 onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Enter') save(); if (e.key === 'Escape') setDraft(null); }} />)}
+    </div>
+  );
+}
+
+// 对方折叠的轨道：照常画，名字旁贴标签；网页上点 × 让 AI 也展开
+function OtherChip({mark, layers}: {mark: FoldMark; layers: number[]}) {
+  const why = mark.tips ? '：' + mark.tips : '';
+  const hint = MINE ? '点 × 让 AI 也展开' : '用户现在不关注这里；内容照常要检查';
+  return (
+    <i className="otherfold-chip" title={`${mark.by} 折叠了这一层和下面的层${why}\n${hint}`}>
+      {THEM}折叠{MINE && RECORD && <b onClick={(e) => { e.stopPropagation(); unfoldForAI(layers); }}>×</b>}
+    </i>
+  );
+}
+
 function Section({board, layout, sec}: {board: Board; layout: BoardLayout; sec: SectionLayout}) {
   const model = useModel()!;
   const {selected, targetLayer, frames, project, noteFocus} = useStore(useShallow((s) => ({
@@ -113,7 +146,7 @@ function Section({board, layout, sec}: {board: Board; layout: BoardLayout; sec: 
     <div className="sec" data-row={sec.index}>
       <div className="names stick">
         {sec.strip && <div className="lname strip" style={{height: 24}}><span className="nm">左右接续 {sec.segments.length} 段</span></div>}
-        {sec.tracks.map(({track, height, fold}) => {
+        {sec.tracks.map(({track, height, fold, other}) => {
           const ids = track.parts.map((p) => p.layer.id), isRoot = track.key === '';
           const label = isRoot ? sec.row.map((r) => model.nameOf(r)).join(' → ') : (track.name || track.type);
           const said = ids.flatMap((id) => notes?.index.get(`layer:${id}`) ?? []);
@@ -123,12 +156,14 @@ function Section({board, layout, sec}: {board: Board; layout: BoardLayout; sec: 
                  data-layers={ids.join(' ')} title={track.tips || label}
                  style={{height, paddingLeft: 8 + 14 * track.depth}}
                  onClick={(e) => { if (!(e.target as HTMLElement).closest('.tog, button')) pickLayer(ids[0]); }}>
-              <span className="tog" title={fold ? '展开' : '折叠：收起这一层和下面所有的层（和 AI 共用，存进数据库）'}
-                    onClick={() => toggleFold(ids, !fold)}>{fold ? '▸' : '▾'}</span>
+              <span className={`tog${MINE ? '' : ' off'}`}
+                    title={MINE ? (fold ? '展开' : '折叠：收起这一层和下面所有的层（存进数据库，AI 看得见，不影响 AI 那边）') : '这是 AI 那边的样子，只看不改'}
+                    onClick={() => MINE && toggleFold(ids, !fold)}>{fold ? '▸' : '▾'}</span>
               <span className="lt">{track.type}</span>
               <span className="nm">{label}</span>
               {said.length > 0 && <i className="note-dot" title={said.map(({top}) => `#${top.id} ${top.text}`).join('\n')}>💬{said.length}</i>}
               {changed.length > 0 && <i className="chg-dot" title="这个层最近被改过">{Math.min(...changed.map((m) => m!.n))}</i>}
+              {other && <OtherChip mark={other} layers={ids} />}
               {isRoot && many && !sec.strip && <button className="split nodrag" title="把这个根拆出去，单独成一块画板" onClick={() => splitRoot(sec.row[0])}>拆出</button>}
               {ids.map((id) => <span key={id}>
                 <Handle type="source" position={Position.Left} id={`ls${id}`} className="rel-handle" isConnectable={false} />
@@ -145,14 +180,12 @@ function Section({board, layout, sec}: {board: Board; layout: BoardLayout; sec: 
             {many && <button className="split nodrag" title="把这一段拆出去，单独成一块画板" onClick={() => splitRoot(s.root)}>拆出</button>}
           </span>)}
         </div>}
-        {sec.tracks.map(({track, height, items, gaps, fold}) => (fold
+        {sec.tracks.map(({track, height, items, gaps, fold, other}) => (fold
           ? <div key={track.key} className="track folded" style={{height}}>
-              <div className="foldbar" title="点一下展开" onClick={(e) => { e.stopPropagation(); toggleFold(track.parts.map((p) => p.layer.id), false); }}>
-                ▸ 已折叠{fold.below ? ` · 下面 ${fold.below} 层` : ''} · {fold.objects} 个对象
-                {notesIn(fold) > 0 && ` · 💬 ${notesIn(fold)} 楼待处理`}{fold.by && <small>（{fold.by} 折叠的）</small>}
-              </div>
+              <FoldBar fold={fold} notes={notesIn(fold)} layers={track.parts.map((p) => p.layer.id)} />
             </div>
-          : <div key={track.key} className="track" style={{height}}>
+          : <div key={track.key} className={`track${other ? ' otherfold' : ''}`} style={{height}}>
+            {other && <span className="otherfold-label">{other.by} 折叠了{other.tips ? '：' + other.tips : ''}</span>}
             <Gaps gaps={gaps} a={a} pps={pps} decimals={decimals} unit={unit} />
             {items.map((it) => <ObjectBlock key={it.o.id} item={it} a={a} pps={pps} unit={unit} project={project} frames={frames}
               selected={it.o.id === selected} hot={hot.has(`object:${it.o.id}`)} mark={marks.changed.get(it.o.id)} notes={notes?.index.get(`object:${it.o.id}`)}

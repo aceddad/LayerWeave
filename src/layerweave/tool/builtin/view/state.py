@@ -75,7 +75,7 @@ def describe(state):
     if state.get("layers"):
         lines.append("可见的层：" + ", ".join(str(i) for i in state["layers"]))
     if state.get("folded"):
-        lines.append("折叠的层（收起了它和下面的层，用 view_fold 查看或展开）：" + ", ".join(str(i) for i in state["folded"]))
+        lines.append("用户折叠的层（用户现在不关注；内容照常要检查，view_fold 查看两边的折叠）：" + ", ".join(str(i) for i in state["folded"]))
     return "\n".join(lines)
 
 

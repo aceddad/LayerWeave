@@ -6,7 +6,7 @@ import {Model} from './model/model';
 import {noteIndex, noteList, noteThreads} from './model/notes';
 import type {Note, Thread} from './model/notes';
 import type {Drop} from './model/dropRule';
-import {numParam, params} from './params';
+import {VIEWER, numParam, params} from './params';
 import type {Board, ChangeOp, ProjectData, ProjectSummary, Side, View} from './types';
 
 export type {Drop};
@@ -21,7 +21,7 @@ export interface State {
   frames: boolean;
   live: boolean;
   message: string;
-  notice: {text: string; thread: number} | null;          // 右下角的提示：别人写了新批注或回复，点一下打开那一楼
+  notice: {text: string; thread?: number; layer?: number} | null;   // 右下角的提示：别人写了新批注、展开了你折叠的层；点一下过去
   view: View;
   side: Side;
   active: number | null;                                  // 当前画板（用其中任一根层的编号表示）
@@ -74,7 +74,7 @@ export function modelOf(s: State): Model | null {
   if (!s.data) return null;
   const key = [s.data, s.only, s.showHidden, s.canvasW];
   if (modelCache && modelCache.key.every((v, i) => v === key[i])) return modelCache.model;
-  modelCache = {key, model: new Model(s.data, {only: s.only, showHidden: s.showHidden, canvasWidth: s.canvasW})};
+  modelCache = {key, model: new Model(s.data, {viewer: VIEWER, only: s.only, showHidden: s.showHidden, canvasWidth: s.canvasW})};
   return modelCache.model;
 }
 export const useModel = () => useStore(modelOf);

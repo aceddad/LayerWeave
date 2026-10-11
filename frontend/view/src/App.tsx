@@ -3,14 +3,14 @@
 import {ReactFlowProvider} from '@xyflow/react';
 import {useEffect} from 'react';
 import {useShallow} from 'zustand/react/shallow';
-import {keyStep, locateNote} from './actions';
+import {goToTarget, keyStep, locateNote} from './actions';
 import {Flow} from './canvas/Flow';
 import {markReady} from './capture';
 import {Header} from './Header';
 import {CAPTURE, FULL} from './params';
 import {SidePanel} from './side/SidePanel';
 import {waitingFor} from './model/notes';
-import {notesOf, setState, useStore} from './store';
+import {getState, notesOf, setState, useStore} from './store';
 import {loadProjects, poll, report} from './sync';
 import {AssetsView} from './views/AssetsView';
 import {CutsView} from './views/CutsView';
@@ -56,7 +56,11 @@ export function App() {
         {view === 'assets' && <AssetsView />}
       </div>
       {message && <p className="message">{message}</p>}
-      {notice && <p className="notice" title="点一下打开这一楼" onClick={() => { setState({notice: null, side: 'notes'}); locateNote(notice.thread); }}>
+      {notice && <p className="notice" title="点一下过去" onClick={() => {
+        setState({notice: null});
+        if (notice.thread != null) { setState({side: 'notes'}); locateNote(notice.thread); }
+        else if (notice.layer != null) goToTarget({kind: 'layer', project: getState().project!, id: notice.layer}, null);
+      }}>
         💬 {notice.text}<button onClick={(e) => { e.stopPropagation(); setState({notice: null}); }}>×</button></p>}
     </div>
   );

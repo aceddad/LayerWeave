@@ -2,7 +2,7 @@
 import {describe, expect, it} from 'vitest';
 import {FOLD, HEAD, ROW, RULER, STRIP, lanes} from '../model';
 import {cutList} from '../cuts';
-import {chapters, data, folded, layer, model, obj, root} from './fixtures';
+import {aiFolded, chapters, data, folded, layer, model, obj, root} from './fixtures';
 
 const board = (rows: number[][], extra = {}) => ({rows, x: 0, y: 0, pps: null, ...extra});
 
@@ -49,7 +49,7 @@ describe('轨道', () => {
     const m = model(folded(chapters(), 1));
     expect(m.visibleTracks([1]).map((t) => t.key)).toEqual(['']);
     expect(m.trackLayout(m.rowTracks([1])[0], [1])).toMatchObject({height: FOLD, items: [], gaps: [],
-      fold: {by: 'Claude', layers: [1, 2, 6], below: 2, objects: 4}});
+      fold: {by: '用户', tips: '太乱', layers: [1, 2, 6], below: 2, objects: 4}});
     expect(m.boardLayout(board([[1]]))!.height).toBe(HEAD + RULER + FOLD + 2);
   });
 
@@ -64,9 +64,18 @@ describe('轨道', () => {
   it('左右接续时，合起来的轨道里有一个层折叠了，整条就折叠；折叠的轨道不列接缝', () => {
     const m = model(folded(chapters(), 13));                 // 只折叠了第二章的「画面」
     const track = m.rowTracks([1, 10])[1];
-    expect(m.foldOf(track)).toBe('Claude');
+    expect(m.foldOf(track)).toEqual({by: '用户', tips: '太乱'});
     expect(m.trackLayout(track, [1, 10]).fold!.layers).toEqual([2, 13]);
     expect(cutList(m, [board([[1, 10]])], {})).toEqual([]);
+  });
+
+  it('人和 AI 各有一份：对方折叠的照常画，只标出来；自己这边的才收起', () => {
+    const user = model(aiFolded(chapters(), 2)), ai = model(aiFolded(chapters(), 2), {viewer: 'ai'});
+    expect(user.visibleTracks([1]).map((t) => t.key)).toEqual(['', '/画面', '/字幕']);
+    expect(user.trackLayout(user.rowTracks([1])[1], [1])).toMatchObject({fold: null, other: {by: 'Claude', tips: '先对字幕'}, height: ROW});
+    expect(ai.trackLayout(ai.rowTracks([1])[1], [1])).toMatchObject({other: null, height: FOLD, fold: {by: 'Claude', tips: '先对字幕'}});
+    const seen = model(folded(chapters(), 2), {viewer: 'ai'});   // AI 那边看用户的折叠
+    expect(seen.trackLayout(seen.rowTracks([1])[1], [1])).toMatchObject({fold: null, other: {by: '用户', tips: '太乱'}});
   });
 
   it('折叠记录指向已经删掉的层：没有影响', () => {

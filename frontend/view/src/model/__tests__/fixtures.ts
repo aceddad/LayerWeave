@@ -28,8 +28,11 @@ export function model(d: ProjectData, opts: Partial<ViewOptions> = {}): Model {
   return new Model(d, {only: null, showHidden: false, canvasWidth: 1290, ...opts});
 }
 
-// 折叠这些层（数据库里视图的表 view_fold 读出来就是这个样子）
-export const folded = (d: ProjectData, ...layers: number[]): ProjectData => ({...d, folds: layers.map((layer) => ({layer, by: 'Claude'}))});
+// 用户这边折叠这些层（数据库里视图的表 view_layer 读出来就是这个样子）；aiFolded：AI 那边
+export const folded = (d: ProjectData, ...layers: number[]): ProjectData =>
+  ({...d, folds: layers.map((layer) => ({layer, user: '用户', user_tips: '太乱', ai: '', ai_tips: ''}))});
+export const aiFolded = (d: ProjectData, ...layers: number[]): ProjectData =>
+  ({...d, folds: layers.map((layer) => ({layer, user: '', user_tips: '', ai: 'Claude', ai_tips: '先对字幕'}))});
 
 // 两章接续用的项目：第一章 [0, 10] 有「画面」「字幕」，第二章 [0, 5] 有「字幕」，配乐 [0, 20] 单独一个根
 export function chapters() {

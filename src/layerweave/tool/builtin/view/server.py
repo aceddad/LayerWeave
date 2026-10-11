@@ -129,13 +129,17 @@ class ViewHandler(SimpleHTTPRequestHandler):
         if notes:
             return self.write_note(int(notes[1]), payload)
         if folds:
-            # 视图的另一种写入：折叠，只写视图自己的表 view_fold（fold.py）
+            # 视图的另一种写入：折叠，只写视图自己的表 view_layer（fold.py）。网页是人这边：
+            # 自己这边能折叠、展开、写备注；AI 那边只能展开（让 AI 看回来）
+            action, side = payload.get("action"), payload.get("side", "user")
+            if side == "ai" and action != "unfold":
+                return self.send_json({"error": "网页不替 AI 折叠，只能展开 AI 折叠的层"}, HTTPStatus.BAD_REQUEST)
             try:
                 layers = [int(layer) for layer in payload.get("layers", [])]
-                result = set_folds(self.database, int(folds[1]), layers, payload.get("action") == "fold", by=payload.get("by") or "")
+                return self.send_json(set_folds(self.database, int(folds[1]), layers, side, action,
+                                                by=payload.get("by") or "", tips=payload.get("tips")))
             except (ValueError, TypeError) as error:
                 return self.send_json({"error": str(error)}, HTTPStatus.BAD_REQUEST)
-            return self.send_json({**result, "folded": [{"layer": k, "by": v} for k, v in sorted(result["folded"].items())]})
         if layout:
             # 网页传来整套画板；按数据库里现有的根校正后再存（单位不同的拼接会被拆开）
             project_id = int(layout[1])

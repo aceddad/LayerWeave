@@ -5,7 +5,7 @@ import sqlite3
 
 from layerweave.support.api import read_project_details, read_record
 
-from .fold import KIND as FOLD_KIND, read_folds
+from .fold import read_folds
 from .notes import LAYER_REF as NOTE_LAYER_REF
 
 IMAGE = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".svg"}
@@ -135,7 +135,7 @@ def project_view(connection, database, project_id):
         "roots": list(roots.values()),
         "layers": layers,
         "binds": project_binds(connection, project_id),
-        "folds": [{"layer": layer, "by": by} for layer, by in sorted(read_folds(connection, project_id).items())],
+        "folds": read_folds(connection, project_id),   # 人和 AI 两边的折叠（fold.py）
     }
 
 
@@ -164,7 +164,7 @@ def recent_changes(connection, project_id, limit=10):
     """最近 limit 次涉及这个项目的操作，新的在前。每项改动给出种类、编号、动作、改之前和之后的名字与位置、
     改了哪些字段；information 里改了的键给出前后值（截短）。只读日志，不碰业务表。"""
     from layerweave.support.storage.log_reader import operation_page, operation_rows
-    _, page = operation_page(connection, project_id, limit=limit * 3)   # 多取一些：只有折叠的操作不列
+    _, page = operation_page(connection, project_id, limit=limit * 3)   # 多取一些：只改视图状态（折叠）的操作不列
     operations = []
     for entry in page:
         if len(operations) >= limit:
@@ -173,8 +173,8 @@ def recent_changes(connection, project_id, limit=10):
         items = []
         for row in rows:
             before, after, kind = row["before_data"], row["after_data"], row["kind"]
-            if kind == FOLD_KIND:
-                continue   # 折叠是视图状态，不是内容的改动；画布上直接看得到
+            if kind.startswith("view_"):
+                continue   # 视图自己的表（折叠等）：视图状态，不是内容的改动；画布上直接看得到
 
             if kind in ("object", "layer") and row["project_id"] != project_id:
                 continue   # 跨项目搬移时，另一头的改动不画在这个项目上
@@ -187,7 +187,7 @@ def recent_changes(connection, project_id, limit=10):
                     item["information"] = [{"key": k, "before": _short(old.get(k)), "after": _short(new.get(k))}
                                            for k in sorted(old.keys() | new.keys()) if old.get(k) != new.get(k)]
             items.append(item)
-        if not items and all(row["kind"] == FOLD_KIND for row in rows):
+        if not items and all(row["kind"].startswith("view_") for row in rows):
             continue
         operations.append({"operation_id": entry["operation_id"], "at": rows[0]["created_at"],
                            "undo_of": rows[0]["undo_of"], "items": items})

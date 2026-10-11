@@ -19,10 +19,15 @@ export function clickBoard(key: number, t: number, objectId: number | null, onRu
   report();
 }
 
-// 折叠 / 展开一条轨道（它合起来的每一个层）：收起它和下面所有的层。存进数据库，和 AI 共用；下面的画板跟着挪
+// 折叠 / 展开自己这边的一条轨道（它合起来的每一个层）：收起它和下面所有的层。存进数据库，AI 看得见；下面的画板跟着挪
 export async function toggleFold(layers: number[], fold: boolean) {
-  if (await foldAction(layers, fold)) report();
+  if (await foldAction(layers, fold ? 'fold' : 'unfold')) report();
 }
+// 展开 AI 折叠的层（让 AI 也看回来）
+export async function unfoldForAI(layers: number[]) {
+  if (await foldAction(layers, 'unfold', 'ai')) report();
+}
+export const setFoldTips = (layers: number[], tips: string) => foldAction(layers, 'tips', 'user', tips);
 
 export function splitRoot(rootId: number) {
   const s = getState();

@@ -12,9 +12,11 @@ export interface Track {
   parts: Part[]; hasChildren: boolean;
 }
 export interface Item { o: Obj; layer: Layer; offset: number; begin: number; end: number; lane: number }
-// 折叠的轨道：收起了它自己和下面所有的层。layers：收起的全部层编号；below：下面收起了几条轨道；objects：一共几个对象
-export interface FoldInfo { by: string; layers: number[]; below: number; objects: number }
-export interface TrackLayout { track: Track; height: number; items: Item[]; gaps: {from: number; to: number}[]; fold: FoldInfo | null }
+// 折叠：人和 AI 各有一份。自己这边折叠的轨道收起它和下面所有的层（fold）；对方折叠的照常画，只标出来（other）
+export interface FoldMark { by: string; tips: string }
+// layers：收起的全部层编号；below：下面收起了几条轨道；objects：一共几个对象
+export interface FoldInfo extends FoldMark { layers: number[]; below: number; objects: number }
+export interface TrackLayout { track: Track; height: number; items: Item[]; gaps: {from: number; to: number}[]; fold: FoldInfo | null; other: FoldMark | null }
 export interface SectionLayout {
   row: number[]; index: number; segments: Segment[]; tracks: TrackLayout[]; strip: boolean; height: number; top: number;
 }
@@ -24,6 +26,7 @@ export interface BoardLayout {
 }
 
 export interface ViewOptions {
+  viewer?: 'user' | 'ai';                                 // 这个页面算哪一边（缺省是人这边）
   only: Set<number> | null;
   showHidden: boolean;
   canvasWidth: number;
@@ -49,11 +52,16 @@ export class Model {
   readonly roots = new Map<number, Root>();
   readonly layers = new Map<number, Layer>();
   readonly objects = new Map<number, ObjWithLayer>();
-  readonly folds = new Map<number, string>();             // 折叠的层 → 谁折叠的
+  readonly own = new Map<number, FoldMark>();             // 自己这边折叠的层
+  readonly other = new Map<number, FoldMark>();           // 对方折叠的层
   private trackCache = new Map<string, Track[]>();
 
   constructor(readonly data: ProjectData, readonly opts: ViewOptions) {
-    for (const f of data.folds ?? []) this.folds.set(f.layer, f.by);
+    const me = opts.viewer ?? 'user', them = me === 'user' ? 'ai' : 'user';
+    for (const f of data.folds ?? []) {
+      if (f[me]) this.own.set(f.layer, {by: f[me], tips: f[`${me}_tips`]});
+      if (f[them]) this.other.set(f.layer, {by: f[them], tips: f[`${them}_tips`]});
+    }
     for (const r of data.roots) this.roots.set(r.id, r);
     for (const l of data.layers) {
       this.layers.set(l.id, l);
@@ -149,9 +157,13 @@ export class Model {
     return out;
   }
 
-  // 轨道折叠了吗：它合起来的层里有一个折叠了就算（左右接续时，网页上折叠一条轨道会折叠它的每一个层）
-  foldOf(t: Track): string | null {
-    for (const p of t.parts) if (this.folds.has(p.layer.id)) return this.folds.get(p.layer.id)!;
+  // 轨道在自己这边折叠了吗：它合起来的层里有一个折叠了就算（左右接续时，网页上折叠一条轨道会折叠它的每一个层）
+  foldOf(t: Track): FoldMark | null {
+    for (const p of t.parts) if (this.own.has(p.layer.id)) return this.own.get(p.layer.id)!;
+    return null;
+  }
+  otherFoldOf(t: Track): FoldMark | null {
+    for (const p of t.parts) if (this.other.has(p.layer.id)) return this.other.get(p.layer.id)!;
     return null;
   }
 
@@ -174,11 +186,11 @@ export class Model {
   }
 
   trackLayout(track: Track, row: number[]): TrackLayout {
-    const by = this.foldOf(track);
-    if (by != null) {
+    const mine = this.foldOf(track), other = this.otherFoldOf(track);
+    if (mine != null) {
       const under = this.below(track, row), all = [track, ...under].flatMap((t) => t.parts.map((p) => p.layer));
-      return {track, height: FOLD, items: [], gaps: [],
-              fold: {by, layers: all.map((l) => l.id), below: under.length, objects: all.reduce((n, l) => n + l.objects.length, 0)}};
+      return {track, height: FOLD, items: [], gaps: [], other,
+              fold: {...mine, layers: all.map((l) => l.id), below: under.length, objects: all.reduce((n, l) => n + l.objects.length, 0)}};
     }
     const raw = track.parts.flatMap(({layer, seg}) => layer.objects.map((o) => ({o, layer, offset: seg.offset, begin: o.begin + seg.offset, end: o.end + seg.offset})))
       .sort((p, q) => p.begin - q.begin || p.end - q.end || p.o.id - q.o.id);
@@ -186,7 +198,7 @@ export class Model {
     const items = raw.map((it, i) => ({...it, lane: ln[i]}));
     const n = Math.max(1, ...ln.map((k) => k + 1));
     const gaps = trackGaps(items, (this.precisionOf(row[0]) ?? 1e-6) / 2);
-    return {track, height: Math.max(ROW, n * LANE + PAD * 2), items, gaps, fold: null};
+    return {track, height: Math.max(ROW, n * LANE + PAD * 2), items, gaps, fold: null, other};
   }
 
   // 画板的完整布局；返回 null 表示这块画板现在不画（收起的层、全被过滤掉）

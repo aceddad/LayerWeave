@@ -305,32 +305,49 @@ class ViewTests(unittest.TestCase):
             urlopen(bad, timeout=10)
         self.assertEqual(error.exception.code, 400)
 
-    def test_folds_are_view_records_named_after_their_layer(self):
-        self.assertEqual(fold(self.database, self.project)["folded"], {})                 # 从没折叠过：还没有表
+    def test_folds_are_two_sided_view_records_named_after_their_layer(self):
+        self.assertEqual(fold(self.database, self.project)["folds"], [])                  # 从没折叠过：还没有表
         with closing(open_readonly(self.database)) as c:
             before = read_record(c, "project", id=self.project)["max_id"]
-        done = fold(self.database, self.project, "fold", layers=[self.art_layer], by="Claude")
-        self.assertEqual((done["changed"], done["folded"]), ([self.art_layer], {self.art_layer: "Claude"}))
-        self.assertEqual(fold(self.database, self.project, "fold", layers=[self.art_layer], by="用户")["changed"], [])   # 已经折叠：不重写
+        done = fold(self.database, self.project, "fold", layers=[self.art_layer], by="Claude", why="先对字幕")
+        self.assertEqual(done["changed"], [self.art_layer])
+        self.assertEqual(done["folds"], [{"layer": self.art_layer, "user": "", "user_tips": "", "ai": "Claude", "ai_tips": "先对字幕"}])
+        self.assertEqual(fold(self.database, self.project, "fold", layers=[self.art_layer], by="Claude", why="先对字幕")["changed"], [])
         with self.assertRaisesRegex(ValueError, "没有层"):
             fold(self.database, self.project, "fold", layers=[99999])
+        with self.assertRaisesRegex(ValueError, "不替用户折叠"):
+            fold(self.database, self.project, "fold", layers=[self.art_layer], side="user")
         with closing(open_readonly(self.database)) as c:
-            row = read_record(c, "view_fold", project_id=self.project, id=self.art_layer)   # 身份就是层的（项目，编号）
-            self.assertEqual((row["folded"], row["by"]), (1, "Claude"))
+            row = read_record(c, "view_layer", project_id=self.project, id=self.art_layer)   # 身份就是层的（项目，编号）
+            self.assertEqual((row["ai_fold"], row["ai_tips"], row["user_fold"]), ("Claude", "先对字幕", ""))
             self.assertEqual(read_record(c, "project", id=self.project)["max_id"], before)   # 不占项目编号
-            self.assertEqual(project_view(c, self.database, self.project)["folds"], [{"layer": self.art_layer, "by": "Claude"}])
+            self.assertEqual(project_view(c, self.database, self.project)["folds"], done["folds"])
             kinds = {item["kind"] for op in recent_changes(c, self.project, 10) for item in op["items"]}
-            self.assertNotIn("view_fold", kinds)                                              # "改动"面板不列折叠
-        # 网页折叠、展开；截图用的服务不写
-        body = json.dumps({"action": "unfold", "layers": [self.art_layer], "by": "用户"}).encode()
-        with urlopen(Request(self.url + f"api/folds/{self.project}", data=body), timeout=10) as response:
-            self.assertEqual(json.loads(response.read())["folded"], [])
+            self.assertNotIn("view_layer", kinds)                                             # "改动"面板不列折叠
+
+        def post(url, body):
+            with urlopen(Request(url + f"api/folds/{self.project}", data=json.dumps(body).encode()), timeout=10) as response:
+                return json.loads(response.read())
+
+        # 网页是人这边：自己折叠、写备注；AI 那边只能展开，不能替 AI 折叠
+        post(self.url, {"action": "fold", "side": "user", "layers": [self.art_layer], "by": "用户", "tips": "太乱"})
+        both = post(self.url, {"action": "tips", "side": "user", "layers": [self.art_layer], "tips": "先不看图"})["folds"][0]
+        self.assertEqual((both["user"], both["user_tips"], both["ai"]), ("用户", "先不看图", "Claude"))   # 两边各一份
+        with self.assertRaises(HTTPError) as refused:
+            post(self.url, {"action": "fold", "side": "ai", "layers": [self.main_layer]})
+        self.assertEqual(refused.exception.code, 400)
+        self.assertEqual(post(self.url, {"action": "unfold", "side": "ai", "layers": [self.art_layer]})["folds"][0]["ai"], "")   # 人让 AI 看回来
+        # AI 把用户折叠的层展开给用户看：写了理由就在那一层留一条批注
+        shown = fold(self.database, self.project, "unfold", layers=[self.art_layer], side="user", by="Claude", why="这张图要你看一下")
+        self.assertEqual(shown["folds"], [])
+        with closing(open_readonly(self.database)) as c:
+            told = [n for n in list_notes(c, self.project) if "这张图要你看一下" in n["text"]]
+        self.assertEqual(len(told), 1)
+        # 截图用的服务不写
         quiet, url = make_server(self.database, state_root=self.state_root, record_state=False)
         threading.Thread(target=quiet.serve_forever, daemon=True).start()
         try:
-            again = json.dumps({"action": "fold", "layers": [self.art_layer]}).encode()
-            with urlopen(Request(url + f"api/folds/{self.project}", data=again), timeout=10) as response:
-                self.assertEqual(json.loads(response.read()), {"recorded": False})
+            self.assertEqual(post(url, {"action": "fold", "side": "user", "layers": [self.art_layer]}), {"recorded": False})
         finally:
             quiet.shutdown(); quiet.server_close()
         # 不声明引用：折叠着的层照样能被删掉；留下的记录不碍事
@@ -340,7 +357,7 @@ class ViewTests(unittest.TestCase):
         fold(self.database, self.project, "fold", layers=[empty])
         with closing(open_database(self.database)) as c:
             self.assertTrue(run_operation(c, lambda w: w.delete("layer", empty, project_id=self.project))["ok"])
-        self.assertIn(empty, fold(self.database, self.project)["folded"])
+        self.assertEqual([f["layer"] for f in fold(self.database, self.project)["folds"]], [empty])
 
     def test_media_is_whitelisted_and_supports_ranges(self):
         status, headers, body = self.get(f"/media/{self.project}/{self.image.id}")

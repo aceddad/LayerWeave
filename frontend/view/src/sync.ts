@@ -4,9 +4,9 @@ import {visibleBoards, visibleRange} from './camera';
 import {afterResize, placeAuto, separate, sizeOf} from './model/layoutOps';
 import {adoptOrphans, keyOf, rootsOf} from './model/model';
 import type {Note} from './model/notes';
-import {CAPTURE, RECORD, numParam} from './params';
+import {CAPTURE, RECORD, VIEWER, numParam} from './params';
 import {activeBoard, getState, modelOf, notesOf, setState} from './store';
-import type {Layout} from './types';
+import type {FoldRow, Layout} from './types';
 
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
 export function toast(text: string, ms = 2500) {
@@ -25,12 +25,12 @@ export async function loadProjects() {
 
 export async function loadProject(id: number) {
   const prev = getState(), same = prev.project === id, oldModel = same ? modelOf(prev) : null;
-  const before = same ? notesOf(prev)?.list : undefined;
+  const before = same ? notesOf(prev)?.list : undefined, foldsBefore = same ? prev.data?.folds ?? [] : undefined;
   // 记下重读之前每块画板的高度：折叠、加层以后画板变高变矮，下面的画板跟着挪
   const heights = oldModel ? new Map(prev.boards.map((b) => [keyOf(b), sizeOf(oldModel, b).h])) : null;
   const [data, layout] = await Promise.all([api.project(id), api.layout(id)]);
   setState({project: id, data: adoptOrphans(data)});
-  announceNotes(before);
+  if (!announceNotes(before)) announceFolds(foldsBefore);
   applyLayout(layout, heights);
   await loadChanges();
   const s = getState(), model = modelOf(s)!;
@@ -42,15 +42,33 @@ export async function loadProject(id: number) {
 }
 
 // 别人（比如 AI 用 view_note）写了新批注或回复：提示一下。自己写的不提示
-function announceNotes(before: Note[] | undefined) {
+function announceNotes(before: Note[] | undefined): boolean {
   const s = getState(), info = notesOf(s);
-  if (!before || !info || CAPTURE) return;
+  if (!before || !info || CAPTURE) return false;
   const old = new Set(before.map((n) => n.id));
   const fresh = info.list.filter((n) => !old.has(n.id) && n.author !== s.me.trim());
-  if (!fresh.length) return;
+  if (!fresh.length) return false;
   const n = fresh[fresh.length - 1], floor = info.threads.findIndex((t) => t.top.id === n.thread) + 1;
   const what = n.replyTo != null ? `回复了第 ${floor} 楼` : `写了新批注（第 ${floor} 楼）`;
-  setState({notice: {text: `${n.author || '有人'}${what}：${n.text.slice(0, 40)}${fresh.length > 1 ? `（共 ${fresh.length} 条新的）` : ''}`, thread: n.thread}});
+  notify({text: `${n.author || '有人'}${what}：${n.text.slice(0, 40)}${fresh.length > 1 ? `（共 ${fresh.length} 条新的）` : ''}`, thread: n.thread});
+  return true;
+}
+
+// 不是在这个页面上点的折叠变化（AI 展开了你折叠的层、或者 AI 自己折叠了什么）：提示一下
+let quietFolds = false;
+function announceFolds(before: FoldRow[] | undefined) {
+  const s = getState(), model = modelOf(s);
+  if (!before || !model || CAPTURE || quietFolds) return;
+  const was = new Map(before.map((f) => [f.layer, f]));
+  const name = (id: number) => model.layer(id)?.name || `层 ${id}`;
+  for (const f of before) if (f.user && !s.data!.folds?.some((g) => g.layer === f.layer && g.user))
+    return notify({text: `你折叠的「${name(f.layer)}」被展开了：AI 想给你看这里`, layer: f.layer});
+  for (const f of s.data!.folds ?? []) if (f.ai && !was.get(f.layer)?.ai)
+    return notify({text: `${f.ai} 折叠了「${name(f.layer)}」${f.ai_tips ? '：' + f.ai_tips : ''}`, layer: f.layer});
+}
+
+function notify(notice: {text: string; thread?: number; layer?: number}) {
+  setState({notice});
   clearTimeout(noticeTimer);
   noticeTimer = setTimeout(() => setState({notice: null}), 12000);
 }
@@ -148,19 +166,22 @@ export function report() {
       boards: canvas ? shown.map(rootsOf) : undefined,
       layers: (canvas ? shown : s.boards).flatMap((b) => b.rows.flatMap((row) => model.visibleTracks(row).filter((t) => model.foldOf(t) == null)
         .flatMap((t) => t.parts.map((p) => p.layer.id)))),
-      folded: [...model.folds.keys()].filter((id) => model.layer(id)),
+      folded: [...model.own.keys()].filter((id) => model.layer(id)),
     }).catch(() => {});
   }, 400);
 }
 
-// 视图的另一种写入：折叠（只写视图自己的表 view_fold，和 AI 共用一份）。写完重读项目，画板高度变了下面的跟着挪
-export async function foldAction(layers: number[], fold: boolean): Promise<boolean> {
+// 视图的另一种写入：折叠（只写视图自己的表 view_layer）。网页是人这边：自己这边折叠、展开、写备注；AI 那边只能展开。
+// 写完重读项目，画板高度变了下面的跟着挪
+export async function foldAction(layers: number[], action: 'fold' | 'unfold' | 'tips', side: 'user' | 'ai' = 'user', tips?: string): Promise<boolean> {
   const s = getState();
   if (s.project == null || !layers.length) return false;
+  if (VIEWER === 'ai') { toast('这是 AI 那边的样子，只看不改折叠'); return false; }
   try {
-    const res = await api.fold(s.project, {action: fold ? 'fold' : 'unfold', layers, by: s.me.trim()});
+    const res = await api.fold(s.project, {action, side, layers, by: s.me.trim(), tips});
     if (res.error || res.recorded === false) { toast('折叠没有存下来：' + (res.error ?? '这个页面只读')); return false; }
-    await loadProject(s.project);
+    quietFolds = true;
+    try { await loadProject(s.project); } finally { quietFolds = false; }
     setState({version: (await api.version()).version});
     return true;
   } catch (error) { toast('折叠没有存下来：' + (error as Error).message); return false; }

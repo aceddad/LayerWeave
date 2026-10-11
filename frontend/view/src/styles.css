@@ -257,3 +257,13 @@ body.full .cuts-view, body.full .grid, body.full .assets-view { overflow: visibl
 .foldbar small { color: #c9a77f; margin-left: 4px; }
 .foldchip { font-size: 11px; color: #ffcf99; border: 1px solid #ff9f43; border-radius: 3px; padding: 0 5px; margin-left: 6px; }
 .gap-line.folded { border-left-color: #ff9f43; color: #ffcf99; }
+
+/* 对方（AI / 用户）折叠的层：照常画，标出来 */
+.otherfold-chip { font-style: normal; font-size: 10px; line-height: 14px; padding: 0 4px; border-radius: 3px; border: 1px dashed #c89bff; color: #dcc4ff; flex: none; }
+.otherfold-chip b { margin-left: 3px; cursor: pointer; color: #fff; }
+.track.otherfold { box-shadow: inset 0 0 0 1px rgba(200, 155, 255, .55); }
+.otherfold-label { position: absolute; right: 6px; top: 1px; font-size: 10px; color: #dcc4ff; background: rgba(21, 23, 28, .85); padding: 0 4px; border-radius: 3px; z-index: 4; pointer-events: none; }
+.foldtips { margin-left: 8px; color: #9fd0ff; cursor: pointer; }
+.foldtips-box { margin-left: 8px; width: 240px; height: 18px; font-size: 11px; padding: 0 4px; }
+.lname .tog.off { cursor: default; opacity: .5; }
+.lname .nm { min-width: 3em; }

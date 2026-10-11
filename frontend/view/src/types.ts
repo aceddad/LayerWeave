@@ -62,7 +62,12 @@ export interface ProjectData {
   roots: Root[];
   layers: Layer[];
   binds: Bind[];
-  folds?: {layer: number; by: string}[];   // 折叠的层（数据库里视图自己的表 view_fold，网页和 AI 共用）
+  folds?: FoldRow[];   // 折叠：人和 AI 各一份（数据库里视图自己的表 view_layer）
+}
+
+// 一层的折叠：user / ai 是那一边谁折叠的（空着就是没折叠），tips 是说明
+export interface FoldRow {
+  layer: number; user: string; user_tips: string; ai: string; ai_tips: string;
 }
 
 export interface ProjectSummary {

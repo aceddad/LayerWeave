@@ -205,10 +205,9 @@ def capture(database, project_id, output, *, view=None, board=None, begin=None, 
     finally:
         server.shutdown()
         server.server_close()
-    with closing(open_readonly(database)) as connection:   # 截图照共用的折叠画；写进返回里，免得 AI 忘了有东西收着
+    with closing(open_readonly(database)) as connection:   # 截图是 AI 这边：AI 折叠的收成细条，用户折叠的照常展开并标出
         folded = read_folds(connection, project_id)
-    return {"output": str(output), "page": page, "browser": browser, "size": [width, height], "ready": ready,
-            "folded": [{"layer": layer, "by": by} for layer, by in sorted(folded.items())]}
+    return {"output": str(output), "page": page, "browser": browser, "size": [width, height], "ready": ready, "folded": folded}
 
 
 def _shoot(profile, page, output, width, height, wait_ms, full_page=False):
@@ -270,7 +269,7 @@ COMMANDS = [{
         "browser": {"type": "string", "description": "浏览器路径；省略时自动查找 Chrome、Edge、Chromium"},
         "wait_ms": {"type": "integer", "description": "最多等页面把图片、视频封面、波形加载完多久", "default": 20000},
     },
-    "returns": "output、page（截图用的页面地址）、browser、size、ready（页面是否在等待时间内加载完；False 时图里可能缺缩略图）、folded（折叠着的层：图里只是一条细条，内容没画出来）。",
+    "returns": "output、page（截图用的页面地址）、browser、size、ready（页面是否在等待时间内加载完；False 时图里可能缺缩略图）、folded（两边的折叠 [{layer, user, user_tips, ai, ai_tips}]：AI 折叠的在图里只是一条细条；用户折叠的照常画出，标着「用户折叠了」）。",
     "examples": [{"cli": "python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/all.png"},
                  {"cli": "python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/t10.png --board 1 --begin 8 --end 14 --playhead 10"},
                  {"cli": "python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/note42.png --note 42"},

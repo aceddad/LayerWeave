@@ -7,5 +7,7 @@ export const SOLO = CAPTURE && params.has('board');           // 截某一块画
 export const FULL = CAPTURE && params.get('full') === '1';    // 截整页：接缝、素材页不限高度
 export const LAZY = CAPTURE ? 'eager' : 'lazy';               // 截图时图片立刻加载
 export const DECODE = CAPTURE ? 'sync' : 'async';
+// 这个页面算哪一边：截图是 AI 这边；网页是人这边（?as=ai 可以看 AI 那边的样子，只看不改折叠）
+export const VIEWER: 'user' | 'ai' = CAPTURE || params.get('as') === 'ai' ? 'ai' : 'user';
 
 export const numParam = (name: string): number | null => (params.has(name) ? Number(params.get(name)) : null);

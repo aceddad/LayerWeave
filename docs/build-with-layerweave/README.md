@@ -22,6 +22,7 @@
 | 工具行为偏好 | 在对应 TOML 中增加自定义段，由消费它的工具解释 |
 | 画面、面板与隐藏信息 | 由工具选择展示哪些层和对象；内容仍可通过普通接口读取 |
 | 缓存、导出文件、临时计算结果 | 放在工具自己的工作目录；需要进入项目的内容再通过接口保存 |
+| 工具自己的业务记录、身份或计数 | 声明专属表；可以复用层编号、独立编号或登记发号簇 |
 
 ## 从最小接入开始
 
@@ -31,12 +32,16 @@
 | 只修改几个字段，或一次组合多个修改 | run_operation 或 transaction 中的 write 原语 |
 | 使用 Python 派生实例，或保存整层与装载对象 | load_layer/load_object、save_layer/save_object |
 | 使用现成的查询展示、编辑、历史或撤销 | 对应的[内部工具包](../../src/layerweave/tool/builtin/README.md) |
+| 声明工具表、复用层编号或共享发号 | [工具表](03-managed-tables.md)与[编号模块](../../src/layerweave/support/numbering/README.md)；可运行示例在[示例索引](../examples.md) |
+| 让 AI 发现工具用途、调用方式与版本 | [命令声明](../../src/layerweave/tool/builtin/shared/help/COMMANDS.md)负责使用说明，[组件声明](../../src/layerweave/tool/builtin/developer/versions/README.md#声明放在哪里)负责版本登记 |
 
 可以直接在自己的 Python 工程里导入公开接口。借用写会话不要求使用 CDUR 请求格式，也不要求构造完整的 Layer/Object 实例。读取普通记录时，配置文件和类不必可用；需要还原派生实例时再用 load。
 
 工具提交当前需要修改的字段，支撑统一维护身份、归属和事务日志。information、axis 等 JSON 字段整体替换；修改其中一个键时在同一会话中读取并合并，示例见[局部修改](02-ordered-metadata.md#只修改自己关心的字段)。
 
 “挂载工具”在这里指工具使用这套数据与配置能力。普通函数就能完成接入；需要进入命令 help 时，再按[命令声明](../../src/layerweave/tool/builtin/shared/help/COMMANDS.md)提供 COMMANDS。层配置里的 tools 是供 AI 阅读的技能路由，执行方式由调用方选择。
+
+不确定一个字符串是配置路径、代码入口还是登记名称时，查[入口与标识](../developer-conventions.md#入口路径与调度标识)，再进入对应专题。
 
 ## 把工具放在哪里
 

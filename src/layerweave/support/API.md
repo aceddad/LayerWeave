@@ -4,7 +4,7 @@
 
 本页说明 LayerWeave 自身的 Python 读写接口。若要配置出图、生视频等外部服务的 API KEY、地址与模型，使用[KEY 与连接说明](../tool/builtin/developer/keys/README.md)；技能选择和调用顺序见[工具区](../tool/README.md#选择与定位技能)。
 
-首次用它开发自己的工具，可先读[AI 开发指导](../../../docs/build-with-layerweave/README.md)，选择嵌套时序或有序管理的示例，再按需查本页参数。
+首次用它开发自己的工具，可先读[AI 开发指导](../../../docs/build-with-layerweave/README.md)，选择嵌套时序、有序管理或工具自有表的示例，再按需查本页参数。配置路径、技能路由和发号词条的区别见[入口与标识](../../../docs/developer-conventions.md#入口路径与调度标识)。
 
 ## 统一写会话
 
@@ -49,6 +49,7 @@ allocate(name, data=...) 在当前写会话中调度发号规则，连接由会�
 工具表的 provided 模式通过 data.id 接收正整数。未入簇的表只检查自身主键，允许与层、对象复用相同 (project_id, id)；加入同一计数范围的表共同遵守编号唯一约定。发号、业务记录和日志仍在同一事务内完成。
 
 ## 六个读写函数
+
 | 调用 | 返回 |
 |---|---|
 | read_layer(connection, project_id, id) | 完整层字典，含直接装载的 objects 和各实体发出的 bind |

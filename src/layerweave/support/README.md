@@ -5,7 +5,7 @@ support 提供核心结构的文件和数据库适配。没有任何内置工具
 | 位置 | 职责 |
 |---|---|
 | api.py | 常用读取、实例往返、写会话及反馈入口 |
-| transaction.py、operation.py | 事务、真实变更收集、提交前父链检查与可选的提交后回调 |
+| transaction.py、operation.py | 事务、真实变更收集、提交前父链/簇编号检查与可选的提交后回调 |
 | records.py | 会话中的记录原语、原值创建和原身份恢复 |
 | [storage/](storage/README.md) | SQLite 表、持久化工具表声明、读查询、日志、精确恢复和实例适配 |
 | [numbering/](numbering/README.md) | 发号词条、规则调度、簇成员与计数状态；工具自定义 ID 的接入说明 |

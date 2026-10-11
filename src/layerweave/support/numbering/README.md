@@ -108,3 +108,14 @@ register_numbering_rule("task_number", task_number)
 计数位置与规则格式是受支持的开发约定。手写 SQL、重置数据库计数或删除历史同时回退计数，会绕过这些保证。工具记录本身继续通过统一写会话处理。
 
 完整临时库示例见仓库 examples/numbering.py；从源码根执行 `python -X utf8 -B examples/numbering.py`，会演示层与视图同编号、独立任务簇、显式领号和原身份恢复。
+
+## 修改实现时从哪里看
+
+| 文件 | 维护内容 |
+|---|---|
+| [registry.py](registry.py) | 库内词条登记、默认项目簇、成员与计数定位声明 |
+| [service.py](service.py) | allocate 薄入口、规则函数映射和原子递增 |
+| [state.py](state.py) | 同簇占用、计数列识别与恢复上界；恢复不调用发号规则 |
+| [__init__.py](__init__.py) | 本模块公开导出；常用接口也由 layerweave.support.api 导出 |
+
+只增加一种身份组合方式时，从规则函数开始；增加另一组共享计数时，从词条登记开始。业务表的创建和恢复仍通过原写会话进入存储适配器。

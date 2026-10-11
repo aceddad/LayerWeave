@@ -26,6 +26,7 @@
 | 主题 | 主要维护位置 |
 |---|---|
 | 模块边界与整体概念 | [架构说明](architecture.md) |
+| 配置路径、技能路由、命令入口与登记名称的区别 | [开发指南](developer-conventions.md#入口路径与调度标识)；各机制的细节仍由对应专题维护 |
 | 按需借用内核、扩展工具与配置 | [AI 开发指导](build-with-layerweave/README.md)，每种思路单独成篇；参数细节继续由 API 和专题维护 |
 | 工具表声明、字段、引用与接入范围 | [工具表开发指导](build-with-layerweave/03-managed-tables.md) |
 | 自定义 ID、发号词条、簇成员与计数恢复 | [编号模块](../src/layerweave/support/numbering/README.md) |

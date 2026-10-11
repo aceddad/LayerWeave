@@ -40,7 +40,7 @@ python -m layerweave.tool.builtin.developer.skills.cli SKILL.zip --layer text --
 python -X utf8 -B -m layerweave.tool.builtin.developer.database.cli output/ai-production.sqlite3
 ```
 
-[database.py](database/cli.py) 是命令入口；表结构、升级和发号实现仍在 support。升级行为见[存储说明](../../../support/storage/SCHEMA.md)。
+[cli.py](database/cli.py) 是命令入口；表结构、升级和发号实现仍在 support。升级行为见[存储说明](../../../support/storage/SCHEMA.md)。
 
 ## 本地 KEY 与连接信息
 

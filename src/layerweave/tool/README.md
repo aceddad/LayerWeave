@@ -36,7 +36,7 @@ python -c "from layerweave.support.paths import SKILLS_ROOT; print(SKILLS_ROOT /
 src/layerweave/tool/
   builtin/                          软件自身的内部工具
     usage/                          records/query/editing/history/undo/validation/text
-    developer/                      database/skills 等开发工具包
+    developer/                      database/skills/keys/versions
     shared/help/                    命令与封装帮助
     view/                           未来视图，当前仅说明
   skills/

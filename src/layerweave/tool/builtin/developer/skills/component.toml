@@ -1,0 +1,5 @@
+name = "layerweave.skills"
+kind = "tool"
+version = "0.1.0"
+description = "将技能 ZIP 安装到 AI 指定的技能目录"
+changes = "首次登记当前组件；后续版本由维护者更新本声明。"

@@ -49,3 +49,5 @@ bind 是普通引用，目标失效不会使原始记录不可读。旧库中的
 默认配置位于包内 configs，自带技能位于包内 tool/skills，SQL schema 跟随存储模块。它们明确作为资源分发。examples 在仓库根，不作为 Python 顶层包安装。技能正文和附件不会被内置命令发现器扫描或自动执行。
 
 这层包名不改变依赖方向，也不要求安装所有工具。ZIP 下载目标默认是调用方工作目录的 tool/skills，可通过 skills_root 指定；不默认向普通安装的库目录追加内容。
+
+基础部分与每个完整内部工具包分别用 component.toml 声明版本；Python 安装包的发布版本仍在 pyproject.toml 中。可选的[版本工具](../src/layerweave/tool/builtin/developer/versions/README.md)将扫描结果登记到自己的工具表，报告声明的存在状态，不参与工具运行许可或基础读写流程。

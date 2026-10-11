@@ -1,0 +1,5 @@
+name = "layerweave.editing"
+kind = "tool"
+version = "0.1.0"
+description = "对象位置编辑、分割、插空档、子树复制与跨项目搬移"
+changes = "首次登记当前组件；后续版本由维护者更新本声明。"

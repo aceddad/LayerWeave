@@ -11,6 +11,7 @@
 | 新增内部工具 | 本页的开发流程、[公共 API](../../../support/API.md)、[命令声明](../shared/help/COMMANDS.md) |
 | 安装下载的技能 ZIP | [技能安装](SKILLS.md)，选择层目录或场景补充区 |
 | 管理本地 API KEY 与连接说明 | [KEY 管理](keys/README.md)，used 可记录任意使用方，公开查询不显示密钥 |
+| 登记和核对基础部分、工具包的版本 | [版本工具](versions/README.md)，扫描 component.toml 自动登记并标记在线/失效 |
 | 调整配置继承 | [配置读取与继承](../../../support/configuration/README.md) |
 | 新增检查规则 | [检测执行与扩展](../usage/validation/RULES.md) |
 | 调整诊断汇报 | [诊断配置](../../../support/DIAGNOSTICS.md) |
@@ -55,7 +56,8 @@ python -m layerweave.tool.builtin.developer.keys.cli export --output keys.exampl
 1. 按用途在 usage、developer 或 shared 下创建完整包；业务辅助放包内，避免对另一个可卸载包的私有依赖。
 2. 从 layerweave.support.api 复用读取、保存、事务和位置计算；读后写在同一 transaction 或 run_operation 的 write 会话内组合；只返回业务结果，日志由支撑自动收集。
 3. 用普通函数表达业务，明确输入、修改范围和返回。新增 CLI 复用 [support/cli.py](../../../support/cli.py)，在自身模块声明 COMMANDS。
-4. 更新主要使用说明及可运行示例，执行与改动相符的检查。测试使用独立数据库。
+4. 需要加入版本管理时，在完整包根放 component.toml；版本号、用途与更新说明按[组件声明约定](versions/README.md#声明放在哪里)维护，不逐条命令声明。
+5. 更新主要使用说明及可运行示例，执行与改动相符的检查。测试使用独立数据库。
 
 load/save、读取快照和检查器等能力直接由开发 API 提供，不逐个包装成新命令。具体事务、声明与验证要求见开发指南。
 

@@ -1,0 +1,5 @@
+name = "layerweave.versions"
+kind = "tool"
+version = "0.1.0"
+description = "扫描组件声明，自动登记版本、更新说明和存在状态"
+changes = "首次登记当前组件；后续版本由维护者更新本声明。"

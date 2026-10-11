@@ -39,6 +39,7 @@
 | 汇报等级和配置覆盖 | [诊断专题](../src/layerweave/support/DIAGNOSTICS.md) |
 | 通用查询与位置工具用法 | [使用手册](../src/layerweave/tool/builtin/usage/GUIDE.md) |
 | 命令声明、发现及 CLI 示例 | [命令专题](../src/layerweave/tool/builtin/shared/help/COMMANDS.md) |
+| 组件声明、版本登记与存在状态 | [版本工具](../src/layerweave/tool/builtin/developer/versions/README.md)，当前版本号和更新摘要在各组件的 component.toml |
 | 配置 help 的使用/开发模式 | [配置 help 专题](../src/layerweave/tool/builtin/shared/help/CONFIG_HELP.md) |
 | 外置技能的存放与绑定示例 | [外置工具](../src/layerweave/tool/README.md)；各技能的能力说明维护在包内 SKILL.md |
 | 技能 ZIP 的安装参数与文件处理 | [安装说明](../src/layerweave/tool/builtin/developer/SKILLS.md) |

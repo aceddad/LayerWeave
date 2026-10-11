@@ -1,0 +1,5 @@
+name = "layerweave.text"
+kind = "tool"
+version = "0.1.0"
+description = "按层和位置汇集文字内容"
+changes = "首次登记当前组件；后续版本由维护者更新本声明。"

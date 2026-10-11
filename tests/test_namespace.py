@@ -56,7 +56,13 @@ assert undo_operation(c, entry["operation_id"])["ok"]
 assert read_record(c, "audit_entry", project_id=p) == []
 assert read_support("combined", "text")["status"] == "completed"
 commands = command_help()
-assert len(commands["items"]) == 27 and commands["status"] == "completed", commands
+assert len(commands["items"]) == 28 and commands["status"] == "completed", commands
+from layerweave.tool.builtin.developer.versions import manage_versions
+versions = manage_versions(c)
+assert versions["ok"] and versions["data"]["status"] == "completed", versions
+assert len(versions["data"]["items"]) == 13, versions
+assert all(row["status"] == "online" for row in versions["data"]["items"]), versions
+assert manage_versions(c,"read",name="layerweave.versions")["data"]["items"][0]["version"] == "0.1.0"
 from layerweave.tool.builtin.developer.keys.service import manage_keys, get_key
 key_store = Path.cwd() / "keys.local.json"
 assert manage_keys("init", store=key_store)["ok"]
@@ -78,7 +84,7 @@ assert installed["route"] == "tool/skills/scenarios/downloaded/SKILL.md"
 for name, module in hosts.items():
     assert module is sys.modules[name] and module.MARKER == "host:" + name
 c.close()
-print("namespace, model roundtrip, tool tables/undo, commands, config/schema and skills passed")
+print("namespace, model roundtrip, tool tables/undo, component versions, commands, config/schema and skills passed")
 '''
 
 

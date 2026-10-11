@@ -20,6 +20,7 @@ exclude = ["layerweave.configs*", "layerweave.tool.skills*"]
 namespaces = false
 
 [tool.setuptools.package-data]
-"layerweave" = ["configs/**/*.toml", "configs/**/*.md", "tool/skills/**/*", "tool/README.md"]
+"layerweave" = ["component.toml", "tool/builtin/**/component.toml", "configs/**/*.toml", "configs/**/*.md", "tool/skills/**/*", "tool/README.md"]
 "layerweave.support.storage" = ["schema.sql"]
 "layerweave.tool.builtin.developer.keys" = ["example.json", "README.md"]
+"layerweave.tool.builtin.developer.versions" = ["README.md"]

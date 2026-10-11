@@ -90,3 +90,5 @@ python -X utf8 -B examples/tool_tables.py
 ```
 
 该[示例](../../examples/tool_tables.py)实际执行混合修改、历史查询、撤销、重做和关闭重开；不写用户项目数据库。
+
+实际工具接入可参考[版本登记工具](../../src/layerweave/tool/builtin/developer/versions/README.md)：它声明独立的 component_version 表，通过公共 register_tables、run_operation 和 read_record 完成管理，不修改 core/support，也不依赖历史或撤销包才能运行。

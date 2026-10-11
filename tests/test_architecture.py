@@ -17,7 +17,7 @@ from layerweave.support.storage.database import SCHEMA_PATH
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = ROOT / "src/layerweave"
 PACKAGES = ("usage/records", "usage/query", "usage/editing", "usage/history", "usage/undo",
-            "usage/validation", "usage/text", "shared/help", "developer/database", "developer/skills", "developer/keys")
+            "usage/validation", "usage/text", "shared/help", "developer/database", "developer/skills", "developer/keys", "developer/versions")
 
 FIXTURE = '''
 from layerweave.support.api import open_database, save_layer, save_object, transaction, read_record
@@ -43,6 +43,7 @@ class IsolationTests(unittest.TestCase):
             package_root = root / "src/layerweave"
             package_root.mkdir(parents=True)
             shutil.copy2(PACKAGE / "__init__.py", package_root / "__init__.py")
+            shutil.copy2(PACKAGE / "component.toml", package_root / "component.toml")
             for name in ("core", "models") if core_only else ("core", "models", "support"):
                 shutil.copytree(PACKAGE / name, package_root / name,
                                 ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
@@ -186,6 +187,13 @@ with ZipFile("demo.zip","w") as archive:
 r = install_skill("demo.zip",layer="text")
 assert r["ok"], r
 assert Path(r["path"]).is_dir()
+''',
+            "developer/versions": '''
+from layerweave.tool.builtin.developer.versions import manage_versions
+r = manage_versions(c)
+assert r["ok"] and r["data"]["status"] == "completed", r
+assert {row["name"] for row in r["data"]["items"]} == {"layerweave.foundation", "layerweave.versions"}, r
+assert len(manage_versions(c,"read")["data"]["items"]) == 2
 ''',
             "developer/keys": '''
 from layerweave.tool.builtin.developer.keys.service import manage_keys, get_key

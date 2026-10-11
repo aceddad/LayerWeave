@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 from layerweave.tool.builtin.usage.records.dispatch import dispatch
 from layerweave.support.api import open_database
-from layerweave.tool.builtin.usage.records.save import save_layer, save_object
+from layerweave.tool.builtin.usage.records.save import save_layer_with_checks, save_object_with_checks
 from layerweave.support.configuration.loader import ConfigError, DEFAULT_ROOT, Loader
 from layerweave.support.storage.database import SCHEMA_PATH
 from layerweave.tool.builtin.usage.validation.rules import fields
@@ -43,12 +43,12 @@ class OptionalHelpTests(unittest.TestCase):
         return ref
 
     def layer(self, kind):
-        result = save_layer(self.c, self.project, {"config_ref": f"layers/{kind}.toml"}, config_root=self.configs)
+        result = save_layer_with_checks(self.c, self.project, {"config_ref": f"layers/{kind}.toml"}, config_root=self.configs)
         self.assertTrue(result["ok"], result)
         return result["data"]["id"]
 
     def obj(self, ref, information, layer):
-        result = save_object(self.c, self.project, {"config_ref": ref, "layer": layer, "information": information}, config_root=self.configs)
+        result = save_object_with_checks(self.c, self.project, {"config_ref": ref, "layer": layer, "information": information}, config_root=self.configs)
         self.assertTrue(result["ok"], result)
         return result
 
@@ -67,7 +67,7 @@ class OptionalHelpTests(unittest.TestCase):
             layer = self.layer(parent)
             obj = getattr(module, name)(layer=layer, information={"source": "resource"})
             with patch("layerweave.tool.builtin.usage.validation.rules.fields.check", wraps=fields.check) as check:
-                result = save_object(self.c, self.project, obj, config_root=self.configs)
+                result = save_object_with_checks(self.c, self.project, obj, config_root=self.configs)
             self.assertTrue(check.called)
             self.assertEqual(result["checks"], {"status": "completed", "issues": []})
             self.assertEqual(result["data"]["config_ref"], f"objects/{name}.toml")

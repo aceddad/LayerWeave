@@ -45,7 +45,7 @@ from tempfile import TemporaryDirectory
 from layerweave.models import TextLayer
 from layerweave.tool.builtin.usage.records.dispatch import dispatch
 from layerweave.support.api import initialize_database, open_database, read_layer
-from layerweave.tool.builtin.usage.records.save import save_layer
+from layerweave.tool.builtin.usage.records.save import save_layer_with_checks
 from layerweave.tool.builtin.usage.editing.objects import append_object
 
 with TemporaryDirectory() as directory:
@@ -56,7 +56,7 @@ with TemporaryDirectory() as directory:
         })
         project_id = project["id"]
         layer = TextLayer(name="字幕")
-        save_layer(connection, project_id, layer)
+        save_layer_with_checks(connection, project_id, layer)
 
         for text in ("你好", "世界"):
             append_object(connection, project_id, layer.id, {

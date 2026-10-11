@@ -35,6 +35,8 @@ def _description(command, source):
         raise ValueError("命令说明需要字符串 name/summary/entrypoint/cli")
     if type(command.get("read_only")) is not bool:
         raise ValueError("read_only 应为布尔值")
+    if "session_entrypoint" in command and not isinstance(command["session_entrypoint"], str):
+        raise ValueError("session_entrypoint 应为字符串")
     for key in ("context", "aliases", "notes"):
         values = command.get(key, [])
         if not isinstance(values, list) or not all(isinstance(value, str) for value in values):

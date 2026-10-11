@@ -8,6 +8,7 @@ from layerweave.support.storage.log_reader import content, operation_rows
 from layerweave.support.configuration.loader import DEFAULT_ROOT
 from layerweave.support.feedback import InputError, target
 from layerweave.support.operation import run_operation
+from layerweave.support.transaction import require_write_session
 from layerweave.support.providers import DEFAULT_CHECKER, optional_checker
 from layerweave.support.values import same_value
 
@@ -117,29 +118,32 @@ def _dependencies(connection, plan):
 
 def undo_operation(connection, operation_id, *, config_root=DEFAULT_ROOT, checker=DEFAULT_CHECKER):
     """撤销整个 operation_id，不提供强制覆盖或部分撤销；重复调用仍作冲突比较。"""
-    def work(write):
-        new_operation_id = write.operation_id
-        rows = operation_rows(connection, operation_id)
-        if not rows:
-            raise InputError(f"未找到有改动日志的操作：{operation_id}", code="operation_not_found", field="operation_id")
-        plan = _plan(connection, rows)
-        _dependencies(connection, plan)
-        # 按最终状态恢复，外键在同一事务提交时检查，允许整批恢复父子；成环仍由写入入口拒绝。
-        crud.defer_references(connection)
-        # 先恢复项目，再移除旧占用，再恢复其他记录，最后删除项目；引用在提交时统一检查。
-        keys = sorted(plan, key=lambda key: (0 if plan[key]["restore"] is not None else 3) if key[0] == "project"
-                      else 1 if plan[key]["restore"] is None else 2)
-        changes = []
-        for key in keys:
-            try:
-                change = crud.restore(connection, key[0], key[2], plan[key]["restore"], project_id=key[1],
-                                      operation_id=new_operation_id, undo_of=operation_id, fields=plan[key].get("fields"))[1]
-            except Exception as error:
-                error.details = {"target": _target(key), **getattr(error, "details", {})}
-                raise
-            if change is not None:
-                changes.append(change)
-        return {"undone_operation_id": operation_id, "restored_records": len(changes)}
-
     checker = optional_checker(checker, config_root=config_root)
-    return {**run_operation(connection, work, checker=checker), "undo_of": operation_id}
+    return {**run_operation(connection, lambda write: undo_operation_in_session(write, operation_id), checker=checker), "undo_of": operation_id}
+
+
+def undo_operation_in_session(write, operation_id):
+    """在当前写会话执行，返回业务数据；异常交给外层，不提交或运行检测。"""
+    connection = require_write_session(write).connection
+    new_operation_id = write.operation_id
+    rows = operation_rows(connection, operation_id)
+    if not rows:
+        raise InputError(f"未找到有改动日志的操作：{operation_id}", code="operation_not_found", field="operation_id")
+    plan = _plan(connection, rows)
+    _dependencies(connection, plan)
+    # 按最终状态恢复，外键在同一事务提交时检查，允许整批恢复父子；成环仍由写入入口拒绝。
+    crud.defer_references(connection)
+    # 先恢复项目，再移除旧占用，再恢复其他记录，最后删除项目；引用在提交时统一检查。
+    keys = sorted(plan, key=lambda key: (0 if plan[key]["restore"] is not None else 3) if key[0] == "project"
+                  else 1 if plan[key]["restore"] is None else 2)
+    changes = []
+    for key in keys:
+        try:
+            change = crud.restore(connection, key[0], key[2], plan[key]["restore"], project_id=key[1],
+                                  operation_id=new_operation_id, undo_of=operation_id, fields=plan[key].get("fields"))[1]
+        except Exception as error:
+            error.details = {"target": _target(key), **getattr(error, "details", {})}
+            raise
+        if change is not None:
+            changes.append(change)
+    return {"undone_operation_id": operation_id, "restored_records": len(changes)}

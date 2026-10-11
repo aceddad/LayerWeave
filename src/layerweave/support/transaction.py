@@ -15,10 +15,16 @@ class WriteSession:
     operation_id: str = field(default_factory=lambda: uuid4().hex)
     writing: bool = True
     _changes: list = field(default_factory=list, init=False, repr=False)
+    _numbering: list = field(default_factory=list, init=False, repr=False)
 
     @property
     def changes(self):
         return deepcopy(self._changes)
+
+    @property
+    def numbering(self):
+        """当前事务的领号信息；只有事务成功后才是已提交的结果。"""
+        return deepcopy(self._numbering)
 
     def read(self, kind, **scope):
         from .storage.crud import read
@@ -49,6 +55,20 @@ class WriteSession:
 
 
 _active = ContextVar("layerweave_write_session", default=None)
+
+
+def require_write_session(write):
+    """事务内工具只接受当前的写会话，不开启或提交事务。"""
+    if _active.get() is not write or not isinstance(write, WriteSession) or not write.writing:
+        raise ValueError("*_in_session 需要当前 transaction/run_operation 提供的写会话")
+    return write
+
+
+def reject_nested_operation(connection):
+    """独立操作误用于现有会话时抛出，让外层决定回滚，不包装成普通业务数据。"""
+    session = _active.get()
+    if session is not None and session.connection is connection:
+        raise ValueError("已有 LayerWeave 会话；请使用 *_in_session(write, ...) 或 write 原语组合操作")
 
 
 def current_write_session():

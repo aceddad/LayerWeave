@@ -25,6 +25,7 @@ python -m venv .venv
 | 要做什么 | 入口 |
 |---|---|
 | 新增层或对象封装 | [模型](../src/layerweave/models/README.md)、[配置](../src/layerweave/configs/README.md)，参考 [Title](../examples/title.py) |
+| 在一个事务中组合多个现成工具 | [事务内组合](build-with-layerweave/04-composing-tools.md)，失败抛出，外层提交与检查 |
 | 新增或维护内部工具 | [工具开发](../src/layerweave/tool/builtin/developer/README.md)、[基础 API](../src/layerweave/support/API.md) |
 | 修改结构、事务或存储 | [基础支撑](../src/layerweave/support/README.md)、[表结构](../src/layerweave/support/storage/SCHEMA.md) |
 | 让工具的专属表接入统一管理 | [工具表开发指导](build-with-layerweave/03-managed-tables.md)，复用 register_tables 与现有写会话 |
@@ -74,7 +75,7 @@ python -m venv .venv
 ## 实现原则
 
 1. 模型保存数据；不在构造与赋值时自动检查内容，不增加未经需要的资源解释。
-2. 新工具使用 layerweave.support.api 的读取、transaction/run_operation、实例保存和位置计算。一个操作内先读后写共用同一写会话，不嵌套操作入口，不复制 SQL、发号或日志。
+2. 新工具使用 layerweave.support.api 的读取、transaction/run_operation、实例保存和位置计算。一个操作内先读后写共用同一写会话；组合高级工具使用公开 *_in_session 入口，不嵌套独立操作，不复制 SQL、发号或日志。
 3. 包内业务代码随包一起增减；不借用另一个可卸载包的私有函数。共用 CLI 使用 layerweave.support.cli；每个命令在本模块声明字面量 COMMANDS，发现和示例排版来自 layerweave.support.commands。
 4. 内容检测是可选公开能力。工具通过 layerweave.support.providers.optional_checker 请求默认提供者；没有提供者返回 not_run。基础支撑的 save 默认不接入检测，records 包提供带默认检测的保存函数。
 5. 新封装同时提供类与 TOML，保留 config_ref 和 layers/objects 分区。修改继承、身份或恢复时先阅读对应专题和测试。
@@ -96,7 +97,7 @@ test_namespace.py 验证宿主同名模块不会干扰公开导入、保存和�
 
 ```sh
 python -m pip wheel --no-deps --wheel-dir scratch/namespace-dist .
-python tests/check_wheel.py scratch/namespace-dist/layerweave-0.2.0-py3-none-any.whl
+python tests/check_wheel.py scratch/namespace-dist/layerweave-0.3.0-py3-none-any.whl
 ```
 
 check_wheel.py 将 wheel 用 pip 安装到临时目标，以禁用 site 的独立进程验证；源码目录不参与导入。它检查只有 layerweave 顶层包、同名模块冲突、默认配置、数据库 schema 和技能正文/脚本。临时目录自动清理，不写用户数据库。

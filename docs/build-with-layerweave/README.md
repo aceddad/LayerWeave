@@ -11,6 +11,7 @@
 | [一：嵌套层与时序](01-timeline.md) | 用父子层组织模块，用对象位置安排内容出现的时段 | 手书、分镜、字幕、音视频编排 |
 | [二：有序列表与隐藏信息管理](02-ordered-metadata.md) | 用层保存有序条目，用关联指向内容，由工具选择展示方式 | 批注、审阅、待办、制作过程信息 |
 | [三：工具自己的表统一管理](03-managed-tables.md) | 声明工具表，复用记录级读写、事务、历史与撤销 | 独立的业务记录、工具任务、专用结构 |
+| [四：一个事务组合多个工具](04-composing-tools.md) | 使用公开事务内入口，一次提交、反馈和检测 | 接续后平移、保存后编辑、撤销后修订 |
 
 这些是可以并用的方式，后面的篇目也可以继续扩充。一个项目可以有多个 root，按模块或范围读取；创建新功能时先复用已有类型，有独立的类型约定时再增加封装。
 
@@ -29,7 +30,7 @@
 | 当前需要 | 入口 |
 |---|---|
 | 读取普通记录、筛选对象、取得直接关联 | support.api 的 read_record、query_objects、read_bindings |
-| 只修改几个字段，或一次组合多个修改 | run_operation 或 transaction 中的 write 原语 |
+| 只修改几个字段，或一次组合多个修改 | run_operation 或 transaction 中的 write 原语；高级工具见[事务内组合](04-composing-tools.md) |
 | 使用 Python 派生实例，或保存整层与装载对象 | load_layer/load_object、save_layer/save_object |
 | 使用现成的查询展示、编辑、历史或撤销 | 对应的[内部工具包](../../src/layerweave/tool/builtin/README.md) |
 | 声明工具表、复用层编号或共享发号 | [工具表](03-managed-tables.md)与[编号模块](../../src/layerweave/support/numbering/README.md)；可运行示例在[示例索引](../examples.md) |

@@ -5,7 +5,7 @@ from contextlib import closing
 from layerweave.tool.builtin.usage.editing.tree_service import copy_subtree, delete_subtree
 from layerweave.tool.builtin.usage.records.dispatch import dispatch
 from layerweave.support.api import open_database
-from layerweave.tool.builtin.usage.records.save import save_layer, save_object
+from layerweave.tool.builtin.usage.records.save import save_layer_with_checks, save_object_with_checks
 from layerweave.tool.builtin.usage.undo.service import undo_operation
 from layerweave.support.storage.database import SCHEMA_PATH
 from layerweave.tool.builtin.usage.editing.subtrees import format_subtree
@@ -21,12 +21,12 @@ def create_example():
 
 
 def _create(connection, project):
-    lyrics = save_layer(connection, project, {"config_ref": "layers/text.toml", "name": "歌词原版"})["data"]["id"]
-    markers = save_layer(connection, project, {"config_ref": "layers/text.toml", "father": lyrics, "name": "段落标记"})["data"]["id"]
-    audio = save_layer(connection, project, {"config_ref": "layers/audio.toml", "name": "伴奏"})["data"]["id"]
-    line = save_object(connection, project, {"config_ref": "objects/text.toml", "layer": lyrics,
+    lyrics = save_layer_with_checks(connection, project, {"config_ref": "layers/text.toml", "name": "歌词原版"})["data"]["id"]
+    markers = save_layer_with_checks(connection, project, {"config_ref": "layers/text.toml", "father": lyrics, "name": "段落标记"})["data"]["id"]
+    audio = save_layer_with_checks(connection, project, {"config_ref": "layers/audio.toml", "name": "伴奏"})["data"]["id"]
+    line = save_object_with_checks(connection, project, {"config_ref": "objects/text.toml", "layer": lyrics,
                                            "information": {"text": "第一句歌词"}, "end": 4})["data"]["id"]
-    marker = save_object(connection, project, {"config_ref": "objects/title.toml", "layer": markers,
+    marker = save_object_with_checks(connection, project, {"config_ref": "objects/title.toml", "layer": markers,
                                              "information": {"text": "主歌"}})["data"]["id"]
     links = [("object", line, "object", marker), ("object", line, "layer", audio), ("layer", audio, "object", line)]
     dispatch(connection, [{"action": "create", "kind": "bind", "data": {

@@ -61,8 +61,20 @@ assert view["ok"], view
 assert "view_state" not in numbering_entries(c)["project_entities"]["members"]
 reversed_view = undo_operation(c, view["operation_id"])
 assert reversed_view["ok"] and undo_operation(c,reversed_view["operation_id"])["ok"]
-with transaction(c):
-    assert allocate("project_entities",data={"project_id":p})["project_id"] == p
+allocated = run_operation(c, lambda w: allocate("project_entities",data={"project_id":p}))
+assert allocated["applied"] and allocated["operation"]["status"] == "committed", allocated
+assert allocated["operation"]["changes"] == [] and allocated["operation"]["numbering"], allocated
+from layerweave.support.api import save_object_in_session
+from layerweave.tool.builtin.usage.editing.timeline import shift_objects_in_session
+from layerweave.tool.builtin.usage.records.dispatch import dispatch_in_session
+def compose(write):
+    row = save_object_in_session(write,p,Title(layer=layer.id,begin=4,end=5,information={"text":"session"}))
+    shifted = shift_objects_in_session(write,p,[row["id"]],offset=1)
+    dispatch_in_session(write,{"action":"update","kind":"object","project_id":p,"id":row["id"],"data":{"tips":"composed"}})
+    return shifted
+composed = run_operation(c,compose)
+assert composed["ok"] and composed["data"][0]["begin"] == 5, composed
+assert undo_operation(c,composed["operation_id"])["ok"]
 assert read_support("combined", "text")["status"] == "completed"
 commands = command_help()
 assert len(commands["items"]) == 28 and commands["status"] == "completed", commands
@@ -93,7 +105,7 @@ assert installed["route"] == "tool/skills/scenarios/downloaded/SKILL.md"
 for name, module in hosts.items():
     assert module is sys.modules[name] and module.MARKER == "host:" + name
 c.close()
-print("namespace, model roundtrip, tool tables/undo, custom IDs/numbering, component versions, commands, config/schema and skills passed")
+print("namespace, model roundtrip, tool tables/undo, session composition, numbering feedback, component versions, commands, config/schema and skills passed")
 '''
 
 

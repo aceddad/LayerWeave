@@ -74,7 +74,9 @@ help 不打开技能文件、不解析路由或判断 tier/when 是否满足条�
 
 ## 保存示例与构造参数
 
-TOML 的 example 仍表示 Python 类的构造参数，开发版保留原样；config_ref 是存储元数据，不传给 Python 构造函数。两种 help 另行生成 save_example，直接调用 layerweave.tool.builtin.usage.records.save.save_layer/save_object，自动补入当前查询封装的 config_ref，派生封装不会误用父配置路径。
+TOML 的 example 仍表示 Python 类的构造参数，开发版保留原样；config_ref 是存储元数据，不传给 Python 构造函数。两种 help 另行生成 save_example，自动补入当前查询封装的 config_ref，派生封装不会误用父配置路径。
+
+生成的示例调用 layerweave.support.api.save_layer/save_object，保持帮助包独立使用，默认不检测。需要默认内容检测时，改用 layerweave.tool.builtin.usage.records.save 中的 save_layer_with_checks/save_object_with_checks。
 
 示例使用已初始化的 connection、真实 project_id，以及对象所属的真实 layer_id。所需变量在 required_context 中逐一说明；help 不查询数据库，也不会假设编号 1 已存在。准备好这些变量后，代码可直接调用。自定义配置目录也会进入保存调用。
 

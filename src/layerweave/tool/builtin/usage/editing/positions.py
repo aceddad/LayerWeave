@@ -3,7 +3,7 @@
 from math import isfinite
 
 from layerweave.support.api import DEFAULT_CHECKER
-from ._plan import dispatch
+from ._plan import dispatch, execute_in_session
 from layerweave.support.api import PositionMath, decimal_value
 
 
@@ -71,6 +71,21 @@ def _update(project_id, record, begin, end):
 
 def arrange_objects(connection, project_id, layer_id, *, object_ids=None, start=None, checker=DEFAULT_CHECKER):
     """按原时长累计再按轴精度落点；显式编号按给定顺序，默认按现有位置顺序。"""
+    plan = _arrange_objects_plan(
+        project_id, layer_id, object_ids=object_ids, start=start,
+    )
+    return dispatch(connection, plan, checker=checker)
+
+
+def arrange_objects_in_session(write, project_id, layer_id, *, object_ids=None, start=None):
+    """复用已有写会话，返回记录或记录列表；失败抛出异常。"""
+    plan = _arrange_objects_plan(
+        project_id, layer_id, object_ids=object_ids, start=start,
+    )
+    return execute_in_session(write, plan)
+
+
+def _arrange_objects_plan(project_id, layer_id, *, object_ids=None, start=None):
     def plan(read):
         if layer_id is None:
             raise ValueError("连续排列需要指定 layer_id")
@@ -85,7 +100,7 @@ def arrange_objects(connection, project_id, layer_id, *, object_ids=None, start=
             requests.append(_update(project_id, record, math.snap(record["layer"], cursor), math.snap(record["layer"], end)))
             cursor = end
         return requests
-    return dispatch(connection, plan, checker=checker)
+    return plan
 
 
 def shift_objects(connection, project_id, object_ids=None, *, offset, layer_id=None, layer_ids=None,
@@ -99,6 +114,21 @@ def shift_objects(connection, project_id, object_ids=None, *, offset, layer_id=N
 
 def align_objects(connection, project_id, object_ids=None, *, position, edge="begin", layer_id=None, checker=DEFAULT_CHECKER):
     """以原时长计算对齐后的端点，再按各自轴精度落点；可选择同项目多个层的对象。"""
+    plan = _align_objects_plan(
+        project_id, object_ids, position=position, edge=edge, layer_id=layer_id,
+    )
+    return dispatch(connection, plan, checker=checker)
+
+
+def align_objects_in_session(write, project_id, object_ids=None, *, position, edge='begin', layer_id=None):
+    """复用已有写会话，返回记录或记录列表；失败抛出异常。"""
+    plan = _align_objects_plan(
+        project_id, object_ids, position=position, edge=edge, layer_id=layer_id,
+    )
+    return execute_in_session(write, plan)
+
+
+def _align_objects_plan(project_id, object_ids=None, *, position, edge='begin', layer_id=None):
     def plan(read):
         target = decimal_value(_number(position, "对齐位置"))
         if edge not in {"begin", "end"}:
@@ -110,18 +140,33 @@ def align_objects(connection, project_id, object_ids=None, *, position, edge="be
             begin, end = (target, target + duration) if edge == "begin" else (target - duration, target)
             requests.append(_update(project_id, record, math.snap(record["layer"], begin), math.snap(record["layer"], end)))
         return requests
-    return dispatch(connection, plan, checker=checker)
+    return plan
 
 
 def set_duration(connection, project_id, object_id, duration, *, checker=DEFAULT_CHECKER):
     """保持起点，计算并量化新终点；不会移动其他对象。"""
+    plan = _set_duration_plan(
+        project_id, object_id, duration,
+    )
+    return dispatch(connection, plan, checker=checker)
+
+
+def set_duration_in_session(write, project_id, object_id, duration):
+    """复用已有写会话，返回记录或记录列表；失败抛出异常。"""
+    plan = _set_duration_plan(
+        project_id, object_id, duration,
+    )
+    return execute_in_session(write, plan)
+
+
+def _set_duration_plan(project_id, object_id, duration):
     def plan(read):
         value = decimal_value(_number(duration, "时长"))
         record = _objects(read, project_id, [object_id])[0]
         begin = _position(record, "begin")
         end = PositionMath(read, project_id).snap(record["layer"], decimal_value(begin) + value)
         return _update(project_id, record, begin, end)
-    return dispatch(connection, plan, checker=checker)
+    return plan
 
 
 def main():
@@ -167,6 +212,7 @@ def main():
 COMMANDS = [{'name': 'arrange_objects',
   'summary': '按指定顺序连续排列对象，保留各自时长',
   'entrypoint': 'layerweave.tool.builtin.usage.editing.positions:arrange_objects',
+  'session_entrypoint': 'layerweave.tool.builtin.usage.editing.positions:arrange_objects_in_session',
   'cli': 'python -m layerweave.tool.builtin.usage.editing.positions',
   'read_only': False,
   'context': ['database', 'project_id'],
@@ -178,6 +224,7 @@ COMMANDS = [{'name': 'arrange_objects',
  {'name': 'shift_objects',
   'summary': '选择对象/直属层/子树，按起点下限筛选后整体平移',
   'entrypoint': 'layerweave.tool.builtin.usage.editing.timeline:shift_objects',
+  'session_entrypoint': 'layerweave.tool.builtin.usage.editing.timeline:shift_objects_in_session',
   'cli': 'python -m layerweave.tool.builtin.usage.editing.positions',
   'read_only': False,
   'context': ['database', 'project_id'],
@@ -194,6 +241,7 @@ COMMANDS = [{'name': 'arrange_objects',
  {'name': 'align_objects',
   'summary': '按起点或终点对齐选中对象，保留各自时长',
   'entrypoint': 'layerweave.tool.builtin.usage.editing.positions:align_objects',
+  'session_entrypoint': 'layerweave.tool.builtin.usage.editing.positions:align_objects_in_session',
   'cli': 'python -m layerweave.tool.builtin.usage.editing.positions',
   'read_only': False,
   'context': ['database', 'project_id'],
@@ -210,6 +258,7 @@ COMMANDS = [{'name': 'arrange_objects',
  {'name': 'set_duration',
   'summary': '保持起点，修改对象时长',
   'entrypoint': 'layerweave.tool.builtin.usage.editing.positions:set_duration',
+  'session_entrypoint': 'layerweave.tool.builtin.usage.editing.positions:set_duration_in_session',
   'cli': 'python -m layerweave.tool.builtin.usage.editing.positions',
   'read_only': False,
   'context': ['database', 'project_id'],

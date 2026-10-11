@@ -10,7 +10,7 @@ from .storage.assembly import _snapshot as read_snapshot
 from .records import read as read_record
 from .storage.database import initialize_database, open_database
 from .storage.models import load_layer, load_object
-from .storage.save import save_layer, save_object
+from .storage.save import save_layer, save_object, save_layer_in_session, save_object_in_session
 from .storage.queries import query_objects, read_bindings, read_layer_positions
 from .storage.details import read_project_details
 from .storage.tables import register_tables, table_specs

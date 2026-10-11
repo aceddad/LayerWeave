@@ -38,12 +38,17 @@ def _operation(rows, *, detail=False, matched_count=None, connection=None):
         item = {"change_id": row["id"], "action": row["action"],
                 "target": target(kind, row["project_id"], row["target_id"]),
                 "name": (after or before).get("name", "")}
+        if row.get("undo_of") is not None:
+            item["undo_of"] = row["undo_of"]
         if row["action"] == "update":
             item["fields"] = differences(content(kind, before, connection), content(kind, after, connection))
         if detail:
             item.update(before=before, after=after)
         changes.append(item)
-    return {"operation_id": rows[0]["operation_id"], "undo_of": rows[0].get("undo_of"),
+    origins = {row.get("undo_of") for row in rows}
+    undo_of = next(iter(origins)) if len(origins) == 1 else None
+    mixed = {"undo_of_operations": sorted(origin for origin in origins if origin is not None)} if len(origins) > 1 else {}
+    return {"operation_id": rows[0]["operation_id"], "undo_of": undo_of, **mixed,
             "started_at": rows[0]["created_at"], "ended_at": rows[-1]["created_at"],
             "project_ids": sorted(set().union(*(_project_ids(row) for row in rows))),
             "change_count": len(rows), "matched_change_count": len(rows) if matched_count is None else matched_count,

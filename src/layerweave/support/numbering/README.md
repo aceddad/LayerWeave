@@ -41,7 +41,9 @@ allocate 不要求 connection 参数；它从当前 transaction/run_operation �
 
 普通 auto 表的 write.create 已在内部调用相应发号流程，不用提前领号。需要显式先领号再创建时，将目标表设为 provided，并将它加入相应词条，然后用 identity["id"] 和 identity.get("project_id") 分别传入创建接口。
 
-allocate 本身不创建层、对象或工具记录，也不生成普通 changes 业务日志；它的计数变更跟随当前事务提交。事务失败一起回滚，成功领取但未用于记录的号码保留为空号。run_operation 的 applied/changes 描述业务记录变化，所以仅调用 allocate 时可能返回 applied=false；领取结果在 data 中，不能据此重复领取。
+allocate 本身不创建层、对象或工具记录，也不生成普通 changes 业务日志；它的计数变更跟随当前事务提交。事务失败一起回滚，成功领取但未用于记录的号码保留为空号。run_operation 会将成功推进的计数标为 applied=true、operation.status=committed，并在 operation.numbering 中返回领号详情。operation.changes 仍只列业务修改；仅领号时它可以为空，此操作没有可撤销业务日志。
+
+write.numbering 返回本次领号信息的副本，提交前为临时结果；失败反馈不包含这些已回滚编号。普通创建内部的簇发号也会出现在 operation.numbering 中，直接 increment 则可能没有词条名或组合后的 identity。
 
 ## 登记发号词条和簇成员
 
@@ -82,6 +84,8 @@ register_numbering 使用独立声明事务，不接管待提交操作。可以�
 ## 增加规则函数
 
 规则是普通函数 function(entry, data)，返回包含正整数 id 的身份字典；当前记录入口支持 id 或 project_id/id。规则可以复用 increment，内部取得当前写连接，定位计数行并原子加一：
+
+allocate 传给规则的 entry 是词条副本，另带 name 表示本次调度的词条名称，供领号反馈使用；数据库中的词条声明格式不变。
 
 ```python
 from layerweave.support.api import increment, register_numbering_rule

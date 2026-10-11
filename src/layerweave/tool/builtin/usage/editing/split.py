@@ -33,6 +33,7 @@ def main():
 COMMANDS = [{'name': 'split_object',
   'summary': '按明确切点与各段内容分割对象，第一段保留编号和关联',
   'entrypoint': 'layerweave.tool.builtin.usage.editing.timeline:split_object',
+  'session_entrypoint': 'layerweave.tool.builtin.usage.editing.timeline:split_object_in_session',
   'cli': 'python -m layerweave.tool.builtin.usage.editing.split',
   'read_only': False,
   'context': ['database', 'project_id'],

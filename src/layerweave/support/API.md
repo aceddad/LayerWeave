@@ -26,11 +26,11 @@ finally:
     connection.close()
 ```
 
-work(write) 返回任意业务数据；run_operation 返回 operation_id、operation、ok、applied、data/error 和 checks。实际日志从写入收集，工具不传日志列表。没有变更不制造日志；失败回滚本批记录、发号和日志，不接管调用方未提交事务。
+work(write) 返回任意业务数据；run_operation 返回 operation_id、operation、ok、applied、data/error 和 checks。实际日志从写入收集，工具不传日志列表。业务变化或成功领号都会令 applied=true、operation.status=committed；仅有业务变化才写 changes 日志。失败回滚本批记录、发号和日志，不接管调用方未提交事务。
 
 write 提供 read(kind, ...)、create(kind, data, ...)、update(kind, id, data, ...)、delete(kind, id, ...)；层、对象及 scoped 工具表使用 project_id，独立表按 id 定位。create/update/delete 返回实际记录或 None。read 传 id 返回一条，否则返回列表；JSON 字段整体替换。write.operation_id 是本次入口生成的操作编号。
 
-希望直接处理异常时使用 `with transaction(connection) as write:`；成功自动提交，异常自动回滚。已有写会话内组合原语，不嵌套 run_operation/save。父链无环按批次最终状态检查，编号、外键和必需存储列由支撑保证，内容规则不在此执行。
+希望直接处理异常时使用 `with transaction(connection) as write:`；成功自动提交，异常自动回滚。已有写会话内组合 write 原语或公开 *_in_session 函数，不嵌套独立操作。独立入口在已有 LayerWeave 会话内调用时直接抛出 ValueError，供外层回滚；不会返回藏在业务数据中的内层失败。父链无环按批次最终状态检查，编号、外键和必需存储列由支撑保证，内容规则不在此执行。
 
 需要原始数值创建时使用 write.create_exact；需要恢复原身份时使用 write.restore(kind, id, record, project_id=..., undo_of=..., fields=...)。record 是完整历史快照或删除用的 None，fields 可限定已有记录要恢复的顶层字段，空列表不修改；这些接口仍通过本次会话维护结构、编号和日志。撤销冲突策略由工具决定，支撑不猜测覆盖。write.defer_references() 可将本次外键验证延迟到提交，以便恢复整批父子记录。
 
@@ -69,7 +69,9 @@ read 返回保留 project_id/config_ref 的普通字典，不需要配置文件�
 
 返回 project/scope/layers/missing_layer_ids。多层请求中的不存在编号列入 missing_layer_ids，其余有效子树继续读取；项目不存在或旧单层入口 layer_id 不存在时仍返回 None。scope.layer_ids 保留去重后的请求，scope.root_ids 给出有效起始层的树序。数据保持完整，读取不加载配置、不写日志。工具 project_details 增加树序、depth、本范围直属 object_count、counts 与缺失目标的逐条提示；compact=True 可生成文字/JSON 共用的精简视图，详见 [详细展开工具](../tool/builtin/usage/query/project_details.py)。
 
-基础支撑的 save_layer/save_object 默认 checker=None，返回明确的未检查状态。需要默认内容检测时，使用 layerweave.tool.builtin.usage.records.save 中的同名函数；它们复用这些保存能力，并可选接入已安装的检测包。
+基础支撑的 save_layer/save_object 默认 checker=None，返回明确的未检查状态。需要默认内容检测时，使用 layerweave.tool.builtin.usage.records.save 的 save_layer_with_checks/save_object_with_checks；工具层原同名函数已移除。这两个包装复用基础保存能力，并可选接入已安装的检测包。
+
+组合保存使用同样从 support.api 导出的 save_layer_in_session(write, project_id, layer, config_root=...) 和 save_object_in_session(write, project_id, obj, config_root=...)；config_root 使用关键字参数。它们返回完整记录，不提交、不检测、不回填输入实例或字典。使用返回记录继续操作，外层提交前编号仍是临时值。其他项目内容工具的组合入口与返回见[事务内组合](../../../docs/build-with-layerweave/04-composing-tools.md)。
 
 ## 通用只读查询
 以下能力也经 layerweave.support.api 提供，供各类型工具复用：
@@ -104,7 +106,7 @@ result = save_layer(connection, project_id, {
 
 整个保存只有一个 operation_id，数据与日志在同一个事务提交，检测在提交后执行一次。返回包含 ok、applied、operation_id、kind、project_id、data、checks。成功后回填输入的 id、对象 layer 和关联 id；失败不回填回滚掉的编号。检测异常不撤销成功的数据写入。
 
-操作结果另由 operation 明确表达：status 为 committed（变更已提交）、unchanged（成功但没有变更）、read（只读成功）或 failed（本次未写入）。operation.changes 按执行顺序列出已提交的 action 和 target；失败批次不返回临时创建编号。原有 ok/applied/data/checks 保留。
+操作结果另由 operation 明确表达：status 为 committed（变更已提交）、unchanged（成功但没有变更）、read（只读成功）或 failed（本次未写入）。operation.changes 按执行顺序列出已提交的 action 和 target；失败批次不返回临时创建编号。原有 ok/applied/data/checks 保留。成功领号时另有 operation.numbering 列表：counter 为 kind/project_id/id/field，before/after 为计数，allocate 成功时还包括 entry、rule 和 identity；直接调用 increment 时这些附加项可能缺席。没有领号时省略 numbering，失败时不返回回滚掉的编号。changes 为空但 numbering 非空也是 committed，并显示“发号成功”；这类操作没有可撤销的业务日志。
 
 内置诊断仍逐条放在 checks.issues，包含 severity、target、rule、message，可带 field。scope=direct 表示问题目标在本次操作中发生过修改，related 表示关联检查涉及但本次未直接修改的目标；主动 validate 使用 manual。checked_target 在规则执行目标与问题目标不同时补充，例如检查 layer 却发现其中一个 object 的配置缺失。scope 只说明检查范围，不判断问题新旧。
 
@@ -142,7 +144,7 @@ result = save_object(connection, project_id, obj)
 
 ## 提交后的可选检查
 
-run_operation 和 save_* 接受 checker；省略或传 checker=None 时不执行内容检查。checker(changes, read_record) 必须返回问题字典列表。检查异常或输出不合法标记 checks.status=failed，已经提交的操作仍是成功。
+run_operation 和独立的基础 save_layer/save_object 接受 checker；省略或传 checker=None 时不执行内容检查。*_in_session 接口不接受 checker，检测统一交给最外层配置。checker(changes, read_record) 必须返回问题字典列表。检查异常或输出不合法标记 checks.status=failed，已经提交的操作仍是成功。
 
 changes 包含 action、kind、project_id、id、before、after、change_id 和 operation_id；记录来自实际写入。read_record(kind, project_id=..., id=..., filters=...) 只提供读取。通用汇报使用 format_feedback、format_issue 和 diagnostic_report。
 

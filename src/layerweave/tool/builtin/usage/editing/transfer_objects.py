@@ -20,6 +20,7 @@ def main():
 COMMANDS = [{'name': 'transfer_objects',
   'summary': '同库跨项目复制/剪切选中对象及出向关联，放入指定已有层',
   'entrypoint': 'layerweave.tool.builtin.usage.editing.tree_service:transfer_objects',
+  'session_entrypoint': 'layerweave.tool.builtin.usage.editing.tree_service:transfer_objects_in_session',
   'cli': 'python -m layerweave.tool.builtin.usage.editing.transfer_objects',
   'read_only': False,
   'context': ['database', 'project_id'],

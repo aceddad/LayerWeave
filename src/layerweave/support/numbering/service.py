@@ -8,7 +8,8 @@ from .registry import CATALOG, counter_key, numbering_entries, persist_entries
 
 def increment(entry, data):
     """规则共用的原子递增；计数行由词条中的 key 定位。"""
-    connection = current_write_session().connection
+    session = current_write_session()
+    connection = session.connection
     counter = entry["counter"]
     spec = table_specs(connection)[counter["kind"]]
     key = counter_key(entry, data)
@@ -23,6 +24,11 @@ def increment(entry, data):
                          reference=target(counter["kind"], key.get("project_id"), key["id"]))
     if type(row[0]) is not int or row[0] < 1:
         raise InputError("计数列需要非负整数，递增后得到正整数", code="numbering_counter", field=counter["field"])
+    session._numbering.append({
+        "counter": {**target(counter["kind"], key.get("project_id"), key["id"]), "field": counter["field"]},
+        "before": row[0] - 1, "after": row[0],
+        **({"entry": entry["name"], "rule": entry["rule"]} if "name" in entry else {}),
+    })
     return row[0]
 
 
@@ -50,12 +56,16 @@ def allocate(name, *, data=None):
     entries = numbering_entries(session.connection)
     if name not in entries:
         raise InputError(f"未知发号词条：{name}", field="numbering", allowed=sorted(entries))
-    entry = entries[name]
+    entry = {**entries[name], "name": name}
     if entry["rule"] not in RULES:
         raise InputError(f"发号规则未加载：{entry['rule']}", field="rule", allowed=sorted(RULES))
     if not _exists(session.connection, CATALOG):
         persist_entries(session.connection, entries)
+    first = len(session._numbering)
     identity = RULES[entry["rule"]](entry, {} if data is None else data)
     if not isinstance(identity, dict) or type(identity.get("id")) is not int or identity["id"] < 1:
         raise InputError("发号规则应返回包含正整数 id 的身份字典", code="numbering_result")
+    from copy import deepcopy
+    for item in session._numbering[first:]:
+        item.setdefault("identity", deepcopy(identity))
     return identity

@@ -1,24 +1,54 @@
 """接续新增与对象复制：只创建对象记录，不自动复制关联或资源文件。"""
 
 from layerweave.support.api import DEFAULT_CHECKER
-from ._plan import dispatch
+from ._plan import dispatch, execute_in_session
 from layerweave.tool.builtin.usage.editing.positions import _duration, _number, _objects, _tail
 from layerweave.support.api import PositionMath, decimal_value
 
 
 def append_object(connection, project_id, layer_id, data, *, duration, after_id=None, empty_start=0, checker=DEFAULT_CHECKER):
     """从层内最大 end（或指定同层对象的 end）新增；空层使用 empty_start。"""
+    plan = _append_object_plan(
+        project_id, layer_id, data, duration=duration, after_id=after_id, empty_start=empty_start,
+    )
+    return dispatch(connection, plan, checker=checker)
+
+
+def append_object_in_session(write, project_id, layer_id, data, *, duration, after_id=None, empty_start=0):
+    """复用已有写会话，返回记录或记录列表；失败抛出异常。"""
+    plan = _append_object_plan(
+        project_id, layer_id, data, duration=duration, after_id=after_id, empty_start=empty_start,
+    )
+    return execute_in_session(write, plan)
+
+
+def _append_object_plan(project_id, layer_id, data, *, duration, after_id=None, empty_start=0):
     def plan(read):
         length = decimal_value(_number(duration, "时长"))
         begin = decimal_value(_tail(read, project_id, layer_id, after_id=after_id, empty_start=empty_start))
         math = PositionMath(read, project_id)
         return {"action": "create", "kind": "object", "project_id": project_id,
                 "data": {**data, "layer": layer_id, "begin": math.snap(layer_id, begin), "end": math.snap(layer_id, begin + length)}}
-    return dispatch(connection, plan, checker=checker)
+    return plan
 
 
 def copy_object(connection, project_id, object_id, *, layer_id=None, begin=None, append=False, name=None, checker=DEFAULT_CHECKER):
     """同项目复制内容与配置并发放新编号；可另选层、起点，或明确接续到目标层末尾。"""
+    plan = _copy_object_plan(
+        project_id, object_id, layer_id=layer_id, begin=begin, append=append, name=name,
+    )
+    return dispatch(connection, plan, checker=checker)
+
+
+def copy_object_in_session(write, project_id, object_id, *, layer_id=None, begin=None, append=False, name=None):
+    """复用已有写会话，返回记录或记录列表；失败抛出异常。"""
+    plan = _copy_object_plan(
+        project_id, object_id, layer_id=layer_id, begin=begin, append=append, name=name,
+    )
+    return execute_in_session(write, plan)
+
+
+def _copy_object_plan(project_id, object_id, *, layer_id=None, begin=None, append=False, name=None):
     def plan(read):
         if append and begin is not None:
             raise ValueError("复制位置请选择 begin 或 append，不要同时指定")
@@ -34,7 +64,7 @@ def copy_object(connection, project_id, object_id, *, layer_id=None, begin=None,
             math = PositionMath(read, project_id)
             data.update(begin=math.snap(destination, start), end=math.snap(destination, start + _duration(source)))
         return {"action": "create", "kind": "object", "project_id": project_id, "data": data}
-    return dispatch(connection, plan, checker=checker)
+    return plan
 
 
 def main():
@@ -73,6 +103,7 @@ def main():
 COMMANDS = [{'name': 'append_object',
   'summary': '按层尾或指定对象终点接续新增对象',
   'entrypoint': 'layerweave.tool.builtin.usage.editing.objects:append_object',
+  'session_entrypoint': 'layerweave.tool.builtin.usage.editing.objects:append_object_in_session',
   'cli': 'python -m layerweave.tool.builtin.usage.editing.objects',
   'read_only': False,
   'context': ['database', 'project_id'],
@@ -90,6 +121,7 @@ COMMANDS = [{'name': 'append_object',
  {'name': 'copy_object',
   'summary': '同项目复制一个对象，可选新层、新起点或接续位置',
   'entrypoint': 'layerweave.tool.builtin.usage.editing.objects:copy_object',
+  'session_entrypoint': 'layerweave.tool.builtin.usage.editing.objects:copy_object_in_session',
   'cli': 'python -m layerweave.tool.builtin.usage.editing.objects',
   'read_only': False,
   'context': ['database', 'project_id'],

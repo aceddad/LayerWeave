@@ -8,7 +8,7 @@ from tempfile import TemporaryDirectory
 from layerweave.models import Text, TextLayer, Title
 from layerweave.tool.builtin.usage.records.dispatch import dispatch
 from layerweave.support.api import initialize_database, load_layer, open_database, read_layer
-from layerweave.tool.builtin.usage.records.save import save_layer
+from layerweave.tool.builtin.usage.records.save import save_layer_with_checks
 
 
 def _saved(result):
@@ -24,17 +24,17 @@ def create_example():
             project_id = _saved(dispatch(connection, {"action": "create", "kind": "project",
                                                       "data": {"name": "派生封装示例"}}))["id"]
             layer = TextLayer(name="文章")
-            _saved(save_layer(connection, project_id, layer))
+            _saved(save_layer_with_checks(connection, project_id, layer))
             layer.objects = [
                 Title(layer=layer.id, name="标题", information={"text": "第一章"}),
                 Text(layer=layer.id, name="正文", information={"text": "故事从这里开始。"}),
             ]
-            written = _saved(save_layer(connection, project_id, layer))
+            written = _saved(save_layer_with_checks(connection, project_id, layer))
 
         with closing(open_database(database)) as connection:
             loaded = load_layer(connection, project_id, layer.id)
             loaded.objects[0].information["text"] = "第一章：出发"
-            updated = _saved(save_layer(connection, project_id, loaded))
+            updated = _saved(save_layer_with_checks(connection, project_id, loaded))
             record = read_layer(connection, project_id, layer.id)
         return {"layer_class": type(loaded).__name__, "layer_type_from_toml": record["type"],
                 "objects": [{"class": type(obj).__name__, "config_ref": row["config_ref"],

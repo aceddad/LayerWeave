@@ -36,6 +36,7 @@ def main():
 COMMANDS = [{'name': 'transfer_subtree',
   'summary': '同库跨项目复制/剪切子树；剪切的外部入向引用跟随新身份',
   'entrypoint': 'layerweave.tool.builtin.usage.editing.tree_service:transfer_subtree',
+  'session_entrypoint': 'layerweave.tool.builtin.usage.editing.tree_service:transfer_subtree_in_session',
   'cli': 'python -m layerweave.tool.builtin.usage.editing.transfer',
   'read_only': False,
   'context': ['database', 'project_id'],

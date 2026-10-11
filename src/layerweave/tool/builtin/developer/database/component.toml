@@ -1,5 +1,5 @@
 name = "layerweave.database"
 kind = "tool"
-version = "0.1.0"
+version = "0.1.1"
 description = "初始化和升级 LayerWeave SQLite 数据库"
-changes = "首次登记当前组件；后续版本由维护者更新本声明。"
+changes = "初始化帮助明确 Python path 与 CLI database 参数的对应关系。"

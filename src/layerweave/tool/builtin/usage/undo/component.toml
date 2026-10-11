@@ -1,5 +1,5 @@
 name = "layerweave.undo"
 kind = "tool"
-version = "0.2.0"
+version = "0.3.0"
 description = "基于改动日志规划撤销、冲突核对和再次撤销"
-changes = "按实际簇成员和计数范围判断撤销冲突；支持自定义 ID 和工具计数列恢复。"
+changes = "增加事务内撤销入口，可与其他项目内容操作共同提交。"

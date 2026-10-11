@@ -10,7 +10,7 @@ from unittest.mock import patch
 from layerweave.models import Text, TextLayer
 from layerweave.support.api import diagnostic_report, format_feedback, load_object, open_database, read_object
 from layerweave.tool.builtin.usage.records.dispatch import dispatch
-from layerweave.tool.builtin.usage.records.save import save_layer, save_object
+from layerweave.tool.builtin.usage.records.save import save_layer_with_checks, save_object_with_checks
 from layerweave.tool.builtin.usage.validation.runner import validate
 from layerweave.support.configuration.loader import DEFAULT_ROOT
 from layerweave.support.storage import crud
@@ -163,7 +163,7 @@ class ReportingPrecisionTests(unittest.TestCase):
                                       "begin": 0.0004, "end": 0.1+0.2}, project_id=self.p, operation_id=write.operation_id)
         self.assertEqual((row["begin"], change["after"]["end"]), (0, 0.3))
         obj = Text(layer=self.layer, begin=1.0004, end=2.0004, information={"text": "正文"})
-        result = save_object(self.c, self.p, obj, config_root=self.configs)
+        result = save_object_with_checks(self.c, self.p, obj, config_root=self.configs)
         self.assertEqual((obj.begin, obj.end), (1, 2))
         self.assertEqual(result["data"]["begin"], obj.begin)
         loaded = load_object(self.c, self.p, obj.id)
@@ -171,10 +171,10 @@ class ReportingPrecisionTests(unittest.TestCase):
 
     def test_failed_whole_save_does_not_backfill_normalized_positions(self):
         layer = TextLayer(axis={"precision": 0.001})
-        save_layer(self.c, self.p, layer, config_root=self.configs)
+        save_layer_with_checks(self.c, self.p, layer, config_root=self.configs)
         good = Text(layer=layer.id, begin=0.0004, end=1, information={"text": "正文"})
         layer.objects = [good, Text(layer=layer.id, information={"bad": object()})]
-        result = save_layer(self.c, self.p, layer, config_root=self.configs)
+        result = save_layer_with_checks(self.c, self.p, layer, config_root=self.configs)
         self.assertFalse(result["ok"])
         self.assertIsNone(good.id)
         self.assertEqual(good.begin, 0.0004)

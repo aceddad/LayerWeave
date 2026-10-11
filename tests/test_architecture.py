@@ -221,6 +221,35 @@ for item in overview["items"]:
 '''
                 self.isolated(code, package=package)
 
+    def test_tool_table_storage_and_each_history_tool_work_without_other_packages(self):
+        setup = FIXTURE + '''
+from layerweave.support.api import register_tables, run_operation, table_specs
+register_tables(c, {"note": {"fields": {"text": "TEXT", "object_id": "INTEGER"},
+                           "references": [{"fields": ["project_id", "object_id"], "kind": "object"}]}})
+made = run_operation(c, lambda w: w.create("note", {"text": "review", "object_id": obj.id}, project_id=p))
+assert made["ok"], made
+assert read_record(c, "note", project_id=p, id=made["data"]["id"])["text"] == "review"
+'''
+        self.isolated(setup + '''
+import sys
+assert not any(n == "layerweave.tool" or n.startswith("layerweave.tool.") for n in sys.modules)
+with transaction(c) as w:
+    w.delete("note", made["data"]["id"], project_id=p)
+with transaction(c) as w:
+    w.restore("note", made["data"]["id"], made["data"], project_id=p)
+''')
+        self.isolated(setup + '''
+from layerweave.tool.builtin.usage.history.service import read_history
+r = read_history(c, p, kind="note", id=made["data"]["id"])
+assert r["change_count"] == 1, r
+''', package="usage/history")
+        self.isolated(setup + '''
+from layerweave.tool.builtin.usage.undo.service import undo_operation
+undone = undo_operation(c, made["operation_id"])
+assert undone["ok"] and undone["checks"]["status"] == "not_run", undone
+assert undo_operation(c, undone["operation_id"])["ok"]
+''', package="usage/undo")
+
     def test_installed_imports_and_cli_from_outside_repository(self):
         with tempfile.TemporaryDirectory() as folder:
             result = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", "layerweave.tool.builtin.shared.help.command_help", "--json"],

@@ -23,7 +23,7 @@ def append_change(connection, operation_id, kind, before, after, *, undo_of=None
     elif kind == "bind":
         project_id = record["source_project_id"]
     else:
-        project_id = record["project_id"]
+        project_id = record.get("project_id")
     action = "create" if before is None else "delete" if after is None else "update"
     cursor = connection.execute(
         "INSERT INTO changes (operation_id, created_at, kind, project_id, target_id, "

@@ -74,7 +74,7 @@ def dispatch(connection, request, *, config_root=DEFAULT_ROOT, checker=DEFAULT_C
                 results.append(result)
             except Exception as error:
                 error.details = {**getattr(error, "details", {}), "request_index": index}
-                if isinstance(item, dict) and isinstance(item.get("kind"), str) and item["kind"] in {"project", "layer", "object", "bind", "change"}:
+                if isinstance(item, dict) and isinstance(item.get("kind"), str) and item["kind"] in crud.table_specs(connection):
                     error.details.setdefault("target", target(item["kind"], item.get("project_id"), item.get("id")))
                 raise
         return results

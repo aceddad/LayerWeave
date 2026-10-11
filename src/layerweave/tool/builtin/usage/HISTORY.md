@@ -54,7 +54,7 @@ operation = read_history(connection, operation_id=operation_id)
 
 | 输入 | 含义 |
 |---|---|
-| project_id、kind、id | 按项目或实体筛选；kind 支持 project/layer/object/bind |
+| project_id、kind、id | 按项目或记录筛选；kind 支持 project/layer/object/bind 及本库已登记的工具 kind |
 | operation_id | 查询一个完整操作，与项目/实体筛选互斥 |
 | limit、before | 每页操作数（默认 20）和上一页的 next_cursor |
 | detail | True 时给列表附带完整前后快照；默认 False |
@@ -67,7 +67,7 @@ operation = read_history(connection, operation_id=operation_id)
 
 **边界行为：**
 
-- 省略范围可查全库。层/对象的 id 还需 project_id；bind.id 在全库唯一。
+- 省略范围可查全库。层、对象及 scoped 工具表的 id 还需 project_id；独立表按本表 id 定位。
 - 按日志编号倒序分页，不切开一个操作。只在 next_cursor 非空时请求下一页。
 - 范围决定哪些操作相关，items 仍展开完整批次；跨项目操作不会被截断。
 - 关联两端以及修改前后的项目都可命中历史。
@@ -83,6 +83,8 @@ python -m layerweave.tool.builtin.usage.history.cli DATABASE --operation-id OPER
 ## 撤销与重做
 
 按操作编号撤回整批改动；撤销新的撤销操作即可重做。
+
+同一操作中的工具表与核心记录一起处理。表声明由支撑从数据库读取，显式引用参与恢复依赖判断；结构维护不属于内容撤销。完整的接入与升级行为见[工具表开发指导](../../../../../docs/build-with-layerweave/03-managed-tables.md)。
 
 ```python
 from layerweave.tool.builtin.usage.undo.service import undo_operation

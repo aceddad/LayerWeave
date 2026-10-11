@@ -6,6 +6,7 @@
 |---|---|
 | 写入、关闭重开、装载 Python 类、再次保存 | [read_write.py](../examples/read_write.py) |
 | 基础 CRUD 与事务日志 | [crud.py](../examples/crud.py) |
+| 工具表与核心记录共用历史、撤销和恢复 | [tool_tables.py](../examples/tool_tables.py) |
 | 操作结果与诊断文字 | [feedback.py](../examples/feedback.py) |
 | 汇报配置与精度处理 | [diagnostics.py](../examples/diagnostics.py) |
 | Python 与 TOML 的派生关系 | [title.py](../examples/title.py) |

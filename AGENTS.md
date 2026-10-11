@@ -13,7 +13,7 @@
 ## 工作要求
 
 - 核心与模型保持简单。core 表达抽象结构与封装语义，support 提供存储和配置适配，src/layerweave/tool/builtin 提供可替换能力；依赖方向见[架构](docs/architecture.md)。
-- 业务数据库的所有受支持写入走 layerweave.support.api.transaction 或 run_operation，包括恢复。工具不执行 SQL 写入，不自行发号、提交或拼装日志；KEY 管理的本地 JSON 配置不进入业务库和 changes 日志。
+- 业务数据库的记录写入走 layerweave.support.api.transaction 或 run_operation，包括工具表和恢复。工具表结构通过 register_tables 声明，由支撑创建或追加列；工具不绕过入口执行 SQL 写入，不自行发号、提交或拼装日志。KEY 管理的本地 JSON 配置不进入业务库和 changes 日志。
 - 一个完整工具包是增减单位；业务辅助代码留在包内。不引用另一个可卸载包的私有实现。共用 CLI 和声明发现来自 support。
 - 一份封装 TOML 对应一个 Python 类，保留 layers/objects 分区及 config_ref。不要为抽象而加入其他后端或新注册框架。
 - 默认工具通过可选提供者接入内容检测。未安装检测包应返回未检查；父链无环和其他结构保证不能依赖检测包。
@@ -21,3 +21,5 @@
 - 查现行代码优先搜索 src/layerweave、tests、examples、docs；scratch 保留本地备份，不作为现行实现依据。不为清理搜索结果而删除或迁移它。
 - 修改持久化、执行入口或模块路径后运行完整回归和隔离验收，方法见开发指南。当前未发布，不保留旧路径转接。
 - MCP 编排留到对应封装阶段；main 保持无 GUI 依赖。
+
+工具表扩展的实施与验收记录见[扩展记录](docs/tool-tables-plan.md)，现行接入方式见[工具表开发指导](docs/build-with-layerweave/03-managed-tables.md)。

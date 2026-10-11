@@ -2,7 +2,8 @@
 
 
 def identity_key(kind, project_id, id):
-    return kind, project_id if kind in {"layer", "object"} else None, id
+    # 扩展记录保留调用方提供的项目范围；独立编号的记录传入 None。
+    return kind, None if kind in {"project", "bind", "change"} else project_id, id
 
 
 def reference(kind, project_id, id):

@@ -27,8 +27,8 @@
 | 项 | 含义 |
 |---|---|
 | action | create / read / update / delete |
-| kind | project / layer / object / bind；另支持 read 查询 change 日志 |
-| project_id | layer、object 的必需项目范围；其他种类按独立 id 定位 |
+| kind | project / layer / object / bind，或本库已登记的工具 kind；另支持 read 查询 change 日志 |
+| project_id | layer、object 及 scoped 工具表的必需项目范围；独立种类按 id 定位 |
 | id | read 的可选编号；update、delete 必须指定 |
 | data | create、update 的字段字典 |
 | filters | read 的可选普通列等值条件，None 表示 SQL NULL |
@@ -39,6 +39,8 @@
 read 提供 id 时返回单条字典或 null，否则返回列表。对象列表按 begin、end、id 排序，其余按 id 排序。full=true 的层读取还包含直属 objects，每个实体带发出的 bind。完整读取需要明确 id，不使用 filters；普通列表查询仍为单表记录。当前不包含 JSON 内部字段筛选、区间交叠查询或自动展开子树。
 
 update 只修改传入字段，JSON 字段整体替换。delete 只删除指定记录，不级联。目标不存在时返回 data = null、applied = false；空修改、修改成相同值也不产生改动日志。改号、迁移不属于本版普通 update。
+
+工具表由 register_tables 预先声明；dispatch 直接复用本库声明，不需要加载原工具代码。工具表使用记录字典，full=true 的模型装载组合仍仅适用于层和对象。接入方式见[工具表开发指导](../../../../../docs/build-with-layerweave/03-managed-tables.md)。
 
 批量请求使用已知的编号，不解释临时变量或结果引用表达式。若需要把刚创建的编号立即交给下一步，可以用 layerweave.support.api.transaction 或 run_operation 组合写会话原语，使用入口分配的 operation_id。
 

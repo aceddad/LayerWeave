@@ -47,6 +47,13 @@ changed = dispatch(c, {"action":"update", "kind":"object", "project_id":p, "id":
 assert changed["ok"] and changed["checks"]["status"] == "completed", changed
 assert undo_operation(c, changed["operation_id"])["ok"]
 assert read_object(c, p, title.id)["tips"] == ""
+from layerweave.support.api import register_tables, run_operation, read_record
+register_tables(c, {"audit_entry": {"fields": {"data": {"type": "JSON", "default": {}}, "object_id": "INTEGER"},
+                                    "references": [{"fields": ["project_id", "object_id"], "kind": "object"}]}})
+entry = run_operation(c, lambda w: w.create("audit_entry", {"data": {"ok": True}, "object_id": title.id}, project_id=p))
+assert entry["ok"] and entry["data"]["data"]["ok"] is True, entry
+assert undo_operation(c, entry["operation_id"])["ok"]
+assert read_record(c, "audit_entry", project_id=p) == []
 assert read_support("combined", "text")["status"] == "completed"
 commands = command_help()
 assert len(commands["items"]) == 27 and commands["status"] == "completed", commands
@@ -71,7 +78,7 @@ assert installed["route"] == "tool/skills/scenarios/downloaded/SKILL.md"
 for name, module in hosts.items():
     assert module is sys.modules[name] and module.MARKER == "host:" + name
 c.close()
-print("namespace, model roundtrip, commands, config/schema and skills passed")
+print("namespace, model roundtrip, tool tables/undo, commands, config/schema and skills passed")
 '''
 
 

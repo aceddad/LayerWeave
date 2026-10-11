@@ -11,50 +11,16 @@ from layerweave.support.positions import PositionMath, numeric_position
 from layerweave.support.storage.database import allocate_id
 from layerweave.support.storage.journal import append_change, json_text
 from layerweave.support.storage.errors import execute
+from .tables import SPECS, get_spec
 
 
-# 字段列表只用于确定 SQL 列和托管字段，不校验封装内容。
-SPECS = {
-    "project": {
-        "table": "projects", "fields": ("name", "tips"),
-        "extra": ("max_id",), "json": (), "scoped": False, "order": '"id"',
-    },
-    "layer": {
-        "table": "layers", "fields": ("name", "type", "config_ref", "father", "axis", "tips"),
-        "extra": (), "json": ("axis",), "scoped": True, "order": '"id"',
-    },
-    "object": {
-        "table": "objects", "fields": ("name", "config_ref", "layer", "begin", "end", "information", "tips"),
-        "extra": (), "json": ("information",), "scoped": True, "order": '"begin", "end", "id"',
-    },
-    "bind": {
-        "table": "binds", "fields": (
-            "source_kind", "source_project_id", "source_id",
-            "target_kind", "target_project_id", "target_id", "tips",
-        ),
-        "extra": (), "json": (), "scoped": False, "order": '"id"',
-    },
-    "change": {
-        "table": "changes", "fields": (),
-        "extra": ("operation_id", "created_at", "kind", "project_id", "target_id", "action", "before_data", "after_data", "undo_of"),
-        "json": ("before_data", "after_data"), "scoped": False, "order": '"id"',
-    },
-}
-
-
-def _spec(kind, *, writing=False):
-    if kind not in SPECS:
-        allowed = [name for name in SPECS if not writing or name != "change"]
-        suffix = "；change 仅支持 read" if not writing else ""
-        raise InputError(f"未知 kind：{kind}{suffix}", code="unknown_kind", field="kind", allowed=allowed)
-    if writing and kind == "change":
-        raise InputError("改动日志由写操作记录，change 仅支持 read", code="readonly_kind", field="action", allowed=["read"])
-    return SPECS[kind]
+def _spec(kind, *, writing=False, connection=None):
+    return get_spec(connection, kind, writing=writing)
 
 
 def _scope(spec, project_id):
     if spec["scoped"] and project_id is None:
-        raise ValueError("层和对象需要 project_id")
+        raise ValueError("按项目管理的记录需要 project_id")
     if not spec["scoped"] and project_id is not None:
         raise ValueError("此种记录使用独立 id；项目条件请放入 filters 的实际字段中")
 
@@ -75,7 +41,7 @@ def _encode(spec, data):
         raise InputError(f"不能写入这些字段：{', '.join(sorted(unknown))}", code="unknown_fields",
                          field=", ".join(sorted(unknown)), allowed=list(spec["fields"]), suggestions=suggestions)
     return {
-        key: (None if key == "axis" and value is None else json_text(value))
+        key: (None if spec["table"] == "layers" and key == "axis" and value is None else json_text(value))
         if key in spec["json"] else value
         for key, value in data.items()
     }
@@ -117,7 +83,7 @@ def _where(spec, project_id, id, filters):
 
 def read(connection, kind, *, project_id=None, id=None, filters=None):
     """按 id 返回单条或 None；不传 id 返回列表。JSON 字段解码为 Python 值。"""
-    spec = _spec(kind)
+    spec = _spec(kind, connection=connection)
     where, values = _where(spec, project_id, id, filters)
     cursor = connection.execute(
         f'SELECT * FROM "{spec["table"]}"{where} ORDER BY {spec["order"]}', values,
@@ -153,7 +119,7 @@ def _positions(connection, values, project_id, before=None, math=None):
 def create(connection, kind, data, *, operation_id, project_id=None, position_math=None):
     """创建记录及日志，返回新记录和变更描述；调用方提交或回滚。"""
     require_session(connection, operation_id)
-    spec = _spec(kind, writing=True)
+    spec = _spec(kind, writing=True, connection=connection)
     _scope(spec, project_id)
     values = _encode(spec, data)
     if kind == "object":
@@ -185,7 +151,7 @@ def _insert(connection, kind, spec, values, *, operation_id, project_id=None):
 def update(connection, kind, id, data, *, operation_id, project_id=None, position_math=None):
     """修改明确传入的字段；JSON 字段整体替换。记录缺失或无变化时不记日志。"""
     require_session(connection, operation_id)
-    spec = _spec(kind, writing=True)
+    spec = _spec(kind, writing=True, connection=connection)
     if id is None:
         raise ValueError("update 需要明确的 id")
     values = _encode(spec, data)
@@ -221,7 +187,7 @@ def update(connection, kind, id, data, *, operation_id, project_id=None, positio
 def delete(connection, kind, id, *, operation_id, project_id=None):
     """仅删除指定记录，返回删除前的数据；记录不存在时返回 None 且不记日志。"""
     require_session(connection, operation_id)
-    spec = _spec(kind, writing=True)
+    spec = _spec(kind, writing=True, connection=connection)
     if id is None:
         raise ValueError("delete 需要明确的 id")
     before = read(connection, kind, project_id=project_id, id=id)

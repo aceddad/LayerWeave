@@ -13,6 +13,7 @@ from .storage.models import load_layer, load_object
 from .storage.save import save_layer, save_object
 from .storage.queries import query_objects, read_bindings, read_layer_positions
 from .storage.details import read_project_details
+from .storage.tables import register_tables, table_specs
 
 
 def diagnostic_report(issues, *, config_root=None):

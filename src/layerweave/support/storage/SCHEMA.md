@@ -26,6 +26,8 @@ python -X utf8 -B -m layerweave.tool.builtin.developer.database.cli output/ai-pr
 | binds | 两端各自记录 kind、project_id、id，另存 tips 和全库递增、不复用的独立 id |
 | changes | 内部 id、operation_id、UTC 时间、目标种类/项目/编号、动作、前后 JSON 快照；undo_of 记录撤销来源 |
 
+register_tables 可按工具声明创建额外的托管表；首次接入时建立 _layerweave_tables 保存声明，普通初始化仍只有上述五张表。工具表的字段、身份和引用详见[接入说明](../../../../docs/build-with-layerweave/03-managed-tables.md)。现有 kinds 及存储列不因此改变。
+
 - `config_ref` 是两类实体的存储元数据，路径相对于项目的 `src/layerweave/configs/`，例如 `objects/image.toml`。它给读取配置、恢复对应 Python 类提供依据，不添加到基础类中。
 - 层的 `type` 保存 TOML 中的类型标识，Python 类不再声明同名字符串。save_layer 自动取得它；dispatch 在省略 type 且提供 config_ref 时也会补齐。低层 crud 不读配置，仍写入调用方提供的原始 type/config_ref，独立检测负责报告矛盾。
 - 对象的 begin/end 在 CRUD 写入时按适用轴精度落点，缺少精度用 1e-6；直接 SQL 不经过该过程。更新只归一提交的坐标，换层时两端都按目标层精度归一；其他字段更新不改旧坐标。日志记录实际落点后的值。
@@ -40,7 +42,7 @@ python -X utf8 -B -m layerweave.tool.builtin.developer.database.cli output/ai-pr
 
 ## 编号身份
 
-项目使用独立编号；同一项目内，层与对象共用发号器，不同项目可以有相同的局部编号。层/对象的完整身份是 (project_id, id)，引用还携带 kind 区分实体种类；text/image 等封装 type 与 kind 分开。项目编号和全库独立的 bind 编号均不占 projects.max_id。
+项目使用独立编号；同一项目内，层、对象与 scoped=true 的工具表共用发号器，不同项目可以有相同的局部编号。这些记录的完整身份是 (project_id, id)，引用还携带 kind 区分种类；text/image 等封装 type 与 kind 分开。项目、bind 与 scoped=false 工具表分别使用各表的独立编号，不占 projects.max_id。
 
 ## 发号与写入
 
@@ -62,7 +64,7 @@ with closing(open_database(path)) as connection:
 
 关联经统一 CRUD 入口创建，binds.id 由 SQLite AUTOINCREMENT 保持全库递增，不占 projects.max_id。initialize_database 还会升级旧关联表并补上 changes.undo_of；关联发号起点同时参考现存行和已删除记录的历史最大编号，保留旧数据及索引。普通打开连接不会自动迁移；旧库写入前运行初始化命令，详见 [历史与恢复](../../tool/builtin/usage/HISTORY.md)。
 
-两个实体表的主键各自防止同表重号，跨表共享编号由统一发号和恢复入口保证。直接 SQL 会绕过日志与结构保证，不属于工具的受支持写入接口。建表脚本没有额外触发器。
+各托管表的主键防止同表重号，按项目的跨表共享编号由统一发号和恢复入口保证。直接 SQL 会绕过日志与结构保证，不属于工具的受支持记录写入接口。工具声明通过 register_tables 交给支撑维护；建表脚本没有额外触发器。
 
 CDUR 请求由 records 包的 dispatch 翻译，最终通过支撑写会话执行。开发其他工具直接使用 transaction/run_operation，无需依赖 CDUR 包；记录原语只在统一写会话内工作。
 

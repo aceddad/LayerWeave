@@ -112,10 +112,11 @@ describe('空当', () => {
     expect(gapAt(objects, 13)).toEqual({kind: 'after', last: 12});
   });
 
-  it('轨道里的空当：只算对象之间，几个小行合起来算，瞬间对象也算分界', () => {
+  it('轨道里的空当：只算有时长的对象之间，几个小行合起来算；瞬间标记不分割、也不单独成空当', () => {
     expect(trackGaps([{begin: 0, end: 2}, {begin: 3, end: 5}, {begin: 4, end: 8}, {begin: 8, end: 8}, {begin: 10, end: 12}]))
       .toEqual([{from: 2, to: 3}, {from: 8, to: 10}]);
-    expect(trackGaps([{begin: 4, end: 8}, {begin: 9, end: 9}, {begin: 10, end: 12}])).toEqual([{from: 8, to: 9}, {from: 9, to: 10}]);
+    expect(trackGaps([{begin: 4, end: 8}, {begin: 9, end: 9}, {begin: 10, end: 12}])).toEqual([{from: 8, to: 10}]);
+    expect(trackGaps([{begin: 1, end: 1}, {begin: 3, end: 3}, {begin: 5, end: 5}])).toEqual([]);   // 一整条小节线
     expect(trackGaps([{begin: 0, end: 2.0004}, {begin: 2.0006, end: 3}], 0.0005)).toEqual([]);
   });
 

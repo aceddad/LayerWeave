@@ -20,10 +20,11 @@ export function gapAt(objects: {begin: number; end: number}[], t: number, near =
   return {kind: 'between', from: last, to: next};
 }
 
-// 一条轨道里对象之间的空当（几个小行合起来算：任何一个小行有对象就不算空）。瞬间对象也算分界。
+// 一条轨道里对象之间的空当（几个小行合起来算：任何一个小行有对象就不算空）。
+// 只看有时长的对象：瞬间对象（小节线、卡点这类标记）之间的距离不是"空着"，标出来只会刷满一条轨道。
 // min：短于它的不算（按轴精度的一半，免得浮点误差画出 0.000 的空当）
 export function trackGaps(items: {begin: number; end: number}[], min = 1e-9): {from: number; to: number}[] {
-  const sorted = [...items].sort((p, q) => p.begin - q.begin || p.end - q.end);
+  const sorted = items.filter((it) => it.end > it.begin).sort((p, q) => p.begin - q.begin || p.end - q.end);
   const out: {from: number; to: number}[] = [];
   let cursor = -Infinity;
   for (const it of sorted) {

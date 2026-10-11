@@ -1,4 +1,5 @@
-// 音频波形：浏览器自己解码，峰值按文件缓存
+// 音频波形：浏览器自己解码，按文件缓存。画每一小段的平均能量（RMS），按分贝对整首最响处归一：
+// 现在的流行曲响度大、峰值处处顶满，按峰值画会是一整条色块，看不出段落起伏
 import {useEffect, useRef} from 'react';
 
 const peaks = new Map<string, Promise<number[] | null>>();
@@ -9,13 +10,15 @@ export const pendingWaves = () => [...peaks.values()];
 function peaksFor(url: string) {
   if (!peaks.has(url)) {
     peaks.set(url, fetch(url).then((r) => r.arrayBuffer()).then((buf) => (audio ??= new AudioContext()).decodeAudioData(buf)).then((decoded) => {
-      const data = decoded.getChannelData(0), n = 400, size = Math.floor(data.length / n) || 1, out: number[] = [];
+      const data = decoded.getChannelData(0), n = 800, size = Math.floor(data.length / n) || 1, out: number[] = [];
       for (let i = 0; i < n; i++) {
-        let m = 0;
-        for (let j = i * size; j < (i + 1) * size && j < data.length; j++) m = Math.max(m, Math.abs(data[j]));
-        out.push(m);
+        let sum = 0, count = 0;
+        for (let j = i * size; j < (i + 1) * size && j < data.length; j++) { sum += data[j] * data[j]; count++; }
+        out.push(Math.sqrt(sum / Math.max(1, count)));
       }
-      return out;
+      // 按分贝画：整首最响处为顶，往下 18 dB 铺满高度（流行曲段落之间常常只差几 dB）
+      const top = Math.max(...out) || 1;
+      return out.map((v) => Math.min(1, Math.max(0.04, (20 * Math.log10(Math.max(v, 1e-6) / top) + 18) / 18)));
     }).catch(() => null));
   }
   return peaks.get(url)!;

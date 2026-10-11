@@ -5,6 +5,7 @@
 | 想了解什么 | 示例脚本 |
 |---|---|
 | 写入、关闭重开、装载 Python 类、再次保存 | [read_write.py](../examples/read_write.py) |
+| 视图复用层编号、自定义发号簇和原身份恢复 | [numbering.py](../examples/numbering.py) |
 | 基础 CRUD 与事务日志 | [crud.py](../examples/crud.py) |
 | 工具表与核心记录共用历史、撤销和恢复 | [tool_tables.py](../examples/tool_tables.py) |
 | 自动登记基础部分、全部内部工具与版本工具自身 | [versions.py](../examples/versions.py) |

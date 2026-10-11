@@ -29,6 +29,7 @@ python -m venv .venv
 | 工具包登记自己的层或对象类型 | [工具包登记类型](../src/layerweave/tool/builtin/developer/TOOL_TYPES.md) |
 | 修改结构、事务或存储 | [基础支撑](../src/layerweave/support/README.md)、[表结构](../src/layerweave/support/storage/SCHEMA.md) |
 | 让工具的专属表接入统一管理 | [工具表开发指导](build-with-layerweave/03-managed-tables.md)，复用 register_tables 与现有写会话 |
+| 自定义记录 ID、登记发号规则与簇 | [编号模块](../src/layerweave/support/numbering/README.md)，provided 表或开发者发号接口 |
 | 修改内容检测 | [检测包](../src/layerweave/tool/builtin/usage/validation/README.md) |
 | 编写或安装外置技能 | [工具区](../src/layerweave/tool/README.md)、[ZIP 安装](../src/layerweave/tool/builtin/developer/SKILLS.md) |
 | 管理本地 KEY 或接入其他模型服务的凭据 | [KEY 工具](../src/layerweave/tool/builtin/developer/keys/README.md)，不依赖业务数据库 |
@@ -78,7 +79,7 @@ test_namespace.py 验证宿主同名模块不会干扰公开导入、保存和�
 
 ```sh
 python -m pip wheel --no-deps --wheel-dir scratch/namespace-dist .
-python tests/check_wheel.py scratch/namespace-dist/layerweave-0.1.0-py3-none-any.whl
+python tests/check_wheel.py scratch/namespace-dist/layerweave-0.2.0-py3-none-any.whl
 ```
 
 check_wheel.py 将 wheel 用 pip 安装到临时目标，以禁用 site 的独立进程验证；源码目录不参与导入。它检查只有 layerweave 顶层包、同名模块冲突、默认配置、数据库 schema 和技能正文/脚本。临时目录自动清理，不写用户数据库。

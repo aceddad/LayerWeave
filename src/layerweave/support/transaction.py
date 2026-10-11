@@ -51,6 +51,14 @@ class WriteSession:
 _active = ContextVar("layerweave_write_session", default=None)
 
 
+def current_write_session():
+    """支撑组件复用当前写事务，调用方无需给每个组件重复传连接。"""
+    session = _active.get()
+    if session is None or not session.writing:
+        raise RuntimeError("发号需要在 transaction 或 run_operation 的写会话内调用")
+    return session
+
+
 def require_session(connection, operation_id=None):
     session = _active.get()
     if session is None or session.connection is not connection or not session.writing:
@@ -89,6 +97,22 @@ def _check_parents(session):
         checked.update((project_id, item) for item in path)
 
 
+def _check_numbering(session):
+    """按提交后的最终状态检查同簇占用，允许批内移走旧占用再恢复原记录。"""
+    from .numbering.state import check_cluster, cluster_identity
+    from .storage.tables import get_spec
+    connection = session.connection
+    targets = {(c["kind"], c["project_id"], c["id"]) for c in session._changes if c["after"] is not None
+               and (c["before"] is None or cluster_identity(connection, c["kind"], c["before"]) !=
+                    cluster_identity(connection, c["kind"], c["after"]))}
+    for kind, project_id, id in targets:
+        # 项目/关联日志的 project_id 是上下文，不是其记录主键的一部分。
+        scope = project_id if get_spec(connection, kind)["scoped"] else None
+        current = session.read(kind, project_id=scope, id=id)
+        if current is not None:
+            check_cluster(connection, kind, current)
+
+
 @contextmanager
 def transaction(connection, *, writing=True, _operation_id=None):
     """独占本次事务；成功提交实际记录/发号/日志，异常共同回滚，不接管调用方事务。"""
@@ -101,6 +125,7 @@ def transaction(connection, *, writing=True, _operation_id=None):
             connection.execute("BEGIN IMMEDIATE" if writing else "BEGIN")
             yield session
             _check_parents(session)
+            _check_numbering(session)
             # 显式提交让错误说明能读到失败现场；异常仍由 with connection 整体回滚。
             commit(connection)
     finally:

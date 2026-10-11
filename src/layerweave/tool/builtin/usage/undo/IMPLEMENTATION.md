@@ -26,7 +26,7 @@ information、axis 的整体比较以及 create/delete 的记录比较，详见�
 
 ## 编号与旧表升级
 
-恢复项目时结合当前状态、行记录和日志中的编号保留发号上界。项目 max_id 不参与内容冲突比较。
+恢复计数行时结合当前状态、簇成员及日志保留发号上界；project.max_id 和已登记工具计数列不参与内容冲突比较。编号冲突只比较同簇同范围的成员，provided 簇外表不参与跨表排斥；发号说明见[编号模块](../../../../support/numbering/README.md)。
 
 database.upgrade_history 负责将关联表升级为 AUTOINCREMENT，并增加 changes.undo_of。迁移保留索引和触发器，发号起点覆盖现存与已删除历史编号；旧日志 undo_of 为 NULL。重复初始化不降低序列，也不改写历史中已发生的编号复用。
 

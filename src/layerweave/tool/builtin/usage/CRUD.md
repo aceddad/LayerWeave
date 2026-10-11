@@ -6,6 +6,8 @@
 
 判断本次数据库操作是否写入，先看 operation.status；checks 只说明检查进度及发现的问题，不能据此重试创建。committed 表示有变更已提交，unchanged 表示成功但无变更，failed 表示操作失败，read 表示只读成功。批次中具体改了哪些记录，再看 operation.changes 和 results；这套协议适用于数据库操作，不要求本地 KEY 或技能安装等文件工具采用同样的返回格式。
 
+工具表声明 id_source="provided" 后，create 的 data 中必须包含正整数 id；project_id 仍放请求外层。其他自动发号表不接受手填 data.id。成员关系与外部 ID 示例见[编号模块](../../../support/numbering/README.md)。
+
 ## 请求格式
 
 单次请求是一个字典；批量请求是这样的字典列表。列表内操作按顺序在同一事务执行，一项操作失败则整批回滚。

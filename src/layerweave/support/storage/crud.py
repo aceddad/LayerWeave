@@ -8,7 +8,6 @@ from layerweave.support.values import same_value
 from layerweave.support.transaction import require_session
 from layerweave.support.feedback import InputError
 from layerweave.support.positions import PositionMath, numeric_position
-from layerweave.support.storage.database import allocate_id
 from layerweave.support.storage.journal import append_change, json_text
 from layerweave.support.storage.errors import execute
 from .tables import SPECS, get_spec
@@ -55,6 +54,16 @@ def _decode(spec, row):
         if record[key] is not None:
             record[key] = json.loads(record[key])
     return record
+
+
+def _encode_create(spec, data):
+    if not isinstance(data, dict) or spec.get("id_source", "auto") != "provided":
+        return _encode(spec, data)
+    values = dict(data)
+    id = values.pop("id", None)
+    if type(id) is not int or id < 1:
+        raise InputError("此表由调用方提供编号，创建时 data.id 需要正整数", code="provided_id", field="id")
+    return {"id": id, **_encode(spec, values)}
 
 
 def _where(spec, project_id, id, filters):
@@ -121,7 +130,7 @@ def create(connection, kind, data, *, operation_id, project_id=None, position_ma
     require_session(connection, operation_id)
     spec = _spec(kind, writing=True, connection=connection)
     _scope(spec, project_id)
-    values = _encode(spec, data)
+    values = _encode_create(spec, data)
     if kind == "object":
         values = _positions(connection, values, project_id, math=position_math)
     return _insert(connection, kind, spec, values, operation_id=operation_id, project_id=project_id)
@@ -130,8 +139,22 @@ def create(connection, kind, data, *, operation_id, project_id=None, position_ma
 def _insert(connection, kind, spec, values, *, operation_id, project_id=None):
     """插入已编码字段并统一发号/记日志；迁移复用此处保留已有坐标数值。"""
     require_session(connection, operation_id)
+    from layerweave.support.numbering import allocate
+    from layerweave.support.numbering.registry import entry_for
+    from layerweave.support.numbering.state import advance_member_counter, preserve_counters
+    values = dict(values)
     if spec["scoped"]:
-        values = {"project_id": project_id, "id": allocate_id(connection, project_id), **values}
+        values["project_id"] = project_id
+    supplied = "id" in values
+    member = entry_for(connection, kind)
+    if not supplied and member is not None:
+        parameters = {field: column["default"] for field, column in spec.get("columns", {}).items() if "default" in column}
+        identity = allocate(member[0], data={**parameters, **values})
+        if set(identity) - {"id", "project_id"} or ("project_id" in identity and identity["project_id"] != project_id):
+            raise InputError("发号规则返回的身份与目标表的项目范围不一致", code="numbering_result")
+        values["id"] = identity["id"]
+    elif not supplied and spec["scoped"]:
+        raise InputError("按项目自动发号的表需要所属发号词条", code="numbering_membership")
     if values:
         columns = ", ".join(f'"{key}"' for key in values)
         placeholders = ", ".join("?" for _ in values)
@@ -142,8 +165,17 @@ def _insert(connection, kind, spec, values, *, operation_id, project_id=None):
     else:
         cursor = execute(connection, f'INSERT INTO "{spec["table"]}" DEFAULT VALUES', (),
                          kind=kind, record=values, action="create")
-    record_id = values["id"] if spec["scoped"] else cursor.lastrowid
+    record_id = values.get("id", cursor.lastrowid)
     record = read(connection, kind, project_id=project_id, id=record_id)
+    preserved = preserve_counters(connection, kind, record)
+    advanced = {field: value for field, value in preserved.items() if value != record.get(field)}
+    if advanced:
+        where, keys = _where(spec, project_id, record_id, None)
+        assignments = ", ".join(f'"{field}"=?' for field in advanced)
+        connection.execute(f'UPDATE "{spec["table"]}" SET {assignments}{where}', [*advanced.values(), *keys])
+        record = read(connection, kind, project_id=project_id, id=record_id)
+    if supplied:
+        advance_member_counter(connection, kind, record)
     change = append_change(connection, operation_id, kind, None, record)
     return record, change
 
@@ -160,6 +192,9 @@ def update(connection, kind, id, data, *, operation_id, project_id=None, positio
         return before, None
     if kind == "object":
         values = _positions(connection, values, project_id, before, position_math)
+    from layerweave.support.numbering.state import check_counter_update, cluster_identity, advance_member_counter
+    check_counter_update(connection, kind, before, values)
+    moved_scope = cluster_identity(connection, kind, before) != cluster_identity(connection, kind, {**before, **values})
     changed = {}
     for key, value in values.items():
         if key in spec["json"]:
@@ -180,6 +215,8 @@ def update(connection, kind, id, data, *, operation_id, project_id=None, positio
         [*changed.values(), *key_values], kind=kind, record={**before, **values}, action="update",
     )
     after = read(connection, kind, project_id=project_id, id=id)
+    if moved_scope:
+        advance_member_counter(connection, kind, after)
     change = append_change(connection, operation_id, kind, before, after)
     return after, change
 

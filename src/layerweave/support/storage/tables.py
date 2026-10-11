@@ -43,6 +43,8 @@ def table_specs(connection=None):
     if connection is not None and _exists(connection, CATALOG):
         result.update((row[0], json.loads(row[1])) for row in connection.execute(
             f"SELECT kind, definition FROM {quote(CATALOG)} ORDER BY kind"))
+    for spec in result.values():
+        spec.setdefault("id_source", "auto")
     return result
 
 
@@ -93,12 +95,15 @@ def _definition(kind, definition):
     _identifier(kind)
     if kind.lower() in SPECS:
         raise InputError("工具声明不能覆盖内置种类", code="table_definition", field="kind")
-    if set(definition) - {"table", "fields", "scoped", "references"}:
-        raise InputError("表声明支持 table、fields、scoped、references", code="table_definition")
+    if set(definition) - {"table", "fields", "scoped", "references", "id_source"}:
+        raise InputError("表声明支持 table、fields、scoped、references、id_source", code="table_definition")
     table = _identifier(definition.get("table", "tool_" + kind))
     scoped = definition.get("scoped", True)
     if type(scoped) is not bool:
         raise InputError("scoped 使用布尔值", code="table_definition", field="scoped")
+    id_source = definition.get("id_source", "auto")
+    if id_source not in {"auto", "provided"}:
+        raise InputError("id_source 使用 auto 或 provided", code="table_definition", field="id_source")
     columns = {}
     for field, declaration in definition.get("fields", {}).items():
         _identifier(field)
@@ -114,7 +119,7 @@ def _definition(kind, definition):
             refs.append(candidate)
     return {"table": table, "fields": list(columns), "columns": columns, "extra": [],
             "json": [name for name, column in columns.items() if column["type"] == "JSON"],
-            "scoped": scoped, "order": '"id"', "references": refs}
+            "scoped": scoped, "id_source": id_source, "order": '"id"', "references": refs}
 
 
 def _column_sql(name, column):
@@ -164,7 +169,7 @@ def register_tables(connection, definitions):
                     raise InputError(f"{kind} 的引用需要对应目标身份的整数列", code="table_definition", field="references")
             old = existing.get(kind)
             if old is not None:
-                if any(not same_value(spec[name], old[name]) for name in ("table", "scoped", "references")) or any(
+                if any(not same_value(spec[name], old[name]) for name in ("table", "scoped", "references", "id_source")) or any(
                     name not in spec["columns"] or not same_value(col, spec["columns"][name]) for name, col in old["columns"].items()):
                     raise InputError(f"{kind} 已登记；允许新增列，已有列、身份和引用保持不变", code="table_definition_changed")
             elif _exists(connection, spec["table"]):
@@ -184,6 +189,9 @@ def register_tables(connection, definitions):
             connection.execute(f'INSERT INTO {quote(CATALOG)} (kind,definition) VALUES (?,?) '
                                'ON CONFLICT(kind) DO UPDATE SET definition=excluded.definition',
                                (kind, json.dumps(spec, ensure_ascii=False, allow_nan=False)))
+        if proposed:
+            from layerweave.support.numbering.registry import numbering_entries, persist_entries
+            persist_entries(connection, numbering_entries(connection))
     return deepcopy(proposed)
 
 

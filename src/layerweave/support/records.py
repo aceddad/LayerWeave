@@ -4,7 +4,8 @@ from .storage import crud
 from .storage.restoration import restore as _restore
 from .transaction import require_session, defer_references
 from .storage.tables import table_specs, normalize_record
-from .storage.references import dependent_records, reference_key, id_occupants
+from .storage.references import dependent_records, reference_key
+from .numbering.state import cluster_occupants, cluster_identity
 
 
 def writable_fields(kind, *, connection=None):
@@ -17,7 +18,7 @@ def create_exact(connection, kind, data, *, operation_id, project_id=None):
     require_session(connection, operation_id)
     spec = crud._spec(kind, writing=True, connection=connection)
     crud._scope(spec, project_id)
-    return crud._insert(connection, kind, spec, crud._encode(spec, data),
+    return crud._insert(connection, kind, spec, crud._encode_create(spec, data),
                         operation_id=operation_id, project_id=project_id)
 
 

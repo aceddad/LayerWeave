@@ -30,6 +30,7 @@ def check(wheel):
                       if p.is_file() and "__pycache__" not in p.parts]
         resources += list(package.rglob("component.toml"))
         resources.append(package / "tool/builtin/developer/versions/README.md")
+        resources.append(package / "support/numbering/README.md")
         for path in resources:
             member = "layerweave/" + path.relative_to(package).as_posix()
             assert member in names, f"Missing package resource: {member}"

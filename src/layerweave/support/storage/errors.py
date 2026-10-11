@@ -71,7 +71,7 @@ def execute(connection, sql, parameters, *, kind, record, action):
         return connection.execute(sql, parameters)
     except sqlite3.IntegrityError as error:
         code = getattr(error, "sqlite_errorcode", None)
-        details = {"target": target(kind, record.get("project_id"), None if action == "create" else record.get("id"))}
+        details = {"target": target(kind, record.get("project_id"), record.get("id"))}
         if code == sqlite3.SQLITE_CONSTRAINT_FOREIGNKEY:
             explanation = _reference_failure(connection, kind, record, action)
             if explanation is not None:

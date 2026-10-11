@@ -40,7 +40,13 @@ write 提供 read(kind, ...)、create(kind, data, ...)、update(kind, id, data, 
 
 register_tables(connection, definitions) 创建工具声明的表，或在保留已有定义的情况下新增列；内部使用独立写会话，调用时连接没有待提交事务。table_specs(connection) 返回本数据库内置表与工具表的声明副本，普通读取不创建元数据表。
 
-声明持久化后，write 原语、read_record、dispatch、历史和撤销都能识别新 kind，无需依赖工具代码。按项目的工具表共享项目发号，独立表使用自身序列；日志仍由真实写入生成。字段、引用、结构升级和业务边界统一见[工具表开发指导](../../../docs/build-with-layerweave/03-managed-tables.md)。
+声明持久化后，write 原语、read_record、dispatch、历史和撤销都能识别新 kind，无需依赖工具代码。工具表默认自动发号，也可声明 id_source="provided"，创建时在 data.id 提供正整数。项目范围与簇成员分开管理；日志仍由真实写入生成。字段、引用、结构升级和业务边界统一见[工具表开发指导](../../../docs/build-with-layerweave/03-managed-tables.md)。
+
+## 发号与自定义身份
+
+allocate(name, data=...) 在当前写会话中调度发号规则，连接由会话提供；只更新计数并返回身份，不写业务行。register_numbering(connection, definitions) 登记词条、计数位置和成员；numbering_entries(connection) 只读查询登记。register_numbering_rule(name, function) 登记本进程的规则函数，规则可复用 increment(entry, data)。完整声明、计数保护和示例见[编号模块](numbering/README.md)。
+
+工具表的 provided 模式通过 data.id 接收正整数。未入簇的表只检查自身主键，允许与层、对象复用相同 (project_id, id)；加入同一计数范围的表共同遵守编号唯一约定。发号、业务记录和日志仍在同一事务内完成。
 
 ## 六个读写函数
 | 调用 | 返回 |

@@ -39,11 +39,3 @@ def dependent_records(connection, key, specs=None):
             for row in connection.execute(f'SELECT * FROM {quote(spec["table"])} WHERE {where}', values):
                 result.append((kind, _decode(spec, row), ref))
     return result
-
-
-def id_occupants(connection, project_id, id, specs=None):
-    """共享项目发号空间的已占用身份。"""
-    specs = table_specs(connection) if specs is None else specs
-    return [kind for kind, spec in specs.items() if spec["scoped"] and connection.execute(
-        f'SELECT 1 FROM {quote(spec["table"])} WHERE project_id=? AND id=?', (project_id, id),
-    ).fetchone() is not None]

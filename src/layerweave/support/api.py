@@ -14,6 +14,7 @@ from .storage.save import save_layer, save_object
 from .storage.queries import query_objects, read_bindings, read_layer_positions
 from .storage.details import read_project_details
 from .storage.tables import register_tables, table_specs
+from .numbering import allocate, register_numbering, numbering_entries, register_numbering_rule, increment
 
 
 def diagnostic_report(issues, *, config_root=None):

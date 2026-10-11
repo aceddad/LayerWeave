@@ -38,12 +38,12 @@ def _plan(connection, rows):
         plan[key]["lifecycle"] |= row["action"] != "update"
     conflicts = []
     for key, item in plan.items():
-        before, expected = content(key[0], item["restore"]), content(key[0], item["expected"])
+        before, expected = content(key[0], item["restore"], connection), content(key[0], item["expected"], connection)
         if same_value(before, expected):
             item["skip"] = True
             continue
         item["current"] = _read(connection, key)
-        current = content(key[0], item["current"])
+        current = content(key[0], item["current"], connection)
         if not item["lifecycle"] and before is not None and expected is not None:
             changed = [name for name in sorted(before.keys() | expected.keys())
                        if (name in before) != (name in expected) or not same_value(before.get(name), expected.get(name))]
@@ -96,12 +96,14 @@ def _dependencies(connection, plan):
                 parent = crud.reference_key(ref, restored, specs)
                 if parent is not None and final(parent) is None:
                     missing(key, ref["fields"][-1], parent)
-            if specs[kind]["scoped"] and item["current"] is None:
-                for other_kind, other_spec in specs.items():
-                    other = (other_kind, project_id, id)
-                    if other_kind != kind and other_spec["scoped"] and final(other) is not None:
-                        conflicts.append({"code": "undo_id_conflict", "target": _target(key),
-                                          "message": "原编号已被同项目的另一种实体占用", "related": [_target(other)]})
+            candidates = {_key(other_kind, row): row for other_kind, row in crud.cluster_occupants(connection, kind, restored, specs=specs)}
+            candidates.update({other: state["restore"] for other, state in plan.items() if state["restore"] is not None})
+            own_cluster = crud.cluster_identity(connection, kind, restored)
+            for other in candidates:
+                other_row = final(other)
+                if other != key and other_row is not None and own_cluster is not None and crud.cluster_identity(connection, other[0], other_row) == own_cluster:
+                    conflicts.append({"code": "undo_id_conflict", "target": _target(key),
+                                      "message": "原编号已被同簇的另一条记录占用", "related": [_target(other)]})
             continue
         for dependent, row, ref in crud.dependent_records(connection, key, specs):
             child_key = _key(dependent, row)

@@ -31,7 +31,7 @@ def _project_ids(row):
     return {row["project_id"]} if row["project_id"] is not None else set()
 
 
-def _operation(rows, *, detail=False, matched_count=None):
+def _operation(rows, *, detail=False, matched_count=None, connection=None):
     changes = []
     for row in rows:
         before, after, kind = row["before_data"], row["after_data"], row["kind"]
@@ -39,7 +39,7 @@ def _operation(rows, *, detail=False, matched_count=None):
                 "target": target(kind, row["project_id"], row["target_id"]),
                 "name": (after or before).get("name", "")}
         if row["action"] == "update":
-            item["fields"] = differences(content(kind, before), content(kind, after))
+            item["fields"] = differences(content(kind, before, connection), content(kind, after, connection))
         if detail:
             item.update(before=before, after=after)
         changes.append(item)
@@ -59,7 +59,7 @@ def read_history(connection, project_id=None, *, kind=None, id=None, operation_i
                 raise ValueError("按 operation_id 展开完整操作时不再提供项目、实体或分页范围")
             rows = operation_rows(connection, operation_id)
             return {"scope": {"operation_id": operation_id}, "operation_count": int(bool(rows)),
-                    "change_count": len(rows), "items": [_operation(rows, detail=True)] if rows else [], "next_cursor": None}
+                    "change_count": len(rows), "items": [_operation(rows, detail=True, connection=connection)] if rows else [], "next_cursor": None}
         if type(limit) is not int or limit < 1:
             raise ValueError("limit 应为正整数")
         if before is not None and (type(before) is not int or before < 1):
@@ -72,7 +72,7 @@ def read_history(connection, project_id=None, *, kind=None, id=None, operation_i
         if id is not None and specs[kind]["scoped"] and project_id is None:
             raise ValueError("按项目管理的记录历史需要 project_id")
         counts, page = operation_page(connection, project_id, kind=kind, id=id, limit=limit, before=before)
-        items = [_operation(operation_rows(connection, row["operation_id"]), detail=detail, matched_count=row["matched"])
+        items = [_operation(operation_rows(connection, row["operation_id"]), detail=detail, matched_count=row["matched"], connection=connection)
                  for row in page[:limit]]
         return {"scope": {"project_id": project_id, "kind": kind, "id": id},
                 "operation_count": counts[0], "change_count": counts[1], "items": items,

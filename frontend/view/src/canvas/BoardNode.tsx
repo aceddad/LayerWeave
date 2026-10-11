@@ -7,6 +7,7 @@ import type {RefObject} from 'react';
 import {useShallow} from 'zustand/react/shallow';
 import {clickBoard, pickLayer, splitRoot, toggleCollapse} from '../actions';
 import {timeZoom, toFlow, xToTime} from '../camera';
+import {decimalsOf, fmtLength} from '../model/gaps';
 import {externalLabels} from '../model/labels';
 import type {BoardLayout, SectionLayout} from '../model/model';
 import {LANE, NAMES, PAD, keyOf, rootsOf} from '../model/model';
@@ -58,6 +59,19 @@ function Ruler({board, layout}: {board: Board; layout: BoardLayout}) {
   );
 }
 
+// 轨道里的空当：|— 3.000 —|，位数按轴的精度。屏幕上放得下数字才写数字，太窄只画两头的竖线，再窄就不画
+function Gaps({gaps, a, pps, decimals, unit}: {gaps: {from: number; to: number}[]; a: number; pps: number; decimals: number | null; unit: string}) {
+  const zoom = useFlowStore((s) => Math.exp(Math.round(Math.log(s.transform[2]) * 10) / 10));
+  return <>{gaps.map(({from, to}) => {
+    const w = (to - from) * pps, label = fmtLength(to - from, decimals), screen = w * zoom;
+    if (screen < 6) return null;
+    return <div key={from} className="gap" style={{left: (from - a) * pps, width: w}}
+                title={`空着 ${label}${unit ? ' ' + unit : ''}（${fmt(from, unit)} – ${fmt(to, unit)}）`}>
+      {screen >= label.length * 6.5 + 18 && <span>{label}</span>}
+    </div>;
+  })}</>;
+}
+
 function Section({board, layout, sec}: {board: Board; layout: BoardLayout; sec: SectionLayout}) {
   const model = useModel()!;
   const {selected, collapsed, targetLayer, frames, project, noteFocus} = useStore(useShallow((s) => ({
@@ -75,6 +89,7 @@ function Section({board, layout, sec}: {board: Board; layout: BoardLayout; sec: 
   };
   const external = useMemo(() => externalLabels(model), [model]);
   const key = keyOf(board), many = rootsOf(board).length > 1, {a, pps, unit} = layout;
+  const decimals = decimalsOf(model.precisionOf(sec.row[0]));
 
   const onTracksClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -122,8 +137,9 @@ function Section({board, layout, sec}: {board: Board; layout: BoardLayout; sec: 
             {many && <button className="split nodrag" title="把这一段拆出去，单独成一块画板" onClick={() => splitRoot(s.root)}>拆出</button>}
           </span>)}
         </div>}
-        {sec.tracks.map(({track, height, items}) => (
+        {sec.tracks.map(({track, height, items, gaps}) => (
           <div key={track.key} className="track" style={{height}}>
+            <Gaps gaps={gaps} a={a} pps={pps} decimals={decimals} unit={unit} />
             {items.map((it) => <ObjectBlock key={it.o.id} item={it} a={a} pps={pps} unit={unit} project={project} frames={frames}
               selected={it.o.id === selected} hot={hot.has(`object:${it.o.id}`)} mark={marks.changed.get(it.o.id)} notes={notes?.index.get(`object:${it.o.id}`)}
               external={external.get(it.o.id)} />)}

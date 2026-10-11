@@ -2,7 +2,7 @@
 import {describe, expect, it} from 'vitest';
 import {changeMarks} from '../changes';
 import {cutList} from '../cuts';
-import {gapAt} from '../gaps';
+import {decimalsOf, fmtLength, gapAt, trackGaps} from '../gaps';
 import {refLabel, relationsOf} from '../labels';
 import {linkQuery} from '../link';
 import {cutPoints, editPoints, stepObject, stepTime, stepTrack} from '../navigate';
@@ -110,6 +110,23 @@ describe('空当', () => {
     expect(gapAt(objects, 4)).toEqual({kind: 'between', from: 3, to: 6});
     expect(gapAt(objects, 9)).toEqual({kind: 'between', from: 9, to: 12});
     expect(gapAt(objects, 13)).toEqual({kind: 'after', last: 12});
+  });
+
+  it('轨道里的空当：只算对象之间，几个小行合起来算，瞬间对象也算分界', () => {
+    expect(trackGaps([{begin: 0, end: 2}, {begin: 3, end: 5}, {begin: 4, end: 8}, {begin: 8, end: 8}, {begin: 10, end: 12}]))
+      .toEqual([{from: 2, to: 3}, {from: 8, to: 10}]);
+    expect(trackGaps([{begin: 4, end: 8}, {begin: 9, end: 9}, {begin: 10, end: 12}])).toEqual([{from: 8, to: 9}, {from: 9, to: 10}]);
+    expect(trackGaps([{begin: 0, end: 2.0004}, {begin: 2.0006, end: 3}], 0.0005)).toEqual([]);
+  });
+
+  it('画布上的空当跟着接续偏移走：第一章的画面 8–9 空着，接缝两边紧接', () => {
+    const m = model(chapters());
+    expect(m.trackLayout(m.rowTracks([1, 10])[1], [1, 10]).gaps).toEqual([{from: 8, to: 9}]);
+  });
+
+  it('长度的位数按轴的精度', () => {
+    expect([decimalsOf(0.001), decimalsOf(1), decimalsOf(0.5), decimalsOf(0.25), decimalsOf(1 / 24), decimalsOf(undefined)]).toEqual([3, 0, 1, 2, 2, null]);
+    expect([fmtLength(3, 3), fmtLength(2.9999999, 3), fmtLength(24, 0), fmtLength(1.5, null)]).toEqual(['3.000', '3.000', '24', '1.5']);
   });
 
   it('有对象、落在瞬间对象上、整层没有对象：都不算空当', () => {

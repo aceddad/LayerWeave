@@ -1,5 +1,6 @@
-// 播放头落在层里没有对象的地方时，说清楚是哪种空：两个对象之间空着（从哪到哪）、还没开始、已经结束。
-// 只在"此刻"面板里写出来，画布上不加标记（空当本来就看得见，缺的是长度和它是中间空还是后面没了）
+// 空当：一条轨道里两个对象之间没有东西的时间。
+// 画布上在空当里画一条标尺 |— 3.000 —|，写出长度（位数按轴的精度），AI 看截图不用再拿前后两个对象去算；
+// 第一个对象之前、最后一个之后不算空当，不画。"此刻"面板另外写出播放头落在哪种空里
 export type Gap =
   | {kind: 'between'; from: number; to: number}
   | {kind: 'before'; next: number}
@@ -18,3 +19,27 @@ export function gapAt(objects: {begin: number; end: number}[], t: number, near =
   if (next === Infinity) return {kind: 'after', last};
   return {kind: 'between', from: last, to: next};
 }
+
+// 一条轨道里对象之间的空当（几个小行合起来算：任何一个小行有对象就不算空）。瞬间对象也算分界。
+// min：短于它的不算（按轴精度的一半，免得浮点误差画出 0.000 的空当）
+export function trackGaps(items: {begin: number; end: number}[], min = 1e-9): {from: number; to: number}[] {
+  const sorted = [...items].sort((p, q) => p.begin - q.begin || p.end - q.end);
+  const out: {from: number; to: number}[] = [];
+  let cursor = -Infinity;
+  for (const it of sorted) {
+    if (cursor !== -Infinity && it.begin - cursor >= min) out.push({from: cursor, to: it.begin});
+    cursor = Math.max(cursor, it.begin, it.end);
+  }
+  return out;
+}
+
+// 轴精度 → 小数位数：精度写成小数要几位就是几位（0.001 → 3，0.25 → 2，1 → 0）；
+// 写不尽的（1/24 秒）按数量级取；没有精度时返回 null（按需要的位数写，最多 3 位）
+export function decimalsOf(precision: unknown): number | null {
+  const p = Number(precision);
+  if (!isFinite(p) || p <= 0) return null;
+  for (let k = 0; k <= 6; k++) if (Math.abs(p * 10 ** k - Math.round(p * 10 ** k)) < 1e-9 * 10 ** k) return k;
+  return Math.max(0, Math.ceil(-Math.log10(p)));
+}
+
+export const fmtLength = (d: number, decimals: number | null) => (decimals == null ? String(+d.toFixed(3)) : d.toFixed(decimals));

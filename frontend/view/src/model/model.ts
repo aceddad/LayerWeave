@@ -1,6 +1,7 @@
 // 项目数据加上视图设置以后的"画面模型"：画板分几行几段、每行哪些轨道、对象排在哪个小行、画板多宽多高。
 // 全是纯计算，不碰页面；画板的尺寸由数据直接算出来，排版（拼接、拆出、吸附）不需要量页面。
 import type {Board, Layer, Obj, ProjectData, Root} from '../types';
+import {trackGaps} from './gaps';
 
 export const NAMES = 200, HEAD = 34, RULER = 26, ROW = 46, LANE = 40, PAD = 3, GAP = 48, STRIP = 24;
 
@@ -11,7 +12,7 @@ export interface Track {
   parts: Part[]; hasChildren: boolean;
 }
 export interface Item { o: Obj; layer: Layer; offset: number; begin: number; end: number; lane: number }
-export interface TrackLayout { track: Track; collapseKey: string; height: number; items: Item[] }
+export interface TrackLayout { track: Track; collapseKey: string; height: number; items: Item[]; gaps: {from: number; to: number}[] }
 export interface SectionLayout {
   row: number[]; index: number; segments: Segment[]; tracks: TrackLayout[]; strip: boolean; height: number; top: number;
 }
@@ -62,6 +63,10 @@ export class Model {
   layer(id: number) { return this.layers.get(id); }
   object(id: number) { return this.objects.get(id); }
   unitOfRoot(id: number | null | undefined) { return (id != null && this.roots.get(id)?.unit) || ''; }
+  precisionOf(id: number | null | undefined): number | null {
+    const p = id != null ? Number(this.roots.get(id)?.axis?.precision) : NaN;
+    return isFinite(p) && p > 0 ? p : null;
+  }
   nameOf(id: number) { return this.roots.get(id)?.name || `层 ${id}`; }
   allObjects() { return [...this.objects.values()]; }
 
@@ -159,7 +164,8 @@ export class Model {
     const ln = lanes(raw);
     const items = raw.map((it, i) => ({...it, lane: ln[i]}));
     const n = Math.max(1, ...ln.map((k) => k + 1));
-    return {track, collapseKey: `${row[0]}|${track.key}`, height: Math.max(ROW, n * LANE + PAD * 2), items};
+    const gaps = trackGaps(items, (this.precisionOf(row[0]) ?? 1e-6) / 2);
+    return {track, collapseKey: `${row[0]}|${track.key}`, height: Math.max(ROW, n * LANE + PAD * 2), items, gaps};
   }
 
   // 画板的完整布局；返回 null 表示这块画板现在不画（收起的层、全被过滤掉）

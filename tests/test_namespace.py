@@ -49,7 +49,7 @@ assert undo_operation(c, changed["operation_id"])["ok"]
 assert read_object(c, p, title.id)["tips"] == ""
 assert read_support("combined", "text")["status"] == "completed"
 commands = command_help()
-assert len(commands["items"]) == 27 and commands["status"] == "completed", commands
+assert len(commands["items"]) == 33 and commands["status"] == "completed", commands
 from layerweave.tool.builtin.developer.keys.service import manage_keys, get_key
 key_store = Path.cwd() / "keys.local.json"
 assert manage_keys("init", store=key_store)["ok"]

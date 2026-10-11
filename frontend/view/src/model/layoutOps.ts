@@ -89,6 +89,24 @@ export function afterResize(boards: Board[], key: number, oldH: number, model: M
   return out;
 }
 
+// 数据变了（AI 折叠、加了层）以后画板可能变高、压到下面的画板：从上往下，压到的往下挪开。只往下推，不往上收
+export function separate(boards: Board[], model: Model): {boards: Board[]; changed: boolean} {
+  const out = clone(boards);
+  const placed = out.filter((b) => b.x != null && b.y != null && sizeOf(model, b).h).sort((p, q) => p.y! - q.y! || p.x! - q.x!);
+  let changed = false;
+  placed.forEach((b, i) => {
+    const me = {x: b.x!, w: sizeOf(model, b).w};
+    for (const o of placed.slice(0, i)) {
+      const h = sizeOf(model, o).h;
+      if (overlapX(me, {x: o.x!, w: sizeOf(model, o).w}) && b.y! < o.y! + h && o.y! < b.y! + sizeOf(model, b).h) {
+        b.y = o.y! + h + GAP;
+        changed = true;
+      }
+    }
+  });
+  return {boards: out, changed};
+}
+
 // 靠近别的画板边缘时吸附：左右上下对齐，或隔一个间距并排。只是摆放，不改变时间
 export function snap(pos: {x: number; y: number}, key: number, boards: Board[], model: Model, zoom: number): {x: number; y: number} {
   const me = boards.find((b) => keyOf(b) === key);

@@ -25,8 +25,11 @@ export function data(roots: Root[], layers: Layer[], binds: Bind[] = []): Projec
 
 // 画布宽 1290：自动缩放时 (1290 - 200 - 90) = 1000 像素铺满一块画板
 export function model(d: ProjectData, opts: Partial<ViewOptions> = {}): Model {
-  return new Model(d, {collapsed: new Set(), only: null, showHidden: false, canvasWidth: 1290, ...opts});
+  return new Model(d, {only: null, showHidden: false, canvasWidth: 1290, ...opts});
 }
+
+// 折叠这些层（数据库里视图的表 view_fold 读出来就是这个样子）
+export const folded = (d: ProjectData, ...layers: number[]): ProjectData => ({...d, folds: layers.map((layer) => ({layer, by: 'Claude'}))});
 
 // 两章接续用的项目：第一章 [0, 10] 有「画面」「字幕」，第二章 [0, 5] 有「字幕」，配乐 [0, 20] 单独一个根
 export function chapters() {

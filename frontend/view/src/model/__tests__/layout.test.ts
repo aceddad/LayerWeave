@@ -1,10 +1,10 @@
 // 排版操作和拖动拼接的判断。三块画板的高度：第一章、第二章各 3 条轨道 → 60+138+2 = 200；配乐 2 条 → 154
 import {describe, expect, it} from 'vitest';
 import {decideDrop} from '../dropRule';
-import {afterResize, merge, placeAuto, sizeOf, snap, split} from '../layoutOps';
+import {afterResize, merge, placeAuto, separate, sizeOf, snap, split} from '../layoutOps';
 import {keyOf} from '../model';
 import type {Board} from '../../types';
-import {chapters, data, layer, model, root} from './fixtures';
+import {chapters, data, folded, layer, model, root} from './fixtures';
 
 const at = (rows: number[][], x: number | null, y: number | null): Board => ({rows, x, y, pps: null});
 const find = (boards: Board[], key: number) => boards.find((b) => keyOf(b) === key)!;
@@ -64,9 +64,16 @@ describe('拼接和拆出', () => {
   });
 
   it('折叠后画板变矮，下面的画板跟着往上', () => {
-    const folded = model(chapters(), {collapsed: new Set(['1|'])});
-    const out = afterResize([at([[1]], 0, 0), at([[10]], 0, 248)], 1, 200, folded);
-    expect(find(out, 10).y).toBe(248 - (200 - (60 + 46 + 2)));
+    const out = afterResize([at([[1]], 0, 0), at([[10]], 0, 248)], 1, 200, model(folded(chapters(), 1)));
+    expect(find(out, 10).y).toBe(248 - (200 - (60 + 26 + 2)));
+  });
+
+  it('压在一起的画板（页面没开着时 AI 展开了一层）：从上往下挪开，不压的不动', () => {
+    const m = model(chapters());
+    const {boards, changed} = separate([at([[1]], 0, 0), at([[10]], 0, 150), at([[20]], 2000, 100)], m);
+    expect(changed).toBe(true);
+    expect([find(boards, 10).y, find(boards, 20).y]).toEqual([248, 100]);
+    expect(separate(boards, m).changed).toBe(false);
   });
 
   it('靠近别的画板左边缘时对齐；离得远的方向不动', () => {

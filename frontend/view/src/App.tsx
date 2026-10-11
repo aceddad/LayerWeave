@@ -1,5 +1,5 @@
 // LayerWeave 视图：画布上每个根（连同子树）是一块时间轴画板；上下 = 同时，左右 = 接续。
-// 只读，唯一的写入是批注（只写批注层）；"用户正在看哪儿"和画板排版记在本机，不写业务库。
+// 只读，写入只有视图自己的两样：批注（只写批注层）和折叠（只写视图的表 view_fold）；"用户正在看哪儿"和画板排版记在本机，不写业务库。
 import {ReactFlowProvider} from '@xyflow/react';
 import {useEffect} from 'react';
 import {useShallow} from 'zustand/react/shallow';

@@ -5,11 +5,11 @@ import type {Node, NodeProps} from '@xyflow/react';
 import {memo, useEffect, useLayoutEffect, useMemo, useRef} from 'react';
 import type {RefObject} from 'react';
 import {useShallow} from 'zustand/react/shallow';
-import {clickBoard, pickLayer, splitRoot, toggleCollapse} from '../actions';
+import {clickBoard, pickLayer, splitRoot, toggleFold} from '../actions';
 import {timeZoom, toFlow, xToTime} from '../camera';
 import {decimalsOf, fmtLength} from '../model/gaps';
 import {externalLabels} from '../model/labels';
-import type {BoardLayout, SectionLayout} from '../model/model';
+import type {BoardLayout, FoldInfo, SectionLayout} from '../model/model';
 import {LANE, NAMES, PAD, keyOf, rootsOf} from '../model/model';
 import {fmt, ticks} from '../model/units';
 import {activeBoard, setState, useMarks, useModel, useNotes, useStore} from '../store';
@@ -74,8 +74,8 @@ function Gaps({gaps, a, pps, decimals, unit}: {gaps: {from: number; to: number}[
 
 function Section({board, layout, sec}: {board: Board; layout: BoardLayout; sec: SectionLayout}) {
   const model = useModel()!;
-  const {selected, collapsed, targetLayer, frames, project, noteFocus} = useStore(useShallow((s) => ({
-    selected: s.selected, collapsed: s.collapsed, targetLayer: s.targetLayer, frames: s.frames, project: s.project!, noteFocus: s.noteFocus,
+  const {selected, targetLayer, frames, project, noteFocus} = useStore(useShallow((s) => ({
+    selected: s.selected, targetLayer: s.targetLayer, frames: s.frames, project: s.project!, noteFocus: s.noteFocus,
   })));
   const marks = useMarks(), notes = useNotes();
   // 对准的那条批注指着的对象和层：高亮
@@ -88,6 +88,15 @@ function Section({board, layout, sec}: {board: Board; layout: BoardLayout; sec: 
     return tops;
   };
   const external = useMemo(() => externalLabels(model), [model]);
+  // 折叠的轨道里收着几楼待处理的批注（指向收起的层或对象）：写在细条上，免得 AI 漏看
+  const notesIn = (fold: FoldInfo) => {
+    const tops = new Set<number>();
+    for (const id of fold.layers) {
+      for (const th of notes?.index.get(`layer:${id}`) ?? []) tops.add(th.top.id);
+      for (const o of model.layer(id)?.objects ?? []) for (const th of notes?.index.get(`object:${o.id}`) ?? []) tops.add(th.top.id);
+    }
+    return tops.size;
+  };
   const key = keyOf(board), many = rootsOf(board).length > 1, {a, pps, unit} = layout;
   const decimals = decimalsOf(model.precisionOf(sec.row[0]));
 
@@ -104,19 +113,18 @@ function Section({board, layout, sec}: {board: Board; layout: BoardLayout; sec: 
     <div className="sec" data-row={sec.index}>
       <div className="names stick">
         {sec.strip && <div className="lname strip" style={{height: 24}}><span className="nm">左右接续 {sec.segments.length} 段</span></div>}
-        {sec.tracks.map(({track, collapseKey, height}) => {
+        {sec.tracks.map(({track, height, fold}) => {
           const ids = track.parts.map((p) => p.layer.id), isRoot = track.key === '';
           const label = isRoot ? sec.row.map((r) => model.nameOf(r)).join(' → ') : (track.name || track.type);
           const said = ids.flatMap((id) => notes?.index.get(`layer:${id}`) ?? []);
           const changed = ids.map((id) => marks.changedLayers.get(id)).filter(Boolean);
           return (
-            <div key={track.key} className={`lname${isRoot ? ' root' : ''}${targetLayer != null && ids.includes(targetLayer) ? ' picked' : ''}${ids.some((id) => hot.has(`layer:${id}`)) ? ' hot' : ''}`}
+            <div key={track.key} className={`lname${isRoot ? ' root' : ''}${fold ? ' folded' : ''}${targetLayer != null && ids.includes(targetLayer) ? ' picked' : ''}${ids.some((id) => hot.has(`layer:${id}`)) ? ' hot' : ''}`}
                  data-layers={ids.join(' ')} title={track.tips || label}
                  style={{height, paddingLeft: 8 + 14 * track.depth}}
                  onClick={(e) => { if (!(e.target as HTMLElement).closest('.tog, button')) pickLayer(ids[0]); }}>
-              {track.hasChildren
-                ? <span className="tog" onClick={() => toggleCollapse(key, collapseKey)}>{collapsed.has(collapseKey) ? '▸' : '▾'}</span>
-                : <span className="tog" />}
+              <span className="tog" title={fold ? '展开' : '折叠：收起这一层和下面所有的层（和 AI 共用，存进数据库）'}
+                    onClick={() => toggleFold(ids, !fold)}>{fold ? '▸' : '▾'}</span>
               <span className="lt">{track.type}</span>
               <span className="nm">{label}</span>
               {said.length > 0 && <i className="note-dot" title={said.map(({top}) => `#${top.id} ${top.text}`).join('\n')}>💬{said.length}</i>}
@@ -137,8 +145,14 @@ function Section({board, layout, sec}: {board: Board; layout: BoardLayout; sec: 
             {many && <button className="split nodrag" title="把这一段拆出去，单独成一块画板" onClick={() => splitRoot(s.root)}>拆出</button>}
           </span>)}
         </div>}
-        {sec.tracks.map(({track, height, items, gaps}) => (
-          <div key={track.key} className="track" style={{height}}>
+        {sec.tracks.map(({track, height, items, gaps, fold}) => (fold
+          ? <div key={track.key} className="track folded" style={{height}}>
+              <div className="foldbar" title="点一下展开" onClick={(e) => { e.stopPropagation(); toggleFold(track.parts.map((p) => p.layer.id), false); }}>
+                ▸ 已折叠{fold.below ? ` · 下面 ${fold.below} 层` : ''} · {fold.objects} 个对象
+                {notesIn(fold) > 0 && ` · 💬 ${notesIn(fold)} 楼待处理`}{fold.by && <small>（{fold.by} 折叠的）</small>}
+              </div>
+            </div>
+          : <div key={track.key} className="track" style={{height}}>
             <Gaps gaps={gaps} a={a} pps={pps} decimals={decimals} unit={unit} />
             {items.map((it) => <ObjectBlock key={it.o.id} item={it} a={a} pps={pps} unit={unit} project={project} frames={frames}
               selected={it.o.id === selected} hot={hot.has(`object:${it.o.id}`)} mark={marks.changed.get(it.o.id)} notes={notes?.index.get(`object:${it.o.id}`)}
@@ -188,6 +202,7 @@ export const BoardNode = memo(function BoardNode({id, data, positionAbsoluteX}: 
   }, [key]);
   if (!layout || !board || !model) return null;
   const {a, pps, unit} = layout;
+  const folded = layout.sections.reduce((n, sec) => n + sec.tracks.filter((t) => t.fold).length, 0);
   const title = board.rows.map((row) => row.map((r) => model.nameOf(r)).join(' → ')).join(' ＋ ');
   const dropHere = drop && drop.targetKey === key ? drop : null;
   const dropSec = dropHere ? layout.sections.find((s) => s.index === dropHere.rowIndex) : undefined;
@@ -198,6 +213,7 @@ export const BoardNode = memo(function BoardNode({id, data, positionAbsoluteX}: 
       <div className="bhead">
         <div className="stick">
           <span className="grip">⠿</span><b>{title}</b><span className="unit">{unit || '没有单位'}</span>
+          {folded > 0 && <span className="foldchip" title="折叠的轨道画成一条细条，点 ▸ 展开">折叠了 {folded} 条</span>}
           <button className="nodrag" title="时间缩小" onClick={() => timeZoom(key, 1 / 1.6)}>−</button>
           <button className="nodrag" title="时间恢复成铺满画布" onClick={() => timeZoom(key, null)}>适应</button>
           <button className="nodrag" title="时间放大" onClick={() => timeZoom(key, 1.6)}>＋</button>

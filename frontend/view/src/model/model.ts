@@ -3,7 +3,7 @@
 import type {Board, Layer, Obj, ProjectData, Root} from '../types';
 import {trackGaps} from './gaps';
 
-export const NAMES = 200, HEAD = 34, RULER = 26, ROW = 46, LANE = 40, PAD = 3, GAP = 48, STRIP = 24;
+export const NAMES = 200, HEAD = 34, RULER = 26, ROW = 46, LANE = 40, PAD = 3, GAP = 48, STRIP = 24, FOLD = 26;
 
 export interface Segment { root: number; offset: number; begin: number; end: number }
 export interface Part { layer: Layer; seg: Segment }
@@ -12,7 +12,9 @@ export interface Track {
   parts: Part[]; hasChildren: boolean;
 }
 export interface Item { o: Obj; layer: Layer; offset: number; begin: number; end: number; lane: number }
-export interface TrackLayout { track: Track; collapseKey: string; height: number; items: Item[]; gaps: {from: number; to: number}[] }
+// 折叠的轨道：收起了它自己和下面所有的层。layers：收起的全部层编号；below：下面收起了几条轨道；objects：一共几个对象
+export interface FoldInfo { by: string; layers: number[]; below: number; objects: number }
+export interface TrackLayout { track: Track; height: number; items: Item[]; gaps: {from: number; to: number}[]; fold: FoldInfo | null }
 export interface SectionLayout {
   row: number[]; index: number; segments: Segment[]; tracks: TrackLayout[]; strip: boolean; height: number; top: number;
 }
@@ -22,7 +24,6 @@ export interface BoardLayout {
 }
 
 export interface ViewOptions {
-  collapsed: Set<string>;
   only: Set<number> | null;
   showHidden: boolean;
   canvasWidth: number;
@@ -48,9 +49,11 @@ export class Model {
   readonly roots = new Map<number, Root>();
   readonly layers = new Map<number, Layer>();
   readonly objects = new Map<number, ObjWithLayer>();
+  readonly folds = new Map<number, string>();             // 折叠的层 → 谁折叠的
   private trackCache = new Map<string, Track[]>();
 
   constructor(readonly data: ProjectData, readonly opts: ViewOptions) {
+    for (const f of data.folds ?? []) this.folds.set(f.layer, f.by);
     for (const r of data.roots) this.roots.set(r.id, r);
     for (const l of data.layers) {
       this.layers.set(l.id, l);
@@ -146,6 +149,13 @@ export class Model {
     return out;
   }
 
+  // 轨道折叠了吗：它合起来的层里有一个折叠了就算（左右接续时，网页上折叠一条轨道会折叠它的每一个层）
+  foldOf(t: Track): string | null {
+    for (const p of t.parts) if (this.folds.has(p.layer.id)) return this.folds.get(p.layer.id)!;
+    return null;
+  }
+
+  // 画出来的轨道：折叠的轨道还在（画成一条细条），它下面的轨道不画
   visibleTracks(row: number[]): Track[] {
     const hidden = new Set<string>(), out: Track[] = [];
     for (const t of this.rowTracks(row)) {
@@ -153,19 +163,30 @@ export class Model {
       if (this.opts.only && !t.parts.some((p) => this.opts.only!.has(p.layer.id))) continue;
       if (!this.opts.showHidden && t.parts.every((p) => p.layer.hidden)) continue;
       out.push(t);
-      if (this.opts.collapsed.has(`${row[0]}|${t.key}`)) hidden.add(t.key);
+      if (this.foldOf(t) != null) hidden.add(t.key);
     }
     return out;
   }
 
+  // 一条轨道下面的所有轨道（按名字路径）
+  below(t: Track, row: number[]): Track[] {
+    return this.rowTracks(row).filter((x) => (t.key === '' ? x.key !== '' : x.key.startsWith(t.key + '/')));
+  }
+
   trackLayout(track: Track, row: number[]): TrackLayout {
+    const by = this.foldOf(track);
+    if (by != null) {
+      const under = this.below(track, row), all = [track, ...under].flatMap((t) => t.parts.map((p) => p.layer));
+      return {track, height: FOLD, items: [], gaps: [],
+              fold: {by, layers: all.map((l) => l.id), below: under.length, objects: all.reduce((n, l) => n + l.objects.length, 0)}};
+    }
     const raw = track.parts.flatMap(({layer, seg}) => layer.objects.map((o) => ({o, layer, offset: seg.offset, begin: o.begin + seg.offset, end: o.end + seg.offset})))
       .sort((p, q) => p.begin - q.begin || p.end - q.end || p.o.id - q.o.id);
     const ln = lanes(raw);
     const items = raw.map((it, i) => ({...it, lane: ln[i]}));
     const n = Math.max(1, ...ln.map((k) => k + 1));
     const gaps = trackGaps(items, (this.precisionOf(row[0]) ?? 1e-6) / 2);
-    return {track, collapseKey: `${row[0]}|${track.key}`, height: Math.max(ROW, n * LANE + PAD * 2), items, gaps};
+    return {track, height: Math.max(ROW, n * LANE + PAD * 2), items, gaps, fold: null};
   }
 
   // 画板的完整布局；返回 null 表示这块画板现在不画（收起的层、全被过滤掉）

@@ -1,4 +1,4 @@
-// 接缝：同一条轨道里前后相接的图片、视频（和画布一样按小行排，同一小行里相邻的两个就是一个接缝）
+// 接缝：同一条轨道里前后相接的图片、视频（和画布一样按小行排，同一小行里相邻的两个就是一个接缝）；折叠的轨道不算
 import type {Board} from '../types';
 import {kindOf} from './kinds';
 import type {Item, Model, Track} from './model';
@@ -13,6 +13,7 @@ export function cutList(model: Model, boards: Board[], filter: {board?: number |
     if (filter.board != null && !rootsOf(b).includes(filter.board)) continue;
     b.rows.forEach((row, rowIndex) => {
       for (const track of model.visibleTracks(row)) {
+        if (model.foldOf(track) != null) continue;          // 折叠的轨道不列接缝
         const items: CutItem[] = track.parts.flatMap(({layer, seg}) => layer.objects.filter((o) => ['image', 'video'].includes(kindOf(o)))
           .map((o) => ({o, layer, offset: seg.offset, root: seg.root, begin: o.begin + seg.offset, end: o.end + seg.offset, lane: 0})))
           .sort((p, q) => p.begin - q.begin || p.end - q.end || p.o.id - q.o.id);

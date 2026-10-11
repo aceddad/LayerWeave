@@ -12,7 +12,7 @@ from pathlib import Path
 import tempfile
 
 FIELDS = {"project": int, "view": str, "board": dict, "range": list, "playhead": (int, float), "playhead_at": list,
-          "selected": dict, "selection": dict, "boards": list, "layers": list}
+          "selected": dict, "selection": dict, "boards": list, "layers": list, "folded": list}
 
 
 def state_path(database, root=None):
@@ -74,6 +74,8 @@ def describe(state):
         lines.append("屏幕上的画板（按根层编号）：" + "；".join("、".join(str(r) for r in roots) for roots in state["boards"]))
     if state.get("layers"):
         lines.append("可见的层：" + ", ".join(str(i) for i in state["layers"]))
+    if state.get("folded"):
+        lines.append("折叠的层（收起了它和下面的层，用 view_fold 查看或展开）：" + ", ".join(str(i) for i in state["folded"]))
     return "\n".join(lines)
 
 

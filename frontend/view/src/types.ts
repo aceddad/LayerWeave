@@ -62,6 +62,7 @@ export interface ProjectData {
   roots: Root[];
   layers: Layer[];
   binds: Bind[];
+  folds?: {layer: number; by: string}[];   // 折叠的层（数据库里视图自己的表 view_fold，网页和 AI 共用）
 }
 
 export interface ProjectSummary {

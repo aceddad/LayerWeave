@@ -24,6 +24,7 @@ export const api = {
   changes: (id: number, limit: number) => get<ChangeOp[]>(`/api/changes/${id}?limit=${limit}`),
   state: (body: unknown) => post('/api/state', body),
   note: (id: number, body: unknown) => post<{error?: string; recorded?: boolean; note?: number}>(`/api/notes/${id}`, body),
+  fold: (id: number, body: unknown) => post<{error?: string; recorded?: boolean}>(`/api/folds/${id}`, body),
 };
 
 export const frameUrl = (project: number, objectId: number, at: number | 'end') =>

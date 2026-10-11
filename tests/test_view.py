@@ -10,9 +10,10 @@ import unittest
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
-from layerweave.support.api import initialize_database, open_database, read_record, save_layer, save_object, transaction
+from layerweave.support.api import initialize_database, open_database, read_record, run_operation, save_layer, save_object, transaction
 from layerweave.models import ImageLayer, Image, Movie, TextLayer, Text
-from layerweave.tool.builtin.view.data import axis_key, extract_frame, find_ffmpeg, open_readonly
+from layerweave.tool.builtin.view.data import axis_key, extract_frame, find_ffmpeg, open_readonly, project_view, recent_changes
+from layerweave.tool.builtin.view.fold import fold
 from layerweave.tool.builtin.view.layout import arrange, chain_offsets, layout_path, merge, reconcile, split
 from layerweave.tool.builtin.view.note import add_note, list_notes, note, remove_note, threads, update_note, waiting_for
 from layerweave.tool.builtin.view.notes import AXIS, LAYER_REF, OBJECT_REF
@@ -303,6 +304,43 @@ class ViewTests(unittest.TestCase):
         with self.assertRaises(HTTPError) as error:
             urlopen(bad, timeout=10)
         self.assertEqual(error.exception.code, 400)
+
+    def test_folds_are_view_records_named_after_their_layer(self):
+        self.assertEqual(fold(self.database, self.project)["folded"], {})                 # 从没折叠过：还没有表
+        with closing(open_readonly(self.database)) as c:
+            before = read_record(c, "project", id=self.project)["max_id"]
+        done = fold(self.database, self.project, "fold", layers=[self.art_layer], by="Claude")
+        self.assertEqual((done["changed"], done["folded"]), ([self.art_layer], {self.art_layer: "Claude"}))
+        self.assertEqual(fold(self.database, self.project, "fold", layers=[self.art_layer], by="用户")["changed"], [])   # 已经折叠：不重写
+        with self.assertRaisesRegex(ValueError, "没有层"):
+            fold(self.database, self.project, "fold", layers=[99999])
+        with closing(open_readonly(self.database)) as c:
+            row = read_record(c, "view_fold", project_id=self.project, id=self.art_layer)   # 身份就是层的（项目，编号）
+            self.assertEqual((row["folded"], row["by"]), (1, "Claude"))
+            self.assertEqual(read_record(c, "project", id=self.project)["max_id"], before)   # 不占项目编号
+            self.assertEqual(project_view(c, self.database, self.project)["folds"], [{"layer": self.art_layer, "by": "Claude"}])
+            kinds = {item["kind"] for op in recent_changes(c, self.project, 10) for item in op["items"]}
+            self.assertNotIn("view_fold", kinds)                                              # "改动"面板不列折叠
+        # 网页折叠、展开；截图用的服务不写
+        body = json.dumps({"action": "unfold", "layers": [self.art_layer], "by": "用户"}).encode()
+        with urlopen(Request(self.url + f"api/folds/{self.project}", data=body), timeout=10) as response:
+            self.assertEqual(json.loads(response.read())["folded"], [])
+        quiet, url = make_server(self.database, state_root=self.state_root, record_state=False)
+        threading.Thread(target=quiet.serve_forever, daemon=True).start()
+        try:
+            again = json.dumps({"action": "fold", "layers": [self.art_layer]}).encode()
+            with urlopen(Request(url + f"api/folds/{self.project}", data=again), timeout=10) as response:
+                self.assertEqual(json.loads(response.read()), {"recorded": False})
+        finally:
+            quiet.shutdown(); quiet.server_close()
+        # 不声明引用：折叠着的层照样能被删掉；留下的记录不碍事
+        with closing(open_database(self.database)) as c:
+            empty = run_operation(c, lambda w: w.create("layer", {"type": "text", "config_ref": "layers/text.toml", "name": "空层",
+                                                                  "father": self.main_layer}, project_id=self.project))["data"]["id"]
+        fold(self.database, self.project, "fold", layers=[empty])
+        with closing(open_database(self.database)) as c:
+            self.assertTrue(run_operation(c, lambda w: w.delete("layer", empty, project_id=self.project))["ok"])
+        self.assertIn(empty, fold(self.database, self.project)["folded"])
 
     def test_media_is_whitelisted_and_supports_ranges(self):
         status, headers, body = self.get(f"/media/{self.project}/{self.image.id}")

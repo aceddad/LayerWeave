@@ -27,7 +27,6 @@ export interface State {
   active: number | null;                                  // 当前画板（用其中任一根层的编号表示）
   playhead: number | null;                                // 当前画板上的时间（左右接续时是连续时间）
   selected: number | null;
-  collapsed: Set<string>;
   only: Set<number> | null;
   showHidden: boolean;
   assetKind: string;
@@ -55,7 +54,7 @@ export const useStore = create<State>((set) => ({
   view: viewParam === 'assets' || viewParam === 'cuts' ? viewParam : 'canvas',
   side: params.get('side') === 'notes' || params.has('note') ? 'notes' : params.has('changes') ? 'changes' : 'now',
   active: numParam('board'), playhead: numParam('playhead'), selected: numParam('select'),
-  collapsed: new Set(), only: params.has('layers') ? new Set(params.get('layers')!.split(',').map(Number)) : null,
+  only: params.has('layers') ? new Set(params.get('layers')!.split(',').map(Number)) : null,
   showHidden: false, assetKind: 'all',
   changeLimit: numParam('changes') || 10, changeOps: [],
   links: params.get('links') === '1',
@@ -73,9 +72,9 @@ export const setState = (patch: Partial<State>) => useStore.getState().set(patch
 let modelCache: {key: unknown[]; model: Model} | null = null;
 export function modelOf(s: State): Model | null {
   if (!s.data) return null;
-  const key = [s.data, s.collapsed, s.only, s.showHidden, s.canvasW];
+  const key = [s.data, s.only, s.showHidden, s.canvasW];
   if (modelCache && modelCache.key.every((v, i) => v === key[i])) return modelCache.model;
-  modelCache = {key, model: new Model(s.data, {collapsed: s.collapsed, only: s.only, showHidden: s.showHidden, canvasWidth: s.canvasW})};
+  modelCache = {key, model: new Model(s.data, {only: s.only, showHidden: s.showHidden, canvasWidth: s.canvasW})};
   return modelCache.model;
 }
 export const useModel = () => useStore(modelOf);

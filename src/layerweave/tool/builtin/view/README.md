@@ -2,7 +2,7 @@
 
 本机网页视图，以及给 AI 用的五个工具：截图、取帧、画板排版、"用户正在看哪儿"、批注。还登记了一种层：批注层。[返回内部工具导航](../README.md)。
 
-视图只读，唯一的例外是批注：服务只监听 127.0.0.1，用只读方式打开数据库看项目；写批注时才打开一次写会话，而且只写批注层（见下文），进改动日志，可以撤销。要修改项目内容，仍然用使用工具。服务端只用 Python 标准库；网页是编译好的静态文件，随包分发（`web/`），用的人不需要 Node。网页源码和改法见文末"网页源码"。
+视图只读，例外只有两种，都是视图自己的东西：批注（只写批注层，见下文）和折叠（只写视图自己的表 `view_fold`，见下文）。服务只监听 127.0.0.1，用只读方式打开数据库看项目；写这两种时才打开一次写会话，进改动日志，可以撤销。要修改项目内容，仍然用使用工具。服务端只用 Python 标准库；网页是编译好的静态文件，随包分发（`web/`），用的人不需要 Node。网页源码和改法见文末"网页源码"。
 
 ## 给人看：视图网页
 
@@ -12,7 +12,8 @@ python -m layerweave.tool.builtin.view.server DATABASE [--project 1] [--port 876
 
 用浏览器打开打印出来的地址。
 
-- **画布**：一张可以拖动、缩放的画布。每个根层连同它的子树是一块**画板**，画板里是这个根的时间轴：层按父子顺序排成轨道，有子层的可以折叠；对象是轴上的色块。同一层里互相重叠的对象会分成上下几行。两个对象之间空着的地方画一条标尺 `|— 3.000 —|`，写出空了多长，位数按这个根的轴精度（精度 0.001 写三位小数，按帧的写整数）；太窄放不下数字时只画两头的竖线，第一个对象之前、最后一个之后不画。图片显示缩略图，视频片段够宽时左边是第一帧、右边是最后一帧（窄的只显示开头），音频显示波形，文字直接显示；素材文件不存在的对象用斜纹标出。配置里 `display.default_visible = false` 的层（比如批注层）默认收起，不进画布。
+- **画布**：一张可以拖动、缩放的画布。每个根层连同它的子树是一块**画板**，画板里是这个根的时间轴：层按父子顺序排成轨道；对象是轴上的色块。同一层里互相重叠的对象会分成上下几行。两个对象之间空着的地方画一条标尺 `|— 3.000 —|`，写出空了多长，位数按这个根的轴精度（精度 0.001 写三位小数，按帧的写整数）；太窄放不下数字时只画两头的竖线，第一个对象之前、最后一个之后不画。图片显示缩略图，视频片段够宽时左边是第一帧、右边是最后一帧（窄的只显示开头），音频显示波形，文字直接显示；素材文件不存在的对象用斜纹标出。配置里 `display.default_visible = false` 的层（比如批注层）默认不进画布。
+- **折叠**：每一层名字前都有 ▾，点一下收起这一层和它下面所有的层，只剩一条细条：层名带橙色边框，内容处是一条虚线框，写着"已折叠 · 下面 2 层 · 5 个对象 · 💬 1 楼待处理（Claude 折叠的）"，画板标题上写"折叠了几条"。点 ▸ 或细条展开。左右接续时合成一条的轨道，折叠会折叠它包含的每一个层。折叠存在数据库里视图自己的表（见下文"折叠表"），和 AI 共用一份：AI 折叠了，你的页面两秒内跟着收起；下次打开、换一个 AI 来看，都还是这样。画板变高变矮时，下面的画板跟着推开或收拢。
 - **拼接**：单位相同的根才能拼。"秒"和"s"这类同义写法算同一种单位；没有单位的根各占一块，不参与拼接。
   - **上下 = 同时**：几行共用一把尺子和一根播放头，同一个数值上下对齐。单位相同的根默认就这样拼在同一块画板里。
   - **左右 = 接续**：后一个根的 0 接在前一个根的结尾（比如第二章接在第一章后面），画板上用连续的时间；两段里名字相同的层合成一条轨道（第一章的「字幕」后面接第二章的「字幕」）。这一行上方有一条窄带，标出每一段的名字和起点。只能手动接。
@@ -55,6 +56,17 @@ python -m layerweave.tool.builtin.view.server DATABASE [--project 1] [--port 876
 - 配置帮助查文字层时，批注对象只在"支持的对象类"里点名（继承文字对象，所以文字层也接受它），不展开详情；查批注层（`combined note`）才展开。
 - 用层当有序列表的一般思路见[AI 开发指导·有序列表与隐藏信息管理](../../../../../docs/build-with-layerweave/02-ordered-metadata.md)；别的工具包想像这样登记自己的层（素材清单、待办……），步骤见[工具包登记类型](../developer/TOOL_TYPES.md)。
 
+## 折叠表：视图自己的表
+
+折叠记在业务库里视图登记的工具表 `view_fold`（通过基础支撑的 `register_tables`，第一次折叠时建表）。
+
+| 约定 | 内容 |
+|---|---|
+| 身份 | 一条记录的身份就是它挂着的层：（项目，层编号），`id_source = "provided"`，不另外发号，不占项目编号 |
+| 字段 | `folded`（1 折叠 / 0 展开）、`by`（谁折叠的，画在细条上） |
+| 引用 | 不声明引用：层被使用工具删掉时不受阻挡；编号不回收，留下的记录不会被新层误认，视图读的时候忽略 |
+| 日志 | 写入走统一写会话，进改动日志（种类 `view_fold`），可以撤销；视图的"改动"面板不列它们，画布上直接看得到 |
+
 ## 给 AI 用
 
 | 工具 | 用途 |
@@ -62,6 +74,7 @@ python -m layerweave.tool.builtin.view.server DATABASE [--project 1] [--port 876
 | `view_state` | 用户正在看哪儿：项目、当前画板、可见范围、播放头、选中的对象、圈出的一段、屏幕上的画板和层。用户说"这里""这段"时先读它 |
 | `view_note` | 读写批注：`list`（按楼；可只看 open / done 的楼，`--waiting 名字` 只看在等这个人回复的楼）、`add`（`--to object:16`、`--to layer:1 --span 6 8`，可以多个）、`reply 编号 正文`、`done` / `reopen`、`edit`、`remove`。自动建批注层、填字段、建关联 |
 | `view_screenshot` | 把视图截成 PNG：整张画布、某一块画板（`--board`，可加 `--begin --end` 放大一段）、接缝页（`--view cuts`）或素材网格；`--focus` 对准某个对象，`--note` 对准某条批注（框住它指的地方，右侧标出这一楼），`--link` 按用户「复制链接」得到的地址拍，`--changes N` 标出最近 N 次操作的改动，`--notes` 打开批注列表，`--links` 画出全部关系线，`--full-page` 把接缝页、素材页截成一整张长图。等页面把图片、封面、波形加载完才拍 |
+| `view_fold` | 查看或改变哪些层折叠了：`fold 层编号… --by 名字`、`unfold`、不带动作时列出。和用户共用一份，折叠后用户的页面跟着收起；截图的返回里也会列出折叠着的层 |
 | `view_layout` | 查看或调整画板：同单位的根上下拼（`merge --side above/below`）、左右接（`merge --side left/right`）或拆开（`split`）、移动（`move`）、恢复自动排版（`reset`）。和网页改的是同一份排版 |
 | `view_frame` | 取视频对象在某一刻的画面（JPEG），按时间轴全局时间或视频自身时间，`--last` 取最后一帧；需要 ffmpeg |
 
@@ -75,6 +88,8 @@ python -m layerweave.tool.builtin.view.note DATABASE 1 reply 46 "改好了" --au
 python -m layerweave.tool.builtin.view.note DATABASE 1 done 41
 python -m layerweave.tool.builtin.view.screenshot DATABASE 1 输出.png
 python -m layerweave.tool.builtin.view.screenshot DATABASE 1 输出.png --board 1 --begin 8 --end 14 --playhead 10
+python -m layerweave.tool.builtin.view.fold DATABASE 1 fold 15 --by Claude
+python -m layerweave.tool.builtin.view.fold DATABASE 1 unfold 15
 python -m layerweave.tool.builtin.view.layout DATABASE 1
 python -m layerweave.tool.builtin.view.layout DATABASE 1 split 19
 python -m layerweave.tool.builtin.view.layout DATABASE 1 merge 19 --to 1 --side above
@@ -91,9 +106,10 @@ python -m layerweave.tool.builtin.view.frame DATABASE 1 16 输出.jpg --at 3.75
 - 左右接续的画板上，`--begin --end --playhead` 用画板上的连续时间；`view_layout` 返回的 `offset` 是每一段在画板上的起点（画板时间 = 这一段自己的时间 + offset），`view_state` 的 `playhead_at` 给出播放头落在哪一段、是那一段自己的第几秒。
 - 开工前先看 `view_note --waiting 自己的名字`：用户在网页上提的问题、回复都在那里，回复用 `reply`。想看一条批注指的是哪里，用 `view_screenshot --note 编号`。
 - 用户贴来视图地址（「复制链接」）时，用 `view_screenshot --link 地址` 拍同一个画面；链接里的项目要和参数里的项目一致。
+- 折叠是共用的：只为看清楚而收起时说一声理由，看完记得展开。截图返回里的 `folded` 列出收着的层，那里只画了一条细条，内容没画出来。
 - 用户圈出一段后，`view_state` 的 `selection` 给出那一段在哪个根上、那个根自己的起止；要给这一段写批注，用 `view_note add --to layer:根编号 --span 起点 终点`。
 - 改动的文字清单也可以用使用工具里的 `read_history`；视图的用处是把改动放回画面里看。
-- 截图自动查找 Chrome、Edge 或 Chromium，也可以用 `--browser` 或环境变量 `LAYERWEAVE_BROWSER` 指定。浏览器使用临时的独立配置，不会碰到用户正在用的浏览器；截图页面不记录状态、不改排版、不写批注。返回里的 `ready` 为 False 时，表示等待时间内没加载完，图里可能缺缩略图。
+- 截图自动查找 Chrome、Edge 或 Chromium，也可以用 `--browser` 或环境变量 `LAYERWEAVE_BROWSER` 指定。浏览器使用临时的独立配置，不会碰到用户正在用的浏览器；截图页面不记录状态、不改排版、不写批注和折叠。返回里的 `ready` 为 False 时，表示等待时间内没加载完，图里可能缺缩略图。
 - "正在看哪儿"记在本机用户目录 `~/.layerweave/view/` 下，每个数据库一份，不写进业务库。
 
 ## 网页源码
@@ -121,5 +137,4 @@ npm run dev          # 开发：接口转给已经在跑的视图服务（默认
 改网页时保持后端接口和截图约定不变（地址参数、`record=0`、`__layerweaveReady`），`view_screenshot` 和测试就照常可用。画板尺寸由数据算出（`Model.boardLayout`），排版不依赖量页面。新的计算放进 `src/model/` 并补单元测试；页面上的部分（拖动、镜头）在浏览器里试。
 
 ## 以后
-- 显隐：配置里的 visibility 只是"允许不允许显隐控制"，每个对象、层当前显不显示要单独存，现在还没有存的地方；和用户讨论中。
 - 播放（按播放头放视频和音频）、大项目只画看得见的部分：先放着。

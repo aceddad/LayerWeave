@@ -28,7 +28,13 @@ export function NowPanel() {
       if (!seg) continue;
       const local = playhead - seg.offset;
       if (row.length > 1) blocks.push(<h3 key={`s${seg.root}`} className="seg">▶ {model.nameOf(seg.root)} 的 {fmt(local, model.unitOfRoot(seg.root))}</h3>);
-      for (const track of model.visibleTracks(row)) for (const {layer} of track.parts.filter((p) => p.seg.root === seg.root)) {
+      for (const track of model.visibleTracks(row)) {
+        if (model.foldOf(track) != null) {                  // 折叠的轨道：只写一行，不列里面的对象
+          if (track.parts.some((p) => p.seg.root === seg.root))
+            blocks.push(<div key={`f${track.key}`} className="gap-line folded"><b>{track.name || (track.key === '' ? model.nameOf(seg.root) : track.type)}</b> 已折叠（连同下面的层）</div>);
+          continue;
+        }
+        for (const {layer} of track.parts.filter((p) => p.seg.root === seg.root)) {
         const here = layer.objects.filter((o) => (o.begin <= local && local < o.end) || (o.begin === o.end && Math.abs(o.begin - local) < near));
         if (!here.length) {
           const gap = gapAt(layer.objects, local, near), segUnit = model.unitOfRoot(seg.root);
@@ -40,6 +46,7 @@ export function NowPanel() {
           <h3>{layer.name || `层 ${layer.id}`} · {layer.type}</h3>
           {here.map((o) => <Card key={o.id} o={{...o, layer}} local={local} />)}
         </div>);
+        }
       }
     }
   }

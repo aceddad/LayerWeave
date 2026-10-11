@@ -1,7 +1,7 @@
 // 和服务同步：读项目和排版、每 2 秒看有没有变化、保存排版、报告"正在看哪儿"、写批注
 import {api} from './api';
 import {visibleBoards, visibleRange} from './camera';
-import {placeAuto} from './model/layoutOps';
+import {afterResize, placeAuto, separate, sizeOf} from './model/layoutOps';
 import {adoptOrphans, keyOf, rootsOf} from './model/model';
 import type {Note} from './model/notes';
 import {CAPTURE, RECORD, numParam} from './params';
@@ -24,11 +24,14 @@ export async function loadProjects() {
 }
 
 export async function loadProject(id: number) {
-  const before = getState().project === id ? notesOf(getState())?.list : undefined;
+  const prev = getState(), same = prev.project === id, oldModel = same ? modelOf(prev) : null;
+  const before = same ? notesOf(prev)?.list : undefined;
+  // 记下重读之前每块画板的高度：折叠、加层以后画板变高变矮，下面的画板跟着挪
+  const heights = oldModel ? new Map(prev.boards.map((b) => [keyOf(b), sizeOf(oldModel, b).h])) : null;
   const [data, layout] = await Promise.all([api.project(id), api.layout(id)]);
   setState({project: id, data: adoptOrphans(data)});
   announceNotes(before);
-  applyLayout(layout);
+  applyLayout(layout, heights);
   await loadChanges();
   const s = getState(), model = modelOf(s)!;
   let active = s.active;
@@ -53,14 +56,23 @@ function announceNotes(before: Note[] | undefined) {
 }
 let noticeTimer: ReturnType<typeof setTimeout> | undefined;
 
-function applyLayout(layout: Layout) {
+function applyLayout(layout: Layout, heights: Map<number, number> | null = null) {
   const s = getState();
   let boards = layout.boards;
   if (s.data?.roots.some((r) => r.id === 0)) boards = [...boards, {rows: [[0]], x: null, y: null, pps: null}];
   const model = modelOf(s)!;
   const placed = placeAuto(boards, model);
-  setState({boards: placed.boards, serial: layout.serial});
-  if (placed.changed) saveLayout();
+  boards = placed.boards;
+  let changed = placed.changed;
+  // 高度变了的画板（从上往下）：正下方的画板跟着推开或收拢
+  for (const key of [...boards].filter((b) => b.y != null).sort((p, q) => p.y! - q.y!).map(keyOf)) {
+    const b = boards.find((x) => keyOf(x) === key)!, old = heights?.get(key), now = sizeOf(model, b).h;
+    if (old != null && now && old !== now) { boards = afterResize(boards, key, old, model); changed = true; }
+  }
+  // 还压在一起的（页面没开着时 AI 折叠、展开了）：往下挪开
+  const apart = separate(boards, model);
+  setState({boards: apart.boards, serial: layout.serial});
+  if (changed || apart.changed) saveLayout();
 }
 
 export async function reloadLayout() {
@@ -134,12 +146,27 @@ export function report() {
       selected: sel ? {id: sel.id, layer: sel.layer.id, name: sel.name} : undefined,
       selection: selectionInfo() ?? undefined,
       boards: canvas ? shown.map(rootsOf) : undefined,
-      layers: (canvas ? shown : s.boards).flatMap((b) => b.rows.flatMap((row) => model.visibleTracks(row).flatMap((t) => t.parts.map((p) => p.layer.id)))),
+      layers: (canvas ? shown : s.boards).flatMap((b) => b.rows.flatMap((row) => model.visibleTracks(row).filter((t) => model.foldOf(t) == null)
+        .flatMap((t) => t.parts.map((p) => p.layer.id)))),
+      folded: [...model.folds.keys()].filter((id) => model.layer(id)),
     }).catch(() => {});
   }, 400);
 }
 
-// 视图唯一的写入：批注。写完重读项目；自己写的不用再被轮询重读一遍
+// 视图的另一种写入：折叠（只写视图自己的表 view_fold，和 AI 共用一份）。写完重读项目，画板高度变了下面的跟着挪
+export async function foldAction(layers: number[], fold: boolean): Promise<boolean> {
+  const s = getState();
+  if (s.project == null || !layers.length) return false;
+  try {
+    const res = await api.fold(s.project, {action: fold ? 'fold' : 'unfold', layers, by: s.me.trim()});
+    if (res.error || res.recorded === false) { toast('折叠没有存下来：' + (res.error ?? '这个页面只读')); return false; }
+    await loadProject(s.project);
+    setState({version: (await api.version()).version});
+    return true;
+  } catch (error) { toast('折叠没有存下来：' + (error as Error).message); return false; }
+}
+
+// 视图的写入之一：批注。写完重读项目；自己写的不用再被轮询重读一遍
 export async function noteAction(body: Record<string, unknown>): Promise<boolean> {
   const s = getState();
   if (s.project == null) return false;

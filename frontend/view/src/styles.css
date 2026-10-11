@@ -247,3 +247,13 @@ body.full .cuts-view, body.full .grid, body.full .assets-view { overflow: visibl
 .gap::before { content: ''; position: absolute; left: 0; right: 0; top: 7px; border-top: 1px solid #8d97ab; }
 .gap span { position: absolute; left: 50%; top: 0; transform: translateX(-50%); padding: 0 4px; background: var(--bg); color: #d5dbe6;
             font: 10px/15px ui-monospace, Consolas, monospace; white-space: nowrap; }
+
+/* 折叠：收起自己和下面所有的层，只剩一条带边框的细条（人和 AI 一眼看得出这里收着东西） */
+.lname.folded { box-shadow: inset 0 0 0 1px #ff9f43; background: #2a2219; }
+.lname .tog { cursor: pointer; }
+.track.folded { background: repeating-linear-gradient(135deg, #1d1a16 0 6px, #221e18 6px 12px); }
+.foldbar { position: absolute; inset: 2px 0; border: 1px dashed #ff9f43; border-radius: 3px; color: #ffcf99; font-size: 11px;
+           line-height: 20px; padding: 0 8px; white-space: nowrap; overflow: hidden; cursor: pointer; }
+.foldbar small { color: #c9a77f; margin-left: 4px; }
+.foldchip { font-size: 11px; color: #ffcf99; border: 1px solid #ff9f43; border-radius: 3px; padding: 0 5px; margin-left: 6px; }
+.gap-line.folded { border-left-color: #ff9f43; color: #ffcf99; }

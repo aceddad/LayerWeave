@@ -10,6 +10,7 @@ python -m layerweave.tool.builtin.view.screenshot DATABASE PROJECT_ID 输出.png
 """
 import argparse
 import base64
+from contextlib import closing
 import json
 import os
 from pathlib import Path
@@ -24,6 +25,8 @@ import time
 from urllib.parse import parse_qs, urlencode, urlparse
 from urllib.request import urlopen
 
+from .data import open_readonly
+from .fold import read_folds
 from .server import make_server
 
 CANDIDATES = [
@@ -202,7 +205,10 @@ def capture(database, project_id, output, *, view=None, board=None, begin=None, 
     finally:
         server.shutdown()
         server.server_close()
-    return {"output": str(output), "page": page, "browser": browser, "size": [width, height], "ready": ready}
+    with closing(open_readonly(database)) as connection:   # 截图照共用的折叠画；写进返回里，免得 AI 忘了有东西收着
+        folded = read_folds(connection, project_id)
+    return {"output": str(output), "page": page, "browser": browser, "size": [width, height], "ready": ready,
+            "folded": [{"layer": layer, "by": by} for layer, by in sorted(folded.items())]}
 
 
 def _shoot(profile, page, output, width, height, wait_ms, full_page=False):
@@ -264,7 +270,7 @@ COMMANDS = [{
         "browser": {"type": "string", "description": "浏览器路径；省略时自动查找 Chrome、Edge、Chromium"},
         "wait_ms": {"type": "integer", "description": "最多等页面把图片、视频封面、波形加载完多久", "default": 20000},
     },
-    "returns": "output、page（截图用的页面地址）、browser、size、ready（页面是否在等待时间内加载完；False 时图里可能缺缩略图）。",
+    "returns": "output、page（截图用的页面地址）、browser、size、ready（页面是否在等待时间内加载完；False 时图里可能缺缩略图）、folded（折叠着的层：图里只是一条细条，内容没画出来）。",
     "examples": [{"cli": "python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/all.png"},
                  {"cli": "python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/t10.png --board 1 --begin 8 --end 14 --playhead 10"},
                  {"cli": "python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/note42.png --note 42"},

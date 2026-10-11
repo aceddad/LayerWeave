@@ -1,11 +1,11 @@
-// 用户在画面上做的事：点选、放播放头、折叠、拆出、点层名、跳到批注指的地方、切换面板、键盘跳转、复制链接
+// 用户在画面上做的事：点选、放播放头、折叠（存进数据库）、拆出、点层名、跳到批注指的地方、切换面板、键盘跳转、复制链接
 import {focusNote, focusObject, focusTime, revealObject, revealTime, visibleRange} from './camera';
-import {afterResize, sizeOf, split} from './model/layoutOps';
+import {sizeOf, split} from './model/layoutOps';
 import {linkQuery} from './model/link';
 import {keyOf} from './model/model';
 import {cutPoints, editPoints, stepObject, stepTime, stepTrack} from './model/navigate';
 import {activeBoard, getState, modelOf, setState} from './store';
-import {loadChanges, report, saveLayout, toast} from './sync';
+import {foldAction, loadChanges, report, saveLayout, toast} from './sync';
 import type {Ref, Side, View} from './types';
 
 // 点画板：放播放头；点在色块上就选中它；点在尺子上只放播放头并取消圈出的一段
@@ -19,17 +19,9 @@ export function clickBoard(key: number, t: number, objectId: number | null, onRu
   report();
 }
 
-export function toggleCollapse(key: number, collapseKey: string) {
-  const s = getState(), model = modelOf(s)!;
-  const board = s.boards.find((b) => keyOf(b) === key)!;
-  const oldH = sizeOf(model, board).h;
-  const collapsed = new Set(s.collapsed);
-  collapsed.has(collapseKey) ? collapsed.delete(collapseKey) : collapsed.add(collapseKey);
-  setState({collapsed});
-  const after = getState();
-  setState({boards: afterResize(after.boards, key, oldH, modelOf(after)!)});
-  saveLayout();
-  report();
+// 折叠 / 展开一条轨道（它合起来的每一个层）：收起它和下面所有的层。存进数据库，和 AI 共用；下面的画板跟着挪
+export async function toggleFold(layers: number[], fold: boolean) {
+  if (await foldAction(layers, fold)) report();
 }
 
 export function splitRoot(rootId: number) {

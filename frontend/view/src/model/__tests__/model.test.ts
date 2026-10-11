@@ -1,7 +1,8 @@
 // 画面模型：接续偏移、轨道合并、小行、画板尺寸。期望值按 model.ts 顶部的常量手算
 import {describe, expect, it} from 'vitest';
-import {HEAD, ROW, RULER, STRIP, lanes} from '../model';
-import {chapters, data, layer, model, obj, root} from './fixtures';
+import {FOLD, HEAD, ROW, RULER, STRIP, lanes} from '../model';
+import {cutList} from '../cuts';
+import {chapters, data, folded, layer, model, obj, root} from './fixtures';
 
 const board = (rows: number[][], extra = {}) => ({rows, x: 0, y: 0, pps: null, ...extra});
 
@@ -44,8 +45,32 @@ describe('轨道', () => {
     expect(model(d).rowTracks([1]).map((t) => t.key)).toEqual(['', '/x', '/x#2']);
   });
 
-  it('折叠根以后只剩根轨道', () => {
-    expect(model(chapters(), {collapsed: new Set(['1|'])}).visibleTracks([1, 10]).map((t) => t.key)).toEqual(['']);
+  it('折叠根：只剩根这一条，它和下面的层都收起来', () => {
+    const m = model(folded(chapters(), 1));
+    expect(m.visibleTracks([1]).map((t) => t.key)).toEqual(['']);
+    expect(m.trackLayout(m.rowTracks([1])[0], [1])).toMatchObject({height: FOLD, items: [], gaps: [],
+      fold: {by: 'Claude', layers: [1, 2, 6], below: 2, objects: 4}});
+    expect(m.boardLayout(board([[1]]))!.height).toBe(HEAD + RULER + FOLD + 2);
+  });
+
+  it('折叠中间一层：这一条还在（细条），下面的不画，旁边的照常', () => {
+    const d = chapters();
+    d.layers.push(layer(8, '分镜', 1, 2, [obj(9, 0, 2)]));   // 「画面」下面再挂一层
+    const m = model(folded(d, 2));
+    expect(m.visibleTracks([1]).map((t) => t.key)).toEqual(['', '/画面', '/字幕']);
+    expect(m.trackLayout(m.rowTracks([1])[1], [1]).fold).toMatchObject({layers: [2, 8], below: 1, objects: 4});
+  });
+
+  it('左右接续时，合起来的轨道里有一个层折叠了，整条就折叠；折叠的轨道不列接缝', () => {
+    const m = model(folded(chapters(), 13));                 // 只折叠了第二章的「画面」
+    const track = m.rowTracks([1, 10])[1];
+    expect(m.foldOf(track)).toBe('Claude');
+    expect(m.trackLayout(track, [1, 10]).fold!.layers).toEqual([2, 13]);
+    expect(cutList(m, [board([[1, 10]])], {})).toEqual([]);
+  });
+
+  it('折叠记录指向已经删掉的层：没有影响', () => {
+    expect(model(folded(chapters(), 999)).visibleTracks([1]).map((t) => t.key)).toEqual(['', '/画面', '/字幕']);
   });
 
   it('只显示部分层：轨道里有这个层才留下', () => {

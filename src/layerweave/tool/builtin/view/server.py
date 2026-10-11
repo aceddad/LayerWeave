@@ -17,6 +17,7 @@ from urllib.parse import parse_qs, urlparse
 
 from .data import extract_frame, find_ffmpeg, list_projects, media_path, open_readonly, project_roots, project_view, recent_changes
 from .layout import layout_serial, load_layout, reconcile, save_layout
+from .fold import set_folds
 from .note import add_note, remove_note, update_note
 from .state import read_state, write_state
 
@@ -113,8 +114,9 @@ class ViewHandler(SimpleHTTPRequestHandler):
         path = urlparse(self.path).path
         layout = re.fullmatch(r"/api/layout/(\d+)", path)
         notes = re.fullmatch(r"/api/notes/(\d+)", path)
-        if path != "/api/state" and not layout and not notes:
-            return self.send_json({"error": "只支持 /api/state、/api/layout/<项目>、/api/notes/<项目>"}, HTTPStatus.NOT_FOUND)
+        folds = re.fullmatch(r"/api/folds/(\d+)", path)
+        if path != "/api/state" and not layout and not notes and not folds:
+            return self.send_json({"error": "只支持 /api/state、/api/layout/<项目>、/api/notes/<项目>、/api/folds/<项目>"}, HTTPStatus.NOT_FOUND)
         length = int(self.headers.get("Content-Length", 0))
         if length > 65536:
             return self.send_json({"error": "内容过大"}, HTTPStatus.REQUEST_ENTITY_TOO_LARGE)
@@ -126,6 +128,14 @@ class ViewHandler(SimpleHTTPRequestHandler):
             return self.send_json({"recorded": False})
         if notes:
             return self.write_note(int(notes[1]), payload)
+        if folds:
+            # 视图的另一种写入：折叠，只写视图自己的表 view_fold（fold.py）
+            try:
+                layers = [int(layer) for layer in payload.get("layers", [])]
+                result = set_folds(self.database, int(folds[1]), layers, payload.get("action") == "fold", by=payload.get("by") or "")
+            except (ValueError, TypeError) as error:
+                return self.send_json({"error": str(error)}, HTTPStatus.BAD_REQUEST)
+            return self.send_json({**result, "folded": [{"layer": k, "by": v} for k, v in sorted(result["folded"].items())]})
         if layout:
             # 网页传来整套画板；按数据库里现有的根校正后再存（单位不同的拼接会被拆开）
             project_id = int(layout[1])
@@ -136,7 +146,7 @@ class ViewHandler(SimpleHTTPRequestHandler):
         return self.send_json(write_state(self.database, payload, self.state_root))
 
     def write_note(self, project_id, payload):
-        """视图唯一的写入：只写批注层，走 note.py（写会话、改动日志、可撤销）。"""
+        """视图的写入之一：批注，只写批注层，走 note.py（写会话、改动日志、可撤销）。另一种是折叠，见 do_POST。"""
         action = payload.get("action")
         try:
             if action == "add":

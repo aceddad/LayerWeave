@@ -1,0 +1,5 @@
+name = "layerweave.keys"
+kind = "tool"
+version = "0.1.0"
+description = "管理本地 KEY、连接信息和通用使用方说明"
+changes = "首次登记当前组件；后续版本由维护者更新本声明。"

@@ -3,17 +3,19 @@ from .storage.crud import read, create, update, delete
 from .storage import crud
 from .storage.restoration import restore as _restore
 from .transaction import require_session, defer_references
+from .storage.tables import table_specs, normalize_record
+from .storage.references import dependent_records, reference_key, id_occupants
 
 
-def writable_fields(kind):
+def writable_fields(kind, *, connection=None):
     """返回记录允许写入的字段名，不暴露 SQL 表和编码细节。"""
-    return crud._spec(kind, writing=True)["fields"]
+    return crud._spec(kind, writing=True, connection=connection)["fields"]
 
 
 def create_exact(connection, kind, data, *, operation_id, project_id=None):
     """显式保留原值的复制/迁移入口；仍统一发号和记录日志。"""
     require_session(connection, operation_id)
-    spec = crud._spec(kind, writing=True)
+    spec = crud._spec(kind, writing=True, connection=connection)
     crud._scope(spec, project_id)
     return crud._insert(connection, kind, spec, crud._encode(spec, data),
                         operation_id=operation_id, project_id=project_id)
@@ -22,7 +24,7 @@ def create_exact(connection, kind, data, *, operation_id, project_id=None):
 def restore(connection, kind, id, record, *, operation_id, project_id=None, undo_of=None, fields=None):
     """按原身份恢复完整快照或顶层字段。调用方决定冲突策略；支撑负责实际写入。"""
     require_session(connection, operation_id)
-    spec = crud._spec(kind, writing=True)
+    spec = crud._spec(kind, writing=True, connection=connection)
     crud._scope(spec, project_id)
     if type(id) is not int or id < 1:
         raise ValueError("恢复需要明确的正整数编号")

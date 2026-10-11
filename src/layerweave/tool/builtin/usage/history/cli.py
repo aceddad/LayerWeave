@@ -38,8 +38,8 @@ def main():
     from layerweave.support.cli import parser_for, run_cli
     parser = parser_for("LayerWeave 历史查询：按操作分页，已删除实体也可查询", project=False, commands=COMMANDS)
     parser.add_argument("--project-id", type=int)
-    parser.add_argument("--kind", choices=("project", "layer", "object", "bind"))
-    parser.add_argument("--id", type=int, help="实体编号；层和对象还需 --project-id")
+    parser.add_argument("--kind", help="内置种类或本数据库已登记的工具表 kind")
+    parser.add_argument("--id", type=int, help="记录编号；按项目管理的种类还需 --project-id")
     parser.add_argument("--operation-id", help="展开完整操作，包含前后快照，不与实体范围混用")
     parser.add_argument("--limit", type=int, default=20)
     parser.add_argument("--before", type=int, help="上一页的 next_cursor")
@@ -58,9 +58,8 @@ COMMANDS = [{'name': 'read_history',
   'context': ['database'],
   'parameters': {'project_id': {'type': 'integer', 'description': '按项目筛选相关操作；完整批次仍可跨项目'},
                  'kind': {'type': 'string',
-                          'description': '实体种类',
-                          'choices': ['project', 'layer', 'object', 'bind']},
-                 'id': {'type': 'integer', 'description': '实体编号，层/对象还需 project_id'},
+                          'description': '内置种类或本数据库已登记的工具表 kind'},
+                 'id': {'type': 'integer', 'description': '记录编号，按项目管理的种类还需 project_id'},
                  'operation_id': {'type': 'string', 'description': '展开一个完整操作，与项目/实体筛选互斥'},
                  'limit': {'type': 'integer', 'description': '每页操作数', 'default': 20},
                  'before': {'type': 'integer', 'description': '上一页 next_cursor'},

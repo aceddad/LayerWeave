@@ -5,11 +5,13 @@
 | 任务 | 分类 |
 |---|---|
 | 创建、查询、编辑项目内容，复查、历史和撤销 | [usage](usage/README.md) |
-| 初始化数据库、安装技能 ZIP、管理本地 KEY、开发新工具 | [developer](developer/README.md) |
+| 初始化数据库、安装技能 ZIP、管理本地 KEY、登记组件版本、开发新工具 | [developer](developer/README.md) |
 | 查询命令或封装支持 | [shared/help](shared/help/README.md) |
 | 查看项目：画布上的时间轴画板、最近改动、接缝、素材预览，以及批注（自带的批注层）；给 AI 的截图、取帧、画板排版、批注、"用户正在看哪儿" | [view](view/README.md) |
 
-完整包包括 usage 下的 records、query、editing、history、undo、validation、text，以及 shared/help、developer/database、developer/skills、developer/keys、view。删除某个包后，其他包仍能独立工作；命令发现只展示仍存在的声明。不要只删包中的某个私有辅助文件。
+完整包包括 usage 下的 records、query、editing、history、undo、validation、text，以及 shared/help、developer/database、developer/skills、developer/keys、developer/versions、view。删除某个包后，其他包仍能独立工作；命令发现只展示仍存在的声明。不要只删包中的某个私有辅助文件。
+
+各完整包用 component.toml 声明自己的版本和用途，AI 可按需修改、替换或移除工具包；声明不决定使用权限。自动登记和状态核对见[版本工具](developer/versions/README.md)。
 
 默认写工具可选接入 validation 包；没有它时写入照常完成、checks.status 为 not_run。共用 CLI、help 示例排版和静态发现位于 support，卸掉帮助包不会破坏其他工具的 --help。
 

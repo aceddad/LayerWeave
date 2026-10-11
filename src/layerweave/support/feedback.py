@@ -27,7 +27,7 @@ def _location(value):
     if not value:
         return ""
     kind, id = value.get("kind", ""), value.get("id")
-    if kind in {"layer", "object"}:
+    if value.get("project_id") is not None or kind in {"layer", "object"}:
         return f"{kind} ({value.get('project_id')}, {id if id is not None else '未分配'})"
     return f"{kind} {id}" if id is not None else kind
 

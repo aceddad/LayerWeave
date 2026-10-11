@@ -2,6 +2,8 @@
 
 开发者和修改代码的 AI 从这里准备环境、寻找源码和选择扩充方式。项目用途见[README](../README.md)，边界见[架构说明](architecture.md)。
 
+想用 LayerWeave 搭建自己的工具，先读[AI 开发指导](build-with-layerweave/README.md)：那里按篇介绍嵌套时序、有序管理以及可自由扩展的部分。本页继续维护源码开发环境和验证流程。
+
 ## 准备环境
 
 需要 Python 3.11+、SQLite 3.35+。运行时仅使用标准库；源码通过本地可编辑安装导入，修改文件立即生效。
@@ -26,9 +28,11 @@ python -m venv .venv
 | 新增或维护内部工具 | [工具开发](../src/layerweave/tool/builtin/developer/README.md)、[基础 API](../src/layerweave/support/API.md) |
 | 工具包登记自己的层或对象类型 | [工具包登记类型](../src/layerweave/tool/builtin/developer/TOOL_TYPES.md) |
 | 修改结构、事务或存储 | [基础支撑](../src/layerweave/support/README.md)、[表结构](../src/layerweave/support/storage/SCHEMA.md) |
+| 让工具的专属表接入统一管理 | [工具表开发指导](build-with-layerweave/03-managed-tables.md)，复用 register_tables 与现有写会话 |
 | 修改内容检测 | [检测包](../src/layerweave/tool/builtin/usage/validation/README.md) |
 | 编写或安装外置技能 | [工具区](../src/layerweave/tool/README.md)、[ZIP 安装](../src/layerweave/tool/builtin/developer/SKILLS.md) |
 | 管理本地 KEY 或接入其他模型服务的凭据 | [KEY 工具](../src/layerweave/tool/builtin/developer/keys/README.md)，不依赖业务数据库 |
+| 声明、登记和核对组件版本 | [版本工具](../src/layerweave/tool/builtin/developer/versions/README.md)，每个完整组件维护自己的 component.toml |
 | 开发视图 | [视图边界](../src/layerweave/tool/builtin/view/README.md)；开始实现时建独立分支 |
 | 修改文档 | [文档约定](documentation.md) |
 | 查看尚未实现的候选方向 | [后续可能更新](FUTURE.md)；视图边界单独维护 |

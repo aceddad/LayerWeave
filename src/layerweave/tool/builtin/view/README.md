@@ -53,7 +53,7 @@ python -m layerweave.tool.builtin.view.server DATABASE [--project 1] [--port 876
 
 - 卸掉视图工具后，配置仍说明批注的样子、检测照常，批注能按普通记录读出；只是不能还原成 Python 实例。
 - 配置帮助查文字层时，批注对象只在"支持的对象类"里点名（继承文字对象，所以文字层也接受它），不展开详情；查批注层（`combined note`）才展开。
-- 别的工具包想这样登记自己的层（素材清单、待办……），步骤见[工具包登记类型](../developer/TOOL_TYPES.md)。
+- 用层当有序列表的一般思路见[AI 开发指导·有序列表与隐藏信息管理](../../../../../docs/build-with-layerweave/02-ordered-metadata.md)；别的工具包想像这样登记自己的层（素材清单、待办……），步骤见[工具包登记类型](../developer/TOOL_TYPES.md)。
 
 ## 给 AI 用
 

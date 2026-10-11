@@ -6,6 +6,7 @@
 |---|---|
 | database.py、schema.sql | 初始化/升级、表结构、项目内发号与全库序列 |
 | crud.py、journal.py、errors.py | 实际记录操作、before/after 日志和引用错误说明 |
+| tables.py、references.py | 内置/工具表声明、原子建表与新增列、引用和身份占用查询 |
 | restoration.py | 精确恢复原身份/原值，维护编号上界 |
 | log_reader.py | 按操作和目标读取原始日志页，不决定撤销或展示策略 |
 | assembly.py、details.py、queries.py | 单记录、范围和关系读取 |

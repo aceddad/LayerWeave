@@ -2,6 +2,7 @@
 
 from importlib import import_module
 import json
+from layerweave.core.identity import identity_key
 
 from layerweave.support.configuration.loader import ConfigError, DEFAULT_ROOT, Loader
 from layerweave.support.values import same_value
@@ -14,7 +15,7 @@ from layerweave.support.diagnostics import prepare_diagnostics
 
 
 def _identity(kind, record):
-    return kind, record.get("project_id") if kind in {"layer", "object"} else None, record["id"]
+    return identity_key(kind, record.get("project_id"), record["id"])
 
 
 def _read(read_record, key):
@@ -97,7 +98,7 @@ def _execute(jobs, read_record, loader, modified=None):
         checked = make_target(kind, project_id, entity_id)
         issue = {"rule": rule, "target": checked, "message": message, **extra}
         actual = issue["target"]
-        identity = (actual["kind"], actual.get("project_id") if actual["kind"] in {"layer", "object"} else None, actual["id"])
+        identity = identity_key(actual["kind"], actual.get("project_id"), actual["id"])
         if identity not in references and actual["kind"] in {"layer", "object"}:
             references[identity] = (_read(read_record, identity) or {}).get("config_ref")
         if references.get(identity):
@@ -187,7 +188,7 @@ def check_changes(changes, read_record, *, config_root=DEFAULT_ROOT):
     """兼容 checker(changes, read_record)；每次调用重新读取配置。"""
     merged = {}
     for change in changes:
-        key = (change["kind"], change["project_id"] if change["kind"] in {"layer", "object"} else None, change["id"])
+        key = identity_key(change["kind"], change["project_id"], change["id"])
         if key not in merged:
             merged[key] = dict(change)
     final = []
@@ -209,7 +210,7 @@ def validate(targets, read_record, *, config_root=DEFAULT_ROOT):
 
     for target in targets:
         kind = target["kind"]
-        key = (kind, target.get("project_id") if kind in {"layer", "object"} else None, target["id"])
+        key = identity_key(kind, target.get("project_id"), target["id"])
         row = _read(read_record, key)
         if row is None:
             missing.append({"rule": "target", "target": target,

@@ -4,6 +4,7 @@ from layerweave.support.storage.log_reader import content, operation_rows, opera
 from layerweave.support.storage.assembly import _snapshot
 from layerweave.support.feedback import InputError, target
 from layerweave.support.values import same_value
+from layerweave.support.api import table_specs
 
 
 def differences(before, after, path=()):
@@ -63,12 +64,13 @@ def read_history(connection, project_id=None, *, kind=None, id=None, operation_i
             raise ValueError("limit 应为正整数")
         if before is not None and (type(before) is not int or before < 1):
             raise ValueError("before 应为上一页返回的正整数游标")
-        if kind is not None and kind not in {"project", "layer", "object", "bind"}:
-            raise InputError(f"未知历史目标：{kind}", field="kind", allowed=["project", "layer", "object", "bind"])
+        specs = table_specs(connection)
+        if kind is not None and (kind not in specs or kind == "change"):
+            raise InputError(f"未知历史目标：{kind}", field="kind", allowed=[name for name in specs if name != "change"])
         if id is not None and kind is None:
             raise ValueError("指定实体 id 时需要同时提供 kind")
-        if id is not None and kind in {"layer", "object"} and project_id is None:
-            raise ValueError("层和对象的历史需要 project_id")
+        if id is not None and specs[kind]["scoped"] and project_id is None:
+            raise ValueError("按项目管理的记录历史需要 project_id")
         counts, page = operation_page(connection, project_id, kind=kind, id=id, limit=limit, before=before)
         items = [_operation(operation_rows(connection, row["operation_id"]), detail=detail, matched_count=row["matched"])
                  for row in page[:limit]]

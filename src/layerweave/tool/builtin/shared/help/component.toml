@@ -1,0 +1,5 @@
+name = "layerweave.help"
+kind = "tool"
+version = "0.1.0"
+description = "展示可用命令、层与对象封装的帮助信息"
+changes = "首次登记当前组件；后续版本由维护者更新本声明。"

@@ -1,0 +1,5 @@
+name = "layerweave.undo"
+kind = "tool"
+version = "0.1.0"
+description = "基于改动日志规划撤销、冲突核对和再次撤销"
+changes = "首次登记当前组件；后续版本由维护者更新本声明。"

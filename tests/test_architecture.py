@@ -17,7 +17,7 @@ from layerweave.support.storage.database import SCHEMA_PATH
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = ROOT / "src/layerweave"
 PACKAGES = ("usage/records", "usage/query", "usage/editing", "usage/history", "usage/undo",
-            "usage/validation", "usage/text", "shared/help", "developer/database", "developer/skills", "developer/keys",
+            "usage/validation", "usage/text", "shared/help", "developer/database", "developer/skills", "developer/keys", "developer/versions",
             "view")   # visualization 分支：视图工具包
 
 FIXTURE = '''
@@ -44,6 +44,7 @@ class IsolationTests(unittest.TestCase):
             package_root = root / "src/layerweave"
             package_root.mkdir(parents=True)
             shutil.copy2(PACKAGE / "__init__.py", package_root / "__init__.py")
+            shutil.copy2(PACKAGE / "component.toml", package_root / "component.toml")
             for name in ("core", "models") if core_only else ("core", "models", "support"):
                 shutil.copytree(PACKAGE / name, package_root / name,
                                 ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
@@ -197,6 +198,13 @@ assert r["layers"][0]["root"] == r["roots"][0]["id"] == r["layers"][0]["id"], r[
 from layerweave.tool.builtin.view.layout import reconcile
 assert reconcile([{"id": 1, "key": "秒"}, {"id": 2, "key": "秒"}, {"id": 3, "key": None}], None)[0]["rows"] == [[1], [2]]
 ''',
+            "developer/versions": '''
+from layerweave.tool.builtin.developer.versions import manage_versions
+r = manage_versions(c)
+assert r["ok"] and r["data"]["status"] == "completed", r
+assert {row["name"] for row in r["data"]["items"]} == {"layerweave.foundation", "layerweave.versions"}, r
+assert len(manage_versions(c,"read")["data"]["items"]) == 2
+''',
             "developer/keys": '''
 from layerweave.tool.builtin.developer.keys.service import manage_keys, get_key
 store = "keys.local.json"
@@ -230,6 +238,35 @@ for item in overview["items"]:
         assert done.code == 0
 '''
                 self.isolated(code, package=package)
+
+    def test_tool_table_storage_and_each_history_tool_work_without_other_packages(self):
+        setup = FIXTURE + '''
+from layerweave.support.api import register_tables, run_operation, table_specs
+register_tables(c, {"note": {"fields": {"text": "TEXT", "object_id": "INTEGER"},
+                           "references": [{"fields": ["project_id", "object_id"], "kind": "object"}]}})
+made = run_operation(c, lambda w: w.create("note", {"text": "review", "object_id": obj.id}, project_id=p))
+assert made["ok"], made
+assert read_record(c, "note", project_id=p, id=made["data"]["id"])["text"] == "review"
+'''
+        self.isolated(setup + '''
+import sys
+assert not any(n == "layerweave.tool" or n.startswith("layerweave.tool.") for n in sys.modules)
+with transaction(c) as w:
+    w.delete("note", made["data"]["id"], project_id=p)
+with transaction(c) as w:
+    w.restore("note", made["data"]["id"], made["data"], project_id=p)
+''')
+        self.isolated(setup + '''
+from layerweave.tool.builtin.usage.history.service import read_history
+r = read_history(c, p, kind="note", id=made["data"]["id"])
+assert r["change_count"] == 1, r
+''', package="usage/history")
+        self.isolated(setup + '''
+from layerweave.tool.builtin.usage.undo.service import undo_operation
+undone = undo_operation(c, made["operation_id"])
+assert undone["ok"] and undone["checks"]["status"] == "not_run", undone
+assert undo_operation(c, undone["operation_id"])["ok"]
+''', package="usage/undo")
 
     def test_installed_imports_and_cli_from_outside_repository(self):
         with tempfile.TemporaryDirectory() as folder:

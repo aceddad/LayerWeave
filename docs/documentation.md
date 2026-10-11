@@ -10,6 +10,7 @@
 | 子目录 README | 按该目录的实际用途介绍模块或作为一组说明的入口；不要求统一套导航模板 |
 | 使用说明 | 学会调用工具，理解输入、返回以及内容、编号、关联、失败和撤销的行为 |
 | 开发指南 | 准备开发环境、找到源码、选择扩充流程和验证方式 |
+| AI 开发指导 | 用 LayerWeave 开发自己的工具，按用法分篇说明自由扩展的位置、最小接入方式与实例 |
 | 架构说明 | 理解概念、模块之间的关系及设计边界 |
 | 实现说明 | 理解内部流程、函数协作、存储步骤和修改注意点 |
 | AGENTS.md | agent 的任务分流、必要阅读与工作要求 |
@@ -25,6 +26,8 @@
 | 主题 | 主要维护位置 |
 |---|---|
 | 模块边界与整体概念 | [架构说明](architecture.md) |
+| 按需借用内核、扩展工具与配置 | [AI 开发指导](build-with-layerweave/README.md)，每种思路单独成篇；参数细节继续由 API 和专题维护 |
+| 工具表声明、字段、引用与接入范围 | [工具表开发指导](build-with-layerweave/03-managed-tables.md) |
 | Python 模型与扩充入口 | [模型说明](../src/layerweave/models/README.md)，字段声明在类及对应 TOML |
 | 配置继承、合并与类绑定 | [配置说明](../src/layerweave/support/configuration/README.md) |
 | Python 调用、输入与返回 | [公共 API](../src/layerweave/support/API.md) |
@@ -36,8 +39,9 @@
 | 汇报等级和配置覆盖 | [诊断专题](../src/layerweave/support/DIAGNOSTICS.md) |
 | 通用查询与位置工具用法 | [使用手册](../src/layerweave/tool/builtin/usage/GUIDE.md) |
 | 命令声明、发现及 CLI 示例 | [命令专题](../src/layerweave/tool/builtin/shared/help/COMMANDS.md) |
+| 组件声明、版本登记与存在状态 | [版本工具](../src/layerweave/tool/builtin/developer/versions/README.md)，当前版本号和更新摘要在各组件的 component.toml |
 | 配置 help 的使用/开发模式 | [配置 help 专题](../src/layerweave/tool/builtin/shared/help/CONFIG_HELP.md) |
-| 工具包登记的层和对象类型、用层当有序列表 | [工具包登记类型](../src/layerweave/tool/builtin/developer/TOOL_TYPES.md)；批注层自己的约定在视图工具 README |
+| 工具包登记自己的层和对象类型 | [工具包登记类型](../src/layerweave/tool/builtin/developer/TOOL_TYPES.md)，以视图工具的批注层为例；有序列表的思路见 AI 开发指导第二篇，批注层自己的约定在视图工具 README |
 | 外置技能的存放与绑定示例 | [外置工具](../src/layerweave/tool/README.md)；各技能的能力说明维护在包内 SKILL.md |
 | 技能 ZIP 的安装参数与文件处理 | [安装说明](../src/layerweave/tool/builtin/developer/SKILLS.md) |
 | 本地 KEY、连接说明与去除私有内容的示例 | [KEY 管理](../src/layerweave/tool/builtin/developer/keys/README.md) |

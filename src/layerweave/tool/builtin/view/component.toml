@@ -1,0 +1,5 @@
+name = "layerweave.view"
+kind = "tool"
+version = "0.8.0"
+description = "视图：画布上的时间轴画板、批注层、截图与“正在看哪儿”，网页源码在仓库 frontend/view"
+changes = "0.8.0：前端单元测试；截图可对准批注、按复制的链接拍；键盘跳转、批注提醒；轨道空当标尺"

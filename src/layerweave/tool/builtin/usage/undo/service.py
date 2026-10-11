@@ -28,7 +28,9 @@ def _read(connection, key):
 def _plan(connection, rows):
     plan = {}
     for row in rows:
-        kind, first, last = row["kind"], row["before_data"], row["after_data"]
+        kind = row["kind"]
+        first = crud.normalize_record(connection, kind, row["before_data"])
+        last = crud.normalize_record(connection, kind, row["after_data"])
         key = _key(kind, last or first)
         if key not in plan:
             plan[key] = {"restore": first, "lifecycle": False}
@@ -78,40 +80,35 @@ def _plan(connection, rows):
 def _dependencies(connection, plan):
     """只检查恢复会改变的真实引用，不替当前配置执行语义检查。"""
     conflicts = []
+    specs = crud.table_specs(connection)
     def final(key):
         return plan[key]["restore"] if key in plan else _read(connection, key)
 
     def missing(owner, field, ref):
         conflicts.append({"code": "undo_dependency", "target": _target(owner), "field": field,
-                          "message": "恢复需要的项目或层不存在于本批最终状态", "related": [_target(ref)]})
+                          "message": "恢复需要的引用不存在于本批最终状态", "related": [_target(ref)]})
 
     for key, item in plan.items():
         kind, project_id, id = key
         restored = item["restore"]
-        if restored is not None and kind in {"layer", "object"}:
-            parent = ("project", None, project_id)
-            if final(parent) is None:
-                missing(key, "project_id", parent)
-            field = "father" if kind == "layer" else "layer"
-            if restored[field] is not None:
-                parent = ("layer", project_id, restored[field])
-                if final(parent) is None:
-                    missing(key, field, parent)
-            other = ("object" if kind == "layer" else "layer", project_id, id)
-            if item["current"] is None and final(other) is not None:
-                conflicts.append({"code": "undo_id_conflict", "target": _target(key),
-                                  "message": "原编号已被同项目的另一种实体占用", "related": [_target(other)]})
-        if restored is not None or kind not in {"project", "layer"}:
+        if restored is not None:
+            for ref in specs[kind]["references"]:
+                parent = crud.reference_key(ref, restored, specs)
+                if parent is not None and final(parent) is None:
+                    missing(key, ref["fields"][-1], parent)
+            if specs[kind]["scoped"] and item["current"] is None:
+                for other_kind, other_spec in specs.items():
+                    other = (other_kind, project_id, id)
+                    if other_kind != kind and other_spec["scoped"] and final(other) is not None:
+                        conflicts.append({"code": "undo_id_conflict", "target": _target(key),
+                                          "message": "原编号已被同项目的另一种实体占用", "related": [_target(other)]})
             continue
-        owner_project = id if kind == "project" else project_id
-        for dependent, field in (("layer", "father"), ("object", "layer")):
-            filters = None if kind == "project" else {field: id}
-            for row in crud.read(connection, dependent, project_id=owner_project, filters=filters):
-                child_key = _key(dependent, row)
-                child = final(child_key)
-                if child is not None and (kind == "project" or child[field] == id):
-                    conflicts.append({"code": "undo_dependency", "target": _target(key),
-                                      "message": "仍有本批不会移走或删除的记录引用此目标", "related": [_target(child_key)]})
+        for dependent, row, ref in crud.dependent_records(connection, key, specs):
+            child_key = _key(dependent, row)
+            child = final(child_key)
+            if child is not None and crud.reference_key(ref, child, specs) == key:
+                conflicts.append({"code": "undo_dependency", "target": _target(key),
+                                  "message": "仍有本批不会移走或删除的记录引用此目标", "related": [_target(child_key)]})
     if conflicts:
         raise InputError("存在引用或编号冲突，本批未写入", code="undo_conflict", conflicts=conflicts)
 
@@ -127,7 +124,9 @@ def undo_operation(connection, operation_id, *, config_root=DEFAULT_ROOT, checke
         _dependencies(connection, plan)
         # 按最终状态恢复，外键在同一事务提交时检查，允许整批恢复父子；成环仍由写入入口拒绝。
         crud.defer_references(connection)
-        keys = sorted(plan, key=lambda key: 0 if key[0] == "project" and plan[key]["restore"] is not None else 2 if key[0] == "project" else 1)
+        # 先恢复项目，再移除旧占用，再恢复其他记录，最后删除项目；引用在提交时统一检查。
+        keys = sorted(plan, key=lambda key: (0 if plan[key]["restore"] is not None else 3) if key[0] == "project"
+                      else 1 if plan[key]["restore"] is None else 2)
         changes = []
         for key in keys:
             try:

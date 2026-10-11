@@ -4,6 +4,8 @@
 
 本页说明 LayerWeave 自身的 Python 读写接口。若要配置出图、生视频等外部服务的 API KEY、地址与模型，使用[KEY 与连接说明](../tool/builtin/developer/keys/README.md)；技能选择和调用顺序见[工具区](../tool/README.md#选择与定位技能)。
 
+首次用它开发自己的工具，可先读[AI 开发指导](../../../docs/build-with-layerweave/README.md)，选择嵌套时序或有序管理的示例，再按需查本页参数。
+
 ## 统一写会话
 
 一次事务中组合读取和修改：
@@ -26,13 +28,19 @@ finally:
 
 work(write) 返回任意业务数据；run_operation 返回 operation_id、operation、ok、applied、data/error 和 checks。实际日志从写入收集，工具不传日志列表。没有变更不制造日志；失败回滚本批记录、发号和日志，不接管调用方未提交事务。
 
-write 提供 read(kind, ...)、create(kind, data, ...)、update(kind, id, data, ...)、delete(kind, id, ...)；层/对象用 project_id，项目和 bind 使用独立 id。create/update/delete 返回实际记录或 None。read 传 id 返回一条，否则返回列表；JSON 字段整体替换。write.operation_id 是本次入口生成的操作编号。
+write 提供 read(kind, ...)、create(kind, data, ...)、update(kind, id, data, ...)、delete(kind, id, ...)；层、对象及 scoped 工具表使用 project_id，独立表按 id 定位。create/update/delete 返回实际记录或 None。read 传 id 返回一条，否则返回列表；JSON 字段整体替换。write.operation_id 是本次入口生成的操作编号。
 
 希望直接处理异常时使用 `with transaction(connection) as write:`；成功自动提交，异常自动回滚。已有写会话内组合原语，不嵌套 run_operation/save。父链无环按批次最终状态检查，编号、外键和必需存储列由支撑保证，内容规则不在此执行。
 
 需要原始数值创建时使用 write.create_exact；需要恢复原身份时使用 write.restore(kind, id, record, project_id=..., undo_of=..., fields=...)。record 是完整历史快照或删除用的 None，fields 可限定已有记录要恢复的顶层字段，空列表不修改；这些接口仍通过本次会话维护结构、编号和日志。撤销冲突策略由工具决定，支撑不猜测覆盖。write.defer_references() 可将本次外键验证延迟到提交，以便恢复整批父子记录。
 
 普通位置写入按轴精度落点，无精度时为 1e-6；改所属层会重新落点 begin/end，只改其他内容不会重写历史位置。精确创建/恢复保留原值。轴单位不自动换算。
+
+## 工具表接入
+
+register_tables(connection, definitions) 创建工具声明的表，或在保留已有定义的情况下新增列；内部使用独立写会话，调用时连接没有待提交事务。table_specs(connection) 返回本数据库内置表与工具表的声明副本，普通读取不创建元数据表。
+
+声明持久化后，write 原语、read_record、dispatch、历史和撤销都能识别新 kind，无需依赖工具代码。按项目的工具表共享项目发号，独立表使用自身序列；日志仍由真实写入生成。字段、引用、结构升级和业务边界统一见[工具表开发指导](../../../docs/build-with-layerweave/03-managed-tables.md)。
 
 ## 六个读写函数
 | 调用 | 返回 |

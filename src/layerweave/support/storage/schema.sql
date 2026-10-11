@@ -7,7 +7,7 @@ BEGIN;
 CREATE TABLE IF NOT EXISTS projects (
     id      INTEGER PRIMARY KEY AUTOINCREMENT,
     name    TEXT NOT NULL DEFAULT '',
-    max_id  INTEGER NOT NULL DEFAULT 0, -- 历史上已发放的最大层/对象编号，不随删除回退
+    max_id  INTEGER NOT NULL DEFAULT 0, -- 层/对象及按项目管理的工具表共用编号，不随删除回退
     tips    TEXT NOT NULL DEFAULT ''
 );
 

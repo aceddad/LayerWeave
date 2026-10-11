@@ -3,6 +3,31 @@
 import sqlite3
 
 from layerweave.support.feedback import target
+from layerweave.core.identity import identity_key
+from .tables import table_specs, quote
+from .references import missing_references, dependent_records
+
+
+def _missing_message(kind, ref, key):
+    if key[0] == "project":
+        return f"项目 {key[2]} 不存在"
+    if kind in {"layer", "object"} and key[0] == "layer":
+        return f"{'父层' if kind == 'layer' else '所属层'} ({key[1]}, {key[2]}) 不存在"
+    return f"引用 {key[0]} ({key[1]}, {key[2]}) 不存在"
+
+
+def _declared_reference_failure(connection, kind, record, action):
+    specs = table_specs(connection)
+    if action != "delete":
+        for ref, key in missing_references(connection, kind, record, specs):
+            return _missing_message(kind, ref, key), ref["fields"][-1], target(*key)
+    else:
+        key = identity_key(kind, record.get("project_id"), record["id"])
+        for dependent, row, ref in dependent_records(connection, key, specs):
+            referenced_by = target(dependent, row.get("project_id"), row["id"])
+            return (f"不能删除 {kind}：仍被 {dependent} ({referenced_by['project_id']}, {row['id']}) 的 {','.join(ref['fields'])} 引用",
+                    "id", referenced_by)
+    return None
 
 
 def _reference_failure(connection, kind, record, action):
@@ -38,7 +63,7 @@ def _reference_failure(connection, kind, record, action):
                 reference = target(table[:-1], row[0], row[1])
                 return (f"不能删除{subject}：仍被 {reference['kind']} ({row[0]}, {row[1]}) 的 {field} 引用",
                         "id", reference)
-    return None
+    return _declared_reference_failure(connection, kind, record, action)
 
 
 def execute(connection, sql, parameters, *, kind, record, action):
@@ -68,25 +93,21 @@ def commit(connection):
         connection.commit()
     except sqlite3.IntegrityError as error:
         if getattr(error, "sqlite_errorcode", None) == sqlite3.SQLITE_CONSTRAINT_FOREIGNKEY:
-            violations = []
+            violations, checked = [], set()
+            specs = table_specs(connection)
+            kinds = {spec["table"]: kind for kind, spec in specs.items()}
             for table, rowid, parent, _ in connection.execute("PRAGMA foreign_key_check"):
-                if table not in {"layers", "objects"} or parent not in {"projects", "layers"}:
+                if table not in kinds or (table, rowid) in checked:
                     continue
-                kind = table[:-1]
-                field = "father" if kind == "layer" else "layer"
-                project_id, id, layer_id = connection.execute(
-                    f'SELECT project_id, id, "{field}" FROM "{table}" WHERE rowid=?', (rowid,),
-                ).fetchone()
-                if parent == "projects":
-                    field, reference = "project_id", target("project", None, project_id)
-                    message = f"项目 {project_id} 不存在"
-                else:
-                    reference = target("layer", project_id, layer_id)
-                    label = "父层" if kind == "layer" else "所属层"
-                    message = f"{label} ({project_id}, {layer_id}) 不存在"
-                violations.append({"target": target(kind, project_id, id), "code": "missing_reference",
-                                   "field": field, "reference": reference,
-                                   "message": f"{kind} ({project_id}, {id})：{message}"})
+                checked.add((table, rowid))
+                kind = kinds[table]
+                row = dict(connection.execute(f'SELECT * FROM {quote(table)} WHERE rowid=?', (rowid,)).fetchone())
+                owner = target(kind, row.get("project_id"), row["id"])
+                for ref, key in missing_references(connection, kind, row, specs):
+                    message = _missing_message(kind, ref, key)
+                    violations.append({"target": owner, "code": "missing_reference",
+                                       "field": ref["fields"][-1], "reference": target(*key),
+                                       "message": f"{kind} ({owner['project_id']}, {row['id']})：{message}"})
             if violations:
                 first = violations[0]
                 error.args = (f"无法提交：{first['message']}；共 {len(violations)} 处引用缺失",)

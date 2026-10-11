@@ -1,5 +1,5 @@
 name = "layerweave.history"
 kind = "tool"
-version = "0.1.0"
+version = "0.1.1"
 description = "按操作查看改动历史和字段变化"
-changes = "首次登记当前组件；后续版本由维护者更新本声明。"
+changes = "历史字段差异识别已登记计数列，不将发号状态当作普通内容变更。"

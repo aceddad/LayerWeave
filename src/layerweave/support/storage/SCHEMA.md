@@ -2,7 +2,7 @@
 
 本专题维护存储格式与写入约定。[返回存储入口](README.md)。
 
-`schema.sql` 定义四张业务表和一张 changes 日志表；`database.py` 提供打开连接、初始化和项目内发号，`crud.py` 提供通用操作，`journal.py` 记录改动；`errors.py` 仅在 SQL 约束失败时解释缺失/被引用的记录。完整模型读写优先见 [公共 API](../API.md)；单条请求和检测协议见 [请求与反馈协议](../../tool/builtin/usage/CRUD.md)。
+`schema.sql` 定义四张业务表和一张 changes 日志表；`database.py` 提供打开连接和初始化，support/numbering 提供发号，`crud.py` 提供通用操作，`journal.py` 记录改动；`errors.py` 仅在 SQL 约束失败时解释缺失/被引用的记录。完整模型读写优先见 [公共 API](../API.md)；单条请求和检测协议见 [请求与反馈协议](../../tool/builtin/usage/CRUD.md)。
 
 ## 初始化
 
@@ -26,7 +26,7 @@ python -X utf8 -B -m layerweave.tool.builtin.developer.database.cli output/ai-pr
 | binds | 两端各自记录 kind、project_id、id，另存 tips 和全库递增、不复用的独立 id |
 | changes | 内部 id、operation_id、UTC 时间、目标种类/项目/编号、动作、前后 JSON 快照；undo_of 记录撤销来源 |
 
-register_tables 可按工具声明创建额外的托管表；首次接入时建立 _layerweave_tables 保存声明，普通初始化仍只有上述五张表。工具表的字段、身份和引用详见[接入说明](../../../../docs/build-with-layerweave/03-managed-tables.md)。现有 kinds 及存储列不因此改变。
+register_tables 可按工具声明创建额外的托管表；首次接入时建立 _layerweave_tables 保存声明，普通初始化仍只有上述五张表。发号词条与簇成员另由按需创建的 _layerweave_numbering 保存。工具表的字段、身份和引用详见[接入说明](../../../../docs/build-with-layerweave/03-managed-tables.md)。现有 kinds 及存储列不因此改变。
 
 - `config_ref` 是两类实体的存储元数据，路径相对于项目的 `src/layerweave/configs/`，例如 `objects/image.toml`。它给读取配置、恢复对应 Python 类提供依据，不添加到基础类中。
 - 层的 `type` 保存 TOML 中的类型标识，Python 类不再声明同名字符串。save_layer 自动取得它；dispatch 在省略 type 且提供 config_ref 时也会补齐。低层 crud 不读配置，仍写入调用方提供的原始 type/config_ref，独立检测负责报告矛盾。
@@ -42,11 +42,11 @@ register_tables 可按工具声明创建额外的托管表；首次接入时建�
 
 ## 编号身份
 
-项目使用独立编号；同一项目内，层、对象与 scoped=true 的工具表共用发号器，不同项目可以有相同的局部编号。这些记录的完整身份是 (project_id, id)，引用还携带 kind 区分种类；text/image 等封装 type 与 kind 分开。项目、bind 与 scoped=false 工具表分别使用各表的独立编号，不占 projects.max_id。
+项目使用独立编号；同一项目内，层、对象与默认 auto 的 scoped 工具表共用 project_entities 发号词条，不同项目可以有相同的局部编号。这些记录的完整身份是 (project_id, id)，引用还携带 kind 区分种类；text/image 等封装 type 与 kind 分开。项目、bind 与未加入发号词条的 auto 独立工具表分别使用各表的自增编号，不占 projects.max_id。provided 工具表由调用方提供 ID，默认不属于任何簇；自定义簇的成员和计数位置见[发号说明](../numbering/README.md)。
 
 ## 发号与写入
 
-同一项目的层和对象都通过 `allocate_id()` 申请编号，它只更新 max_id，不提交事务。发号和保存实体放在同一个事务里：
+同一项目的层和对象在创建时通过默认词条申请编号。开发接口为 `allocate("project_entities", data={"project_id": project_id})`，隐式使用当前写会话，只更新 max_id，不提交事务、不创建业务记录。发号和保存实体放在同一个事务里：
 
 ```python
 from contextlib import closing
@@ -64,7 +64,7 @@ with closing(open_database(path)) as connection:
 
 关联经统一 CRUD 入口创建，binds.id 由 SQLite AUTOINCREMENT 保持全库递增，不占 projects.max_id。initialize_database 还会升级旧关联表并补上 changes.undo_of；关联发号起点同时参考现存行和已删除记录的历史最大编号，保留旧数据及索引。普通打开连接不会自动迁移；旧库写入前运行初始化命令，详见 [历史与恢复](../../tool/builtin/usage/HISTORY.md)。
 
-各托管表的主键防止同表重号，按项目的跨表共享编号由统一发号和恢复入口保证。直接 SQL 会绕过日志与结构保证，不属于工具的受支持记录写入接口。工具声明通过 register_tables 交给支撑维护；建表脚本没有额外触发器。
+各托管表的主键防止同表重号，同簇、同范围的跨表编号由发号及提交前检查保证；未入簇的自定义 ID 不参与跨表占用比较。直接 SQL 会绕过日志与结构保证，不属于工具的受支持记录写入接口。工具声明通过 register_tables 交给支撑维护；建表脚本没有额外触发器。
 
 CDUR 请求由 records 包的 dispatch 翻译，最终通过支撑写会话执行。开发其他工具直接使用 transaction/run_operation，无需依赖 CDUR 包；记录原语只在统一写会话内工作。
 
@@ -73,7 +73,7 @@ CDUR 请求由 records 包的 dispatch 翻译，最终通过支撑写会话执�
 - 实际发生的 create、update、delete 各记录目标行的前后快照；read、空修改、无变化及目标不存在的操作不记日志。
 - 什么算改动，以实际存储的前后值为准，具体比较规则见下节。
 - 业务写入与日志同事务提交；数据或日志写入失败时，由事务调用方一起回滚。
-- operation_id 由支撑的统一入口生成 UUID，同一批操作共用，不占 projects.max_id；工具不自行发号或构造日志。
+- operation_id 由支撑的统一入口生成 UUID，同一批操作共用，不占 projects.max_id；工具不自行生成 operation_id 或构造日志。
 - 日志没有实体外键，目标被删除后仍能查看历史。日志本身通过 read(kind="change") 查询。
 - 检测在提交后运行，不改变日志或业务操作的提交状态。显式撤销由 undo_operation 提供，新操作保留 undo_of；不自动撤回有诊断的写入。失败操作的持久化诊断日志尚未实现。
 

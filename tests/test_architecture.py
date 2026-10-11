@@ -265,6 +265,26 @@ assert undo_operation(c, undone["operation_id"])["ok"]
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn("split_object", result.stdout)
 
+    def test_provided_ids_and_numbering_work_without_any_tool_package(self):
+        self.isolated(FIXTURE + '''
+from layerweave.support.api import register_tables, allocate, numbering_entries, run_operation
+register_tables(c, {"view_state": {"id_source":"provided", "fields":{"collapsed":{"type":"INTEGER", "default":0}},
+                                  "references":[{"fields":["project_id","id"],"kind":"layer"}]}})
+made = run_operation(c, lambda w: w.create("view_state", {"id":layer.id,"collapsed":1}, project_id=p))
+assert made["ok"] and made["data"]["id"] == layer.id, made
+assert "view_state" not in numbering_entries(c)["project_entities"]["members"]
+with transaction(c) as w:
+    identity = allocate("project_entities",data={"project_id":p})
+assert identity["id"] > obj.id and identity["project_id"] == p
+with transaction(c) as w:
+    w.delete("view_state",layer.id,project_id=p)
+with transaction(c) as w:
+    w.restore("view_state",layer.id,made["data"],project_id=p)
+assert read_record(c,"view_state",project_id=p,id=layer.id)["collapsed"] == 1
+import sys
+assert not any(n == "layerweave.tool" or n.startswith("layerweave.tool.") for n in sys.modules)
+''')
+
     def test_foundation_has_no_import_dependency_on_builtin_tools(self):
         for path in (PACKAGE / "support").rglob("*.py"):
             tree = ast.parse(path.read_text(encoding="utf-8-sig"))

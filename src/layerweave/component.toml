@@ -1,5 +1,5 @@
 name = "layerweave.foundation"
 kind = "foundation"
-version = "0.1.0"
+version = "0.2.0"
 description = "层、对象等抽象结构，以及配置、存储、编号、事务和日志支撑"
-changes = "首次登记当前组件；后续版本由维护者更新本声明。"
+changes = "支持工具自定义整数 ID、可登记发号词条和规则；恢复按簇检查并保留计数上界。"

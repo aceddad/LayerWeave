@@ -63,7 +63,7 @@ operation = read_history(connection, operation_id=operation_id)
 
 - 每项含 operation_id、undo_of、时间、project_ids、change_count、matched_change_count 和 changes。
 - 更新记录的 fields 表示字段差异；path 是键数组，before_present/after_present 区分缺失与 null。
-- 字典差异递归展开，列表整体比较；1、1.0、true 分开表示。发号状态 max_id 不作为内容差异展示。
+- 字典差异递归展开，列表整体比较；1、1.0、true 分开表示。发号状态 max_id 及登记的其他计数列不作为内容差异展示。
 
 **边界行为：**
 
@@ -110,6 +110,7 @@ if undone["ok"] and undone["applied"]:
 - information、axis 各算一个完整字段，不合并其内部键；其他未被原操作改变的字段保留后续值。
 - 创建/删除仍按整条记录判断；任一冲突都会阻止整批恢复，没有局部撤销或强制覆盖。
 - 缺少恢复所需层/项目、原编号被占用、待删除记录被后来记录引用，都会报告冲突。
+- 跨表编号占用仅比较同簇、同计数范围的成员。provided 簇外工具表可以与层、对象使用相同数字；规则见[编号模块](../../../support/numbering/README.md)。
 - 冲突时 ok=false、applied=false，error.conflicts 给出目标、字段、预期/当前/拟恢复值或引用阻碍；comparison 为 fields 或 record。
 - 恢复原编号、历史坐标、内容、config_ref 和层 type，不按当前轴重新落点。已提交的发号进度不回退。
 - 成功撤销作为新操作记入历史。没有最终变化时 unchanged；操作不存在或没有实际日志时为 operation_not_found。

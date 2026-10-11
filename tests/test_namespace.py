@@ -54,6 +54,15 @@ entry = run_operation(c, lambda w: w.create("audit_entry", {"data": {"ok": True}
 assert entry["ok"] and entry["data"]["data"]["ok"] is True, entry
 assert undo_operation(c, entry["operation_id"])["ok"]
 assert read_record(c, "audit_entry", project_id=p) == []
+from layerweave.support.api import allocate, numbering_entries
+register_tables(c, {"view_state": {"id_source":"provided", "fields":{"collapsed":{"type":"INTEGER", "default":0}}}})
+view = run_operation(c, lambda w: w.create("view_state", {"id":layer.id,"collapsed":1}, project_id=p))
+assert view["ok"], view
+assert "view_state" not in numbering_entries(c)["project_entities"]["members"]
+reversed_view = undo_operation(c, view["operation_id"])
+assert reversed_view["ok"] and undo_operation(c,reversed_view["operation_id"])["ok"]
+with transaction(c):
+    assert allocate("project_entities",data={"project_id":p})["project_id"] == p
 assert read_support("combined", "text")["status"] == "completed"
 commands = command_help()
 assert len(commands["items"]) == 28 and commands["status"] == "completed", commands
@@ -84,7 +93,7 @@ assert installed["route"] == "tool/skills/scenarios/downloaded/SKILL.md"
 for name, module in hosts.items():
     assert module is sys.modules[name] and module.MARKER == "host:" + name
 c.close()
-print("namespace, model roundtrip, tool tables/undo, component versions, commands, config/schema and skills passed")
+print("namespace, model roundtrip, tool tables/undo, custom IDs/numbering, component versions, commands, config/schema and skills passed")
 '''
 
 

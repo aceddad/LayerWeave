@@ -64,7 +64,8 @@ class VersionTests(unittest.TestCase):
                     "help", "database", "skills", "keys", "versions"}
         self.assertEqual({row["name"] for row in rows}, {"layerweave." + name for name in expected})
         self.assertEqual(len(rows), 13)
-        self.assertTrue(all(row["status"] == "online" and row["version"] == "0.1.0" for row in rows))
+        self.assertTrue(all(row["status"] == "online" and row["version"] for row in rows))
+        self.assertEqual(next(row for row in rows if row["name"] == "layerweave.foundation")["version"], "0.2.0")
         self.assertEqual(sum(row["kind"] == "tool" for row in rows), 12)
         self.assertEqual(sum(row["kind"] == "foundation" for row in rows), 1)
         self.assertEqual(len(list(BUILTIN_ROOT.rglob("component.toml"))), 12)

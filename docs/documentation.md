@@ -28,6 +28,7 @@
 | 模块边界与整体概念 | [架构说明](architecture.md) |
 | 按需借用内核、扩展工具与配置 | [AI 开发指导](build-with-layerweave/README.md)，每种思路单独成篇；参数细节继续由 API 和专题维护 |
 | 工具表声明、字段、引用与接入范围 | [工具表开发指导](build-with-layerweave/03-managed-tables.md) |
+| 自定义 ID、发号词条、簇成员与计数恢复 | [编号模块](../src/layerweave/support/numbering/README.md) |
 | Python 模型与扩充入口 | [模型说明](../src/layerweave/models/README.md)，字段声明在类及对应 TOML |
 | 配置继承、合并与类绑定 | [配置说明](../src/layerweave/support/configuration/README.md) |
 | Python 调用、输入与返回 | [公共 API](../src/layerweave/support/API.md) |

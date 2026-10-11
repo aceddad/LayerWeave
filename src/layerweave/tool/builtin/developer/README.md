@@ -17,6 +17,7 @@
 | 调整诊断汇报 | [诊断配置](../../../support/DIAGNOSTICS.md) |
 | 修改存储、编号、日志或恢复 | [存储入口](../../../support/storage/README.md) |
 | 接入工具自己的业务表 | [工具表开发指导](../../../../../docs/build-with-layerweave/03-managed-tables.md)，用声明复用统一管理 |
+| 使用自己的 ID 或登记共享发号规则 | [编号模块](../../../support/numbering/README.md)，薄 Python 接口，不增加业务工具依赖 |
 | 查完整封装定义 | [配置 help](../shared/help/CONFIG_HELP.md)，使用既有 --dev 模式 |
 
 修改前阅读[开发指南](../../../../../docs/developer-conventions.md)，只展开当前任务需要的专题。文档与示例的维护方式见[文档约定](../../../../../docs/documentation.md)。

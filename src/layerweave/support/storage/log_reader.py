@@ -1,11 +1,13 @@
 """原始改动日志查询；不依赖历史展示或撤销策略。"""
 from . import crud
 
-def content(kind, row):
+def content(kind, row, connection=None):
     """发号进度是托管状态，不参与内容撤销及冲突比较。"""
     if row is None:
         return None
-    return {key: value for key, value in row.items() if not (kind == "project" and key == "max_id")}
+    from layerweave.support.numbering.state import counter_fields
+    fields = counter_fields(connection, kind, row) if connection is not None else {"max_id"} if kind == "project" else set()
+    return {key: value for key, value in row.items() if key not in fields}
 
 
 def operation_rows(connection, operation_id):

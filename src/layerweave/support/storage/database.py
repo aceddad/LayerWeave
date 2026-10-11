@@ -1,4 +1,4 @@
-"""初始化 SQLite 业务表及日志表，并提供项目内共用的发号方法。"""
+"""初始化 SQLite 业务表及日志表；发号服务位于 support.numbering。"""
 
 from contextlib import closing
 from pathlib import Path
@@ -84,15 +84,3 @@ def upgrade_history(connection):
             connection.execute("INSERT INTO sqlite_sequence(name,seq) VALUES ('binds',?)", (maximum,))
         elif maximum > row[0]:
             connection.execute("UPDATE sqlite_sequence SET seq=? WHERE name='binds'", (maximum,))
-
-
-def allocate_id(connection: sqlite3.Connection, project_id: int) -> int:
-    """申请项目内的下一个层/对象编号；不提交，由调用方与实体写入一起提交。"""
-    row = connection.execute(
-        "UPDATE projects SET max_id = max_id + 1 WHERE id = ? RETURNING max_id",
-        (project_id,),
-    ).fetchone()
-    if row is None:
-        raise InputError(f"项目 {project_id} 不存在", code="missing_reference", field="project_id",
-                         reference=target("project", None, project_id))
-    return row[0]

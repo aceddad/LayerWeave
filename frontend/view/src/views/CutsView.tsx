@@ -2,7 +2,7 @@
 import {useEffect} from 'react';
 import {useShallow} from 'zustand/react/shallow';
 import {selectObject} from '../actions';
-import {Frame, Img} from '../canvas/Media';
+import {Frame, Thumb} from '../canvas/Media';
 import {markReady} from '../capture';
 import {cutGroupKey, cutList} from '../model/cuts';
 import type {Cut, CutItem} from '../model/cuts';
@@ -16,7 +16,7 @@ function Shot({model, it, end, project, frames}: {model: Model; it: CutItem; end
   const o = it.o, unit = model.unitOfRoot(it.root);
   if (o.media && !o.media.available) return <div className="shot missing">文件不存在<br />{o.media.source}</div>;
   if (!o.media?.url) return <div className="shot missing">没有素材</div>;
-  if (kindOf(o) === 'image') return <div className="shot"><Img src={o.media.url} /></div>;
+  if (kindOf(o) === 'image') return <div className="shot"><Thumb project={project} o={o} width={640} frames={frames} /></div>;
   return <div className="shot"><Frame project={project} o={o} at={end ? lastAt(o, isSec(unit)) : 0.05} frames={frames} /></div>;
 }
 

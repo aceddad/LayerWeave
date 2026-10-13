@@ -27,5 +27,7 @@ export const api = {
   fold: (id: number, body: unknown) => post<{error?: string; recorded?: boolean}>(`/api/folds/${id}`, body),
 };
 
+export const thumbUrl = (project: number, objectId: number, width: number) => `/thumb/${project}/${objectId}?w=${width}`;
+
 export const frameUrl = (project: number, objectId: number, at: number | 'end') =>
   `/frame/${project}/${objectId}?t=${at === 'end' ? 'end' : (+at).toFixed(2)}`;

@@ -15,7 +15,7 @@ import re
 import threading
 from urllib.parse import parse_qs, urlparse
 
-from .data import extract_frame, find_ffmpeg, list_projects, media_path, open_readonly, project_roots, project_view, recent_changes
+from .data import extract_frame, find_ffmpeg, list_projects, media_path, open_readonly, project_roots, project_view, recent_changes, thumbnail, waveform
 from .layout import layout_serial, load_layout, reconcile, save_layout
 from .fold import set_folds
 from .note import add_note, remove_note, set_read, update_note
@@ -95,6 +95,29 @@ class ViewHandler(SimpleHTTPRequestHandler):
                 body = FRAMES[key]
                 self.send_response(HTTPStatus.OK)
                 self.send_header("Content-Type", "image/jpeg")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                return self.wfile.write(body)
+            if match := re.fullmatch(r"/wave/(\d+)/(\d+)", url.path):
+                # 音频波形：服务端算好的 800 段能量；算不了时 404，页面退回自己解码
+                with closing(open_readonly(self.database)) as connection:
+                    path = media_path(connection, self.database, int(match[1]), int(match[2]))
+                values = waveform(path, self.state_root) if path else None
+                if values is None:
+                    return self.send_json({"error": "算不了这个波形"}, HTTPStatus.NOT_FOUND)
+                return self.send_json({"rms": values})
+            if match := re.fullmatch(r"/thumb/(\d+)/(\d+)", url.path):
+                # 图片缩略图：画布、素材页、接缝页用它；缩不了（没有 ffmpeg、svg、gif、解不开）就送原图
+                with closing(open_readonly(self.database)) as connection:
+                    path = media_path(connection, self.database, int(match[1]), int(match[2]))
+                if not path:
+                    return self.send_json({"error": "没有这个素材"}, HTTPStatus.NOT_FOUND)
+                made = thumbnail(path, int(parse_qs(url.query).get("w", ["320"])[0]), self.state_root)
+                if made is None:
+                    return self.send_file(path)
+                body, kind = made
+                self.send_response(HTTPStatus.OK)
+                self.send_header("Content-Type", kind)
                 self.send_header("Content-Length", str(len(body)))
                 self.end_headers()
                 return self.wfile.write(body)

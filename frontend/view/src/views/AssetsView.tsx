@@ -2,7 +2,7 @@
 import {useEffect} from 'react';
 import {useShallow} from 'zustand/react/shallow';
 import {selectObject} from '../actions';
-import {Frame, Img} from '../canvas/Media';
+import {Frame, Thumb} from '../canvas/Media';
 import {Waveform} from '../canvas/Waveform';
 import {markReady} from '../capture';
 import {KIND_LABEL, kindOf} from '../model/kinds';
@@ -31,7 +31,7 @@ export function AssetsView() {
             <div key={o.id} className="tile" title={o.media?.source ?? ''} onClick={() => selectObject(o.id)}>
               <div className="thumb">
                 {missing ? '文件不存在'
-                  : k === 'image' ? <Img src={o.media!.url!} />
+                  : k === 'image' ? <Thumb project={project} o={o} width={320} frames={frames} />
                   : k === 'video' ? <Frame project={project} o={o} at={0.1} frames={frames} />
                   : k === 'audio' ? <Waveform url={o.media!.url!} className="tile-wave" />
                   : k === 'text' ? <div className="txt">{o.text}</div> : null}

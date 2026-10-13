@@ -44,6 +44,7 @@ export interface State {
   dragging: boolean;
   drop: Drop | null;
   autoFit: boolean;
+  settledZoom: number;   // 镜头停下来时的缩放：格子按它决定画多细（缩放过程中不换，免得每跨一档几百个格子一起重画）
   set: (patch: Partial<State> | ((s: State) => Partial<State>)) => void;
 }
 
@@ -61,7 +62,7 @@ export const useStore = create<State>((set) => ({
   sel: null, targetLayer: null, wholeProject: false,
   noteFilter: 'open', noteFocus: numParam('note'), me: localStorage.getItem('lw-author') || '用户',
   canvasW: Math.max(600, window.innerWidth - 340), canvasH: Math.max(400, window.innerHeight - 50),
-  dragging: false, drop: null, autoFit: true,
+  dragging: false, drop: null, autoFit: true, settledZoom: 0,
   set: (patch) => set(patch as any),
 }));
 
@@ -91,6 +92,27 @@ export function notesOf(s: State): NotesInfo | null {
   return notesCache.value;
 }
 export const useNotes = () => useStore(notesOf);
+// 这一刻要画关系线的端点（"object:16"、"layer:5"）：只有它们挂 React Flow 的连接点。
+// 每个对象都挂的话，5000 个对象就是一万个点，画板一动 React Flow 就要把它们的位置全量一遍（2026-10-14 量的：打开时最耗时的就是这个）
+let handleCache: {key: unknown[]; value: Set<string>} | null = null;
+export function handleKeysOf(s: State): Set<string> {
+  const model = modelOf(s);
+  const key = [model, s.links, s.selected];
+  if (handleCache && handleCache.key.every((v, i) => v === key[i])) return handleCache.value;
+  const value = new Set<string>();
+  if (model) {
+    const mine = (r: {kind: string; project: number; id: number}) => r.kind === 'object' && r.project === model.project && r.id === s.selected;
+    for (const b of model.data.binds) {
+      if (!s.links && !(s.selected != null && (mine(b.source) || mine(b.target)))) continue;
+      if (b.source.project !== model.project || b.target.project !== model.project) continue;
+      value.add(`${b.source.kind}:${b.source.id}`);
+      value.add(`${b.target.kind}:${b.target.id}`);
+    }
+  }
+  handleCache = {key, value};
+  return value;
+}
+
 // 在等本机署名的楼（没处理、最后一句不是我说的、我也没标已读）：标签上的数字、标题、"等我回复"都用它
 export const waitingOf = (s: State) => waitingFor(notesOf(s)?.threads ?? [], s.me, s.data?.noteReads);
 

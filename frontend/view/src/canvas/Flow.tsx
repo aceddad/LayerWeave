@@ -3,7 +3,7 @@ import {Background, BackgroundVariant, MarkerType, MiniMap, Panel, ReactFlow, ap
 import type {Edge, NodeChange, ReactFlowInstance} from '@xyflow/react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useShallow} from 'zustand/react/shallow';
-import {attachCamera, focusInitial, viewport} from '../camera';
+import {attachCamera, focusInitial, settleZoom, viewport} from '../camera';
 import {markReady} from '../capture';
 import {merge, sizeOf, snap} from '../model/layoutOps';
 import {keyOf} from '../model/model';
@@ -131,7 +131,7 @@ export function Flow() {
         onNodesChange={onNodesChange} onNodeDragStart={onNodeDragStart} onNodeDrag={onNodeDrag} onNodeDragStop={onNodeDragStop}
         onInit={(rf) => { attachCamera(rf as unknown as ReactFlowInstance, paneRef.current!); setInstance(rf as unknown as ReactFlowInstance); }}
         onMoveStart={(event) => { if (event) setState({autoFit: false}); }}
-        onMoveEnd={() => report()}
+        onMoveEnd={() => { report(); settleZoom(); }}
         colorMode="dark" minZoom={0.05} maxZoom={4} defaultViewport={{x: 24, y: 24, zoom: 1}}
         nodesConnectable={false} elementsSelectable={false} nodesFocusable={false} edgesFocusable={false}
         nodesDraggable={!CAPTURE} zoomOnDoubleClick={false}>

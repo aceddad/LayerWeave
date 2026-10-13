@@ -11,7 +11,7 @@ from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 from layerweave.support.api import initialize_database, open_database, read_record, run_operation, save_layer, save_object, transaction
-from layerweave.models import ImageLayer, Image, Movie, TextLayer, Text
+from layerweave.models import Audio, ImageLayer, Image, Movie, TextLayer, Text
 from layerweave.tool.builtin.view.data import axis_key, extract_frame, find_ffmpeg, open_readonly, project_view, recent_changes
 from layerweave.tool.builtin.view.fold import fold
 from layerweave.tool.builtin.view.layout import arrange, chain_offsets, layout_path, merge, reconcile, split
@@ -189,6 +189,46 @@ class ViewTests(unittest.TestCase):
             save_object(c, self.project, clip)
         status, headers, body = self.get(f"/frame/{self.project}/{clip.id}?t=end")
         self.assertEqual((status, headers["Content-Type"]), (200, "image/jpeg"))
+
+    @unittest.skipIf(find_ffmpeg() is None, "本机没有 ffmpeg")
+    def test_thumbnails_are_scaled_cached_and_fall_back_to_the_original(self):
+        import struct
+        import subprocess
+        big = Path(self.temp.name) / "media" / "big.png"                     # 1000×600，带透明
+        subprocess.run([find_ffmpeg(), "-v", "error", "-f", "lavfi", "-i", "color=c=red@0.5:s=1000x600:d=1,format=rgba",
+                        "-frames:v", "1", str(big)], check=True, capture_output=True)
+        with closing(open_database(self.database)) as c:
+            pic = Image(layer=self.art_layer, begin=7, end=8, information={"source": "media/big.png"})
+            save_object(c, self.project, pic)
+        status, headers, body = self.get(f"/thumb/{self.project}/{pic.id}?w=300")
+        self.assertEqual((status, headers["Content-Type"]), (200, "image/png"))           # 带透明的缩成 PNG
+        self.assertEqual(struct.unpack(">II", body[16:24]), (320, 192))                    # 300 取到 320 这一档，高按比例
+        cached = list((Path(self.state_root) / "thumbs").glob("*.png"))
+        self.assertEqual(len(cached), 1)                                                  # 存在本机视图目录，第二次直接读
+        self.assertEqual(self.get(f"/thumb/{self.project}/{pic.id}?w=320")[2], body)
+        status, _, body = self.get(f"/thumb/{self.project}/{self.image.id}?w=320")        # 解不开的"图"：送原图
+        self.assertEqual((status, body), (200, self.png))
+        with self.assertRaises(HTTPError) as error:
+            self.get(f"/thumb/{self.project}/{self.missing.id}")
+        self.assertEqual(error.exception.code, 404)
+
+    @unittest.skipIf(find_ffmpeg() is None, "本机没有 ffmpeg")
+    def test_waveforms_are_computed_by_the_server_and_cached(self):
+        import subprocess
+        song = Path(self.temp.name) / "media" / "quiet_loud.wav"           # 前一秒小声、后一秒大声
+        subprocess.run([find_ffmpeg(), "-v", "error", "-f", "lavfi", "-i", "sine=f=440:d=1,volume=0.05",
+                        "-f", "lavfi", "-i", "sine=f=440:d=1,volume=0.8", "-filter_complex", "[0][1]concat=n=2:v=0:a=1",
+                        str(song)], check=True, capture_output=True)
+        with closing(open_database(self.database)) as c:
+            clip = Audio(layer=self.art_layer, begin=8, end=10, information={"source": "media/quiet_loud.wav"})
+            save_object(c, self.project, clip)
+        rms = self.json(f"/wave/{self.project}/{clip.id}")["rms"]
+        self.assertEqual(len(rms), 800)
+        self.assertGreater(sum(rms[500:700]), 5 * sum(rms[100:300]))                      # 后半段明显更响
+        self.assertEqual(len(list((Path(self.state_root) / "waves").glob("*.json"))), 1)
+        with self.assertRaises(HTTPError) as error:                                          # 解不开：404，页面退回自己解码
+            self.get(f"/wave/{self.project}/{self.image.id}")
+        self.assertEqual(error.exception.code, 404)
 
     def test_note_types_are_registered_in_core_configs_by_the_view(self):
         from layerweave.support.configuration.loader import Loader

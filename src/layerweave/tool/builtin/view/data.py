@@ -1,7 +1,10 @@
 """视图读取：只读打开数据库，整理成网页需要的结构；素材文件只提供数据库里引用过的。"""
+from concurrent.futures import ThreadPoolExecutor
 import json
+import os
 from pathlib import Path
 import sqlite3
+import threading
 
 from layerweave.support.api import read_project_details, read_record
 
@@ -43,6 +46,24 @@ def resolve_source(database, source):
     if not path.is_absolute():
         path = Path(database).resolve().parent / path
     return path.resolve()
+
+
+def _local(base, source):
+    """和 resolve_source 同样的规则，但不解析真实路径：整理项目数据时只要知道文件在不在（送文件时再用 resolve_source）。"""
+    if not isinstance(source, str) or not source or "://" in source:
+        return None
+    path = Path(source)
+    return str(path if path.is_absolute() else base / path)
+
+
+def _existing(paths):
+    """一批本地文件在不在：去重后并行地查。Windows 上解析路径、查一次文件都要零点几毫秒，
+    几千个对象逐个查要好几秒（2026-10-14 量的：5000 个对象的库里整理一次项目要 3.8 秒，九成花在这里）。"""
+    unique = list(dict.fromkeys(p for p in paths if p))
+    if len(unique) < 32:
+        return {p: os.path.isfile(p) for p in unique}
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        return dict(zip(unique, pool.map(os.path.isfile, unique)))
 
 
 UNIT_ALIASES = {"秒": {"秒", "s", "sec", "secs", "second", "seconds"}, "帧": {"帧", "f", "frame", "frames"}}
@@ -92,6 +113,14 @@ def project_view(connection, database, project_id):
         return None
     layers, roots, root_of = [], {}, {}
     hidden = _hidden_by_default({layer["config_ref"] for layer in details["layers"]})
+    base = Path(database).resolve().parent
+    local = {}
+    for layer in details["layers"]:
+        for obj in layer["objects"]:
+            info = obj["information"] if isinstance(obj["information"], dict) else {}
+            if media_kind(info.get("source")):
+                local[obj["id"]] = _local(base, info.get("source"))
+    exists = _existing(local.values())
     for layer in order_layers(details["layers"]):
         if layer["depth"] is not None:
             root_of[layer["id"]] = layer["id"] if layer["depth"] == 0 else root_of[layer["father"]]
@@ -105,15 +134,14 @@ def project_view(connection, database, project_id):
             info = obj["information"] if isinstance(obj["information"], dict) else {}
             source = info.get("source")
             kind = media_kind(source)
-            path = resolve_source(database, source) if kind else None
+            available = bool(kind and exists.get(local.get(obj["id"])))
             item = {
                 "id": obj["id"], "name": obj["name"], "type": obj["config_ref"].rsplit("/", 1)[-1].removesuffix(".toml"),
                 "begin": obj["begin"], "end": obj["end"], "tips": obj["tips"],
                 "text": info.get("text") if isinstance(info.get("text"), str) else None,
                 "media": None if kind is None else {
-                    "kind": kind, "source": source,
-                    "available": bool(path and path.is_file()),
-                    "url": f"/media/{project_id}/{obj['id']}" if path and path.is_file() else None,
+                    "kind": kind, "source": source, "available": available,
+                    "url": f"/media/{project_id}/{obj['id']}" if available else None,
                 },
                 "information": info,
             }
@@ -239,6 +267,87 @@ def find_ffmpeg():
     if value and Path(value).is_file():
         return value
     return shutil.which("ffmpeg")
+
+
+THUMB_WIDTHS = (160, 320, 640, 1280)   # 只出这几种宽，免得缓存按任意宽度长
+THUMB_KEEP = {".svg", ".gif"}            # 不缩：矢量图本来就轻；动图缩了只剩第一帧
+_thumb_slots = threading.BoundedSemaphore(4)   # 同时最多几个 ffmpeg：页面一打开会同时要几百张
+
+
+def thumbnail(path, width, cache_root=None, *, ffmpeg=None):
+    """图片的缩略图：(字节, 类型)。用 ffmpeg 缩到 width 宽（原图更窄时不放大），存在本机视图目录 thumbs/ 里，
+    原文件的修改时间或大小变了就重做。带透明的格式（png、webp）缩成 PNG，其余缩成 JPEG。
+    没有 ffmpeg、文件解不开（或是 svg、gif）时返回 None，调用方改送原图。
+    为什么要缩：画布上一个格子一两百像素宽，原图却常是几 MB 的 3072×2048；手书那个库打开就下载了 390 MB，拖动画布每秒只有 8 帧（2026-10-14 量的）。"""
+    import hashlib
+    import subprocess
+    path = Path(path)
+    if path.suffix.lower() in THUMB_KEEP:
+        return None
+    ffmpeg = ffmpeg or find_ffmpeg()
+    if ffmpeg is None:
+        return None
+    width = min(THUMB_WIDTHS, key=lambda w: (w < width, abs(w - width)))   # 取不小于要求的最近一档
+    stat = path.stat()
+    alpha = path.suffix.lower() in {".png", ".webp"}
+    key = hashlib.sha1(f"{path.resolve()}|{stat.st_mtime_ns}|{stat.st_size}|{width}".encode()).hexdigest()[:24]
+    folder = Path(cache_root or Path.home() / ".layerweave" / "view") / "thumbs"
+    cached = folder / f"{key}.{'png' if alpha else 'jpg'}"
+    kind = "image/png" if alpha else "image/jpeg"
+    if cached.is_file():
+        return cached.read_bytes(), kind
+    codec = ["-vcodec", "png"] if alpha else ["-vcodec", "mjpeg", "-q:v", "4"]
+    with _thumb_slots:
+        if cached.is_file():   # 排队的时候别的请求已经做好了
+            return cached.read_bytes(), kind
+        result = subprocess.run([ffmpeg, "-v", "error", "-i", str(path), "-vf", f"scale='min({width},iw)':-2", "-frames:v", "1",
+                                 "-f", "image2pipe", *codec, "-"], capture_output=True, timeout=60)
+    if result.returncode != 0 or not result.stdout:
+        return None
+    folder.mkdir(parents=True, exist_ok=True)
+    temp = folder / f"{key}.{os.getpid()}.{threading.get_ident()}.tmp"
+    temp.write_bytes(result.stdout)
+    os.replace(temp, cached)
+    return result.stdout, kind
+
+
+WAVE_BINS = 800
+
+
+def waveform(path, cache_root=None, *, ffmpeg=None):
+    """音频的波形：整首分成 800 段，每段的平均能量（RMS，0–1）。用 ffmpeg 解成单声道 4000 Hz 再算，存在本机视图目录 waves/ 里。
+    页面拿这 800 个数按分贝画（和以前浏览器自己解码时一样）。没有 ffmpeg 或解不开时返回 None，页面退回自己解码。
+    为什么放到服务端：分轨常是几十 MB 的 WAV，浏览器要整个下载再解码；手书那个库光 4 条分轨就下载了 147 MB（2026-10-14 量的）。"""
+    from array import array
+    import hashlib
+    import subprocess
+    path = Path(path)
+    ffmpeg = ffmpeg or find_ffmpeg()
+    if ffmpeg is None:
+        return None
+    stat = path.stat()
+    key = hashlib.sha1(f"{path.resolve()}|{stat.st_mtime_ns}|{stat.st_size}|{WAVE_BINS}".encode()).hexdigest()[:24]
+    folder = Path(cache_root or Path.home() / ".layerweave" / "view") / "waves"
+    cached = folder / f"{key}.json"
+    if cached.is_file():
+        return json.loads(cached.read_text(encoding="utf-8"))
+    with _thumb_slots:
+        result = subprocess.run([ffmpeg, "-v", "error", "-i", str(path), "-vn", "-ac", "1", "-ar", "4000", "-f", "s16le", "-"],
+                                capture_output=True, timeout=120)
+    if result.returncode != 0 or len(result.stdout) < 2:
+        return None
+    samples = array("h")
+    samples.frombytes(result.stdout[: len(result.stdout) // 2 * 2])
+    size = max(1, len(samples) // WAVE_BINS)
+    rms = []
+    for i in range(WAVE_BINS):
+        part = samples[i * size:(i + 1) * size]
+        rms.append(round((sum(v * v for v in part) / max(1, len(part))) ** 0.5 / 32768, 5))
+    folder.mkdir(parents=True, exist_ok=True)
+    temp = folder / f"{key}.{os.getpid()}.{threading.get_ident()}.tmp"
+    temp.write_text(json.dumps(rms), encoding="utf-8")
+    os.replace(temp, cached)
+    return rms
 
 
 def extract_frame(path, seconds, *, width=640, ffmpeg=None):

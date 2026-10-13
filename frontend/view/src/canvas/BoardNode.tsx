@@ -13,7 +13,7 @@ import type {BoardLayout, FoldInfo, FoldMark, SectionLayout} from '../model/mode
 import {RECORD, VIEWER} from '../params';
 import {LANE, NAMES, PAD, keyOf, rootsOf} from '../model/model';
 import {fmt, ticks} from '../model/units';
-import {activeBoard, setState, useMarks, useModel, useNotes, useStore} from '../store';
+import {activeBoard, handleKeysOf, setState, useMarks, useModel, useNotes, useStore} from '../store';
 import {report} from '../sync';
 import type {Board} from '../types';
 import {ObjectBlock} from './ObjectBlock';
@@ -105,12 +105,14 @@ function OtherChip({mark, layers}: {mark: FoldMark; layers: number[]}) {
   );
 }
 
-function Section({board, layout, sec}: {board: Board; layout: BoardLayout; sec: SectionLayout}) {
+// 一行（一段或左右接续的几段）的轨道和对象。memo：拖画板时画板每一帧都重画（标题要跟着吸附），这一行的数据没变就不跟着重画，
+// 否则 5000 个对象时每移一下都要把几千个格子重新比一遍，拖画板只剩每秒 1 帧（2026-10-14 量的）
+const Section = memo(function Section({board, layout, sec}: {board: Board; layout: BoardLayout; sec: SectionLayout}) {
   const model = useModel()!;
   const {selected, targetLayer, frames, project, noteFocus} = useStore(useShallow((s) => ({
     selected: s.selected, targetLayer: s.targetLayer, frames: s.frames, project: s.project!, noteFocus: s.noteFocus,
   })));
-  const marks = useMarks(), notes = useNotes();
+  const marks = useMarks(), notes = useNotes(), handles = useStore(handleKeysOf);
   // 对准的那条批注指着的对象和层：高亮
   const focusTop = noteFocus != null ? notes?.threads.find((t) => t.top.id === noteFocus)?.top : undefined;
   const hot = useMemo(() => new Set((focusTop?.targets ?? []).filter((t) => t.project === project).map((t) => `${t.kind}:${t.id}`)), [focusTop, project]);
@@ -189,7 +191,7 @@ function Section({board, layout, sec}: {board: Board; layout: BoardLayout; sec: 
             <Gaps gaps={gaps} a={a} pps={pps} decimals={decimals} unit={unit} />
             {items.map((it) => <ObjectBlock key={it.o.id} item={it} a={a} pps={pps} unit={unit} project={project} frames={frames}
               selected={it.o.id === selected} hot={hot.has(`object:${it.o.id}`)} mark={marks.changed.get(it.o.id)} notes={notes?.index.get(`object:${it.o.id}`)}
-              external={external.get(it.o.id)} />)}
+              external={external.get(it.o.id)} handles={handles.has(`object:${it.o.id}`)} />)}
             {track.parts.flatMap(({layer, seg}) => (marks.ghosts.get(layer.id) ?? []).map((g) => (
               <div key={`g${g.id}`} className={`ghost ${g.action}`} data-ghost={g.id}
                    style={{left: (g.begin + seg.offset - a) * pps, width: Math.max(6, (g.end - g.begin) * pps), top: PAD, height: LANE - 4}}
@@ -207,7 +209,7 @@ function Section({board, layout, sec}: {board: Board; layout: BoardLayout; sec: 
       </div>
     </div>
   );
-}
+});
 
 export const BoardNode = memo(function BoardNode({id, data, positionAbsoluteX}: NodeProps<BoardNodeType>) {
   const key = data.key;
@@ -220,7 +222,8 @@ export const BoardNode = memo(function BoardNode({id, data, positionAbsoluteX}: 
   }));
   const rootRef = useRef<HTMLDivElement>(null);
   const updateNodeInternals = useUpdateNodeInternals();
-  useEffect(() => { updateNodeInternals(id); }, [layout, id, updateNodeInternals]);   // 关系线的端点跟着对象走
+  const handles = useStore(handleKeysOf);   // 要画的关系线变了（选了别的对象、开关关系线），重新量一次端点
+  useEffect(() => { updateNodeInternals(id); }, [layout, id, updateNodeInternals, handles]);   // 关系线的端点跟着对象走
   useEffect(() => {
     const el = rootRef.current;
     if (!el) return;

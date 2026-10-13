@@ -19,6 +19,14 @@ const paneRect = () => pane?.getBoundingClientRect() ?? new DOMRect(0, 0, getSta
 
 function setView(x: number, y: number, zoom: number) {
   flow?.setViewport({x, y, zoom: Math.min(4, Math.max(0.05, zoom))});
+  settleZoom();
+}
+
+// 镜头停下来以后才换格子的细节档（Flow 的 onMoveEnd 和程序里设镜头都走这里）
+let settleTimer: ReturnType<typeof setTimeout> | undefined;
+export function settleZoom(delay = 120) {
+  clearTimeout(settleTimer);
+  settleTimer = setTimeout(() => { if (flow) setState({settledZoom: flow.getViewport().zoom}); }, delay);
 }
 
 // 画板时间 → 画布上的横坐标（世界坐标）

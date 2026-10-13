@@ -5,7 +5,7 @@ import json
 
 from layerweave.tool.builtin.usage.records.dispatch import dispatch
 from layerweave.support.api import open_database
-from layerweave.tool.builtin.usage.records.save import save_layer
+from layerweave.tool.builtin.usage.records.save import save_layer_with_checks
 from layerweave.support.storage.database import SCHEMA_PATH
 from layerweave.tool.builtin.usage.query.find_objects import find_objects
 from layerweave.tool.builtin.usage.query.project_overview import project_overview
@@ -19,14 +19,14 @@ def create_example():
         project_id = dispatch(connection, {
             "action": "create", "kind": "project", "data": {"name": "第一批工具示例"},
         })["id"]
-        text = save_layer(connection, project_id, {
+        text = save_layer_with_checks(connection, project_id, {
             "config_ref": "layers/text.toml", "name": "台词",
             "objects": [
                 {"config_ref": "objects/text.toml", "name": "开场", "begin": 0, "end": 2, "information": {"text": "开场白"}},
                 {"config_ref": "objects/text.toml", "name": "结尾", "begin": 2, "end": 4, "information": {"text": "结束语"}},
             ],
         })["data"]
-        voice = save_layer(connection, project_id, {
+        voice = save_layer_with_checks(connection, project_id, {
             "config_ref": "layers/audio.toml", "name": "配音", "father": text["id"],
             "objects": [{"config_ref": "objects/audio.toml", "begin": 0, "end": 2,
                          "information": {"source": "assets/opening.wav"}}],

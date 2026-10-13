@@ -1,10 +1,14 @@
 # LayerWeave 工作导引
 
-软件自身的执行能力统称为“内部工具”，放在 src/layerweave/tool/builtin；供层原型 tools 引用的外置技能放在 src/layerweave/tool/skills。
+可独立增减的软件操作包统称为“内部工具”，放在 src/layerweave/tool/builtin；基础读写、事务和发号位于 support。供层原型 tools 引用的外置技能放在 src/layerweave/tool/skills。
 
 - 操作项目内容：从[使用工具](src/layerweave/tool/builtin/usage/README.md)选择操作，参数和示例由各工具 help 提供。
 - 借用 LayerWeave 开发自己的工具：先读[AI 开发指导](docs/build-with-layerweave/README.md)，按篇选择嵌套时序或有序管理等接入方式。
 - 修改代码或增加封装：先读[开发指南](docs/developer-conventions.md)，再读对应配置、API 和实现专题。
+- 一批操作共同提交：读[事务内组合](docs/build-with-layerweave/04-composing-tools.md)，使用 *_in_session(write, ...)；独立工具入口不嵌套，检测由最外层配置。
+- 持续刷新视图或缓存：读[增量接入](docs/build-with-layerweave/05-incremental-reading.md)，初始数据与日志游标共用读取快照；业务日志从 support.api.read_changes 连续读取。
+- 接入工具自己的表：读[工具表开发指导](docs/build-with-layerweave/03-managed-tables.md)，字段、身份、引用和恢复的范围以此为准。
+- 分辨路径或调度名称：读[入口与标识](docs/developer-conventions.md#入口路径与调度标识)，区分配置、技能、命令、发号词条和组件名称。
 - 维护组件版本与更新说明：读[版本登记](src/layerweave/tool/builtin/developer/versions/README.md)，更新组件自己的 component.toml；sync 自动登记并核对，read 只看上次记录。
 - 开放工具自己的 ID 或扩展发号：读[编号模块](src/layerweave/support/numbering/README.md)，规则使用当前写会话；发号不创建业务行，簇成员集中登记。
 - 修改文档：读取[文档约定](docs/documentation.md)，保持主题有明确的主要维护位置。
@@ -23,5 +27,3 @@
 - 查现行代码优先搜索 src/layerweave、tests、examples、docs；scratch 保留本地备份，不作为现行实现依据。不为清理搜索结果而删除或迁移它。
 - 修改持久化、执行入口或模块路径后运行完整回归和隔离验收，方法见开发指南。当前未发布，不保留旧路径转接。
 - MCP 编排留到对应封装阶段；main 保持无 GUI 依赖。
-
-工具表扩展的实施与验收记录见[扩展记录](docs/tool-tables-plan.md)，现行接入方式见[工具表开发指导](docs/build-with-layerweave/03-managed-tables.md)。

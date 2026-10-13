@@ -10,7 +10,7 @@ LayerWeave 是一个用层、对象、关联和轴位置组织内容的 Python �
 - **查询与编辑**：项目概览、子树与区间展开、对象查找、空档查询，以及接续、排列、平移、分割、复制和搬移。
 - **保存与恢复**：SQLite 保存项目，修改记录历史，支持按操作整批撤销与重做。
 - **检查与扩充**：按配置检查约定，分别返回写入结果和诊断；通过 Python 类与 TOML 扩充封装。
-- **工具自有数据**：声明工具自己的表，复用统一读写、事务日志、历史和撤销；已有声明随数据库保存。
+- **工具自有数据**：声明工具自己的表，选择外部 ID 或共享发号，复用统一读写、事务日志、历史和撤销；已有声明随数据库保存。
 - **两种调用方式**：Python API 和 CLI；命令 help 与配置 help 可以查询支持能力和调用示例。
 
 ## 开始使用
@@ -25,6 +25,14 @@ python -X utf8 -B examples/read_write.py
 ```
 
 该示例使用临时数据库，演示写入、关闭重开、装载 Python 对象和再次保存。
+
+已有数据库时，先看项目结构：
+
+```sh
+python -m layerweave.tool.builtin.usage.query.project_overview DATABASE PROJECT_ID
+```
+
+DATABASE 换成数据库路径，PROJECT_ID 换成项目编号。它展示层树和各层直属对象数；需要正文再用 project_details，定位特定对象用 find_objects。反复从文档同步内容时，可用 upsert_objects 按名字或稳定键更新原对象，保留身份与引用；见[使用手册](src/layerweave/tool/builtin/usage/GUIDE.md)。
 
 也可以直接查询命令和可用封装，这两个入口无需数据库：
 
@@ -45,7 +53,7 @@ from tempfile import TemporaryDirectory
 from layerweave.models import TextLayer
 from layerweave.tool.builtin.usage.records.dispatch import dispatch
 from layerweave.support.api import initialize_database, open_database, read_layer
-from layerweave.tool.builtin.usage.records.save import save_layer
+from layerweave.tool.builtin.usage.records.save import save_layer_with_checks
 from layerweave.tool.builtin.usage.editing.objects import append_object
 
 with TemporaryDirectory() as directory:
@@ -56,7 +64,7 @@ with TemporaryDirectory() as directory:
         })
         project_id = project["id"]
         layer = TextLayer(name="字幕")
-        save_layer(connection, project_id, layer)
+        save_layer_with_checks(connection, project_id, layer)
 
         for text in ("你好", "世界"):
             append_object(connection, project_id, layer.id, {

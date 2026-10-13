@@ -13,6 +13,8 @@ def format_commands(result):
         lines.extend(["", f"{item['name']} · {'只读' if item['read_only'] else '可写入'}：{item['summary']}", "  " + item["cli"]])
         if "parameters" in item:
             lines.append("  Python 入口：" + item["entrypoint"])
+            if item.get("session_entrypoint"):
+                lines.append("  事务内入口：" + item["session_entrypoint"] + "（首参 write，由外层统一提交和检测）")
             for name, spec in item["parameters"].items():
                 required = "必需" if spec.get("required") else "可选"
                 suffix = " · 可选值=" + json.dumps(spec["choices"], ensure_ascii=False) if "choices" in spec else ""
@@ -29,7 +31,7 @@ def main():
     parser = argparse.ArgumentParser(description="LayerWeave 命令总览；指定多个名称可展开详情", epilog=help_examples(COMMANDS), formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("names", nargs="*", help="命令名或别名，如 split、insert_gap、undo")
     parser.add_argument("--json", action="store_true", help="返回未来 MCP 等调用方可复用的结构化说明")
-    parser.add_argument("--source-root", help="扩展命令的 Python 源目录，默认项目 src")
+    parser.add_argument("--source-root", help="命令声明扫描目录，默认包内 tool/builtin；指定后替换默认扫描范围")
     args = parser.parse_args()
     try:
         result = command_help(args.names or None, **({"source_root": args.source_root} if args.source_root else {}))
@@ -48,7 +50,7 @@ COMMANDS = [{'name': 'command_help',
   'read_only': True,
   'context': [],
   'parameters': {'names': {'type': 'array', 'description': '命令名或别名列表，省略为总览'},
-                 'source_root': {'type': 'string', 'description': '扩展命令源目录，默认 src'}},
+                 'source_root': {'type': 'string', 'description': '命令声明扫描目录，默认包内 tool/builtin；指定后替换默认范围'}},
   'returns': 'view、status、items 与逐条 issues；不执行工具或连接数据库。',
   'examples': [{'cli': 'python -m layerweave.tool.builtin.shared.help.command_help --json'},
                {'cli': 'python -m layerweave.tool.builtin.shared.help.command_help split insert_gap undo --json'}],

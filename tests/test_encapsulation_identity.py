@@ -10,7 +10,7 @@ import unittest
 from layerweave.models import Text, TextLayer, Title
 from layerweave.tool.builtin.usage.records.dispatch import dispatch
 from layerweave.support.api import load_layer, load_object, open_database, read_layer
-from layerweave.tool.builtin.usage.records.save import save_layer, save_object
+from layerweave.tool.builtin.usage.records.save import save_layer_with_checks, save_object_with_checks
 from layerweave.tool.builtin.usage.validation.runner import validate
 from layerweave.support.configuration.loader import ConfigError, DEFAULT_ROOT, Loader
 from layerweave.support.storage import crud
@@ -31,7 +31,7 @@ class EncapsulationIdentityTests(unittest.TestCase):
         self.project = dispatch(self.connection, {"action": "create", "kind": "project", "data": {}})["id"]
 
     def save(self, value):
-        return save_layer(self.connection, self.project, value, config_root=self.configs)
+        return save_layer_with_checks(self.connection, self.project, value, config_root=self.configs)
 
     def call(self, action, **args):
         return dispatch(self.connection, {"action": action, "kind": "layer", "project_id": self.project, **args},
@@ -91,9 +91,9 @@ class EncapsulationIdentityTests(unittest.TestCase):
         layer = TextLayer()
         self.save(layer)
         original = Text(layer=layer.id, information={"text": "同一记录"})
-        save_object(self.connection, self.project, original)
+        save_object_with_checks(self.connection, self.project, original)
         title = Title(id=original.id, layer=layer.id, information=original.information)
-        result = save_object(self.connection, self.project, title)
+        result = save_object_with_checks(self.connection, self.project, title)
         self.assertEqual(result["data"]["config_ref"], "objects/title.toml")
         self.assertIs(type(load_object(self.connection, self.project, title.id)), Title)
 

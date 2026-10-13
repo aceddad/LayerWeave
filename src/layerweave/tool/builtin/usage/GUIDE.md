@@ -4,6 +4,12 @@
 
 范围平移、分割、插空档和跨项目搬移见[编辑工具](EDITING.md)，整层操作见[子树工具](SUBTREES.md)，复查与恢复见[历史工具](HISTORY.md)。Python 示例使用已有连接和真实编号，CLI 完成可编辑安装后运行。
 
+打开已有项目时，先调用 project_overview 看层树和各层对象数；需要正文再调用 project_details，按条件定位对象用 find_objects。
+
+```sh
+python -m layerweave.tool.builtin.usage.query.project_overview DATABASE PROJECT_ID
+```
+
 ## 帮助入口
 
 查工具用途与调用示例使用命令 help；查可用层、对象类与配置示例使用配置 help。两个入口均无需数据库：
@@ -142,13 +148,34 @@ relations = query_relations(connection, project_id, "object", object_id)
 
 返回 entity、direction、outgoing、incoming。entity 是查询实体的 kind/project_id/id；两个方向的列表保留完整 bind 记录及 tips。direction 可为 both（默认）、outgoing、incoming；只选一个方向时，另一列表未查询，返回空列表。
 
-自关联在 outgoing/incoming 中各出现一次。按 kind、项目和编号共同匹配，不把其他项目的同号记录混入结果。实体或目标已删除时仍可查询保留的关联；工具不声称端点一定存在，也不自动装载或递归目标。需要存在性诊断时使用核心 validate。
+自关联在 outgoing/incoming 中各出现一次。按 kind、项目和编号共同匹配，不把其他项目的同号记录混入结果。实体或目标已删除时仍可查询保留的关联；工具不声称端点一定存在，也不自动装载或递归目标。需要存在性诊断时使用复查工具 recheck；多步读取使用下面的 walk_relations。
 
 ```sh
 python -X utf8 -B -m layerweave.tool.builtin.usage.query.relations output/ai-production.sqlite3 1 object 2 --direction both
 ```
 
 命令行默认输出 JSON。
+
+## 沿关联展开
+
+```python
+from layerweave.tool.builtin.usage.query.walk import walk_relations
+
+graph = walk_relations(connection, project_id, "object", object_id,
+                       direction="outgoing", max_depth=3, max_nodes=100, max_edges=300)
+```
+
+返回 scope、nodes、edges、truncated、truncation_reasons。在同一读取快照内广度遍历，nodes 按发现顺序排列，每个节点保留 kind/project_id/id、距起点的最短 depth、status 和原始 record。record 含该行内容，不装载层对象、关联或 Python 类，不生成媒体摘要。
+
+- 起点深度为 0，max_depth=0 只读起点。direction 为 outgoing（默认）、incoming 或 both；跨项目引用也按同样规则遍历。
+- 按完整身份去重；已访问节点不再重复扩展，但自关联、环边和多个来源仍保留在 edges 中。每条 bind 只返回一次，原方向不变。
+- 实体已删除仍可沿保留的 bind 继续查；节点 status=missing、record=None。非 layer/object 端点标记 unsupported_kind，不再展开。
+- max_nodes 包含起点。数量上限省掉节点或关联时 truncated=true，原因列在 truncation_reasons；达到深度只表示本次范围边界，不算数量截断。返回的边两端都有对应节点。
+- 只解释标准 bind。其他工具自有表的引用，由该工具读取和解释；本接口不会扫描这些表寻找关系。
+
+```sh
+python -m layerweave.tool.builtin.usage.query.walk DATABASE PROJECT_ID object OBJECT_ID --direction both --max-depth 3
+```
 
 ## 文本汇集
 
@@ -181,6 +208,35 @@ python -X utf8 -B -m layerweave.tool.builtin.usage.text.collect output/ai-produc
 ## 常用编辑
 
 以下操作使用同一项目的对象。先看调用示例，共用的位置和反馈规则见下方[通用写入约定](#通用写入约定)。
+
+### 匹配更新或创建
+
+用脚本反复同步分镜、故事等内容时，按同层名字或稳定键找到原对象，保留其编号与引用：
+
+```python
+from layerweave.tool.builtin.usage.editing.upsert import upsert_objects
+
+result = upsert_objects(connection, project_id, layer_id, [
+    {"name": "序幕", "config_ref": "objects/text.toml", "begin": 0, "end": 3,
+     "information": {"source_key": "scene_017", "text": "修改后的正文"}}
+], match_by="information.source_key")
+```
+
+match_by 默认为 name，也可指定 information 下的点分路径，例如 information.source.key；路径中的每一段表示一个字典键。稳定键是调用方自己的内容约定，不新增数据库列，也不要求其他对象都提供它。键使用非空字符串；information 路径也接受整数，数字 1 与字符串 "1" 分开匹配。
+
+稳定键需要实际保存在对象里，工具不会从名字推测或自动生成。给已有项目切换匹配方式时，先按原名字或明确 ID 为旧对象补入稳定键；否则没有该键的旧对象不会被匹配，本次输入会创建新对象。
+
+匹配限定 project_id/layer_id 的直属对象，区分大小写，精确匹配，不使用 find_objects 的子串逻辑。找不到则创建，恰好一个则更新；匹配多个会以 ambiguous_match 返回 candidate_ids。输入缺键、空键或批次重复键也会整批失败；与本批无关的旧对象重名不阻止操作。
+
+更新只覆盖传入字段，information 整体替换；未传字段保留，不修改关联或工具表批注，不删除输入中缺席的旧对象。创建项必须提供 config_ref，更新项可沿用原配置。未修改的内容不产生额外日志；每次成功匹配保留 ID，新对象才领号。改名字时使用稳定键；仅按名字无法判断改名是否是同一对象。
+
+返回标准操作结果；data 含 scope、counts（created/updated/unchanged）、items。每项为 match_value、action（create/update/unchanged）和 record。整批共享事务、日志和撤销；内容检测仍在提交后执行。组合调用使用同模块的 upsert_objects_in_session(write, project_id, layer_id, objects, match_by=...)，检测交给外层。
+
+```sh
+python -m layerweave.tool.builtin.usage.editing.upsert DATABASE PROJECT_ID LAYER_ID --data-file scenes.json --match-by information.source_key
+```
+
+scenes.json 是上例对象字段字典组成的 JSON 列表；--help 带完整最短文件示例。
 
 ### 接续新增
 

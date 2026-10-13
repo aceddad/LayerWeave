@@ -7,9 +7,10 @@ from layerweave.support import records as crud
 from layerweave.support.storage.details import read_project_details
 from layerweave.tool.builtin.usage.editing.tree_service import _checker, _payload
 from layerweave.support.configuration.loader import DEFAULT_ROOT
-from ._plan import dispatch
+from ._plan import dispatch, execute_in_session
 from layerweave.support.feedback import InputError, target
 from layerweave.support.operation import run_operation
+from layerweave.support.transaction import require_write_session
 from layerweave.support.providers import DEFAULT_CHECKER
 from layerweave.support.positions import PositionMath, decimal_value, numeric_position, shifted_positions
 
@@ -61,6 +62,24 @@ def _select(connection, project_id, *, object_ids=None, layer_id=None, layer_ids
 
 def shift_objects(connection, project_id, object_ids=None, *, offset, layer_id=None, layer_ids=None,
                   from_position=None, config_root=DEFAULT_ROOT, checker=DEFAULT_CHECKER):
+    plan = _shift_objects_plan(
+        connection, project_id, object_ids, offset=offset, layer_id=layer_id, layer_ids=layer_ids,
+        from_position=from_position,
+    )
+    return dispatch(connection, plan, config_root=config_root, checker=checker)
+
+
+def shift_objects_in_session(write, project_id, object_ids=None, *, offset, layer_id=None, layer_ids=None, from_position=None):
+    """复用已有写会话，返回记录或记录列表；失败抛出异常。"""
+    connection = require_write_session(write).connection
+    plan = _shift_objects_plan(
+        connection, project_id, object_ids, offset=offset, layer_id=layer_id, layer_ids=layer_ids,
+        from_position=from_position,
+    )
+    return execute_in_session(write, plan)
+
+
+def _shift_objects_plan(connection, project_id, object_ids=None, *, offset, layer_id=None, layer_ids=None, from_position=None):
     def plan(read):
         _number(offset, "offset")
         if from_position is not None:
@@ -70,7 +89,7 @@ def shift_objects(connection, project_id, object_ids=None, *, offset, layer_id=N
         return [{"action": "update", "kind": "object", "project_id": owner, "id": row["id"],
                  "data": shifted_positions(row, offset, math)} for row in rows
                 if from_position is None or _number(row["begin"], "begin") >= from_position]
-    return dispatch(connection, plan, config_root=config_root, checker=checker)
+    return plan
 
 
 def _information(value, field, row):
@@ -123,99 +142,122 @@ def _apply_split(connection, row, parts, math, operation_id):
 
 def split_object(connection, project_id, object_id, *, cuts, first_information=None,
                  config_root=DEFAULT_ROOT, checker=DEFAULT_CHECKER):
-    def work(write):
-        operation_id = write.operation_id
-        row = _record(connection, "object", project_id, object_id)
-        math = PositionMath(partial(crud.read, connection), row["project_id"])
-        parts, positions = _prepare_split(row, math, first_information, cuts)
-        segments = _apply_split(connection, row, parts, math, operation_id)
-        return {"project_id": row["project_id"], "object_id": row["id"], "cuts": positions, "segments": segments}
-    return {**run_operation(connection, work, checker=_checker(checker, config_root)), "tool": "split_object"}
+    result = run_operation(
+        connection,
+        lambda write: split_object_in_session(
+            write, project_id, object_id, cuts=cuts, first_information=first_information,
+        ),
+        checker=_checker(checker, config_root),
+    )
+    return {**result, "tool": 'split_object'}
+
+
+def split_object_in_session(write, project_id, object_id, *, cuts, first_information=None):
+    """在当前写会话执行，返回业务数据；异常交给外层，不提交或运行检测。"""
+    connection = require_write_session(write).connection
+    operation_id = write.operation_id
+    row = _record(connection, "object", project_id, object_id)
+    math = PositionMath(partial(crud.read, connection), row["project_id"])
+    parts, positions = _prepare_split(row, math, first_information, cuts)
+    segments = _apply_split(connection, row, parts, math, operation_id)
+    return {"project_id": row["project_id"], "object_id": row["id"], "cuts": positions, "segments": segments}
 
 
 def insert_gap(connection, project_id, *, at, length, layer_id=None, layer_ids=None, whole_project=False,
                crossing_actions=None, split_contents=None,
                config_root=DEFAULT_ROOT, checker=DEFAULT_CHECKER):
-    def work(write):
-        operation_id = write.operation_id
-        if type(whole_project) is not bool or sum((layer_id is not None, layer_ids is not None, whole_project is True)) != 1:
-            raise InputError("请明确选择一个范围：直属层、子树或整个项目", field="scope", code="explicit_scope_required",
-                             allowed=["layer_id", "layer_ids", "whole_project=True"])
-        if crossing_actions is not None and split_contents is not None:
-            raise InputError("crossing_actions 与旧参数 split_contents 不能同时提供", field="crossing_actions")
-        _number(at, "at")
-        if _number(length, "length") <= 0:
-            raise InputError("空档长度应大于零", field="length")
-        owner, layers, rows = _select(connection, project_id, layer_id=layer_id, layer_ids=layer_ids, whole=whole_project)
-        math = PositionMath(partial(crud.read, connection), owner)
-        gaps = {}
-        for id in layers:
-            begin = math.snap(id, at)
-            end = math.snap(id, decimal_value(begin) + decimal_value(length))
-            if math.ticks(id, end) <= math.ticks(id, begin):
-                raise InputError("长度落点后无法形成空档", field="length", target=target("layer", owner, id), actual_begin=begin, actual_end=end)
-            gaps[id] = {"layer_id": id, "begin": begin, "end": end, "length": float(decimal_value(end) - decimal_value(begin))}
-        supplied = {}
-        entries = crossing_actions if crossing_actions is not None else split_contents
-        for item in entries or []:
-            if not isinstance(item, dict) or type(item.get("object_id")) is not int:
-                raise InputError("每项跨界处理需要整数 object_id", field="crossing_actions")
-            if item["object_id"] in supplied:
-                raise InputError("同一对象的跨界处理只能提供一次", field="crossing_actions")
-            # 旧文件明确给出两段内容时仍表示 split；不根据对象类型推断处理方式。
-            action = item.get("action", "split" if "first_information" in item and "second_information" in item else None)
-            if action not in CROSSING_ACTIONS:
-                raise InputError("跨界对象需要明确选择 split、keep、stretch 或 move", field="action", allowed=list(CROSSING_ACTIONS),
-                                 target=target("object", owner, item["object_id"]))
-            supplied[item["object_id"]] = {**item, "action": action}
-        shifts, crossings = [], []
-        for row in rows:
-            gap = gaps[row["layer"]]
-            begin = _number(row["begin"], "begin")
-            end = _number(row["end"], "end")
-            point = gap["begin"]
-            if begin >= point:  # 瞬间对象正好在切点时也后移。
-                shifts.append((row, shifted_positions(row, gap["length"], math)))
-            elif point < end:
-                crossings.append(row)
-        crossing_ids = {row["id"] for row in crossings}
-        missing = [{"object_id": row["id"], "layer_id": row["layer"], "begin": row["begin"], "end": row["end"],
-                    "at": gaps[row["layer"]]["begin"]} for row in crossings if row["id"] not in supplied]
-        if missing or supplied.keys() - crossing_ids:
-            raise InputError("跨界处理与当前对象不对应；本批未写入", code="crossing_actions_required", field="crossing_actions",
-                             target=target("project", None, owner), allowed=list(CROSSING_ACTIONS),
-                             required_crossings=missing, required_splits=missing,
-                             unused_object_ids=sorted(supplied.keys() - crossing_ids))
-        planned, kept, adjustments = [], [], []
-        for row in crossings:
-            gap, info = gaps[row["layer"]], supplied[row["id"]]
-            if info["action"] == "keep":
-                kept.append({"id": row["id"], "layer_id": row["layer"], "begin": row["begin"], "end": row["end"]})
-                continue
-            if info["action"] == "stretch":
-                values = {"end": math.snap(row["layer"], decimal_value(row["end"]) + decimal_value(gap["length"]))}
-                adjustments.append((row, values, "stretched"))
-                continue
-            if info["action"] == "move":
-                adjustments.append((row, shifted_positions(row, gap["length"], math), "moved"))
-                continue
-            parts, _ = _prepare_split(row, math, info.get("first_information"),
-                                     [{"at": gap["begin"], "information": info.get("second_information")}])
-            parts[1].update(shifted_positions({**row, **parts[1]}, gap["length"], math))
-            planned.append((row, parts))
-        splits = []
-        updates = {"shifted": [], "stretched": [], "moved": []}
-        for row, parts in planned:
-            segments = _apply_split(connection, row, parts, math, operation_id)
-            splits.append({"object_id": row["id"], "segments": segments})
-        for row, values, action in [*adjustments, *((row, values, "shifted") for row, values in shifts)]:
-            updated, _ = crud.update(connection, "object", row["id"], values, project_id=owner,
-                                           operation_id=operation_id, position_math=math)
-            summary = {"id": updated["id"], "begin": updated["begin"], "end": updated["end"]}
-            if action != "shifted":
-                summary.update(layer_id=row["layer"], previous_begin=row["begin"], previous_end=row["end"])
-            updates[action].append(summary)
-        scope = {"mode": "project" if whole_project else "layer" if layer_id is not None else "subtrees", "layer_ids": layers}
-        return {"project_id": owner, "scope": scope, "requested_at": at, "requested_length": length,
-                "gaps": list(gaps.values()), "splits": splits, "kept": kept, **updates}
-    return {**run_operation(connection, work, checker=_checker(checker, config_root)), "tool": "insert_gap"}
+    result = run_operation(
+        connection,
+        lambda write: insert_gap_in_session(
+            write, project_id, at=at, length=length, layer_id=layer_id, layer_ids=layer_ids,
+            whole_project=whole_project, crossing_actions=crossing_actions, split_contents=split_contents,
+        ),
+        checker=_checker(checker, config_root),
+    )
+    return {**result, "tool": 'insert_gap'}
+
+
+def insert_gap_in_session(write, project_id, *, at, length, layer_id=None, layer_ids=None, whole_project=False, crossing_actions=None, split_contents=None):
+    """在当前写会话执行，返回业务数据；异常交给外层，不提交或运行检测。"""
+    connection = require_write_session(write).connection
+    operation_id = write.operation_id
+    if type(whole_project) is not bool or sum((layer_id is not None, layer_ids is not None, whole_project is True)) != 1:
+        raise InputError("请明确选择一个范围：直属层、子树或整个项目", field="scope", code="explicit_scope_required",
+                         allowed=["layer_id", "layer_ids", "whole_project=True"])
+    if crossing_actions is not None and split_contents is not None:
+        raise InputError("crossing_actions 与旧参数 split_contents 不能同时提供", field="crossing_actions")
+    _number(at, "at")
+    if _number(length, "length") <= 0:
+        raise InputError("空档长度应大于零", field="length")
+    owner, layers, rows = _select(connection, project_id, layer_id=layer_id, layer_ids=layer_ids, whole=whole_project)
+    math = PositionMath(partial(crud.read, connection), owner)
+    gaps = {}
+    for id in layers:
+        begin = math.snap(id, at)
+        end = math.snap(id, decimal_value(begin) + decimal_value(length))
+        if math.ticks(id, end) <= math.ticks(id, begin):
+            raise InputError("长度落点后无法形成空档", field="length", target=target("layer", owner, id), actual_begin=begin, actual_end=end)
+        gaps[id] = {"layer_id": id, "begin": begin, "end": end, "length": float(decimal_value(end) - decimal_value(begin))}
+    supplied = {}
+    entries = crossing_actions if crossing_actions is not None else split_contents
+    for item in entries or []:
+        if not isinstance(item, dict) or type(item.get("object_id")) is not int:
+            raise InputError("每项跨界处理需要整数 object_id", field="crossing_actions")
+        if item["object_id"] in supplied:
+            raise InputError("同一对象的跨界处理只能提供一次", field="crossing_actions")
+        # 旧文件明确给出两段内容时仍表示 split；不根据对象类型推断处理方式。
+        action = item.get("action", "split" if "first_information" in item and "second_information" in item else None)
+        if action not in CROSSING_ACTIONS:
+            raise InputError("跨界对象需要明确选择 split、keep、stretch 或 move", field="action", allowed=list(CROSSING_ACTIONS),
+                             target=target("object", owner, item["object_id"]))
+        supplied[item["object_id"]] = {**item, "action": action}
+    shifts, crossings = [], []
+    for row in rows:
+        gap = gaps[row["layer"]]
+        begin = _number(row["begin"], "begin")
+        end = _number(row["end"], "end")
+        point = gap["begin"]
+        if begin >= point:  # 瞬间对象正好在切点时也后移。
+            shifts.append((row, shifted_positions(row, gap["length"], math)))
+        elif point < end:
+            crossings.append(row)
+    crossing_ids = {row["id"] for row in crossings}
+    missing = [{"object_id": row["id"], "layer_id": row["layer"], "begin": row["begin"], "end": row["end"],
+                "at": gaps[row["layer"]]["begin"]} for row in crossings if row["id"] not in supplied]
+    if missing or supplied.keys() - crossing_ids:
+        raise InputError("跨界处理与当前对象不对应；本批未写入", code="crossing_actions_required", field="crossing_actions",
+                         target=target("project", None, owner), allowed=list(CROSSING_ACTIONS),
+                         required_crossings=missing, required_splits=missing,
+                         unused_object_ids=sorted(supplied.keys() - crossing_ids))
+    planned, kept, adjustments = [], [], []
+    for row in crossings:
+        gap, info = gaps[row["layer"]], supplied[row["id"]]
+        if info["action"] == "keep":
+            kept.append({"id": row["id"], "layer_id": row["layer"], "begin": row["begin"], "end": row["end"]})
+            continue
+        if info["action"] == "stretch":
+            values = {"end": math.snap(row["layer"], decimal_value(row["end"]) + decimal_value(gap["length"]))}
+            adjustments.append((row, values, "stretched"))
+            continue
+        if info["action"] == "move":
+            adjustments.append((row, shifted_positions(row, gap["length"], math), "moved"))
+            continue
+        parts, _ = _prepare_split(row, math, info.get("first_information"),
+                                 [{"at": gap["begin"], "information": info.get("second_information")}])
+        parts[1].update(shifted_positions({**row, **parts[1]}, gap["length"], math))
+        planned.append((row, parts))
+    splits = []
+    updates = {"shifted": [], "stretched": [], "moved": []}
+    for row, parts in planned:
+        segments = _apply_split(connection, row, parts, math, operation_id)
+        splits.append({"object_id": row["id"], "segments": segments})
+    for row, values, action in [*adjustments, *((row, values, "shifted") for row, values in shifts)]:
+        updated, _ = crud.update(connection, "object", row["id"], values, project_id=owner,
+                                       operation_id=operation_id, position_math=math)
+        summary = {"id": updated["id"], "begin": updated["begin"], "end": updated["end"]}
+        if action != "shifted":
+            summary.update(layer_id=row["layer"], previous_begin=row["begin"], previous_end=row["end"])
+        updates[action].append(summary)
+    scope = {"mode": "project" if whole_project else "layer" if layer_id is not None else "subtrees", "layer_ids": layers}
+    return {"project_id": owner, "scope": scope, "requested_at": at, "requested_length": length,
+            "gaps": list(gaps.values()), "splits": splits, "kept": kept, **updates}

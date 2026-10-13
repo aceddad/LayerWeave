@@ -16,13 +16,16 @@ def format_history(result):
         lines.extend(["", f"操作 {op['operation_id']} · {op['started_at']} · 项目 {op['project_ids']}"])
         if op["undo_of"]:
             lines.append(f"  撤销自：{op['undo_of']}")
+        elif op.get("undo_of_operations"):
+            lines.append("  本操作包含撤销：" + " / ".join(op["undo_of_operations"]))
         if op["matched_change_count"] != op["change_count"]:
             lines.append(f"  范围命中 {op['matched_change_count']} 条；展开完整操作共 {op['change_count']} 条。")
         for change in op["changes"]:
             target = change["target"]
             identity = f"({target['project_id']}, {target['id']})" if target["project_id"] is not None else str(target["id"])
             action = {"create": "创建", "update": "修改", "delete": "删除"}[change["action"]]
-            lines.append(f"  {action} {target['kind']} {identity}" + (f" · {change['name']}" if change["name"] else ""))
+            suffix = f" · 撤销自 {change['undo_of']}" if op.get("undo_of_operations") and change.get("undo_of") else ""
+            lines.append(f"  {action} {target['kind']} {identity}" + (f" · {change['name']}" if change["name"] else "") + suffix)
             for field in change.get("fields", []):
                 old = dump(field["before"]) if field["before_present"] else "（未提供）"
                 new = dump(field["after"]) if field["after_present"] else "（未提供）"

@@ -26,11 +26,14 @@
 | 主题 | 主要维护位置 |
 |---|---|
 | 模块边界与整体概念 | [架构说明](architecture.md) |
+| 配置路径、技能路由、命令入口与登记名称的区别 | [开发指南](developer-conventions.md#入口路径与调度标识)；各机制的细节仍由对应专题维护 |
 | 按需借用内核、扩展工具与配置 | [AI 开发指导](build-with-layerweave/README.md)，每种思路单独成篇；参数细节继续由 API 和专题维护 |
 | 工具表声明、字段、引用与接入范围 | [工具表开发指导](build-with-layerweave/03-managed-tables.md) |
 | 自定义 ID、发号词条、簇成员与计数恢复 | [编号模块](../src/layerweave/support/numbering/README.md) |
 | Python 模型与扩充入口 | [模型说明](../src/layerweave/models/README.md)，字段声明在类及对应 TOML |
 | 配置继承、合并与类绑定 | [配置说明](../src/layerweave/support/configuration/README.md) |
+| 独立工具与事务内组合接口 | [组合开发指导](build-with-layerweave/04-composing-tools.md)；反馈字段由基础 API 维护 |
+| 初始快照与增量刷新次序 | [增量接入指导](build-with-layerweave/05-incremental-reading.md)；日志字段由基础 API 维护 |
 | Python 调用、输入与返回 | [公共 API](../src/layerweave/support/API.md) |
 | JSON CRUD 请求和操作/检查反馈 | [请求协议](../src/layerweave/tool/builtin/usage/CRUD.md) |
 | 数据表、编号、持久化与日志写入 | [存储专题](../src/layerweave/support/storage/SCHEMA.md) |

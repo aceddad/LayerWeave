@@ -16,11 +16,14 @@ def error_detail(error):
     return {"type": type(error).__name__, "message": str(error), **getattr(error, "details", {})}
 
 
-def operation_result(status, changes=()):
-    return {"status": status, "changes": [
+def operation_result(status, changes=(), *, numbering=()):
+    result = {"status": status, "changes": [
         {"action": change["action"], "target": target(change["kind"], change["project_id"], change["id"])}
         for change in changes
     ]}
+    if numbering:
+        result["numbering"] = list(numbering)
+    return result
 
 
 def _location(value):
@@ -78,6 +81,13 @@ def format_feedback(result):
                   "failed": "[操作失败] 本次未写入。"}[operation["status"]]]
     if result.get("error"):
         lines.extend(["", format_issue(result["error"])])
+    for item in operation.get("numbering", []):
+        counter = item["counter"]
+        location = _location(counter) + "." + counter["field"]
+        identity = "，身份：" + json.dumps(item["identity"], ensure_ascii=False) if "identity" in item else ""
+        lines.append(f"[发号成功] {item.get('entry', location)}：{item['before']} → {item['after']}{identity}")
+    if operation.get("numbering") and not operation["changes"]:
+        lines.append("计数已提交；本次没有可撤销的业务记录变更，撤销不会回收编号。")
     # 文字模式的读取仍返回数据，不能只显示一行“成功”。
     reads = [item for item in result.get("results", [result]) if item.get("action") == "read"]
     for item in reads:

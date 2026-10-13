@@ -35,6 +35,7 @@ def main():
 COMMANDS = [{'name': 'undo_operation',
   'summary': '整批撤销或重做；更新按顶层字段冲突判断，创建/删除按整条记录',
   'entrypoint': 'layerweave.tool.builtin.usage.undo.service:undo_operation',
+  'session_entrypoint': 'layerweave.tool.builtin.usage.undo.service:undo_operation_in_session',
   'cli': 'python -m layerweave.tool.builtin.usage.undo.cli',
   'read_only': False,
   'context': ['database'],

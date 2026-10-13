@@ -41,7 +41,7 @@ python -m layerweave.tool.builtin.developer.skills.cli SKILL.zip --layer text --
 python -X utf8 -B -m layerweave.tool.builtin.developer.database.cli output/ai-production.sqlite3
 ```
 
-[database.py](database/cli.py) 是命令入口；表结构、升级和发号实现仍在 support。升级行为见[存储说明](../../../support/storage/SCHEMA.md)。
+[cli.py](database/cli.py) 是命令入口；表结构、升级和发号实现仍在 support。升级行为见[存储说明](../../../support/storage/SCHEMA.md)。
 
 ## 本地 KEY 与连接信息
 
@@ -57,7 +57,7 @@ python -m layerweave.tool.builtin.developer.keys.cli export --output keys.exampl
 
 1. 按用途在 usage、developer 或 shared 下创建完整包；业务辅助放包内，避免对另一个可卸载包的私有依赖。
 2. 从 layerweave.support.api 复用读取、保存、事务和位置计算；读后写在同一 transaction 或 run_operation 的 write 会话内组合；只返回业务结果，日志由支撑自动收集。
-3. 用普通函数表达业务，明确输入、修改范围和返回。新增 CLI 复用 [support/cli.py](../../../support/cli.py)，在自身模块声明 COMMANDS。
+3. 用普通函数表达业务，明确输入、修改范围和返回。可组合写工具提供 *_in_session(write, ...) 并由独立入口复用同一实现，详细约定见[事务内组合](../../../../../docs/build-with-layerweave/04-composing-tools.md)。新增 CLI 复用 [support/cli.py](../../../support/cli.py)，在自身模块声明 COMMANDS。
 4. 需要加入版本管理时，在完整包根放 component.toml；版本号、用途与更新说明按[组件声明约定](versions/README.md#声明放在哪里)维护，不逐条命令声明。
 5. 更新主要使用说明及可运行示例，执行与改动相符的检查。测试使用独立数据库。
 

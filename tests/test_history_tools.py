@@ -12,7 +12,7 @@ from layerweave.tool.builtin.usage.records.dispatch import dispatch
 from layerweave.support.api import initialize_database, open_database, read_record
 from layerweave.tool.builtin.usage.history.service import read_history
 from layerweave.tool.builtin.usage.validation.recheck import recheck
-from layerweave.tool.builtin.usage.records.save import save_layer, save_object
+from layerweave.tool.builtin.usage.records.save import save_layer_with_checks, save_object_with_checks
 from layerweave.tool.builtin.usage.undo.service import undo_operation
 from layerweave.support.configuration.loader import DEFAULT_ROOT
 from layerweave.support.storage.database import SCHEMA_PATH, upgrade_history
@@ -177,7 +177,7 @@ class HistoryToolsTests(unittest.TestCase):
         data = {"config_ref": "layers/text.toml", "objects": [
             {"config_ref": "objects/title.toml", "information": {"text": "标题"}},
             {"config_ref": "objects/text.toml", "information": {"text": "正文"}}]}
-        saved = save_layer(self.c, self.p, data)
+        saved = save_layer_with_checks(self.c, self.p, data)
         self.assertTrue(saved["ok"], saved)
         original = saved["data"]
         u = self.undo(saved["operation_id"])
@@ -353,8 +353,8 @@ class HistoryToolsTests(unittest.TestCase):
         c = open_database(path)
         self.addCleanup(c.close)
         pid = dispatch(c, {"action": "create", "kind": "project", "data": {}})["id"]
-        layer = save_layer(c, pid, {"config_ref": "layers/text.toml"})["data"]["id"]
-        obj = save_object(c, pid, {"config_ref": "objects/text.toml", "layer": layer, "information": {"text": "test"}})
+        layer = save_layer_with_checks(c, pid, {"config_ref": "layers/text.toml"})["data"]["id"]
+        obj = save_object_with_checks(c, pid, {"config_ref": "objects/text.toml", "layer": layer, "information": {"text": "test"}})
         commands = [("validation", [str(pid), "--layer-ids", str(layer)]), ("history", ["--project-id", str(pid)]), ("undo", [obj["operation_id"]])]
         for module, args in commands:
             run = subprocess.run([sys.executable, "-X", "utf8", "-B", "-m", f"layerweave.tool.builtin.usage.{module}.cli", str(path), *args, "--json"], capture_output=True, text=True, encoding="utf-8")

@@ -53,6 +53,7 @@ def main():
 COMMANDS = [{'name': 'insert_gap',
   'summary': '明确选范围并插入时间；跨界对象逐个选择 split、keep、stretch 或 move',
   'entrypoint': 'layerweave.tool.builtin.usage.editing.timeline:insert_gap',
+  'session_entrypoint': 'layerweave.tool.builtin.usage.editing.timeline:insert_gap_in_session',
   'cli': 'python -m layerweave.tool.builtin.usage.editing.gaps',
   'read_only': False,
   'context': ['database', 'project_id'],

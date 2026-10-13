@@ -80,9 +80,11 @@ python -m layerweave.tool.builtin.usage.history.cli DATABASE --project-id PROJEC
 python -m layerweave.tool.builtin.usage.history.cli DATABASE --operation-id OPERATION_ID --json
 ```
 
+历史中只有整批改动属于同一撤销来源时，顶层 undo_of 才是该操作编号。混合撤销与其他修改时，undo_of 为 None，undo_of_operations 列出涉及来源，各条撤销改动保留自己的 undo_of。
+
 ## 撤销与重做
 
-按操作编号撤回整批改动；撤销新的撤销操作即可重做。
+按操作编号撤回整批改动；撤销新的撤销操作即可重做。与其他操作组合时使用 undo_operation_in_session(write, operation_id)，返回业务摘要，外层统一提交；见[组合开发指导](../../../../../docs/build-with-layerweave/04-composing-tools.md)。
 
 同一操作中的工具表与核心记录一起处理。表声明由支撑从数据库读取，显式引用参与恢复依赖判断；结构维护不属于内容撤销。完整的接入与升级行为见[工具表开发指导](../../../../../docs/build-with-layerweave/03-managed-tables.md)。
 

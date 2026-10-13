@@ -6,9 +6,11 @@ from functools import partial
 
 from layerweave.support import records as crud
 from layerweave.support.storage.details import read_project_details
+from layerweave.support.storage.assembly import read_object
 from layerweave.support.configuration.loader import DEFAULT_ROOT
 from layerweave.support.feedback import InputError, target
 from layerweave.support.operation import run_operation
+from layerweave.support.transaction import require_write_session
 from layerweave.support.providers import DEFAULT_CHECKER, optional_checker
 from layerweave.support.positions import PositionMath
 
@@ -122,46 +124,79 @@ def _copy_records(connection, source, destination, operation_id, *, name=None, c
 
 def delete_subtree(connection, project_id, layer_id, *, config_root=DEFAULT_ROOT, checker=DEFAULT_CHECKER):
     """删除子树及出向关联；外部入向关联保留，由提交后检查诊断。"""
-    def work(write):
-        operation_id = write.operation_id
-        source = _source(connection, project_id, layer_id)
-        _delete_records(connection, source, operation_id)
-        return {"project_id": source[0], "layer_id": source[1], "counts": _counts(source)}
-    return {**run_operation(connection, work, checker=_checker(checker, config_root)), "tool": "delete_subtree"}
+    result = run_operation(
+        connection,
+        lambda write: delete_subtree_in_session(
+            write, project_id, layer_id,
+        ),
+        checker=_checker(checker, config_root),
+    )
+    return {**result, "tool": 'delete_subtree'}
+
+
+def delete_subtree_in_session(write, project_id, layer_id):
+    """在当前写会话执行，返回业务数据；异常交给外层，不提交或运行检测。"""
+    connection = require_write_session(write).connection
+    operation_id = write.operation_id
+    source = _source(connection, project_id, layer_id)
+    _delete_records(connection, source, operation_id)
+    return {"project_id": source[0], "layer_id": source[1], "counts": _counts(source)}
 
 
 def copy_subtree(connection, project_id, layer_id, *, name=None, config_root=DEFAULT_ROOT, checker=DEFAULT_CHECKER):
     """同项目、同父层复制子树，保留原有普通写入刻度规则。"""
-    def work(write):
-        operation_id = write.operation_id
-        source = _source(connection, project_id, layer_id)
-        mapping = _copy_records(connection, source, source[0], operation_id, name=name)
-        return {"project_id": source[0], "source_layer_id": source[1], "layer_id": mapping["layer"][source[1]],
-                "counts": _counts(source), "id_map": _mapping_result(mapping)}
-    return {**run_operation(connection, work, checker=_checker(checker, config_root)), "tool": "copy_subtree"}
+    result = run_operation(
+        connection,
+        lambda write: copy_subtree_in_session(
+            write, project_id, layer_id, name=name,
+        ),
+        checker=_checker(checker, config_root),
+    )
+    return {**result, "tool": 'copy_subtree'}
+
+
+def copy_subtree_in_session(write, project_id, layer_id, *, name=None):
+    """在当前写会话执行，返回业务数据；异常交给外层，不提交或运行检测。"""
+    connection = require_write_session(write).connection
+    operation_id = write.operation_id
+    source = _source(connection, project_id, layer_id)
+    mapping = _copy_records(connection, source, source[0], operation_id, name=name)
+    return {"project_id": source[0], "source_layer_id": source[1], "layer_id": mapping["layer"][source[1]],
+            "counts": _counts(source), "id_map": _mapping_result(mapping)}
 
 
 def transfer_subtree(connection, project_id, layer_id, target_project_id, *, mode="copy", name=None,
                      config_root=DEFAULT_ROOT, checker=DEFAULT_CHECKER):
     """同库跨项目复制或剪切；剪切的外部入向引用跟随新身份，整个过程可撤销。"""
-    def work(write):
-        operation_id = write.operation_id
-        if mode not in {"copy", "cut"}:
-            raise InputError("迁移模式应为 copy 或 cut", field="mode", allowed=["copy", "cut"])
-        source = _source(connection, project_id, layer_id)
-        destination = crud.read(connection, "project", id=target_project_id) if target_project_id is not None else None
-        if destination is None:
-            raise InputError("目标项目不存在", code="missing_reference", field="target_project_id",
-                             target=target("project", None, target_project_id))
-        destination = destination["id"]
-        if destination == source[0]:
-            raise InputError("跨项目操作需要不同的目标项目；同项目复制使用 copy_subtree", field="target_project_id")
-        mapping, incoming = _transfer_records(connection, source, destination, operation_id, mode=mode, name=name)
-        return {"mode": mode, "source_project_id": source[0], "project_id": destination,
-                "source_layer_id": source[1], "layer_id": mapping["layer"][source[1]],
-                "counts": _counts(source), "id_map": _mapping_result(mapping),
-                "redirected_bind_ids": list(incoming)}
-    return {**run_operation(connection, work, checker=_checker(checker, config_root)), "tool": "transfer_subtree"}
+    result = run_operation(
+        connection,
+        lambda write: transfer_subtree_in_session(
+            write, project_id, layer_id, target_project_id, mode=mode, name=name,
+        ),
+        checker=_checker(checker, config_root),
+    )
+    return {**result, "tool": 'transfer_subtree'}
+
+
+def transfer_subtree_in_session(write, project_id, layer_id, target_project_id, *, mode='copy', name=None):
+    """在当前写会话执行，返回业务数据；异常交给外层，不提交或运行检测。"""
+    connection = require_write_session(write).connection
+    operation_id = write.operation_id
+    if mode not in {"copy", "cut"}:
+        raise InputError("迁移模式应为 copy 或 cut", field="mode", allowed=["copy", "cut"])
+    source = _source(connection, project_id, layer_id)
+    destination = crud.read(connection, "project", id=target_project_id) if target_project_id is not None else None
+    if destination is None:
+        raise InputError("目标项目不存在", code="missing_reference", field="target_project_id",
+                         target=target("project", None, target_project_id))
+    destination = destination["id"]
+    if destination == source[0]:
+        raise InputError("跨项目操作需要不同的目标项目；同项目复制使用 copy_subtree", field="target_project_id")
+    mapping, incoming = _transfer_records(connection, source, destination, operation_id, mode=mode, name=name)
+    return {"mode": mode, "source_project_id": source[0], "project_id": destination,
+            "source_layer_id": source[1], "layer_id": mapping["layer"][source[1]],
+            "counts": _counts(source), "id_map": _mapping_result(mapping),
+            "redirected_bind_ids": list(incoming)}
 
 
 def _transfer_records(connection, source, destination, operation_id, *, mode, name=None, target_layer_id=None):
@@ -189,40 +224,49 @@ def _transfer_records(connection, source, destination, operation_id, *, mode, na
 def transfer_objects(connection, project_id, object_ids, target_project_id, target_layer_id, *, mode="copy",
                      config_root=DEFAULT_ROOT, checker=DEFAULT_CHECKER):
     """同库跨项目复制/剪切选中对象及出向关联，放入明确的已有目标层。"""
-    from layerweave.support.storage.assembly import read_object
+    result = run_operation(
+        connection,
+        lambda write: transfer_objects_in_session(
+            write, project_id, object_ids, target_project_id, target_layer_id, mode=mode,
+        ),
+        checker=_checker(checker, config_root),
+    )
+    return {**result, "tool": 'transfer_objects'}
 
-    def work(write):
-        operation_id = write.operation_id
-        if mode not in {"copy", "cut"}:
-            raise InputError("迁移模式应为 copy 或 cut", field="mode", allowed=["copy", "cut"])
-        projects = []
-        for field, id in (("project_id", project_id), ("target_project_id", target_project_id)):
-            row = crud.read(connection, "project", id=id) if id is not None else None
-            if row is None:
-                raise InputError(f"项目 {id} 不存在", code="missing_reference", field=field,
-                                 target=target("project", None, id))
-            projects.append(row["id"])
-        owner, destination = projects
-        if owner == destination:
-            raise InputError("跨项目操作需要不同的目标项目；同项目复制使用 copy_object，换层使用 update",
-                             field="target_project_id")
-        layer = crud.read(connection, "layer", project_id=destination, id=target_layer_id) if target_layer_id is not None else None
-        if layer is None:
-            raise InputError(f"目标层 ({destination}, {target_layer_id}) 不存在", code="missing_reference",
-                             field="target_layer_id", target=target("layer", destination, target_layer_id))
-        if object_ids is None or isinstance(object_ids, (str, bytes)):
-            raise InputError("object_ids 需要编号列表，单个对象也使用 [id]", field="object_ids")
-        objects = {}
-        for id in dict.fromkeys(object_ids):
-            obj = read_object(connection, owner, id) if id is not None else None
-            if obj is None:
-                raise InputError(f"对象 ({owner}, {id}) 不存在", code="target_not_found", field="object_ids",
-                                 target=target("object", owner, id))
-            objects.setdefault(obj["id"], obj)
-        source = (owner, None, [], list(objects.values()), [bind for obj in objects.values() for bind in obj["bind"]])
-        mapping, incoming = _transfer_records(connection, source, destination, operation_id,
-                                                       mode=mode, target_layer_id=layer["id"])
-        return {"mode": mode, "source_project_id": owner, "source_object_ids": list(objects), "project_id": destination,
-                "layer_id": layer["id"], "counts": _counts(source), "id_map": _mapping_result(mapping),
-                "redirected_bind_ids": list(incoming)}
-    return {**run_operation(connection, work, checker=_checker(checker, config_root)), "tool": "transfer_objects"}
+
+def transfer_objects_in_session(write, project_id, object_ids, target_project_id, target_layer_id, *, mode='copy'):
+    """在当前写会话执行，返回业务数据；异常交给外层，不提交或运行检测。"""
+    connection = require_write_session(write).connection
+    operation_id = write.operation_id
+    if mode not in {"copy", "cut"}:
+        raise InputError("迁移模式应为 copy 或 cut", field="mode", allowed=["copy", "cut"])
+    projects = []
+    for field, id in (("project_id", project_id), ("target_project_id", target_project_id)):
+        row = crud.read(connection, "project", id=id) if id is not None else None
+        if row is None:
+            raise InputError(f"项目 {id} 不存在", code="missing_reference", field=field,
+                             target=target("project", None, id))
+        projects.append(row["id"])
+    owner, destination = projects
+    if owner == destination:
+        raise InputError("跨项目操作需要不同的目标项目；同项目复制使用 copy_object，换层使用 update",
+                         field="target_project_id")
+    layer = crud.read(connection, "layer", project_id=destination, id=target_layer_id) if target_layer_id is not None else None
+    if layer is None:
+        raise InputError(f"目标层 ({destination}, {target_layer_id}) 不存在", code="missing_reference",
+                         field="target_layer_id", target=target("layer", destination, target_layer_id))
+    if object_ids is None or isinstance(object_ids, (str, bytes)):
+        raise InputError("object_ids 需要编号列表，单个对象也使用 [id]", field="object_ids")
+    objects = {}
+    for id in dict.fromkeys(object_ids):
+        obj = read_object(connection, owner, id) if id is not None else None
+        if obj is None:
+            raise InputError(f"对象 ({owner}, {id}) 不存在", code="target_not_found", field="object_ids",
+                             target=target("object", owner, id))
+        objects.setdefault(obj["id"], obj)
+    source = (owner, None, [], list(objects.values()), [bind for obj in objects.values() for bind in obj["bind"]])
+    mapping, incoming = _transfer_records(connection, source, destination, operation_id,
+                                                   mode=mode, target_layer_id=layer["id"])
+    return {"mode": mode, "source_project_id": owner, "source_object_ids": list(objects), "project_id": destination,
+            "layer_id": layer["id"], "counts": _counts(source), "id_map": _mapping_result(mapping),
+            "redirected_bind_ids": list(incoming)}

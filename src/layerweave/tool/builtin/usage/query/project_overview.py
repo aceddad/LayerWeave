@@ -50,7 +50,8 @@ def main():
 
 # 命令目录和 --help 共用的只读接口说明。
 COMMANDS = [{'name': 'project_overview',
-  'summary': '查看项目树、层类型和直属对象数量',
+  'summary': '打开已有项目先看这里：层树、层类型和直属对象数量',
+  'aliases': ['overview'],
   'entrypoint': 'layerweave.tool.builtin.usage.query.project_overview:project_overview',
   'cli': 'python -m layerweave.tool.builtin.usage.query.project_overview',
   'read_only': True,

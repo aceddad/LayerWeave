@@ -7,6 +7,7 @@ from layerweave.support.feedback import target
 from layerweave.support.positions import PositionMath
 from functools import partial
 from layerweave.support.operation import run_operation
+from layerweave.support.transaction import require_write_session
 from layerweave.support.storage import crud
 from layerweave.support.storage.assembly import read_layer, read_object
 from layerweave.support.storage.models import infer_config, model_fields
@@ -90,33 +91,37 @@ def _save_entity(connection, kind, project_id, value, loader, operation_id, upda
     return row
 
 
+def _save_in_session(write, kind, project_id, value, *, config_root=DEFAULT_ROOT, updates=None):
+    connection = require_write_session(write).connection
+    updates = [] if updates is None else updates
+    operation_id = write.operation_id
+    loader = Loader(config_root)
+    positions = PositionMath(partial(crud.read, connection), project_id)
+
+    def save_entity(entity_kind, entity, **context):
+        try:
+            return _save_entity(connection, entity_kind, project_id, entity, loader, operation_id, updates,
+                                positions=positions, **context)
+        except Exception as error:
+            error.details = {"target": target(entity_kind, project_id, _get(entity, "id")),
+                             **getattr(error, "details", {})}
+            raise
+
+    row = save_entity(kind, value)
+    if kind == "layer":
+        for obj in _get(value, "objects", []):
+            save_entity("object", obj, layer_id=row["id"])
+        data = read_layer(connection, project_id, row["id"])
+    else:
+        data = read_object(connection, project_id, row["id"])
+    return data
+
+
 def _save(connection, kind, project_id, value, *, config_root=DEFAULT_ROOT, checker=None):
     updates = []
 
-    def work(write):
-        operation_id = write.operation_id
-        loader = Loader(config_root)
-        positions = PositionMath(partial(crud.read, connection), project_id)
-
-        def save_entity(entity_kind, entity, **context):
-            try:
-                return _save_entity(connection, entity_kind, project_id, entity, loader, operation_id, updates,
-                                    positions=positions, **context)
-            except Exception as error:
-                error.details = {"target": target(entity_kind, project_id, _get(entity, "id")),
-                                 **getattr(error, "details", {})}
-                raise
-
-        row = save_entity(kind, value)
-        if kind == "layer":
-            for obj in _get(value, "objects", []):
-                save_entity("object", obj, layer_id=row["id"])
-            data = read_layer(connection, project_id, row["id"])
-        else:
-            data = read_object(connection, project_id, row["id"])
-        return data
-
-    result = run_operation(connection, work, checker=checker)
+    result = run_operation(connection, lambda write: _save_in_session(
+        write, kind, project_id, value, config_root=config_root, updates=updates), checker=checker)
     if result["ok"]:
         # 事务失败不会留下已回滚的编号；检测失败不影响已成功保存的编号。
         for instance, fields in updates:
@@ -136,3 +141,13 @@ def save_object(connection, project_id, obj, *, config_root=DEFAULT_ROOT, checke
 def save_layer(connection, project_id, layer, *, config_root=DEFAULT_ROOT, checker=None):
     """同一事务保存层、传入 objects 和它们的 bind；type 来自层配置。"""
     return _save(connection, "layer", project_id, layer, config_root=config_root, checker=checker)
+
+
+def save_object_in_session(write, project_id, obj, *, config_root=DEFAULT_ROOT):
+    """保存并返回对象记录；不回填输入实例，不提交或检测，异常交给外层。"""
+    return _save_in_session(write, "object", project_id, obj, config_root=config_root)
+
+
+def save_layer_in_session(write, project_id, layer, *, config_root=DEFAULT_ROOT):
+    """保存层与传入对象，返回完整记录；不回填输入实例，外层负责提交和检测。"""
+    return _save_in_session(write, "layer", project_id, layer, config_root=config_root)

@@ -100,9 +100,19 @@ assert type(load_object(c, p, obj.id)) is Title
 assert type(load_layer(c, p, layer.id).objects[0]) is Title
 assert read_record(c, "project", id=p)["max_id"] == obj.id
 assert len(read_record(c, "change")) == 3
+from layerweave.support.api import save_layer_in_session, save_object_in_session, run_operation
+def compose(write):
+    extra = save_layer_in_session(write, p, TextLayer(name="composed"))
+    return save_object_in_session(write, p, Title(layer=extra["id"], information={"text":"session"}))
+composed = run_operation(c, compose)
+assert composed["ok"] and composed["checks"]["status"] == "not_run", composed
+assert type(load_object(c,p,composed["data"]["id"])) is Title
 with transaction(c) as write:
     write.update("object", obj.id, {"config_ref": "objects/missing.toml"}, project_id=p)
 assert read_record(c, "object", project_id=p, id=obj.id)["config_ref"] == "objects/missing.toml"
+from layerweave.support.api import change_cursor, read_changes
+assert read_changes(c)["next_cursor"] == change_cursor(c)
+assert read_changes(c,after=change_cursor(c))["changes"] == []
 try:
     load_object(c, p, obj.id)
 except ValueError:
@@ -116,10 +126,15 @@ assert not any(n == "layerweave.tool" or n.startswith("layerweave.tool.") for n 
         actions = {
             "usage/records": '''
 from layerweave.tool.builtin.usage.records.dispatch import dispatch
-from layerweave.tool.builtin.usage.records.save import save_object
+from layerweave.tool.builtin.usage.records.save import save_object_with_checks
 r = dispatch(c, {"action": "update", "kind": "object", "project_id": p, "id": obj.id, "data": {"tips": "ok"}})
 assert r["ok"] and r["checks"]["status"] == "not_run", r
-assert save_object(c, p, Title(layer=layer.id, information={"text": "second"}))["ok"]
+assert save_object_with_checks(c, p, Title(layer=layer.id, information={"text": "second"}))["ok"]
+from layerweave.support.api import run_operation
+from layerweave.tool.builtin.usage.records.dispatch import dispatch_in_session
+r = run_operation(c, lambda w: dispatch_in_session(w, {"action":"update", "kind":"object", "project_id":p,
+                                                       "id":obj.id, "data":{"tips":"session"}}))
+assert r["ok"] and r["data"]["tips"] == "session", r
 ''',
             "usage/query": '''
 from layerweave.tool.builtin.usage.query.project_overview import project_overview
@@ -128,6 +143,11 @@ from layerweave.tool.builtin.usage.query.free_ranges import find_gaps
 assert project_overview(c,p)["counts"]["objects"] == 1
 assert project_details(c,p)["layers"][0]["objects"][0]["id"] == obj.id
 assert find_gaps(c,p,layer.id,begin=0,end=4) is not None
+from layerweave.tool.builtin.usage.query.walk import walk_relations
+with transaction(c) as write:
+    write.create("bind",{"source_kind":"layer","source_project_id":p,"source_id":layer.id,
+                         "target_kind":"object","target_project_id":p,"target_id":obj.id})
+assert len(walk_relations(c,p,"layer",layer.id)["nodes"]) == 2
 ''',
             "usage/editing": '''
 from layerweave.tool.builtin.usage.editing.timeline import split_object
@@ -137,6 +157,19 @@ r = split_object(c,p,obj.id,first_information={"text":"one"},cuts=[{"at":1,"info
 assert r["ok"] and r["checks"]["status"] == "not_run", r
 assert append_object(c,p,layer.id,{"config_ref":"objects/text.toml","information":{"text":"three"}},duration=1)["ok"]
 assert copy_subtree(c,p,layer.id)["ok"]
+from layerweave.support.api import run_operation
+from layerweave.tool.builtin.usage.editing.objects import append_object_in_session
+from layerweave.tool.builtin.usage.editing.timeline import shift_objects_in_session
+def compose(write):
+    row = append_object_in_session(write,p,layer.id,{"config_ref":"objects/text.toml","information":{"text":"four"}},duration=1)
+    return shift_objects_in_session(write,p,[row["id"]],offset=1)
+r = run_operation(c, compose)
+assert r["ok"] and len(r["data"]) == 1, r
+from layerweave.tool.builtin.usage.editing.upsert import upsert_objects
+r = upsert_objects(c,p,layer.id,[{"name":"sync","config_ref":"objects/text.toml","information":{"text":"sync"}}])
+assert r["ok"] and r["checks"]["status"] == "not_run", r
+same = upsert_objects(c,p,layer.id,[{"name":"sync","tips":"updated"}])
+assert same["ok"] and same["data"]["items"][0]["record"]["id"] == r["data"]["items"][0]["record"]["id"], same
 ''',
             "usage/history": '''
 from layerweave.tool.builtin.usage.history.service import read_history
@@ -151,6 +184,10 @@ assert r["ok"] and r["checks"]["status"] == "not_run", r
 assert read_record(c,"object",project_id=p,id=obj.id) is None
 assert undo_operation(c,r["operation_id"])["ok"]
 assert read_record(c,"object",project_id=p,id=obj.id)["id"] == obj.id
+from layerweave.support.api import run_operation
+from layerweave.tool.builtin.usage.undo.service import undo_operation_in_session
+r = run_operation(c, lambda w: undo_operation_in_session(w,saved_object["operation_id"]))
+assert r["ok"] and read_record(c,"object",project_id=p,id=obj.id) is None, r
 ''',
             "usage/validation": '''
 from layerweave.tool.builtin.usage.validation.recheck import recheck

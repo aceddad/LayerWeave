@@ -41,6 +41,7 @@ def main():
 COMMANDS = [{'name': 'dispatch',
   'summary': '基础记录 CRUD 与批次请求的分流入口',
   'entrypoint': 'layerweave.tool.builtin.usage.records.dispatch:dispatch',
+  'session_entrypoint': 'layerweave.tool.builtin.usage.records.dispatch:dispatch_in_session',
   'cli': 'python -m layerweave.tool.builtin.usage.records.cli',
   'read_only': False,
   'context': ['database'],

@@ -9,6 +9,7 @@
 | tables.py、references.py | 内置/工具表声明、原子建表与新增列、引用查询 |
 | restoration.py | 精确恢复原身份/原值，维护编号上界 |
 | log_reader.py | 按操作和目标读取原始日志页，不决定撤销或展示策略 |
+| change_feed.py | 按日志游标连续读取，分页保留完整操作，供增量刷新 |
 | assembly.py、details.py、queries.py | 单记录、范围和关系读取 |
 | models.py、save.py | 类适配、按需装载、完整层/对象保存与成功后回填 |
 

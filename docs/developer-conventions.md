@@ -2,7 +2,7 @@
 
 开发者和修改代码的 AI 从这里准备环境、寻找源码和选择扩充方式。项目用途见[README](../README.md)，边界见[架构说明](architecture.md)。
 
-想用 LayerWeave 搭建自己的工具，先读[AI 开发指导](build-with-layerweave/README.md)：那里按篇介绍嵌套时序、有序管理以及可自由扩展的部分。本页继续维护源码开发环境和验证流程。
+想用 LayerWeave 搭建自己的工具，先读[AI 开发指导](build-with-layerweave/README.md)：那里按篇介绍嵌套时序、有序管理和工具自有表。本页维护源码开发环境、入口定位和验证流程。
 
 ## 准备环境
 
@@ -25,6 +25,8 @@ python -m venv .venv
 | 要做什么 | 入口 |
 |---|---|
 | 新增层或对象封装 | [模型](../src/layerweave/models/README.md)、[配置](../src/layerweave/configs/README.md)，参考 [Title](../examples/title.py) |
+| 在一个事务中组合多个现成工具 | [事务内组合](build-with-layerweave/04-composing-tools.md)，失败抛出，外层提交与检查 |
+| 让视图或缓存连续读取业务变化 | [增量接入](build-with-layerweave/05-incremental-reading.md)，初始快照与后续日志游标 |
 | 新增或维护内部工具 | [工具开发](../src/layerweave/tool/builtin/developer/README.md)、[基础 API](../src/layerweave/support/API.md) |
 | 工具包登记自己的层或对象类型 | [工具包登记类型](../src/layerweave/tool/builtin/developer/TOOL_TYPES.md) |
 | 修改结构、事务或存储 | [基础支撑](../src/layerweave/support/README.md)、[表结构](../src/layerweave/support/storage/SCHEMA.md) |
@@ -46,6 +48,7 @@ python -m venv .venv
 | src/layerweave/configs/layers、src/layerweave/configs/objects | 与 Python 类对应的封装约定 |
 | src/layerweave/configs/logging | 诊断汇报等级；不保存数据库操作历史 |
 | [src/layerweave/support](../src/layerweave/support/README.md) | 存储与配置适配、统一写入、实例装配、CLI 和静态发现 |
+| [src/layerweave/support/numbering](../src/layerweave/support/numbering/README.md) | 发号词条、普通规则函数、簇成员和计数恢复；属于基础支撑 |
 | src/layerweave/tool/builtin | 可独立增减的完整工具包，按 usage/developer/view/shared 分类 |
 | src/layerweave/tool/skills | 外置技能，供层配置中的 tools 引用 |
 | examples、tests | 可运行例子、行为回归与隔离验收 |
@@ -54,10 +57,27 @@ python -m venv .venv
 
 查现行源码时可使用 `rg 关键词 src/layerweave tests examples docs`。scratch 保留开发备份和临时材料，已被 Git 忽略；递归扫描时排除 scratch、build、.venv，避免把旧副本当作当前实现，不需要为了检索而清理备份。
 
+## 入口路径与调度标识
+
+这些字段服务不同用途；名称相同或写法相似，不代表它们共用一套加载、执行或登记机制。
+
+| 入口或标识 | 在哪里声明、如何定位 | 谁使用它 |
+|---|---|---|
+| Python API，例如 layerweave.support.api | Python 的 layerweave 包内模块；从任意工作目录导入 | 开发者直接调用，见[公共 API](../src/layerweave/support/API.md) |
+| config_ref，例如 objects/title.toml | 相对于 configs 根目录；TOML 内的 extends 则相对于当前配置文件 | 存储和配置读取器，见[配置继承](../src/layerweave/support/configuration/README.md) |
+| TOML 的 class，例如 layerweave.models.objects.title:Title | 模块名与类名，由对应封装声明 | 实例装配时导入并还原；与业务记录的名称分开 |
+| 层配置 tools 中的 route | 技能文件位置，配合 tier/when；源码、自带安装资源和 ZIP 目标的基准不同 | 供 AI 阅读选择，不自动执行，见[技能定位](../src/layerweave/tool/README.md#选择与定位技能) |
+| COMMANDS 的 entrypoint 与 cli | 命令模块内声明 Python 函数入口、CLI 启动方式 | command_help 静态展示说明，实际调用由调用方完成，见[命令声明](../src/layerweave/tool/builtin/shared/help/COMMANDS.md) |
+| PROVIDERS 的角色与函数入口 | 完整工具包的 `__init__.py` 中声明；例如 checker | 显式请求可选能力时查找提供者；默认检测在提交后执行，见[检测包](../src/layerweave/tool/builtin/usage/validation/README.md) |
+| 发号词条与 rule | 词条、计数位置、成员保存于数据库；rule 对应本进程登记的函数 | allocate 在当前写会话中调度，见[编号模块](../src/layerweave/support/numbering/README.md) |
+| component.toml 的 name | 组件目录内的稳定名称，例如 layerweave.versions；版本由该声明维护 | 版本工具扫描登记与核对，不以名称执行代码，见[版本工具](../src/layerweave/tool/builtin/developer/versions/README.md) |
+
+增加功能时，先选择对应机制：新命令改自身 COMMANDS；技能绑定改层配置 tools；编号扩展登记词条与规则；组件说明改自身 component.toml。工具表的 kind 由 register_tables 登记，用来选择数据表，和上述组件名称、发号词条分别维护。
+
 ## 实现原则
 
 1. 模型保存数据；不在构造与赋值时自动检查内容，不增加未经需要的资源解释。
-2. 新工具使用 layerweave.support.api 的读取、transaction/run_operation、实例保存和位置计算。一个操作内先读后写共用同一写会话，不嵌套操作入口，不复制 SQL、发号或日志。
+2. 新工具使用 layerweave.support.api 的读取、transaction/run_operation、实例保存和位置计算。一个操作内先读后写共用同一写会话；组合高级工具使用公开 *_in_session 入口，不嵌套独立操作，不复制 SQL、发号或日志。
 3. 包内业务代码随包一起增减；不借用另一个可卸载包的私有函数。共用 CLI 使用 layerweave.support.cli；每个命令在本模块声明字面量 COMMANDS，发现和示例排版来自 layerweave.support.commands。
 4. 内容检测是可选公开能力。工具通过 layerweave.support.providers.optional_checker 请求默认提供者；没有提供者返回 not_run。基础支撑的 save 默认不接入检测，records 包提供带默认检测的保存函数。
 5. 新封装同时提供类与 TOML，保留 config_ref 和 layers/objects 分区。修改继承、身份或恢复时先阅读对应专题和测试。
@@ -79,7 +99,7 @@ test_namespace.py 验证宿主同名模块不会干扰公开导入、保存和�
 
 ```sh
 python -m pip wheel --no-deps --wheel-dir scratch/namespace-dist .
-python tests/check_wheel.py scratch/namespace-dist/layerweave-0.2.0-py3-none-any.whl
+python tests/check_wheel.py scratch/namespace-dist/layerweave-0.4.0-py3-none-any.whl
 ```
 
 check_wheel.py 将 wheel 用 pip 安装到临时目标，以禁用 site 的独立进程验证；源码目录不参与导入。它检查只有 layerweave 顶层包、同名模块冲突、默认配置、数据库 schema 和技能正文/脚本。临时目录自动清理，不写用户数据库。

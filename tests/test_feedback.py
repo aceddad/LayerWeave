@@ -12,7 +12,7 @@ import unittest
 from layerweave.models import Text, TextLayer
 from layerweave.tool.builtin.usage.records.dispatch import dispatch
 from layerweave.support.api import format_feedback, initialize_database, open_database
-from layerweave.tool.builtin.usage.records.save import save_layer
+from layerweave.tool.builtin.usage.records.save import save_layer_with_checks
 from layerweave.tool.builtin.usage.validation.runner import validate
 from layerweave.support.configuration.loader import DEFAULT_ROOT, ConfigError, Loader
 from layerweave.support.storage import crud
@@ -135,9 +135,11 @@ class FeedbackTests(unittest.TestCase):
         bad = self.obj(config_ref="objects/txt.toml")
         self.assertTrue(all(item["scope"] == "direct" for item in bad["checks"]["issues"]))
         result = self.obj()
-        self.assertEqual(result["operation"], {"status": "committed", "changes": [
+        self.assertEqual({key: result["operation"][key] for key in ("status", "changes")}, {"status": "committed", "changes": [
             {"action": "create", "target": {"kind": "object", "project_id": self.project, "id": result["id"]}},
         ]})
+        self.assertEqual(result["operation"]["numbering"][0]["identity"],
+                         {"project_id": self.project, "id": result["id"]})
         issue = result["checks"]["issues"][0]
         self.assertEqual(issue["target"]["id"], bad["id"])
         self.assertEqual(issue["scope"], "related")
@@ -181,13 +183,13 @@ class FeedbackTests(unittest.TestCase):
 
     def test_model_save_feedback_lists_actual_nested_changes(self):
         layer = TextLayer()
-        result = save_layer(self.connection, self.project, layer)
+        result = save_layer_with_checks(self.connection, self.project, layer)
         self.assertEqual(result["operation"]["changes"][0]["target"]["id"], layer.id)
         layer.objects.append(Text(layer=layer.id, information={"text": "正文"}))
-        result = save_layer(self.connection, self.project, layer)
+        result = save_layer_with_checks(self.connection, self.project, layer)
         self.assertEqual(len(result["operation"]["changes"]), 1)
         self.assertEqual(result["operation"]["changes"][0]["target"]["kind"], "object")
-        failed = save_layer(self.connection, self.project, {"id": layer.id, "objects": [
+        failed = save_layer_with_checks(self.connection, self.project, {"id": layer.id, "objects": [
             {"config_ref": "objects/txt.toml"},
         ]})
         self.assertEqual(failed["error"]["target"]["kind"], "object")

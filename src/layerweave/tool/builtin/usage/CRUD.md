@@ -4,9 +4,11 @@
 
 通过 dispatch 或 layerweave.tool.builtin.usage.records.cli 读写记录。示例中的项目、层和对象编号须替换为实际值；CLI 完成可编辑安装后运行。
 
-判断本次数据库操作是否写入，先看 operation.status；checks 只说明检查进度及发现的问题，不能据此重试创建。committed 表示有变更已提交，unchanged 表示成功但无变更，failed 表示操作失败，read 表示只读成功。批次中具体改了哪些记录，再看 operation.changes 和 results；这套协议适用于数据库操作，不要求本地 KEY 或技能安装等文件工具采用同样的返回格式。
+判断本次数据库操作是否写入，先看 operation.status；checks 只说明检查进度及发现的问题，不能据此重试创建。committed 表示业务或计数变更已提交，unchanged 表示成功且没有这两类变化，failed 表示操作失败，read 表示只读成功。批次中具体改了哪些记录，再看 operation.changes 和 results；这套协议适用于数据库操作，不要求本地 KEY 或技能安装等文件工具采用同样的返回格式。
 
 工具表声明 id_source="provided" 后，create 的 data 中必须包含正整数 id；project_id 仍放请求外层。其他自动发号表不接受手填 data.id。成员关系与外部 ID 示例见[编号模块](../../../support/numbering/README.md)。
+
+发号反馈在非空 operation.numbering 中，业务修改继续列在 operation.changes；只领号时 changes 为空也可能 applied=true。需要同一事务组合请求与其他工具时，使用 dispatch_in_session(write, request, config_root=...)，返回单条数据或数据列表，失败抛出；config_root 是关键字参数，检测由最外层决定。完整示例见[事务内组合](../../../../../docs/build-with-layerweave/04-composing-tools.md)。
 
 ## 请求格式
 

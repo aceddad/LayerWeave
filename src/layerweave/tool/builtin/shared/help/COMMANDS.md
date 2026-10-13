@@ -17,11 +17,13 @@ python -X utf8 -B -m layerweave.tool.builtin.usage.editing.gaps --help
 python -X utf8 -B -m layerweave.tool.builtin.usage.editing.split --help
 ```
 
-总览只有 name、summary、read_only 和 cli 模块入口。详情还包括 Python entrypoint、参数说明、返回说明、notes、examples 和声明所在 source。参数含类型、用途、是否必需，以及适用的 choices/default。示例中的 files 直接保存可解析的 JSON 值；文件最外层的字典或列表不会用省略号代替。
+总览只有 name、summary、read_only 和 cli 模块入口。详情还包括 Python entrypoint、参数说明、返回说明、notes、examples 和声明所在 source。可组合写工具另有 session_entrypoint，指向接受 write 的 Python 事务内入口；不增加命令，也不改变 CLI。参数含类型、用途、是否必需，以及适用的 choices/default。示例中的 files 直接保存可解析的 JSON 值；文件最外层的字典或列表不会用省略号代替。
 
 名称支持规范命令名、别名或完整 Python 入口，比如 split、split_object、layerweave.tool.builtin.usage.editing.timeline:split_object。重复指向同一命令的查询去重，names=[] 返回空列表。名称不明或有歧义时给出问题和候选，其他目标继续；有歧义时可以用不同的完整 entrypoint 区分。
 
 返回 view、status、items、issues。completed 表示说明读取完成，partial 表示部分声明或目标不可用。说明不验证命令的业务执行结果。CLI 查询失败或源目录错误返回失败，部分目标不可用仍返回有效部分。
+
+事务内入口的返回是业务数据，不含独立提交反馈，完整约定见[组合开发指导](../../../../../../docs/build-with-layerweave/04-composing-tools.md)。
 
 ## 同一份说明用于目录与 CLI
 

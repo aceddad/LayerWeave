@@ -20,13 +20,17 @@ import {ObjectBlock} from './ObjectBlock';
 
 export type BoardNodeType = Node<{key: number}, 'board'>;
 
-// 画板左边移出视口时，名字列、刻度角、标题跟着往右挪
-function Sticky({target, x, width}: {target: RefObject<HTMLDivElement | null>; x: number; width: number}) {
+// 画板左边移出视口时，名字列、刻度角、标题跟着往右挪。
+// 直接改这几个元素自己的 transform。原来是在画板根上设 CSS 变量 --stick，变量会往下继承，放大以后平移，
+// 每一帧都要把整块画板两千多个元素的样式重算一遍（放大后平移卡顿的主因，2026-10-14 量的）
+function Sticky({target, x, width, layout}: {target: RefObject<HTMLDivElement | null>; x: number; width: number; layout: BoardLayout}) {
   const stick = useFlowStore((s) => {
     const [tx, , z] = s.transform;
     return Math.round(Math.max(0, Math.min(-(tx + x * z) / z, width - NAMES - 60)));
   });
-  useLayoutEffect(() => { target.current?.style.setProperty('--stick', `${stick}px`); }, [stick, target]);
+  useLayoutEffect(() => {
+    target.current?.querySelectorAll<HTMLElement>('.stick').forEach((el) => { el.style.transform = stick ? `translateX(${stick}px)` : ''; });
+  }, [stick, target, layout]);   // layout 变了（折叠、加层）会有新的名字列，也要挪
   return null;
 }
 
@@ -248,7 +252,7 @@ export const BoardNode = memo(function BoardNode({id, data, positionAbsoluteX}: 
   return (
     <div ref={rootRef} className={`board${isActive ? ' active' : ''}${dropHere ? (dropHere.ok ? ' canmerge' : ' nomerge') : ''}`}
          data-key={key} style={{width: layout.width, height: layout.height}}>
-      <Sticky target={rootRef} x={positionAbsoluteX} width={layout.width} />
+      <Sticky target={rootRef} x={positionAbsoluteX} width={layout.width} layout={layout} />
       <div className="bhead">
         <div className="stick">
           <span className="grip">⠿</span><b>{title}</b><span className="unit">{unit || '没有单位'}</span>

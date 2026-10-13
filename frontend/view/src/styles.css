@@ -42,13 +42,12 @@ select { background: var(--panel); padding: 3px 6px; }
 .link-tip { position: absolute; font-size: 12px; color: #dfeeff; background: rgba(21, 23, 28, .9); border: 1px solid #2c3d55; border-radius: 3px;
             padding: 0 5px; white-space: nowrap; pointer-events: none; }
 
-/* 画板：一个根（或同单位的几个根）的时间轴。名字列、刻度角和标题在画板左边移出视口时跟着往右挪（--stick） */
+/* 画板：一个根（或同单位的几个根）的时间轴。名字列、刻度角和标题在画板左边移出视口时跟着往右挪（BoardNode 的 Sticky 直接改它们的 transform） */
 .board { position: relative; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; overflow: hidden;
          box-shadow: 0 6px 24px rgba(0, 0, 0, .35); }
 .board.active { border-color: #44536e; }
 .board.canmerge { outline: 2px solid var(--accent); }
 .board.nomerge { outline: 2px dashed #ff6b6b; }
-.stick { transform: translateX(var(--stick, 0px)); }
 .bhead { height: 34px; display: flex; align-items: center; background: var(--panel); border-bottom: 1px solid var(--line); cursor: move; }
 .bhead .stick { display: flex; align-items: center; gap: 8px; padding: 0 10px; white-space: nowrap; }
 .bhead .grip { color: var(--dim); }

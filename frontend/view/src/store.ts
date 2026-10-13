@@ -3,7 +3,7 @@ import {create} from 'zustand';
 import {changeMarks, noMarks} from './model/changes';
 import type {ChangeMarks} from './model/changes';
 import {Model} from './model/model';
-import {noteIndex, noteList, noteThreads} from './model/notes';
+import {noteIndex, noteList, noteThreads, waitingFor} from './model/notes';
 import type {Note, Thread} from './model/notes';
 import type {Drop} from './model/dropRule';
 import {VIEWER, numParam, params} from './params';
@@ -36,7 +36,7 @@ export interface State {
   sel: {key: number; begin: number; end: number} | null;  // 在尺子上圈出的一段（画板时间）
   targetLayer: number | null;                             // 点层名选中的层：写批注时指向它
   wholeProject: boolean;
-  noteFilter: 'all' | 'open' | 'done' | 'waiting';
+  noteFilter: 'open' | 'done' | 'waiting';               // 已处理的楼只在"已处理"里出现，默认看待处理的
   noteFocus: number | null;                               // 镜头对准的那条批注（地址参数 note、批注上的"定位"）：它的楼和目标高亮
   me: string;                                             // 本机署名：写批注用，也用来算"等我回复"的楼
   canvasW: number;
@@ -59,7 +59,7 @@ export const useStore = create<State>((set) => ({
   changeLimit: numParam('changes') || 10, changeOps: [],
   links: params.get('links') === '1',
   sel: null, targetLayer: null, wholeProject: false,
-  noteFilter: 'all', noteFocus: numParam('note'), me: localStorage.getItem('lw-author') || '用户',
+  noteFilter: 'open', noteFocus: numParam('note'), me: localStorage.getItem('lw-author') || '用户',
   canvasW: Math.max(600, window.innerWidth - 340), canvasH: Math.max(400, window.innerHeight - 50),
   dragging: false, drop: null, autoFit: true,
   set: (patch) => set(patch as any),
@@ -91,6 +91,8 @@ export function notesOf(s: State): NotesInfo | null {
   return notesCache.value;
 }
 export const useNotes = () => useStore(notesOf);
+// 在等本机署名的楼（没处理、最后一句不是我说的、我也没标已读）：标签上的数字、标题、"等我回复"都用它
+export const waitingOf = (s: State) => waitingFor(notesOf(s)?.threads ?? [], s.me, s.data?.noteReads);
 
 let marksCache: {model: Model; ops: ChangeOp[]; value: ChangeMarks} | null = null;
 export function marksOf(s: State): ChangeMarks {

@@ -63,6 +63,7 @@ export interface ProjectData {
   layers: Layer[];
   binds: Bind[];
   folds?: FoldRow[];   // 折叠：人和 AI 各一份（数据库里视图自己的表 view_layer）
+  noteReads?: Record<string, Record<string, number>>;   // 批注的已读：{楼主: {名字: 读到的最后一条}}（视图自己的表 view_note）
 }
 
 // 一层的折叠：user / ai 是那一边谁折叠的（空着就是没折叠），tips 是说明

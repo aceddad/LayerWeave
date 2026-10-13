@@ -2,8 +2,9 @@
 批注层是项目里的一个根层（类型 note，轴的单位是"条"，第 n 条占 [n, n+1)），第一次写批注时自动创建。
 写入走 support 的写会话：进改动日志，可以用撤销工具撤回。视图网页写批注也走这里，这是视图唯一会写入的地方。
 
-python -m layerweave.tool.builtin.view.note DATABASE PROJECT_ID                       按楼列出批注
-python -m layerweave.tool.builtin.view.note DATABASE PROJECT_ID --waiting Claude      只列"最后一句不是 Claude 说的"的楼：等 Claude 回复
+python -m layerweave.tool.builtin.view.note DATABASE PROJECT_ID                       按楼列出待处理的批注（--status done 看已处理的，all 看全部）
+python -m layerweave.tool.builtin.view.note DATABASE PROJECT_ID --waiting Claude      只列在等 Claude 的楼：没处理、最后一句不是 Claude 说的、Claude 也没标已读
+python -m layerweave.tool.builtin.view.note DATABASE PROJECT_ID read 41 --author Claude  这一楼 Claude 看过了，不再算"等 Claude"（unread 取消）
 python -m layerweave.tool.builtin.view.note DATABASE PROJECT_ID reply 41 "回复正文" [--author Claude]
 python -m layerweave.tool.builtin.view.note DATABASE PROJECT_ID add "正文" [--to object:16] [--to layer:1 --span 3 5] [--author Claude]
 python -m layerweave.tool.builtin.view.note DATABASE PROJECT_ID done 40               标记已处理（reopen 40 重新打开）
@@ -16,12 +17,14 @@ import json
 from pathlib import Path
 import sys
 
-from layerweave.support.api import open_database, read_record, run_operation
+from layerweave.support.api import open_database, read_record, register_tables, run_operation
 
 from .data import open_readonly
 from .notes import AXIS, LAYER_REF, OBJECT_REF
+from .notes.reads import READ_KIND, READ_TABLE, parse_reads, read_reads
 
 STATUS = {"open": "待处理", "done": "已处理"}
+LIST_STATUS = (*STATUS, "all")
 
 
 def is_note_layer(layer):
@@ -92,9 +95,13 @@ def threads(notes):
             for key, group in groups.items() if any(n["id"] == key for n in group)]
 
 
-def waiting_for(notes, name):
-    """最后一句不是 name 说的、还没处理的楼：在等 name 回复。"""
-    return [n for top, replies in threads(notes) if top["status"] == "open" and ([top, *replies][-1]["author"] != name)
+def waiting_for(notes, name, reads=None):
+    """在等 name 的楼：还没处理、最后一句不是 name 说的，name 也没有在最后一条之后标过已读。
+    reads 是 read_reads 的结果；楼里后来又有人写了新的一条，就又算没读。"""
+    reads = reads or {}
+    return [n for top, replies in threads(notes)
+            if top["status"] == "open" and [top, *replies][-1]["author"] != name
+            and reads.get(top["id"], {}).get(name, 0) < max(m["id"] for m in [top, *replies])
             for n in [top, *replies]]
 
 
@@ -184,11 +191,46 @@ def remove_note(database, project_id, note_id):
     return _run(database, work)
 
 
-def describe(notes):
+def set_read(database, project_id, note_id, reader, read=True):
+    """reader 把 note_id 所在的这一楼标成已读（记下现在最后一条的编号），read=False 取消。写视图自己的表 view_note。"""
+    reader = (reader or "").strip()
+    if not reader:
+        raise ValueError("标已读要写明是谁（--author 名字）")
+    with closing(open_database(database)) as connection:
+        notes = list_notes(connection, project_id)
+        note = next((n for n in notes if n["id"] == note_id), None)
+        if note is None:
+            raise ValueError(f"#{note_id} 不是这个项目批注层里的批注")
+        thread = note["thread"]
+        last = max(n["id"] for n in notes if n["thread"] == thread)
+        register_tables(connection, READ_TABLE)   # 相同声明重复登记什么也不做
+
+        def work(write):
+            row = write.read(READ_KIND, project_id=project_id, id=thread)
+            reads = parse_reads(row["reads"]) if row else {}
+            want = {**reads, reader: last} if read else {k: v for k, v in reads.items() if k != reader}
+            if want != reads:
+                value = json.dumps(want, ensure_ascii=False, sort_keys=True)
+                if row is None:
+                    write.create(READ_KIND, {"id": thread, "reads": value}, project_id=project_id)
+                else:
+                    write.update(READ_KIND, thread, {"reads": value}, project_id=project_id)
+            return {"thread": thread, "reader": reader, "read": read, "last": last}
+
+        result = run_operation(connection, work)
+    if not result["ok"]:
+        error = result.get("error") or {}
+        raise ValueError(error.get("message") or str(error))
+    return {**(result["data"] or {}), "operation_id": result["operation_id"]}
+
+
+def describe(notes, numbers=None):
+    """numbers：{楼主编号: 第几楼}，按全部楼排的号（和网页一致）；只列一部分楼时也用全部的号，免得同一楼两边叫法不一样。"""
     if not notes:
         return "没有批注。"
     lines = []
-    for number, (top, replies) in enumerate(threads(notes), 1):
+    for index, (top, replies) in enumerate(threads(notes), 1):
+        number = (numbers or {}).get(top["id"], index)
         where = "；".join(t["label"] + (f" 的 {top['span']['begin']:g}–{top['span']['end']:g}" if top["span"] and t["kind"] == "layer" else "")
                          for t in top["targets"]) or "整个项目"
         lines.append(f"第 {number} 楼 #{top['id']} [{STATUS[top['status']]}] {top['author'] or '（未署名）'}：{top['text']}")
@@ -201,15 +243,22 @@ def describe(notes):
     return "\n".join(lines)
 
 
-def note(database, project_id, action="list", *, text=None, to=None, span=None, author=None, note_id=None, status=None,
+def note(database, project_id, action="list", *, text=None, to=None, span=None, author=None, note_id=None, status="open",
          waiting=None):
-    """批注的统一入口。action：list（可按 status、waiting 过滤）、add、reply、done、reopen、edit、remove。"""
+    """批注的统一入口。action：list（默认只列待处理的楼；status="done" 已处理、"all" 全部；可按 waiting 过滤）、
+    add、reply、done、reopen、edit、remove、read / unread（author 这个人标已读、取消已读）。"""
     if action == "list":
+        if status not in (None, *LIST_STATUS):
+            raise ValueError(f"status 只能是 {'、'.join(LIST_STATUS)}")
         with closing(open_readonly(database)) as connection:
-            notes = list_notes(connection, project_id, status)
+            every = list_notes(connection, project_id)
+            reads = read_reads(connection, project_id)
+        numbers = {top["id"]: number for number, (top, _) in enumerate(threads(every), 1)}   # 第几楼按全部楼数
+        tops = {n["id"]: n for n in every}
+        notes = every if status in (None, "all") else [n for n in every if tops[n["thread"]]["status"] == status]
         if waiting:
-            notes = waiting_for(notes, waiting)
-        return {"notes": notes, "text": describe(notes)}
+            notes = waiting_for(notes, waiting, reads)
+        return {"notes": notes, "text": describe(notes, numbers)}
     if action == "reply":
         if note_id is None:
             raise ValueError("reply 需要被回复的批注编号")
@@ -228,6 +277,8 @@ def note(database, project_id, action="list", *, text=None, to=None, span=None, 
         return update_note(database, project_id, note_id, text=text)
     if action == "remove":
         return remove_note(database, project_id, note_id)
+    if action in ("read", "unread"):
+        return set_read(database, project_id, note_id, author, read=action == "read")
     raise ValueError(f"不认识的动作：{action}")
 
 
@@ -239,14 +290,14 @@ COMMANDS = [{
     "read_only": False,
     "context": ["database", "project_id"],
     "parameters": {
-        "action": {"type": "string", "description": "list、add、reply、done、reopen、edit 或 remove", "default": "list"},
+        "action": {"type": "string", "description": "list、add、reply、done、reopen、edit、remove、read 或 unread", "default": "list"},
         "text": {"type": "string", "description": "add、reply、edit 时的批注正文"},
         "to": {"type": "array", "description": "add 时指向的东西：object:编号、layer:编号，或跨项目的 object:项目:编号；可以多个"},
         "span": {"type": "array", "description": "add 时指向层的一段空白时间 [起点, 终点]，用那个层的单位；要和 layer:编号 一起用"},
-        "author": {"type": "string", "description": "谁写的，例如 用户、Claude"},
-        "note_id": {"type": "integer", "description": "reply（被回复的那条）、done、reopen、edit、remove 时的批注编号"},
-        "status": {"type": "string", "description": "list 时只看 open（待处理）或 done（已处理）的楼"},
-        "waiting": {"type": "string", "description": "list 时只看在等这个人回复的楼：没处理，而且最后一句不是他说的"},
+        "author": {"type": "string", "description": "谁写的，例如 用户、Claude；read、unread 时是谁标已读"},
+        "note_id": {"type": "integer", "description": "reply（被回复的那条）、done、reopen、edit、remove、read、unread 时的批注编号（read 按它所在的楼）"},
+        "status": {"type": "string", "description": "list 时看哪些楼：open（待处理，默认）、done（已处理）或 all（全部）", "default": "open"},
+        "waiting": {"type": "string", "description": "list 时只看在等这个人的楼：没处理、最后一句不是他说的，他也没在最后一条之后标已读"},
     },
     "returns": "list：notes（顺序、正文、状态、作者、span、指向及其是否还在、reply_to、thread）和按楼排的 text；写入：批注编号和 operation_id。",
     "examples": [
@@ -256,10 +307,14 @@ COMMANDS = [{
         {"cli": "python -m layerweave.tool.builtin.view.note DATABASE 1 --waiting Claude"},
         {"cli": "python -m layerweave.tool.builtin.view.note DATABASE 1 reply 41 \"已经改了\" --author Claude"},
         {"cli": "python -m layerweave.tool.builtin.view.note DATABASE 1 done 40"},
+        {"cli": "python -m layerweave.tool.builtin.view.note DATABASE 1 read 40 --author Claude"},
+        {"cli": "python -m layerweave.tool.builtin.view.note DATABASE 1 --status done"},
     ],
     "notes": ["批注层第一次写入时自动创建：项目里的一个根层，类型 note，轴的单位是“条”，默认在视图里收起。",
               "写入进改动日志，可以用撤销工具撤回。回复就是一条关联到另一条批注的批注，按楼显示；楼主的状态代表整楼。",
               "开工前先看 --waiting 自己的名字：用户在网页上回复的问题都在那里。",
+              "默认只列待处理的楼；已处理的要 --status done 才看得到（网页上也一样，在“已处理”里）。",
+              "已读和已处理是两回事：已读（read）只是“我看过了，别再提醒我”，每个人各记各的，存在视图自己的表 view_note；之后有人再写一条，就又算没读。",
               "批注层、批注对象由视图工具登记：配置在 configs/layers/note.toml、configs/objects/note.toml（requires 本工具包），类在 notes/models.py。"],
 }]
 
@@ -269,18 +324,20 @@ def main():
     p = argparse.ArgumentParser(description="视图工具的批注", formatter_class=argparse.RawDescriptionHelpFormatter,
                                 epilog=help_examples(COMMANDS))
     p.add_argument("database", type=Path); p.add_argument("project_id", type=int)
-    p.add_argument("action", nargs="?", default="list", choices=("list", "add", "reply", "done", "reopen", "edit", "remove"))
-    p.add_argument("args", nargs="*", help="add：正文；done/reopen/remove：编号；edit、reply：编号 正文")
+    p.add_argument("action", nargs="?", default="list",
+                   choices=("list", "add", "reply", "done", "reopen", "edit", "remove", "read", "unread"))
+    p.add_argument("args", nargs="*", help="add：正文；done/reopen/remove/read/unread：编号；edit、reply：编号 正文")
     p.add_argument("--to", action="append", help="指向：object:编号、layer:编号、object:项目:编号；可以写多次")
     p.add_argument("--span", type=float, nargs=2, metavar=("起点", "终点"))
-    p.add_argument("--author"); p.add_argument("--status", choices=tuple(STATUS)); p.add_argument("--json", action="store_true")
+    p.add_argument("--author"); p.add_argument("--json", action="store_true")
+    p.add_argument("--status", choices=LIST_STATUS, default="open", help="list 时看哪些楼：open（默认）、done、all")
     p.add_argument("--waiting", metavar="名字", help="只列在等这个人回复的楼")
     a = p.parse_args()
     try:
         text = note_id = None
         if a.action == "add":
             text = " ".join(a.args)
-        elif a.action in ("done", "reopen", "remove", "edit", "reply"):
+        elif a.action in ("done", "reopen", "remove", "edit", "reply", "read", "unread"):
             if not a.args or not a.args[0].isdigit():
                 raise ValueError(f"{a.action} 后面要跟批注编号")
             note_id = int(a.args[0])

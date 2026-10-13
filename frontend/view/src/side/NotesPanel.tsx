@@ -1,11 +1,13 @@
 // 批注：按楼列出；写新批注（写给：圈出的一段 > 点选的层 > 选中的对象 > 整个项目）；卡片里回复、改、删（不用浏览器弹窗）。
-// "等我回复"：没处理、最后一句不是本机署名说的楼（和 view_note --waiting 同一条规则），标签上的数字也是它
+// 默认只列待处理的楼；已处理的只在"已处理"里出现（字多了以后不用翻过它们）。
+// "等我回复"：没处理、最后一句不是本机署名说的、我也没标已读的楼（和 view_note --waiting 同一条规则），标签上的数字也是它。
+// 已读 ≠ 已处理：已读只是"我看过了，别再提醒我"，按署名各记各的；之后有人再写一条，就又算没读
 import {useEffect, useRef, useState} from 'react';
 import {useShallow} from 'zustand/react/shallow';
 import {goToTarget, locateNote} from '../actions';
 import {refExists, refLabel} from '../model/labels';
 import type {Model} from '../model/model';
-import {waitingFor} from '../model/notes';
+import {lastOf, readBy, waitingFor} from '../model/notes';
 import type {Note, Thread} from '../model/notes';
 import {fmt} from '../model/units';
 import {RECORD} from '../params';
@@ -37,7 +39,17 @@ function Targets({model, note}: {model: Model; note: Note}) {
   })}</>;
 }
 
-function NoteCard({model, note, floors, top, number, waiting}: {model: Model; note: Note; floors: Map<number, number>; top?: Note; number?: number; waiting?: boolean}) {
+// 楼主卡片上的已读：在等我的楼给"已读"；我标过已读的（而且之后没人再写）给"标为未读"。我自己最后说的、已处理的楼不用标
+function ReadButton({thread, me, read}: {thread: Thread; me: string; read: boolean}) {
+  if (!RECORD || thread.top.status !== 'open' || lastOf(thread).author === me.trim()) return null;
+  const mark = (action: 'read' | 'unread') => noteAction({action, note: thread.top.id, reader: me.trim()});
+  return read
+    ? <><span className="read-tag" title={`「${me}」看过了：这楼不再算等你回复`}>已读</span><button onClick={() => mark('unread')}>标为未读</button></>
+    : <button title="我看过了，这楼不再算等我回复（不是已处理；之后有人再写一条，会重新提醒）" onClick={() => mark('read')}>已读</button>;
+}
+
+function NoteCard({model, note, floors, top, number, waiting, thread, me, read}: {model: Model; note: Note; floors: Map<number, number>; top?: Note;
+  number?: number; waiting?: boolean; thread?: Thread; me?: string; read?: boolean}) {
   const [mode, setMode] = useState<'view' | 'edit' | 'reply' | 'delete'>('view');
   const [draft, setDraft] = useState('');
   const isTop = !top;
@@ -62,6 +74,7 @@ function NoteCard({model, note, floors, top, number, waiting}: {model: Model; no
               onChange={(e) => noteAction({action: e.target.checked ? 'done' : 'reopen', note: note.id})} /> 第 {number} 楼</label>
           : <><span className="floor">{floors.get(note.id)} 楼</span>{note.replyTo !== top.id && floors.has(note.replyTo!) && <span className="reply-to">回复 {floors.get(note.replyTo!)} 楼</span>}</>}
         {note.author && <b>{note.author}</b>}<small>#{note.id}</small>{waiting && <span className="wait-tag">等你回复</span>}<span className="grow" />
+        {isTop && thread && me != null && <ReadButton thread={thread} me={me} read={!!read} />}
         {isTop && <button title="镜头对准这一楼指的地方，并标出来" onClick={() => locateNote(note.id)}>定位</button>}
         {RECORD && (mode === 'delete'
           ? <><span className="confirm">删除这条{isTop && floors.size > 1 ? '（回复会留下）' : ''}？</span>
@@ -83,13 +96,14 @@ function NoteCard({model, note, floors, top, number, waiting}: {model: Model; no
   );
 }
 
-function ThreadView({model, thread, number, waiting, focused}: {model: Model; thread: Thread; number: number; waiting: boolean; focused: boolean}) {
+function ThreadView({model, thread, number, waiting, focused, me, read}: {model: Model; thread: Thread; number: number; waiting: boolean; focused: boolean;
+  me: string; read: boolean}) {
   const floors = new Map([[thread.top.id, 1], ...thread.replies.map((r, i) => [r.id, i + 2] as [number, number])]);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => { if (focused) ref.current?.scrollIntoView({block: 'nearest'}); }, [focused]);
   return (
     <div ref={ref} className={`thread ${thread.top.status}${focused ? ' focus' : ''}`}>
-      <NoteCard model={model} note={thread.top} floors={floors} number={number} waiting={waiting} />
+      <NoteCard model={model} note={thread.top} floors={floors} number={number} waiting={waiting} thread={thread} me={me} read={read} />
       {thread.replies.map((r) => <NoteCard key={r.id} model={model} note={r} floors={floors} top={thread.top} />)}
     </div>
   );
@@ -98,13 +112,23 @@ function ThreadView({model, thread, number, waiting, focused}: {model: Model; th
 export function NotesPanel() {
   const model = useModel(), notes = useNotes();
   // sel、targetLayer、selected、wholeProject 变了，"写给"跟着变，所以一起订阅
-  const {filter, showHidden, me, focus} = useStore(useShallow((s) => ({filter: s.noteFilter, showHidden: s.showHidden, me: s.me, focus: s.noteFocus,
+  // 选择器里只取原始值（reads 是数据里的同一个对象）；"等我回复"在这里算，免得每次都返回新数组让页面反复重画
+  const {filter, showHidden, me, focus, reads} = useStore(useShallow((s) => ({filter: s.noteFilter, showHidden: s.showHidden, me: s.me,
+    focus: s.noteFocus, reads: s.data?.noteReads,
     sel: s.sel, targetLayer: s.targetLayer, selected: s.selected, wholeProject: s.wholeProject})));
   const [text, setText] = useState('');
+  // 对准了一楼（地址参数 note、提示、定位）：列表切到看得见它的那一类。已处理的楼只在"已处理"里；"等我回复"里没有它就回"待处理"
+  useEffect(() => {
+    const th = notes?.threads.find((t) => t.top.id === focus);
+    if (!th) return;
+    const want = th.top.status === 'done' ? 'done' : filter === 'done' || (filter === 'waiting' && !waitingFor([th], me, reads).length) ? 'open' : filter;
+    if (want !== filter) setState({noteFilter: want});
+  }, [focus, notes]);   // eslint-disable-line react-hooks/exhaustive-deps
   if (!model || !notes) return null;
   const target = composeTarget();
-  const threads = notes.threads, waiting = new Set(waitingFor(threads, me));
-  const shown = threads.filter((th) => filter === 'all' || (filter === 'waiting' ? waiting.has(th) : th.top.status === filter));
+  const threads = notes.threads, waiting = new Set(waitingFor(threads, me, reads));
+  const count = {open: threads.filter((th) => th.top.status === 'open').length, done: threads.filter((th) => th.top.status === 'done').length};
+  const shown = threads.filter((th) => (filter === 'waiting' ? waiting.has(th) : th.top.status === filter));
   const rename = (name: string) => { setState({me: name}); localStorage.setItem('lw-author', name.trim()); };
   const add = async () => {
     const body: Record<string, unknown> = {action: 'add', text: text.trim(), author: me.trim()};
@@ -115,7 +139,7 @@ export function NotesPanel() {
   };
   return (
     <section>
-      <h2>批注 <small>{threads.length} 楼，待处理 {threads.filter(({top}) => top.status === 'open').length}</small></h2>
+      <h2>批注 <small>待处理 {count.open} 楼，已处理 {count.done} 楼</small></h2>
       {RECORD && <div className="compose">
         <textarea rows={3} value={text} placeholder="写一条批注……（Ctrl+回车加上）" onChange={(e) => setText(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) add(); }} />
@@ -125,15 +149,16 @@ export function NotesPanel() {
         <p className="hint">先选中一个对象、点一个层名，或者在尺子上拖出一段，批注就指向那里；什么都不选就是写给整个项目。每条都可以回复，回复按楼显示。</p>
       </div>}
       <div className="note-row filters">
-        {(['all', 'open', 'done', 'waiting'] as const).map((f) => <button key={f} className={filter === f ? 'on' : ''} onClick={() => setState({noteFilter: f})}
-            title={f === 'waiting' ? `没处理、最后一句不是「${me}」说的楼` : undefined}>
-          {{all: '全部', open: '待处理', done: '已处理', waiting: `等我回复 ${waiting.size}`}[f]}</button>)}
+        {(['open', 'waiting', 'done'] as const).map((f) => <button key={f} className={filter === f ? 'on' : ''} onClick={() => setState({noteFilter: f})}
+            title={{open: '还没处理的楼', waiting: `没处理、最后一句不是「${me}」说的、你也没标已读的楼`, done: '已处理的楼只在这里出现'}[f]}>
+          {{open: `待处理 ${count.open}`, waiting: `等我回复 ${waiting.size}`, done: `已处理 ${count.done}`}[f]}</button>)}
         <span className="grow" />
         <label className="toggle" title="批注层默认收起；勾上后在画布上也显示成一块画板"><input type="checkbox" checked={showHidden} onChange={(e) => setState({showHidden: e.target.checked})} /> 画布上显示批注层</label>
       </div>
       {shown.length ? shown.map((th) => <ThreadView key={th.top.id} model={model} thread={th} number={threads.indexOf(th) + 1}
-                                                    waiting={waiting.has(th)} focused={focus === th.top.id} />)
-        : <p className="hint">{threads.length ? '这一类里没有楼。' : '还没有批注。选中一个对象、点一个层名，或者在尺子上拖出一段，再写。'}</p>}
+                                                    waiting={waiting.has(th)} focused={focus === th.top.id} me={me} read={readBy(th, me, reads)} />)
+        : <p className="hint">{threads.length ? {open: '没有待处理的楼。', waiting: '没有在等你的楼。', done: '还没有已处理的楼。'}[filter]
+                                              : '还没有批注。选中一个对象、点一个层名，或者在尺子上拖出一段，再写。'}</p>}
     </section>
   );
 }

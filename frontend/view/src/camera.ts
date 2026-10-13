@@ -144,7 +144,7 @@ export function focusNote(id: number): boolean {
   const s = getState(), model = modelOf(s), notes = notesOf(s);
   const thread = notes?.threads.find((t) => t.top.id === id || t.replies.some((r) => r.id === id));
   if (!model || !thread || !pane) return false;
-  setState({noteFocus: thread.top.id, autoFit: false});
+  setState({noteFocus: thread.top.id, autoFit: false});   // 批注列表会切到看得见这一楼的那一类（NotesPanel）
   const {top} = thread, targets = top.targets.filter((t) => t.project === s.project);
   if (!targets.length) { fitBoards(); return true; }
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;

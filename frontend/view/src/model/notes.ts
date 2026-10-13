@@ -56,7 +56,13 @@ export function noteIndex(threads: Thread[], project: number): Map<string, Threa
   return index;
 }
 
-// 等 name 回复的楼：还没处理、最后一句不是 name 说的（和 view_note --waiting 同一条规则）
+// 已读：{楼主编号: {名字: 读到的最后一条批注编号}}，存在视图自己的表 view_note。每个人各记各的；楼里后来又有人写了新的一条，就又算没读
+export type NoteReads = Record<string, Record<string, number>>;
 export const lastOf = (th: Thread) => th.replies[th.replies.length - 1] ?? th.top;
-export const waitingFor = (threads: Thread[], name: string) =>
-  threads.filter((th) => th.top.status === 'open' && lastOf(th).author !== name.trim());
+const newestId = (th: Thread) => Math.max(th.top.id, ...th.replies.map((r) => r.id));
+export const readBy = (th: Thread, name: string, reads: NoteReads | undefined) =>
+  (reads?.[String(th.top.id)]?.[name.trim()] ?? 0) >= newestId(th);
+
+// 等 name 的楼：还没处理、最后一句不是 name 说的，name 也没在最后一条之后标过已读（和 view_note --waiting 同一条规则）
+export const waitingFor = (threads: Thread[], name: string, reads?: NoteReads) =>
+  threads.filter((th) => th.top.status === 'open' && lastOf(th).author !== name.trim() && !readBy(th, name, reads));

@@ -9,8 +9,7 @@ import {markReady} from './capture';
 import {Header} from './Header';
 import {CAPTURE, FULL} from './params';
 import {SidePanel} from './side/SidePanel';
-import {waitingFor} from './model/notes';
-import {getState, notesOf, setState, useStore} from './store';
+import {getState, setState, useStore, waitingOf} from './store';
 import {loadProjects, poll, report} from './sync';
 import {AssetsView} from './views/AssetsView';
 import {CutsView} from './views/CutsView';
@@ -18,7 +17,7 @@ import {CutsView} from './views/CutsView';
 export function App() {
   const {view, message, notice, name, hasData, waiting} = useStore(useShallow((s) => ({
     view: s.view, message: s.message, notice: s.notice, name: s.data?.project.name, hasData: !!s.data,
-    waiting: waitingFor(notesOf(s)?.threads ?? [], s.me).length,
+    waiting: waitingOf(s).length,
   })));
 
   useEffect(() => {

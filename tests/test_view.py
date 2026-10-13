@@ -273,7 +273,7 @@ class ViewTests(unittest.TestCase):
         self.assertEqual({n["thread"] for n in waiting_for(notes, "Claude")}, {other})       # Claude 刚回过的楼不用等
         self.assertEqual({n["thread"] for n in waiting_for(notes, "用户")}, {top})
         text = note(self.database, self.project, waiting="Claude")["text"]
-        self.assertIn("第 1 楼", text)
+        self.assertIn("第 2 楼", text)                                                       # 只列一部分时也用全部楼里的号
         self.assertNotIn("要补图吗", text)
         listing = note(self.database, self.project)["text"]
         self.assertIn("3 楼", listing)
@@ -283,6 +283,45 @@ class ViewTests(unittest.TestCase):
             self.assertEqual({n["id"] for n in list_notes(c, self.project, "done")}, {top, answer, again})
         with self.assertRaisesRegex(ValueError, "不是这个项目批注层里的批注"):
             note(self.database, self.project, "reply", text="x", note_id=self.image.id)
+
+    def test_read_marks_are_per_person_and_reset_by_new_replies(self):
+        top = add_note(self.database, self.project, "这里要改吗？", author="用户")["note"]
+        other = add_note(self.database, self.project, "顺便看看这个", author="用户")["note"]
+        waiting = lambda: {n["thread"] for n in note(self.database, self.project, waiting="Claude")["notes"]}
+        self.assertEqual(waiting(), {top, other})
+        with closing(open_readonly(self.database)) as c:
+            before = read_record(c, "project", id=self.project)["max_id"]
+        marked = note(self.database, self.project, "read", note_id=top, author="Claude")
+        self.assertEqual((marked["thread"], marked["last"]), (top, top))
+        self.assertEqual(waiting(), {other})                                                 # 读过了：不再算等 Claude
+        self.assertEqual({n["thread"] for n in note(self.database, self.project, waiting="另一个AI")["notes"]}, {top, other})
+        with closing(open_readonly(self.database)) as c:                                      # 各记各的，身份就是楼主，不占项目编号
+            self.assertEqual(read_record(c, "project", id=self.project)["max_id"], before)
+            self.assertEqual(project_view(c, self.database, self.project)["noteReads"], {str(top): {"Claude": top}})
+        later = note(self.database, self.project, "reply", text="补一句", note_id=top, author="用户")["note"]
+        self.assertEqual(waiting(), {top, other})                                            # 有人再写一条：又算没读
+        note(self.database, self.project, "read", note_id=later, author="Claude")              # 按回复标也是整楼
+        self.assertEqual(waiting(), {other})
+        note(self.database, self.project, "unread", note_id=top, author="Claude")
+        self.assertEqual(waiting(), {top, other})
+        with self.assertRaisesRegex(ValueError, "是谁"):
+            note(self.database, self.project, "read", note_id=top)
+        # 已处理的楼默认不列，要 status=done / all 才看得到
+        update_note(self.database, self.project, top, status="done")                          # 第几楼按全部楼数，和网页一致
+        self.assertIn("第 2 楼", note(self.database, self.project)["text"])
+        update_note(self.database, self.project, top, status="open")
+        update_note(self.database, self.project, other, status="done")
+        self.assertEqual({n["thread"] for n in note(self.database, self.project)["notes"]}, {top})
+        self.assertEqual({n["thread"] for n in note(self.database, self.project, status="done")["notes"]}, {other})
+        self.assertEqual({n["thread"] for n in note(self.database, self.project, status="all")["notes"]}, {top, other})
+        with self.assertRaisesRegex(ValueError, "status"):
+            note(self.database, self.project, status="closed")
+        # 网页按署名标已读
+        body = json.dumps({"action": "read", "note": top, "reader": "用户"}).encode()
+        with urlopen(Request(self.url + f"api/notes/{self.project}", data=body), timeout=10) as response:
+            self.assertEqual(json.loads(response.read())["reader"], "用户")
+        with closing(open_readonly(self.database)) as c:
+            self.assertEqual(project_view(c, self.database, self.project)["noteReads"][str(top)]["用户"], later)
 
     def test_page_writes_notes_only_when_allowed(self):
         body = json.dumps({"action": "add", "text": "页面写的", "targets": [{"kind": "object", "id": self.image.id}],

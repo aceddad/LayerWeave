@@ -18,7 +18,7 @@ from urllib.parse import parse_qs, urlparse
 from .data import extract_frame, find_ffmpeg, list_projects, media_path, open_readonly, project_roots, project_view, recent_changes
 from .layout import layout_serial, load_layout, reconcile, save_layout
 from .fold import set_folds
-from .note import add_note, remove_note, update_note
+from .note import add_note, remove_note, set_read, update_note
 from .state import read_state, write_state
 
 WEB_ROOT = Path(__file__).with_name("web")
@@ -166,6 +166,9 @@ class ViewHandler(SimpleHTTPRequestHandler):
                 result = update_note(self.database, project_id, int(payload["note"]), text=payload.get("text"))
             elif action == "remove":
                 result = remove_note(self.database, project_id, int(payload["note"]))
+            elif action in ("read", "unread"):
+                # 已读按网页上的署名记（人这边），写视图自己的表 view_note
+                result = set_read(self.database, project_id, int(payload["note"]), payload.get("reader") or "", read=action == "read")
             else:
                 return self.send_json({"error": f"不认识的动作：{action}"}, HTTPStatus.BAD_REQUEST)
         except (ValueError, KeyError, TypeError) as error:

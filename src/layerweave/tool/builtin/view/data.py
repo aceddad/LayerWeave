@@ -7,6 +7,7 @@ from layerweave.support.api import read_project_details, read_record
 
 from .fold import read_folds
 from .notes import LAYER_REF as NOTE_LAYER_REF
+from .notes.reads import read_reads
 
 IMAGE = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".svg"}
 VIDEO = {".mp4", ".webm", ".mov", ".m4v", ".mkv"}
@@ -136,6 +137,7 @@ def project_view(connection, database, project_id):
         "layers": layers,
         "binds": project_binds(connection, project_id),
         "folds": read_folds(connection, project_id),   # 人和 AI 两边的折叠（fold.py）
+        "noteReads": {str(k): v for k, v in read_reads(connection, project_id).items()},   # 批注的已读：{楼主: {名字: 读到的最后一条}}
     }
 
 

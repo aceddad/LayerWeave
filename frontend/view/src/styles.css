@@ -231,6 +231,7 @@ body.full .cuts-view, body.full .grid, body.full .assets-view { overflow: visibl
 .side-tabs .badge { font-style: normal; display: inline-block; min-width: 16px; margin-left: 4px; padding: 0 4px; border-radius: 8px; background: #ff6b6b; color: #fff; font-size: 11px; line-height: 16px; text-align: center; }
 .note-head { flex-wrap: wrap; }
 .wait-tag { white-space: nowrap; font-size: 10px; color: #3a2a00; background: #ffd23f; border-radius: 3px; padding: 0 4px; }
+.read-tag { white-space: nowrap; font-size: 10px; color: #4a5560; background: #e3e8ec; border-radius: 3px; padding: 0 4px; }
 .thread.focus { box-shadow: 0 0 0 2px #ff9f43; border-radius: 4px; }
 .obj.hot { outline: 2px dashed #ff9f43; outline-offset: 1px; z-index: 3; }
 .obj.sel.hot { outline-style: solid; }

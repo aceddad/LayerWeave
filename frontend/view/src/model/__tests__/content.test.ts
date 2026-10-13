@@ -6,7 +6,7 @@ import {decimalsOf, fmtLength, gapAt, trackGaps} from '../gaps';
 import {refLabel, relationsOf} from '../labels';
 import {linkQuery} from '../link';
 import {cutPoints, editPoints, stepObject, stepTime, stepTrack} from '../navigate';
-import {noteIndex, noteList, noteThreads, waitingFor} from '../notes';
+import {noteIndex, noteList, noteThreads, readBy, waitingFor} from '../notes';
 import {fmt, fmtSpan, ticks} from '../units';
 import type {ChangeOp} from '../../types';
 import {bind, chapters, data, layer, model, obj, ref, root} from './fixtures';
@@ -45,6 +45,14 @@ describe('批注成楼', () => {
   it('等谁回复：没处理、最后一句不是他说的（和 view_note --waiting 一样）', () => {
     expect(waitingFor(threads, '用户').map((t) => t.top.id)).toEqual([31]);
     expect(waitingFor(threads, 'Claude').map((t) => t.top.id)).toEqual([35]);
+  });
+
+  it('已读：读到楼里最后一条就不算等他；之后有人再写一条又算；各记各的', () => {
+    expect(waitingFor(threads, 'Claude', {'35': {Claude: 35}}).map((t) => t.top.id)).toEqual([]);
+    expect(waitingFor(threads, 'Claude', {'35': {用户: 35}}).map((t) => t.top.id)).toEqual([35]);
+    expect(waitingFor(threads, '用户', {'31': {用户: 32}}).map((t) => t.top.id)).toEqual([31]);   // 读到 32，后面还有 33
+    expect(waitingFor(threads, '用户', {'31': {用户: 33}}).map((t) => t.top.id)).toEqual([]);
+    expect(readBy(threads[0], '用户', {'31': {用户: 33}})).toBe(true);
   });
 });
 

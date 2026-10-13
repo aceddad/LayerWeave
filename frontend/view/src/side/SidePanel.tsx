@@ -1,8 +1,7 @@
 // 右侧面板：此刻 / 改动 / 批注
 import {useShallow} from 'zustand/react/shallow';
 import {setSide} from '../actions';
-import {waitingFor} from '../model/notes';
-import {notesOf, useStore} from '../store';
+import {useStore, waitingOf} from '../store';
 import type {Side} from '../types';
 import {ChangesPanel} from './ChangesPanel';
 import {NotesPanel} from './NotesPanel';
@@ -15,7 +14,7 @@ const TABS: {side: Side; label: string; title: string}[] = [
 ];
 
 export function SidePanel() {
-  const {side, waiting, me} = useStore(useShallow((s) => ({side: s.side, me: s.me, waiting: waitingFor(notesOf(s)?.threads ?? [], s.me).length})));
+  const {side, waiting, me} = useStore(useShallow((s) => ({side: s.side, me: s.me, waiting: waitingOf(s).length})));
   return (
     <aside className="side">
       <nav className="side-tabs">

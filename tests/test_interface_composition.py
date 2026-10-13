@@ -302,7 +302,7 @@ class CompositionTests(unittest.TestCase):
         self.assertEqual(session_route, "layerweave.tool.builtin.usage.editing.objects:append_object_in_session")
         entries = command_help([item["name"] for item in command_help()["items"]])["items"]
         routes = [entry["session_entrypoint"] for entry in entries if "session_entrypoint" in entry]
-        self.assertEqual(len(routes), 14)
+        self.assertEqual(len(routes), 15)
         for route in routes:
             module, name = route.split(":")
             self.assertEqual(next(iter(signature(getattr(import_module(module), name)).parameters)), "write", route)

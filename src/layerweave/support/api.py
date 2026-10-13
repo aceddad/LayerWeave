@@ -13,6 +13,7 @@ from .storage.models import load_layer, load_object
 from .storage.save import save_layer, save_object, save_layer_in_session, save_object_in_session
 from .storage.queries import query_objects, read_bindings, read_layer_positions
 from .storage.details import read_project_details
+from .storage.change_feed import change_cursor, read_changes
 from .storage.tables import register_tables, table_specs
 from .numbering import allocate, register_numbering, numbering_entries, register_numbering_rule, increment
 

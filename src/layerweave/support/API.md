@@ -36,6 +36,18 @@ write 提供 read(kind, ...)、create(kind, data, ...)、update(kind, id, data, 
 
 普通位置写入按轴精度落点，无精度时为 1e-6；改所属层会重新落点 begin/end，只改其他内容不会重写历史位置。精确创建/恢复保留原值。轴单位不自动换算。
 
+## 增量读取业务日志
+
+change_cursor(connection) 返回当前快照最后一个 changes.id，空日志返回 0。read_changes(connection, after=0, limit=100) 按递增编号读取后续业务日志，after/limit 为关键字参数。它们从 support.api 导入，不依赖 history 或任何其他工具包。
+
+返回 changes、next_cursor、has_more。changes 使用原始日志字段：id（日志游标）、operation_id、kind、project_id、target_id、action、before_data、after_data、undo_of、created_at；JSON 快照已解码。limit 是日志行数软上限，页尾延伸至该次操作的末尾，可能超过 limit。只在调用方处理成功后保存 next_cursor，has_more=true 时继续读取；空页保留原游标。
+
+使用 change_cursor 或上次返回的 next_cursor；手填到操作内部会报 cursor_inside_operation，超过当前日志末尾会报 cursor_ahead。不要使用 operation_id、时间戳或目标记录 id 代替游标。首次读取项目内容和取得游标必须在同一个 read_snapshot 内；[增量接入指导](../../../docs/build-with-layerweave/05-incremental-reading.md)给出调用次序。
+
+返回全库托管业务记录的变化，包括工具表、bind 和撤销。没有项目过滤，以免丢掉跨项目关联和移动前后的信息；调用方依据前后快照判断影响范围。项目上下文 project_id 不总是目标主键的一部分，目标身份以对应 table_specs 的 scoped 约定为准。
+
+该接口不创建日志、不删除日志、不追踪外部直接 SQL、结构登记或单独领号；记录写入附带的计数更新也不单列成项目事件。需要最新 max_id 时另外读取项目。监听使用没有待提交写入的读取连接；若在已有事务内调用，按统一读取约定使用该事务的可见状态。切换数据库或直接替换文件时重新载入初始快照，不能把另一个库的数字游标沿用过来。
+
 ## 工具表接入
 
 register_tables(connection, definitions) 创建工具声明的表，或在保留已有定义的情况下新增列；内部使用独立写会话，调用时连接没有待提交事务。table_specs(connection) 返回本数据库内置表与工具表的声明副本，普通读取不创建元数据表。

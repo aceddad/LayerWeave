@@ -75,9 +75,20 @@ def compose(write):
 composed = run_operation(c,compose)
 assert composed["ok"] and composed["data"][0]["begin"] == 5, composed
 assert undo_operation(c,composed["operation_id"])["ok"]
+from layerweave.support.api import change_cursor, read_changes
+from layerweave.tool.builtin.usage.editing.upsert import upsert_objects
+from layerweave.tool.builtin.usage.query.walk import walk_relations
+cursor = change_cursor(c)
+synced = upsert_objects(c,p,layer.id,[{"name":"sync","config_ref":"objects/text.toml","information":{"text":"s"}}])
+assert synced["ok"], synced
+synced_id = synced["data"]["items"][0]["record"]["id"]
+again = upsert_objects(c,p,layer.id,[{"name":"sync","tips":"update"}])
+assert again["ok"] and again["data"]["items"][0]["record"]["id"] == synced_id
+assert len(read_changes(c,after=cursor)["changes"]) == 2
+assert walk_relations(c,p,"object",synced_id)["nodes"][0]["record"]["tips"] == "update"
 assert read_support("combined", "text")["status"] == "completed"
 commands = command_help()
-assert len(commands["items"]) == 28 and commands["status"] == "completed", commands
+assert len(commands["items"]) == 30 and commands["status"] == "completed", commands
 from layerweave.tool.builtin.developer.versions import manage_versions
 versions = manage_versions(c)
 assert versions["ok"] and versions["data"]["status"] == "completed", versions

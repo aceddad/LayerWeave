@@ -1,5 +1,5 @@
 name = "layerweave.query"
 kind = "tool"
-version = "0.1.0"
+version = "0.2.0"
 description = "项目、子树、对象位置、空档与关联查询"
-changes = "首次登记当前组件；后续版本由维护者更新本声明。"
+changes = "新增标准关联的多步展开，明确节点、步数和截断；强化项目概览导引。"

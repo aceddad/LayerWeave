@@ -33,6 +33,7 @@
 | Python 模型与扩充入口 | [模型说明](../src/layerweave/models/README.md)，字段声明在类及对应 TOML |
 | 配置继承、合并与类绑定 | [配置说明](../src/layerweave/support/configuration/README.md) |
 | 独立工具与事务内组合接口 | [组合开发指导](build-with-layerweave/04-composing-tools.md)；反馈字段由基础 API 维护 |
+| 初始快照与增量刷新次序 | [增量接入指导](build-with-layerweave/05-incremental-reading.md)；日志字段由基础 API 维护 |
 | Python 调用、输入与返回 | [公共 API](../src/layerweave/support/API.md) |
 | JSON CRUD 请求和操作/检查反馈 | [请求协议](../src/layerweave/tool/builtin/usage/CRUD.md) |
 | 数据表、编号、持久化与日志写入 | [存储专题](../src/layerweave/support/storage/SCHEMA.md) |

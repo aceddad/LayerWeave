@@ -1,5 +1,5 @@
 name = "layerweave.foundation"
 kind = "foundation"
-version = "0.3.0"
+version = "0.4.0"
 description = "层、对象等抽象结构，以及配置、存储、编号、事务和日志支撑"
-changes = "支持事务内操作组合；领号结果计入操作反馈，误嵌套独立操作时传播异常。"
+changes = "公开业务日志游标与增量读取接口，分页保留完整操作，支持初始快照衔接。"

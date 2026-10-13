@@ -26,6 +26,14 @@ python -X utf8 -B examples/read_write.py
 
 该示例使用临时数据库，演示写入、关闭重开、装载 Python 对象和再次保存。
 
+已有数据库时，先看项目结构：
+
+```sh
+python -m layerweave.tool.builtin.usage.query.project_overview DATABASE PROJECT_ID
+```
+
+DATABASE 换成数据库路径，PROJECT_ID 换成项目编号。它展示层树和各层直属对象数；需要正文再用 project_details，定位特定对象用 find_objects。反复从文档同步内容时，可用 upsert_objects 按名字或稳定键更新原对象，保留身份与引用；见[使用手册](src/layerweave/tool/builtin/usage/GUIDE.md)。
+
 也可以直接查询命令和可用封装，这两个入口无需数据库：
 
 ```sh

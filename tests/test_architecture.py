@@ -109,6 +109,9 @@ assert type(load_object(c,p,composed["data"]["id"])) is Title
 with transaction(c) as write:
     write.update("object", obj.id, {"config_ref": "objects/missing.toml"}, project_id=p)
 assert read_record(c, "object", project_id=p, id=obj.id)["config_ref"] == "objects/missing.toml"
+from layerweave.support.api import change_cursor, read_changes
+assert read_changes(c)["next_cursor"] == change_cursor(c)
+assert read_changes(c,after=change_cursor(c))["changes"] == []
 try:
     load_object(c, p, obj.id)
 except ValueError:
@@ -139,6 +142,11 @@ from layerweave.tool.builtin.usage.query.free_ranges import find_gaps
 assert project_overview(c,p)["counts"]["objects"] == 1
 assert project_details(c,p)["layers"][0]["objects"][0]["id"] == obj.id
 assert find_gaps(c,p,layer.id,begin=0,end=4) is not None
+from layerweave.tool.builtin.usage.query.walk import walk_relations
+with transaction(c) as write:
+    write.create("bind",{"source_kind":"layer","source_project_id":p,"source_id":layer.id,
+                         "target_kind":"object","target_project_id":p,"target_id":obj.id})
+assert len(walk_relations(c,p,"layer",layer.id)["nodes"]) == 2
 ''',
             "usage/editing": '''
 from layerweave.tool.builtin.usage.editing.timeline import split_object
@@ -156,6 +164,11 @@ def compose(write):
     return shift_objects_in_session(write,p,[row["id"]],offset=1)
 r = run_operation(c, compose)
 assert r["ok"] and len(r["data"]) == 1, r
+from layerweave.tool.builtin.usage.editing.upsert import upsert_objects
+r = upsert_objects(c,p,layer.id,[{"name":"sync","config_ref":"objects/text.toml","information":{"text":"sync"}}])
+assert r["ok"] and r["checks"]["status"] == "not_run", r
+same = upsert_objects(c,p,layer.id,[{"name":"sync","tips":"updated"}])
+assert same["ok"] and same["data"]["items"][0]["record"]["id"] == r["data"]["items"][0]["record"]["id"], same
 ''',
             "usage/history": '''
 from layerweave.tool.builtin.usage.history.service import read_history

@@ -53,6 +53,7 @@ result = run_operation(connection, work, checker=optional_checker())
 | 模块 | 事务内函数 | 返回 |
 |---|---|---|
 | tool.builtin.usage.editing.objects | append_object_in_session、copy_object_in_session | 对象记录 |
+| tool.builtin.usage.editing.upsert | upsert_objects_in_session | scope、counts、items（匹配值、动作与对象记录） |
 | tool.builtin.usage.editing.positions | arrange_objects_in_session、align_objects_in_session | 对象记录列表 |
 | tool.builtin.usage.editing.positions | set_duration_in_session | 对象记录 |
 | tool.builtin.usage.editing.timeline | shift_objects_in_session | 对象记录列表 |

@@ -2,12 +2,22 @@
 
 使用工具处理项目内容，支持 Python 和 CLI 调用。[返回内部工具](../README.md)。
 
+**打开已有项目先用 project_overview** 查看层树和对象数量，再用 project_details 展开正文，或用 find_objects 定位对象。
+
+```sh
+python -m layerweave.tool.builtin.usage.query.project_overview DATABASE PROJECT_ID
+```
+
+DATABASE/PROJECT_ID 使用实际数据库路径和项目编号。命令 help 可用 overview 别名查这项能力。
+
 ## 按操作查说明
 
 | 要做什么 | 详细说明 |
 |---|---|
 | 创建、读取、修改、删除，或发送一批请求 | [CRUD 请求与反馈协议](CRUD.md) |
 | 看项目、查对象、查关联、汇集文字 | [使用手册](GUIDE.md) |
+| 按名字或稳定键更新对象，保留原编号 | [匹配更新](GUIDE.md#匹配更新或创建) |
+| 沿关联展开相关内容 | [关联展开](GUIDE.md#沿关联展开) |
 | 接续新增、排列、对齐、修改时长、复制对象 | [使用手册](GUIDE.md) |
 | 查找空档 | [使用手册](GUIDE.md#空档查询) |
 | 平移、分割、插空档、跨项目复制或剪切 | [编辑说明](EDITING.md) |

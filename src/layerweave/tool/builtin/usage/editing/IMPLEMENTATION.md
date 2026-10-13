@@ -7,6 +7,7 @@
 | 模块 | 实现职责 |
 |---|---|
 | [timeline.py](timeline.py) | 对象选择、切点和分段规划、插空档的组合写入 |
+| [upsert.py](upsert.py) | 同层匹配键索引、批次歧义检查、更新或创建；用法见[匹配更新](../GUIDE.md#匹配更新或创建) |
 | [positions.py](../../../../support/positions.py) | PositionMath、decimal_value 和 shifted_positions |
 | [subtrees.py](tree_service.py) | 子树与对象跨项目迁移，共用创建、改指和删除步骤 |
 | [crud.py](../../../../support/storage/crud.py) | 实际发号、记录写入与日志；工具通过 layerweave.support.records 使用 |
@@ -21,6 +22,8 @@ CLI 与格式化在本包的 split、gaps、positions、transfer、transfer_obje
 3. 普通平移在本包 _plan 中生成并执行 update 步骤，不依赖 records 工具包；复合动作使用 run_operation，共享一个操作编号，不嵌套完整操作入口。
 4. 跨项目操作复用 subtrees 的 _transfer_records，先取得选中范围的记录和关联，再创建目标、调整外部入向引用并按模式删除源。
 5. 检查器只在最终状态提交后执行一次，数据和日志失败均交由共享事务回滚。
+
+匹配更新在同一写会话内只读取一次目标层对象，按匹配路径建立临时索引。先确认本批键不重复且无匹配歧义，再通过支撑记录原语更新/创建；未变更的内容不写日志。独立入口复用 upsert_objects_in_session，调用方组合更多步骤时沿用同一个 write。
 
 ## 坐标写入的实现选择
 

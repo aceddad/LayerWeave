@@ -1,0 +1,18 @@
+{
+  "format_version": 1,
+  "name": "分镜与参考",
+  "when": "用独立根层组织分镜说明与参考图；示例演示跨根关联",
+  "project": {"data": {"name": "分镜项目"}},
+  "items": [
+    {"kind": "layer", "op": "add", "key": "story", "data": {"name": "分镜", "config_ref": "layers/text.toml"},
+     "children": [
+       {"kind": "object", "op": "add", "key": "opening",
+        "data": {"name": "开场", "config_ref": "objects/text.toml", "begin": 0, "end": 3, "information": {"text": "描述开场镜头"}}}
+     ]},
+    {"kind": "layer", "op": "add", "key": "references", "data": {"name": "参考图", "config_ref": "layers/image.toml"}}
+  ],
+  "records": [
+    {"kind": "bind", "op": "add", "data": {"tips": "此镜头的参考图放在该层"},
+     "refs": {"source": {"key": "opening"}, "target": {"key": "references"}}}
+  ]
+}

@@ -36,6 +36,7 @@
 | 初始快照与增量刷新次序 | [增量接入指导](build-with-layerweave/05-incremental-reading.md)；日志字段由基础 API 维护 |
 | Python 调用、输入与返回 | [公共 API](../src/layerweave/support/API.md) |
 | JSON CRUD 请求和操作/检查反馈 | [请求协议](../src/layerweave/tool/builtin/usage/CRUD.md) |
+| 分层 JSON 交换、文件引用与模板 | [交换格式](../src/layerweave/tool/builtin/usage/exchange/FORMAT.md)；调用入口与扩充说明在同包 |
 | 数据表、编号、持久化与日志写入 | [存储专题](../src/layerweave/support/storage/SCHEMA.md) |
 | 历史与恢复、子树、范围编辑的使用行为 | usage 的 [HISTORY](../src/layerweave/tool/builtin/usage/HISTORY.md)、[SUBTREES](../src/layerweave/tool/builtin/usage/SUBTREES.md)、[EDITING](../src/layerweave/tool/builtin/usage/EDITING.md) |
 | 这些工具的实现流程 | 工具包的 [HISTORY](../src/layerweave/tool/builtin/usage/undo/IMPLEMENTATION.md)、[SUBTREES](../src/layerweave/tool/builtin/usage/editing/TREES.md)、[EDITING](../src/layerweave/tool/builtin/usage/editing/IMPLEMENTATION.md)；参数与业务规则链接到使用说明 |

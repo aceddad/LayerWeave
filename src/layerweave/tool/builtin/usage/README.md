@@ -15,6 +15,7 @@ DATABASE/PROJECT_ID 使用实际数据库路径和项目编号。命令 help 可
 | 要做什么 | 详细说明 |
 |---|---|
 | 创建、读取、修改、删除，或发送一批请求 | [CRUD 请求与反馈协议](CRUD.md) |
+| JSON 导入导出、直接套用场景模板 | [交换工具](exchange/README.md) |
 | 看项目、查对象、查关联、汇集文字 | [使用手册](GUIDE.md) |
 | 按名字或稳定键更新对象，保留原编号 | [匹配更新](GUIDE.md#匹配更新或创建) |
 | 沿关联展开相关内容 | [关联展开](GUIDE.md#沿关联展开) |
@@ -39,6 +40,7 @@ Python 公共读写接口见 [API](../../../support/API.md)。实际执行例子
 ## 代码位置
 
 - [records/](records)：CDUR 请求协议和默认实例保存。
+- [exchange/](exchange/README.md)：分层 JSON 交换、工具表数据、编号映射和场景模板。
 - [query/](query)：概览、展开、对象、关联与空档查询。
 - [editing/](editing)：位置、对象、子树、分割、插空档和迁移。
 - [history/](history) 与 [undo/](undo)：历史展示与撤销规划，各自独立。

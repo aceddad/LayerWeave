@@ -60,6 +60,7 @@ result = run_operation(connection, work, checker=optional_checker())
 | tool.builtin.usage.editing.timeline | split_object_in_session、insert_gap_in_session | 原独立结果 data 中的业务摘要 |
 | tool.builtin.usage.editing.tree_service | copy_subtree_in_session、delete_subtree_in_session、transfer_subtree_in_session、transfer_objects_in_session | 原独立结果 data 中的业务摘要 |
 | tool.builtin.usage.records.dispatch | dispatch_in_session | 单条请求的数据，或与请求顺序一致的数据列表 |
+| tool.builtin.usage.exchange | import_project_in_session | 导入计数、逐项状态、跳过警告与编号映射；表结构事先准备 |
 | tool.builtin.usage.undo.service | undo_operation_in_session | undone_operation_id、restored_records |
 | support.api | save_layer_in_session、save_object_in_session | 保存后的完整层/对象记录 |
 

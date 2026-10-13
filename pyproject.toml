@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "layerweave"
-version = "0.4.0"
+version = "0.5.0"
 description = "Layers, objects and composable tools for AI workflows"
 requires-python = ">=3.11"
 dependencies = []
@@ -25,3 +25,4 @@ namespaces = false
 "layerweave.support.numbering" = ["README.md"]
 "layerweave.tool.builtin.developer.keys" = ["example.json", "README.md"]
 "layerweave.tool.builtin.developer.versions" = ["README.md"]
+"layerweave.tool.builtin.usage.exchange" = ["templates/*.json", "README.md", "FORMAT.md", "DEVELOPMENT.md"]

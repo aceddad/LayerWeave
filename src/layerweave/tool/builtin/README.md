@@ -9,7 +9,7 @@
 | 查询命令或封装支持 | [shared/help](shared/help/README.md) |
 | 未来可视化 | [view](view/README.md)，当前只有边界说明 |
 
-完整包包括 usage 下的 records、query、editing、history、undo、validation、text，以及 shared/help、developer/database、developer/skills、developer/keys、developer/versions。删除某个包后，其他包仍能独立工作；命令发现只展示仍存在的声明。不要只删包中的某个私有辅助文件。
+完整包包括 usage 下的 records、query、editing、history、undo、validation、text、exchange，以及 shared/help、developer/database、developer/skills、developer/keys、developer/versions。删除某个包后，其他包仍能独立工作；命令发现只展示仍存在的声明。不要只删包中的某个私有辅助文件。
 
 各完整包用 component.toml 声明自己的版本和用途，AI 可按需修改、替换或移除工具包；声明不决定使用权限。自动登记和状态核对见[版本工具](developer/versions/README.md)。
 

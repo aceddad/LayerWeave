@@ -201,8 +201,21 @@ export class Model {
     return {track, height: Math.max(ROW, n * LANE + PAD * 2), items, gaps, fold: null, other};
   }
 
-  // 画板的完整布局；返回 null 表示这块画板现在不画（收起的层、全被过滤掉）
+  // 画板的完整布局；返回 null 表示这块画板现在不画（收起的层、全被过滤掉）。
+  // 按"哪几行、每单位多少像素"缓存（按内容，不按数组：拼接时会原地改 rows）：布局和画板摆在哪无关。
+  // 拖画板时位置每一帧都变，原来每一帧都重算一遍，几百个格子拿到新的 item 全部重画（拖画板一卡一卡，2026-10-14 量的）。
+  // 缓存里的 board 是第一次算时的那份，位置可能已经旧了：要位置去读画板本身
   boardLayout(b: Board): BoardLayout | null {
+    const key = `${b.rows.map((r) => r.join(',')).join('|')}@${this.pps(b)}`;
+    if (!this.layoutCache.has(key)) {
+      if (this.layoutCache.size > 64) this.layoutCache.clear();   // Alt+滚轮缩放时间时每一档都是新的像素比，别一直攒着
+      this.layoutCache.set(key, this.computeLayout(b));
+    }
+    return this.layoutCache.get(key)!;
+  }
+  private layoutCache = new Map<string, BoardLayout | null>();
+
+  private computeLayout(b: Board): BoardLayout | null {
     if (this.boardHidden(b)) return null;
     const [a, e] = this.extent(b), pps = this.pps(b), tracksWidth = (e - a) * pps + 40;
     const sections: SectionLayout[] = [];

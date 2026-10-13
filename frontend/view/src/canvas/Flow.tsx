@@ -82,16 +82,17 @@ export function Flow() {
     if (moves.size) setState({boards: s.boards.map((b) => (moves.has(nodeId(b)) ? {...b, x: moves.get(nodeId(b))!.x, y: moves.get(nodeId(b))!.y} : b))});
   }, []);
 
-  const dragStart = useRef<{key: number; gap: {x: number; y: number; w: number; h: number}} | null>(null);
+  const dragStart = useRef<{key: number; gap: {x: number; y: number; w: number; h: number}; origin: {left: number; top: number}} | null>(null);
   const onNodeDragStart = useCallback((_: unknown, node: BoardNodeType) => {
     const s = getState(), b = s.boards.find((x) => nodeId(x) === node.id)!, {w, h} = sizeOf(modelOf(s)!, b);
-    dragStart.current = {key: keyOf(b), gap: {x: b.x!, y: b.y!, w, h}};
+    const r = paneRef.current!.getBoundingClientRect();   // 画布在页面上的位置：拖动中不变，只量这一次
+    dragStart.current = {key: keyOf(b), gap: {x: b.x!, y: b.y!, w, h}, origin: {left: r.left, top: r.top}};
     setState({dragging: true});
   }, []);
   const onNodeDrag = useCallback((event: MouseEvent | TouchEvent, node: BoardNodeType) => {
-    const s = getState(), b = s.boards.find((x) => nodeId(x) === node.id);
+    const s = getState(), b = s.boards.find((x) => nodeId(x) === node.id), origin = dragStart.current?.origin;
     const point = 'touches' in event ? event.touches[0] : event;
-    if (b && point) setState({drop: dropTarget(point.clientX, point.clientY, b, s.boards, modelOf(s)!)});
+    if (b && point && origin) setState({drop: dropTarget(point.clientX, point.clientY, origin, b, s.boards, modelOf(s)!)});
   }, []);
   const onNodeDragStop = useCallback(() => {
     const s = getState(), drop = s.drop, start = dragStart.current;

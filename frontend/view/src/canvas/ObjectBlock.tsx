@@ -11,7 +11,7 @@ import type {Item} from '../model/model';
 import {LANE, PAD} from '../model/model';
 import type {Thread} from '../model/notes';
 import {fmt, isSec} from '../model/units';
-import {Frame, Thumb} from './Media';
+import {BlockFrame, BlockThumb} from './Media';
 import {Waveform} from './Waveform';
 
 interface Props {
@@ -36,10 +36,10 @@ export const ObjectBlock = memo(function ObjectBlock({item, a, pps, unit, projec
   });
   let inner = null;
   if (!missing && o.media?.url && (detail > 0 || k === 'audio')) {
-    if (k === 'image') inner = <Thumb project={project} o={o} width={detail === 1 ? 160 : 320} frames={frames} />;
+    if (k === 'image') inner = <BlockThumb project={project} o={o} width={detail === 1 ? 160 : 320} frames={frames} />;
     else if (k === 'video') inner = frames && w >= 150
-      ? <span className="ends"><Frame project={project} o={o} at={0.05} frames /><Frame project={project} o={o} at={lastAt(o, isSec(unit))} frames /></span>
-      : <Frame project={project} o={o} at={0.1} frames={frames} />;
+      ? <span className="ends"><BlockFrame project={project} o={o} at={0.05} frames /><BlockFrame project={project} o={o} at={lastAt(o, isSec(unit))} frames /></span>
+      : <BlockFrame project={project} o={o} at={0.1} frames={frames} />;
     else if (k === 'audio') inner = <Waveform url={o.media.url} />;
   }
   const board = item.offset ? `（画板上 ${fmt(item.begin, unit)} – ${fmt(item.end, unit)}）` : '';

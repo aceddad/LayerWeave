@@ -3,7 +3,7 @@ import type {ReactFlowInstance} from '@xyflow/react';
 import {NAMES} from './model/model';
 import {keyOf} from './model/model';
 import {sizeOf} from './model/layoutOps';
-import {params} from './params';
+import {CAPTURE, params} from './params';
 import {activeBoard, getState, modelOf, notesOf, setState} from './store';
 import type {Board} from './types';
 
@@ -24,7 +24,7 @@ function setView(x: number, y: number, zoom: number) {
 
 // 镜头停下来以后才换格子的细节档（Flow 的 onMoveEnd 和程序里设镜头都走这里）
 let settleTimer: ReturnType<typeof setTimeout> | undefined;
-export function settleZoom(delay = 120) {
+export function settleZoom(delay = CAPTURE ? 0 : 120) {   // 截图时镜头只设一次，马上换档，免得拍到旧清晰度
   clearTimeout(settleTimer);
   settleTimer = setTimeout(() => { if (flow) setState({settledZoom: flow.getViewport().zoom}); }, delay);
 }

@@ -13,7 +13,7 @@ import type {BoardLayout, FoldInfo, FoldMark, SectionLayout} from '../model/mode
 import {RECORD, VIEWER} from '../params';
 import {LANE, NAMES, PAD, keyOf, rootsOf} from '../model/model';
 import {fmt, ticks} from '../model/units';
-import {activeBoard, handleKeysOf, setState, useMarks, useModel, useNotes, useStore} from '../store';
+import {activeBoard, handleKeysOf, hotOf, setState, useMarks, useModel, useNotes, useStore} from '../store';
 import {report} from '../sync';
 import type {Board} from '../types';
 import {ObjectBlock} from './ObjectBlock';
@@ -107,15 +107,15 @@ function OtherChip({mark, layers}: {mark: FoldMark; layers: number[]}) {
 
 // 一行（一段或左右接续的几段）的轨道和对象。memo：拖画板时画板每一帧都重画（标题要跟着吸附），这一行的数据没变就不跟着重画，
 // 否则 5000 个对象时每移一下都要把几千个格子重新比一遍，拖画板只剩每秒 1 帧（2026-10-14 量的）
+// 选中的对象不在这里订阅：格子自己订阅（ObjectBlock），点一下对象这一行不用重画
 const Section = memo(function Section({board, layout, sec}: {board: Board; layout: BoardLayout; sec: SectionLayout}) {
   const model = useModel()!;
-  const {selected, targetLayer, frames, project, noteFocus} = useStore(useShallow((s) => ({
-    selected: s.selected, targetLayer: s.targetLayer, frames: s.frames, project: s.project!, noteFocus: s.noteFocus,
+  const {targetLayer, frames, project, noteFocus} = useStore(useShallow((s) => ({
+    targetLayer: s.targetLayer, frames: s.frames, project: s.project!, noteFocus: s.noteFocus,
   })));
-  const marks = useMarks(), notes = useNotes(), handles = useStore(handleKeysOf);
-  // 对准的那条批注指着的对象和层：高亮
+  const marks = useMarks(), notes = useNotes(), hot = useStore(hotOf);
+  // 对准的那条批注：它指着的层名高亮、它圈的那一段画出来
   const focusTop = noteFocus != null ? notes?.threads.find((t) => t.top.id === noteFocus)?.top : undefined;
-  const hot = useMemo(() => new Set((focusTop?.targets ?? []).filter((t) => t.project === project).map((t) => `${t.kind}:${t.id}`)), [focusTop, project]);
   // 层上的黄色带子：待处理的、指向一段时间的批注；对准的那条即使已处理也画出来
   const bandsOf = (layerId: number) => {
     const tops = (notes?.index.get(`layer:${layerId}`) ?? []).map((t) => t.top).filter((top) => top.span);
@@ -190,8 +190,7 @@ const Section = memo(function Section({board, layout, sec}: {board: Board; layou
             {other && <span className="otherfold-label">{other.by} 折叠了{other.tips ? '：' + other.tips : ''}</span>}
             <Gaps gaps={gaps} a={a} pps={pps} decimals={decimals} unit={unit} />
             {items.map((it) => <ObjectBlock key={it.o.id} item={it} a={a} pps={pps} unit={unit} project={project} frames={frames}
-              selected={it.o.id === selected} hot={hot.has(`object:${it.o.id}`)} mark={marks.changed.get(it.o.id)} notes={notes?.index.get(`object:${it.o.id}`)}
-              external={external.get(it.o.id)} handles={handles.has(`object:${it.o.id}`)} />)}
+              mark={marks.changed.get(it.o.id)} notes={notes?.index.get(`object:${it.o.id}`)} external={external.get(it.o.id)} />)}
             {track.parts.flatMap(({layer, seg}) => (marks.ghosts.get(layer.id) ?? []).map((g) => (
               <div key={`g${g.id}`} className={`ghost ${g.action}`} data-ghost={g.id}
                    style={{left: (g.begin + seg.offset - a) * pps, width: Math.max(6, (g.end - g.begin) * pps), top: PAD, height: LANE - 4}}
@@ -216,13 +215,17 @@ export const BoardNode = memo(function BoardNode({id, data, positionAbsoluteX}: 
   const model = useModel();
   const board = useStore((s) => s.boards.find((b) => keyOf(b) === key));
   const layout = useMemo(() => (model && board ? model.boardLayout(board) : null), [model, board]);
+  // 只取和这块画板有关的：播放头、圈出的一段、拼接提示不在这块上时是 null，别的画板上点来点去这块不重画
   const {isActive, playhead, sel, drop} = useStore(useShallow((s) => {
-    const act = activeBoard(s);
-    return {isActive: !!act && keyOf(act) === key, playhead: s.playhead, sel: s.sel, drop: s.drop};
+    const act = activeBoard(s), isActive = !!act && keyOf(act) === key;
+    return {isActive, playhead: isActive ? s.playhead : null, sel: s.sel && s.sel.key === key ? s.sel : null,
+            drop: s.drop && s.drop.targetKey === key ? s.drop : null};
   }));
   const rootRef = useRef<HTMLDivElement>(null);
   const updateNodeInternals = useUpdateNodeInternals();
-  const handles = useStore(handleKeysOf);   // 要画的关系线变了（选了别的对象、开关关系线），重新量一次端点
+  // 这块画板上要挂连接点的对象（写成一串字）：变了才重新量端点。选了别的对象、开关关系线时，不相干的画板不用量
+  const ids = useMemo(() => new Set(layout?.sections.flatMap((s) => s.tracks.flatMap((t) => t.items.map((it) => it.o.id))) ?? []), [layout]);
+  const handles = useStore((s) => [...handleKeysOf(s)].filter((k) => k.startsWith('object:') && ids.has(Number(k.slice(7)))).sort().join(' '));
   useEffect(() => { updateNodeInternals(id); }, [layout, id, updateNodeInternals, handles]);   // 关系线的端点跟着对象走
   useEffect(() => {
     const el = rootRef.current;
@@ -240,7 +243,7 @@ export const BoardNode = memo(function BoardNode({id, data, positionAbsoluteX}: 
   const {a, pps, unit} = layout;
   const folded = layout.sections.reduce((n, sec) => n + sec.tracks.filter((t) => t.fold).length, 0);
   const title = board.rows.map((row) => row.map((r) => model.nameOf(r)).join(' → ')).join(' ＋ ');
-  const dropHere = drop && drop.targetKey === key ? drop : null;
+  const dropHere = drop;
   const dropSec = dropHere ? layout.sections.find((s) => s.index === dropHere.rowIndex) : undefined;
   return (
     <div ref={rootRef} className={`board${isActive ? ' active' : ''}${dropHere ? (dropHere.ok ? ' canmerge' : ' nomerge') : ''}`}
@@ -258,7 +261,7 @@ export const BoardNode = memo(function BoardNode({id, data, positionAbsoluteX}: 
       <div className="rrow"><div className="corner stick">{unit}</div><Ruler board={board} layout={layout} /></div>
       {layout.sections.map((sec) => <Section key={sec.index} board={board} layout={layout} sec={sec} />)}
       {isActive && playhead != null && <div className="playhead" style={{left: NAMES + (playhead - a) * pps}} />}
-      {sel && sel.key === key && <div className="selband" style={{left: NAMES + (sel.begin - a) * pps, width: Math.max(2, (sel.end - sel.begin) * pps)}} />}
+      {sel && <div className="selband" style={{left: NAMES + (sel.begin - a) * pps, width: Math.max(2, (sel.end - sel.begin) * pps)}} />}
       {dropHere && !dropHere.ok && <div className="dropnote">{dropHere.reason}</div>}
       {dropHere && dropHere.ok && dropSec && (dropHere.side === 'left' || dropHere.side === 'right'
         ? <div className="dropmark v" style={{left: NAMES + (dropHere.at! - a) * pps, top: dropSec.top, height: dropSec.height}}>{dropHere.side === 'left' ? '接在这一段前面' : '接在这一段后面'}</div>

@@ -109,26 +109,11 @@ function ThreadView({model, thread, number, waiting, focused, me, read}: {model:
   );
 }
 
-export function NotesPanel() {
-  const model = useModel(), notes = useNotes();
-  // sel、targetLayer、selected、wholeProject 变了，"写给"跟着变，所以一起订阅
-  // 选择器里只取原始值（reads 是数据里的同一个对象）；"等我回复"在这里算，免得每次都返回新数组让页面反复重画
-  const {filter, showHidden, me, focus, reads} = useStore(useShallow((s) => ({filter: s.noteFilter, showHidden: s.showHidden, me: s.me,
-    focus: s.noteFocus, reads: s.data?.noteReads,
-    sel: s.sel, targetLayer: s.targetLayer, selected: s.selected, wholeProject: s.wholeProject})));
+// 写新批注的框："写给"跟着圈出的一段、点选的层、选中的对象变，所以只有它订阅这些；点画板上的对象，下面几十楼不用跟着重画
+function Compose({me}: {me: string}) {
+  useStore(useShallow((s) => ({sel: s.sel, targetLayer: s.targetLayer, selected: s.selected, wholeProject: s.wholeProject})));
   const [text, setText] = useState('');
-  // 对准了一楼（地址参数 note、提示、定位）：列表切到看得见它的那一类。已处理的楼只在"已处理"里；"等我回复"里没有它就回"待处理"
-  useEffect(() => {
-    const th = notes?.threads.find((t) => t.top.id === focus);
-    if (!th) return;
-    const want = th.top.status === 'done' ? 'done' : filter === 'done' || (filter === 'waiting' && !waitingFor([th], me, reads).length) ? 'open' : filter;
-    if (want !== filter) setState({noteFilter: want});
-  }, [focus, notes]);   // eslint-disable-line react-hooks/exhaustive-deps
-  if (!model || !notes) return null;
   const target = composeTarget();
-  const threads = notes.threads, waiting = new Set(waitingFor(threads, me, reads));
-  const count = {open: threads.filter((th) => th.top.status === 'open').length, done: threads.filter((th) => th.top.status === 'done').length};
-  const shown = threads.filter((th) => (filter === 'waiting' ? waiting.has(th) : th.top.status === filter));
   const rename = (name: string) => { setState({me: name}); localStorage.setItem('lw-author', name.trim()); };
   const add = async () => {
     const body: Record<string, unknown> = {action: 'add', text: text.trim(), author: me.trim()};
@@ -138,16 +123,37 @@ export function NotesPanel() {
     if (await noteAction(body)) { setText(''); setState({wholeProject: false}); }
   };
   return (
+    <div className="compose">
+      <textarea rows={3} value={text} placeholder="写一条批注……（Ctrl+回车加上）" onChange={(e) => setText(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) add(); }} />
+      <div className="note-row">写给：<b>{target.label}</b>
+        {target.kind !== 'project' && <a href="#" onClick={(e) => { e.preventDefault(); setState({wholeProject: true}); }}>改成整个项目</a>}</div>
+      <div className="note-row"><label title="你的名字：写批注时署上，也用它算哪些楼在等你回复">署名 <input size={8} value={me} onChange={(e) => rename(e.target.value)} /></label><span className="grow" /><button onClick={add}>加上</button></div>
+      <p className="hint">先选中一个对象、点一个层名，或者在尺子上拖出一段，批注就指向那里；什么都不选就是写给整个项目。每条都可以回复，回复按楼显示。</p>
+    </div>
+  );
+}
+
+export function NotesPanel() {
+  const model = useModel(), notes = useNotes();
+  // 选择器里只取原始值（reads 是状态里的同一个对象）；"等我回复"在这里算，免得每次都返回新数组让页面反复重画
+  const {filter, showHidden, me, focus, reads} = useStore(useShallow((s) => ({filter: s.noteFilter, showHidden: s.showHidden, me: s.me,
+    focus: s.noteFocus, reads: s.reads})));
+  // 对准了一楼（地址参数 note、提示、定位）：列表切到看得见它的那一类。已处理的楼只在"已处理"里；"等我回复"里没有它就回"待处理"
+  useEffect(() => {
+    const th = notes?.threads.find((t) => t.top.id === focus);
+    if (!th) return;
+    const want = th.top.status === 'done' ? 'done' : filter === 'done' || (filter === 'waiting' && !waitingFor([th], me, reads).length) ? 'open' : filter;
+    if (want !== filter) setState({noteFilter: want});
+  }, [focus, notes]);   // eslint-disable-line react-hooks/exhaustive-deps
+  if (!model || !notes) return null;
+  const threads = notes.threads, waiting = new Set(waitingFor(threads, me, reads));
+  const count = {open: threads.filter((th) => th.top.status === 'open').length, done: threads.filter((th) => th.top.status === 'done').length};
+  const shown = threads.filter((th) => (filter === 'waiting' ? waiting.has(th) : th.top.status === filter));
+  return (
     <section>
       <h2>批注 <small>待处理 {count.open} 楼，已处理 {count.done} 楼</small></h2>
-      {RECORD && <div className="compose">
-        <textarea rows={3} value={text} placeholder="写一条批注……（Ctrl+回车加上）" onChange={(e) => setText(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) add(); }} />
-        <div className="note-row">写给：<b>{target.label}</b>
-          {target.kind !== 'project' && <a href="#" onClick={(e) => { e.preventDefault(); setState({wholeProject: true}); }}>改成整个项目</a>}</div>
-        <div className="note-row"><label title="你的名字：写批注时署上，也用它算哪些楼在等你回复">署名 <input size={8} value={me} onChange={(e) => rename(e.target.value)} /></label><span className="grow" /><button onClick={add}>加上</button></div>
-        <p className="hint">先选中一个对象、点一个层名，或者在尺子上拖出一段，批注就指向那里；什么都不选就是写给整个项目。每条都可以回复，回复按楼显示。</p>
-      </div>}
+      {RECORD && <Compose me={me} />}
       <div className="note-row filters">
         {(['open', 'waiting', 'done'] as const).map((f) => <button key={f} className={filter === f ? 'on' : ''} onClick={() => setState({noteFilter: f})}
             title={{open: '还没处理的楼', waiting: `没处理、最后一句不是「${me}」说的、你也没标已读的楼`, done: '已处理的楼只在这里出现'}[f]}>

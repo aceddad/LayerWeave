@@ -4,7 +4,7 @@
 import {Handle, Position} from '@xyflow/react';
 import {memo} from 'react';
 import {CAPTURE} from '../params';
-import {useStore} from '../store';
+import {handleKeysOf, hotOf, useStore} from '../store';
 import {kindOf, lastAt} from '../model/kinds';
 import type {Mark} from '../model/changes';
 import type {Item} from '../model/model';
@@ -16,12 +16,16 @@ import {Waveform} from './Waveform';
 
 interface Props {
   item: Item; a: number; pps: number; unit: string; project: number; frames: boolean;
-  selected: boolean; hot?: boolean; mark?: Mark; notes?: Thread[]; external?: string[];
-  handles?: boolean;   // 这一刻有关系线连到它：才挂连接点（store 的 handleKeysOf）
+  mark?: Mark; notes?: Thread[]; external?: string[];
 }
 
-export const ObjectBlock = memo(function ObjectBlock({item, a, pps, unit, project, frames, selected, hot, mark, notes, external, handles}: Props) {
+// 选中、高亮、挂不挂连接点：每个格子自己订阅自己那一位。原来由整行传下来，点一下对象，所有轨道连同几百个格子都要重新过一遍
+// （手书 800 个对象：点选一次 250–420 毫秒，2026-10-14 量的）
+export const ObjectBlock = memo(function ObjectBlock({item, a, pps, unit, project, frames, mark, notes, external}: Props) {
   const o = item.o, k = kindOf(o), instant = o.end <= o.begin;
+  const selected = useStore((s) => s.selected === o.id);
+  const hot = useStore((s) => hotOf(s).has(`object:${o.id}`));
+  const handles = useStore((s) => handleKeysOf(s).has(`object:${o.id}`));   // 这一刻有关系线连到它：才挂连接点
   const left = (item.begin - a) * pps, w = Math.max(instant ? 8 : 3, (o.end - o.begin) * pps);
   const missing = !!o.media && !o.media.available;
   // 画得多细：按镜头停下来时格子在屏幕上的高度分三档（缩放过程中不换，停下来才一起换）。0 只画色块，1 用 160 宽的缩略图，2 用 320 宽的

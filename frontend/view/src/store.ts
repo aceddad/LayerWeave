@@ -4,7 +4,7 @@ import {changeMarks, noMarks} from './model/changes';
 import type {ChangeMarks} from './model/changes';
 import {Model} from './model/model';
 import {noteIndex, noteList, noteThreads, waitingFor} from './model/notes';
-import type {Note, Thread} from './model/notes';
+import type {Note, NoteReads, Thread} from './model/notes';
 import type {Drop} from './model/dropRule';
 import {VIEWER, numParam, params} from './params';
 import type {Board, ChangeOp, ProjectData, ProjectSummary, Side, View} from './types';
@@ -39,6 +39,7 @@ export interface State {
   noteFilter: 'open' | 'done' | 'waiting';               // 已处理的楼只在"已处理"里出现，默认看待处理的
   noteFocus: number | null;                               // 镜头对准的那条批注（地址参数 note、批注上的"定位"）：它的楼和目标高亮
   me: string;                                             // 本机署名：写批注用，也用来算"等我回复"的楼
+  reads: NoteReads;                                       // 批注的已读（读项目时从 data.noteReads 拿；点"已读"先改这里，不等服务端，也不重建画面模型）
   canvasW: number;
   canvasH: number;
   dragging: boolean;
@@ -60,7 +61,7 @@ export const useStore = create<State>((set) => ({
   changeLimit: numParam('changes') || 10, changeOps: [],
   links: params.get('links') === '1',
   sel: null, targetLayer: null, wholeProject: false,
-  noteFilter: 'open', noteFocus: numParam('note'), me: localStorage.getItem('lw-author') || '用户',
+  noteFilter: 'open', noteFocus: numParam('note'), me: localStorage.getItem('lw-author') || '用户', reads: {},
   canvasW: Math.max(600, window.innerWidth - 340), canvasH: Math.max(400, window.innerHeight - 50),
   dragging: false, drop: null, autoFit: true, settledZoom: 0,
   set: (patch) => set(patch as any),
@@ -94,6 +95,7 @@ export function notesOf(s: State): NotesInfo | null {
 export const useNotes = () => useStore(notesOf);
 // 这一刻要画关系线的端点（"object:16"、"layer:5"）：只有它们挂 React Flow 的连接点。
 // 每个对象都挂的话，5000 个对象就是一万个点，画板一动 React Flow 就要把它们的位置全量一遍（2026-10-14 量的：打开时最耗时的就是这个）
+// 内容没变就还给原来那个 Set：选了一个没有关联的对象时，端点照旧是空的，画板不用重新量连接点
 let handleCache: {key: unknown[]; value: Set<string>} | null = null;
 export function handleKeysOf(s: State): Set<string> {
   const model = modelOf(s);
@@ -109,12 +111,26 @@ export function handleKeysOf(s: State): Set<string> {
       value.add(`${b.target.kind}:${b.target.id}`);
     }
   }
-  handleCache = {key, value};
+  const old = handleCache?.value;
+  handleCache = {key, value: old && old.size === value.size && [...value].every((k) => old.has(k)) ? old : value};
+  return handleCache.value;
+}
+
+// 对准的那条批注（noteFocus）指着的对象和层（"object:16"、"layer:5"）：画布上高亮
+const noHot = new Set<string>();
+let hotCache: {key: unknown[]; value: Set<string>} | null = null;
+export function hotOf(s: State): Set<string> {
+  const notes = notesOf(s);
+  const key = [notes, s.noteFocus, s.project];
+  if (hotCache && hotCache.key.every((v, i) => v === key[i])) return hotCache.value;
+  const top = s.noteFocus != null ? notes?.threads.find((t) => t.top.id === s.noteFocus)?.top : undefined;
+  const value = top ? new Set(top.targets.filter((t) => t.project === s.project).map((t) => `${t.kind}:${t.id}`)) : noHot;
+  hotCache = {key, value};
   return value;
 }
 
 // 在等本机署名的楼（没处理、最后一句不是我说的、我也没标已读）：标签上的数字、标题、"等我回复"都用它
-export const waitingOf = (s: State) => waitingFor(notesOf(s)?.threads ?? [], s.me, s.data?.noteReads);
+export const waitingOf = (s: State) => waitingFor(notesOf(s)?.threads ?? [], s.me, s.reads);
 
 let marksCache: {model: Model; ops: ChangeOp[]; value: ChangeMarks} | null = null;
 export function marksOf(s: State): ChangeMarks {

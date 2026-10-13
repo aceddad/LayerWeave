@@ -34,22 +34,42 @@ function peaksFor(url: string) {
   return peaks.get(url)!;
 }
 
-export function Waveform({url, mark, className}: {url: string; mark?: number | null; className?: string}) {
+// 尺寸由 ResizeObserver 告诉（排版完才回调）。原来每次画之前读 clientWidth，会逼浏览器当场把整页排一遍；
+// 播放头的位置还画在波形里，点一下画板，此刻面板里每条音频都要这样重画一次（手书：一次 158 毫秒，2026-10-14 量的）。
+// 现在波形只在文件或尺寸变了时画；播放头是盖在上面的一条线（WaveMark）
+export function Waveform({url, className}: {url: string; className?: string}) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
-    let alive = true;
-    peaksFor(url).then((values) => {
-      const canvas = ref.current;
-      if (!alive || !canvas) return;
-      const w = (canvas.width = canvas.clientWidth || 160), h = (canvas.height = canvas.clientHeight || 40);
+    const canvas = ref.current;
+    if (!canvas) return;
+    let alive = true, values: number[] | null | undefined, w = 0, h = 0;
+    const draw = () => {
+      if (!alive || values === undefined || !w || !h) return;
+      canvas.width = w;
+      canvas.height = h;
       const c = canvas.getContext('2d')!;
       c.clearRect(0, 0, w, h);
-      if (!values) { c.fillStyle = '#ffffff88'; c.fillText('无法解码', 4, h / 2); return; }
+      if (!values) { c.fillStyle = '#ffffff88'; c.font = `${10 * devicePixelRatio}px sans-serif`; c.fillText('无法解码', 4, h / 2); return; }
       c.fillStyle = 'rgba(255,255,255,.75)';
-      for (let x = 0; x < w; x++) { const p = values[Math.floor((x / w) * values.length)]; c.fillRect(x, h / 2 - (p * h) / 2, 1, Math.max(1, p * h)); }
-      if (mark != null) { c.fillStyle = '#ff4f7a'; c.fillRect(mark * w, 0, 2, h); }
+      const bar = Math.max(1, Math.round(devicePixelRatio));
+      for (let x = 0; x < w; x += bar) { const p = values[Math.floor((x / w) * values.length)]; c.fillRect(x, h / 2 - (p * h) / 2, bar, Math.max(1, p * h)); }
+    };
+    const observer = new ResizeObserver(([entry]) => {
+      const box = entry.devicePixelContentBoxSize?.[0];
+      const nw = Math.min(4096, Math.round(box ? box.inlineSize : entry.contentRect.width * devicePixelRatio)) || 160;
+      const nh = Math.min(512, Math.round(box ? box.blockSize : entry.contentRect.height * devicePixelRatio)) || 40;
+      if (nw === w && nh === h) return;
+      w = nw; h = nh;
+      draw();
     });
-    return () => { alive = false; };
-  }, [url, mark]);
+    try { observer.observe(canvas, {box: 'device-pixel-content-box'}); } catch { observer.observe(canvas); }
+    peaksFor(url).then((got) => { values = got; draw(); });
+    return () => { alive = false; observer.disconnect(); };
+  }, [url]);
   return <canvas ref={ref} className={className ?? 'wave'} />;
+}
+
+// 波形上的播放头：一条盖在上面的竖线，按比例放（0–1），挪它不用重画波形
+export function WaveMark({at}: {at: number | null}) {
+  return at == null ? null : <i className="wave-mark" style={{left: `${Math.max(0, Math.min(1, at)) * 100}%`}} />;
 }

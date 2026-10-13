@@ -1,7 +1,8 @@
 // 对象卡片：此刻面板、选中对象的详情都用它
 import {frameUrl} from '../api';
 import {goToTarget, selectObject} from '../actions';
-import {Waveform} from '../canvas/Waveform';
+import {Img, Thumb} from '../canvas/Media';
+import {WaveMark, Waveform} from '../canvas/Waveform';
 import {kindOf} from '../model/kinds';
 import {refLabel, relationsOf} from '../model/labels';
 import type {ObjWithLayer} from '../model/model';
@@ -24,24 +25,25 @@ export function Card({o, full = false, local = null}: {o: ObjWithLayer; full?: b
   const k = kindOf(o), missing = !!o.media && !o.media.available;
   let body = null;
   if (missing) body = <p className="hint">文件不存在：{o.media!.source}</p>;
-  else if (k === 'image') body = <img src={o.media!.url!} alt="" />;
+  // 卡片里用 640 宽的缩略图（侧栏才 340 宽）：原来放原图，点一下画板，此刻面板要解码好几张几百万像素的图。点图看原图
+  else if (k === 'image') body = <a href={o.media!.url!} target="_blank" rel="noreferrer" title="点开看原图"><Thumb project={project} o={o} width={640} frames={frames} /></a>;
   else if (k === 'video') body = frames
     ? <>
-        <img src={frameUrl(project, o.id, at)} alt="" />
+        <Img src={frameUrl(project, o.id, at)} />
         {!CAPTURE && <video muted controls preload="none" src={o.media!.url!} style={{marginTop: 4}}
                             onLoadedMetadata={(e) => { const v = e.currentTarget; v.currentTime = Math.min(at, Math.max(0, v.duration - 0.05)); }} />}
       </>
     : <video muted controls preload="metadata" src={o.media!.url!}
              onLoadedMetadata={(e) => { const v = e.currentTarget; v.currentTime = Math.min(at, Math.max(0, v.duration - 0.05)); }} />;
   else if (k === 'audio') body = <>
-    <Waveform url={o.media!.url!} mark={onClip && o.end > o.begin ? at / (o.end - o.begin) : null} />
+    <div className="wave-box"><Waveform url={o.media!.url!} /><WaveMark at={onClip && o.end > o.begin ? at / (o.end - o.begin) : null} /></div>
     <audio controls preload="none" src={o.media!.url!} style={{width: '100%'}} />
   </>;
   const said = full ? (notes?.threads ?? []).filter(({top}) => top.targets.some((t) => t.kind === 'object' && t.id === o.id && t.project === project)) : [];
   const relations = full ? relationsOf(model, 'object', o.id) : [];
   return (
     <div className={`card${o.id === selected ? ' sel' : ''}`}>
-      <div className="meta">#{o.id} {o.name} · {o.type} · {fmt(o.begin, unit)} – {fmt(o.end, unit)}</div>
+      <div className="meta">{`#${o.id} ${o.name} · ${o.type} · ${fmt(o.begin, unit)} – ${fmt(o.end, unit)}`}</div>
       {body}
       {o.text != null && <div className="txt">{o.text}</div>}
       {said.length > 0 && <div className="rels"><div className="rels-head">批注</div>

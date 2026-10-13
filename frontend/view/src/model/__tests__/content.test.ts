@@ -7,6 +7,7 @@ import {refLabel, relationsOf} from '../labels';
 import {linkQuery} from '../link';
 import {cutPoints, editPoints, stepObject, stepTime, stepTrack} from '../navigate';
 import {noteIndex, noteList, noteThreads, readBy, waitingFor} from '../notes';
+import {withFolds, withNoteStatus, withRead} from '../optimistic';
 import {fmt, fmtSpan, ticks} from '../units';
 import type {ChangeOp} from '../../types';
 import {bind, chapters, data, layer, model, obj, ref, root} from './fixtures';
@@ -193,5 +194,35 @@ describe('时间写法', () => {
     const marks = ticks(0, 10, 100, 1, '秒');
     expect(marks[1].t - marks[0].t).toBe(1);
     expect(ticks(0, 10, 100, 0.5, '秒')[1].t).toBe(2);
+  });
+});
+
+// 先改画面、再写数据库：本地改的这一份要和服务端写完以后读回来的一样（note.py 的 set_read、fold.py 的 set_folds）
+describe('先改画面的写入', () => {
+  it('已读记下楼里最新的一条，标为未读去掉这个人；别人的不动', () => {
+    const d = withNotes(), threads = noteThreads(noteList(model(d)));
+    const read = withRead({'31': {Claude: 31}}, threads[0], ' 用户 ', true);
+    expect(read).toEqual({'31': {Claude: 31, 用户: 33}});
+    expect(readBy(threads[0], '用户', read)).toBe(true);
+    expect(withRead(read, threads[0], '用户', false)).toEqual({'31': {Claude: 31}});
+  });
+
+  it('已处理只改那一条批注的状态，楼跟着进"已处理"', () => {
+    const d = withNotes(), after = withNoteStatus(d, 31, 'done');
+    const threads = noteThreads(noteList(model(after)));
+    expect(threads.map((t) => [t.top.id, t.top.status])).toEqual([[31, 'done'], [34, 'done'], [35, 'open']]);
+    expect(noteThreads(noteList(model(d)))[0].top.status).toBe('open');   // 原来那份不变
+  });
+
+  it('折叠：已经折着的保留原来的人，没带说明留着原来的；展开清掉；对方那边不动', () => {
+    const start = [{layer: 2, user: '小林', user_tips: '先不看', ai: 'Claude', ai_tips: '对过了'}];
+    expect(withFolds(start, [2, 3], 'user', 'fold', '用户')).toEqual([
+      {layer: 2, user: '小林', user_tips: '先不看', ai: 'Claude', ai_tips: '对过了'},
+      {layer: 3, user: '用户', user_tips: '', ai: '', ai_tips: ''},
+    ]);
+    expect(withFolds(start, [2], 'user', 'unfold', '用户')).toEqual([{layer: 2, user: '', user_tips: '', ai: 'Claude', ai_tips: '对过了'}]);
+    expect(withFolds(start, [2], 'ai', 'unfold', '用户')).toEqual([{layer: 2, user: '小林', user_tips: '先不看', ai: '', ai_tips: ''}]);
+    expect(withFolds(start, [2], 'user', 'tips', '用户', ' 换了方向 ')[0].user_tips).toBe('换了方向');
+    expect(withFolds([], [4], 'user', 'fold', '  ')).toEqual([{layer: 4, user: '用户', user_tips: '', ai: '', ai_tips: ''}]);
   });
 });

@@ -1,7 +1,7 @@
 {
   "name": "layerweave-view",
   "private": true,
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "LayerWeave 视图网页的源码；npm run build 输出到 src/layerweave/tool/builtin/view/web/",
   "type": "module",
   "scripts": {

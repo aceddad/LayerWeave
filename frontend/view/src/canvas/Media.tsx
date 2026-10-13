@@ -8,7 +8,7 @@ export function Img({src}: {src: string}) {
 }
 
 // 图片对象的缩略图：服务端有 ffmpeg 时按宽度缩好（缩不了的它自己送原图）；没有 ffmpeg 时直接用原图。
-// 画布格子、素材网格用 320 宽，接缝页 640 宽；看单个对象详情时才用原图
+// 画布格子、素材网格用 320 宽，接缝页、侧栏卡片 640 宽；原图只在点开时看
 export function Thumb({project, o, width, frames}: {project: number; o: Obj; width: number; frames: boolean}) {
   return <Img src={frames ? thumbUrl(project, o.id, width) : o.media!.url!} />;
 }

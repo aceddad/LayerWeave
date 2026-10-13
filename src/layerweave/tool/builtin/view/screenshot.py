@@ -53,6 +53,11 @@ def find_browser(explicit=None):
     return None
 
 
+# 新建的配置目录照样会被浏览器用系统账号自动登录、把扩展同步进来（Edge 会这样：2026-10-14 在无界面浏览器的日志里看到了用户的扩展在跑，
+# 一并出现过画面停止出帧、输入事件等不到应答）。截图只要一个干净的页面：扩展、同步、后台联网都关掉
+QUIET = ["--disable-extensions", "--disable-sync", "--disable-background-networking", "--disable-component-update"]
+
+
 class DevTools:
     """浏览器调试接口（Chrome DevTools Protocol）的最小客户端：一条只连本机的 WebSocket，按编号收发 JSON。"""
 
@@ -192,7 +197,7 @@ def capture(database, project_id, output, *, view=None, board=None, begin=None, 
         # 独立的浏览器配置，不碰用户正在用的浏览器
         with tempfile.TemporaryDirectory(prefix="layerweave-shot-", ignore_cleanup_errors=True) as profile:
             process = subprocess.Popen([browser, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--mute-audio",
-                                        "--no-first-run", "--no-default-browser-check", f"--user-data-dir={profile}",
+                                        "--no-first-run", "--no-default-browser-check", f"--user-data-dir={profile}", *QUIET,
                                         "--remote-debugging-port=0", f"--window-size={width},{height}", "about:blank"],
                                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             try:

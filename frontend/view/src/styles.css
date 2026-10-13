@@ -134,6 +134,10 @@ select { background: var(--panel); padding: 3px 6px; }
 .card .meta { color: var(--dim); font-size: 11px; margin-bottom: 6px; }
 .card img, .card video { width: 100%; border-radius: 4px; display: block; background: #000; }
 .card canvas { width: 100%; height: 48px; display: block; }
+.wave-box { position: relative; }
+.wave-mark { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--play); pointer-events: none; }
+/* 侧栏里滚到看不见的卡片、楼不排版不绘制：此刻面板常有二三十张卡片，一次只看得见三四张 */
+.card, .thread { content-visibility: auto; contain-intrinsic-size: auto 160px; }
 .card pre { white-space: pre-wrap; word-break: break-all; font-size: 11px; color: var(--dim); margin: 6px 0 0; max-height: 180px; overflow: auto; }
 .card .txt { white-space: pre-wrap; }
 .rels { margin-top: 8px; border-top: 1px solid var(--line); padding-top: 6px; }

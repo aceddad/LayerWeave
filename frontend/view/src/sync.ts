@@ -4,9 +4,11 @@ import {visibleBoards, visibleRange} from './camera';
 import {afterResize, placeAuto, separate, sizeOf} from './model/layoutOps';
 import {adoptOrphans, keyOf, rootsOf} from './model/model';
 import type {Note} from './model/notes';
+import {withFolds, withNoteStatus, withRead} from './model/optimistic';
+import type {Model} from './model/model';
 import {CAPTURE, RECORD, VIEWER, numParam} from './params';
 import {activeBoard, getState, modelOf, notesOf, setState} from './store';
-import type {FoldRow, Layout} from './types';
+import type {Board, FoldRow, Layout} from './types';
 
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
 export function toast(text: string, ms = 2500) {
@@ -29,7 +31,7 @@ export async function loadProject(id: number) {
   // 记下重读之前每块画板的高度：折叠、加层以后画板变高变矮，下面的画板跟着挪
   const heights = oldModel ? new Map(prev.boards.map((b) => [keyOf(b), sizeOf(oldModel, b).h])) : null;
   const [data, layout] = await Promise.all([api.project(id), api.layout(id)]);
-  setState({project: id, data: adoptOrphans(data)});
+  setState({project: id, data: adoptOrphans(data), reads: data.noteReads ?? {}});
   if (!announceNotes(before)) announceFolds(foldsBefore);
   applyLayout(layout, heights);
   await loadChanges();
@@ -80,17 +82,20 @@ function applyLayout(layout: Layout, heights: Map<number, number> | null = null)
   if (s.data?.roots.some((r) => r.id === 0)) boards = [...boards, {rows: [[0]], x: null, y: null, pps: null}];
   const model = modelOf(s)!;
   const placed = placeAuto(boards, model);
-  boards = placed.boards;
-  let changed = placed.changed;
-  // 高度变了的画板（从上往下）：正下方的画板跟着推开或收拢
+  const flowed = reflow(placed.boards, heights, model);
+  setState({boards: flowed.boards, serial: layout.serial});
+  if (placed.changed || flowed.changed) saveLayout();
+}
+
+// 高度变了的画板（从上往下）：正下方的画板跟着推开或收拢；还压在一起的（页面没开着时 AI 折叠、展开了）往下挪开
+function reflow(boards: Board[], heights: Map<number, number> | null, model: Model): {boards: Board[]; changed: boolean} {
+  let changed = false;
   for (const key of [...boards].filter((b) => b.y != null).sort((p, q) => p.y! - q.y!).map(keyOf)) {
     const b = boards.find((x) => keyOf(x) === key)!, old = heights?.get(key), now = sizeOf(model, b).h;
     if (old != null && now && old !== now) { boards = afterResize(boards, key, old, model); changed = true; }
   }
-  // 还压在一起的（页面没开着时 AI 折叠、展开了）：往下挪开
   const apart = separate(boards, model);
-  setState({boards: apart.boards, serial: layout.serial});
-  if (changed || apart.changed) saveLayout();
+  return {boards: apart.boards, changed: changed || apart.changed};
 }
 
 export async function reloadLayout() {
@@ -122,16 +127,20 @@ export async function poll() {
 let saveTimer: ReturnType<typeof setTimeout> | undefined;
 export function saveLayout(delay = 0) {
   if (!RECORD) return;
-  const project = getState().project;
-  if (project == null) return;
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(async () => {
-    const boards = getState().boards.filter((b) => rootsOf(b).every((r) => r > 0)).map(({rows, x, y, pps}) => ({rows, x, y, pps: pps ?? null}));
-    try {
-      const res = await api.saveLayout(project, boards);
-      if (res.serial != null && project === getState().project) setState({serial: res.serial});
-    } catch { /* 服务停了：下次轮询会显示断开 */ }
-  }, delay);
+  saveTimer = setTimeout(saveLayoutNow, delay);
+}
+
+// 马上存，存完才返回（折叠先挪了画板，要在重读排版之前存好，不然重读回来的是挪之前的位置）
+export async function saveLayoutNow() {
+  const project = getState().project;
+  if (!RECORD || project == null) return;
+  clearTimeout(saveTimer);
+  const boards = getState().boards.filter((b) => rootsOf(b).every((r) => r > 0)).map(({rows, x, y, pps}) => ({rows, x, y, pps: pps ?? null}));
+  try {
+    const res = await api.saveLayout(project, boards);
+    if (res.serial != null && project === getState().project) setState({serial: res.serial});
+  } catch { /* 服务停了：下次轮询会显示断开 */ }
 }
 
 // 圈出的一段落在哪个根上：画板第一行在起点处的那一段，换成那个根自己的时间
@@ -177,14 +186,24 @@ export async function foldAction(layers: number[], action: 'fold' | 'unfold' | '
   const s = getState();
   if (s.project == null || !layers.length) return false;
   if (VIEWER === 'ai') { toast('这是 AI 那边的样子，只看不改折叠'); return false; }
+  // 先在本地折好、把下面的画板挪好，再写数据库
+  const project = s.project, oldModel = modelOf(s);
+  if (oldModel && s.data) {
+    const heights = new Map(s.boards.map((b) => [keyOf(b), sizeOf(oldModel, b).h]));
+    setState({data: {...s.data, folds: withFolds(s.data.folds ?? [], layers, side, action, s.me, tips)}});
+    const flowed = reflow(getState().boards, heights, modelOf(getState())!);
+    if (flowed.changed) setState({boards: flowed.boards});
+  }
+  const failed = async (why: string) => { toast('折叠没有存下来：' + why); await loadProject(project); return false; };
   try {
-    const res = await api.fold(s.project, {action, side, layers, by: s.me.trim(), tips});
-    if (res.error || res.recorded === false) { toast('折叠没有存下来：' + (res.error ?? '这个页面只读')); return false; }
+    const res = await api.fold(project, {action, side, layers, by: s.me.trim(), tips});
+    if (res.error || res.recorded === false) return await failed(res.error ?? '这个页面只读');
+    await saveLayoutNow();
     quietFolds = true;
-    try { await loadProject(s.project); } finally { quietFolds = false; }
+    try { await loadProject(project); } finally { quietFolds = false; }
     setState({version: (await api.version()).version});
     return true;
-  } catch (error) { toast('折叠没有存下来：' + (error as Error).message); return false; }
+  } catch (error) { return await failed((error as Error).message); }
 }
 
 // 视图的写入之一：批注。写完重读项目；自己写的不用再被轮询重读一遍。
@@ -203,12 +222,38 @@ export async function noteAction(body: Record<string, unknown>): Promise<boolean
   }
 }
 
+// 已读、标为未读、已处理、重新打开：先改画面（model/optimistic.ts），再写；写失败时重读项目改回去
+function guess(body: Record<string, unknown>): boolean {
+  const s = getState(), id = Number(body.note), action = body.action;
+  if (!s.data || !Number.isFinite(id)) return false;
+  if (action === 'read' || action === 'unread') {
+    const thread = notesOf(s)?.threads.find((th) => th.top.id === id || th.replies.some((r) => r.id === id));
+    if (!thread) return false;
+    setState({reads: withRead(s.reads, thread, String(body.reader ?? ''), action === 'read')});
+    return true;
+  }
+  if (action === 'done' || action === 'reopen') {
+    setState({data: withNoteStatus(s.data, id, action === 'done' ? 'done' : 'open')});
+    return true;
+  }
+  return false;
+}
+
 async function sendNote(project: number, body: Record<string, unknown>): Promise<boolean> {
+  const guessed = guess(body);
   try {
     const res = await api.note(project, body);
-    if (res.error || res.recorded === false) { toast('批注没有写进去：' + (res.error ?? '这个页面只读')); return false; }
+    if (res.error || res.recorded === false) {
+      toast('批注没有写进去：' + (res.error ?? '这个页面只读'));
+      if (guessed) await loadProject(project);
+      return false;
+    }
     await loadProject(project);
     setState({version: (await api.version()).version});
     return true;
-  } catch (error) { toast('批注没有写进去：' + (error as Error).message); return false; }
+  } catch (error) {
+    toast('批注没有写进去：' + (error as Error).message);
+    if (guessed) await loadProject(project).catch(() => {});
+    return false;
+  }
 }

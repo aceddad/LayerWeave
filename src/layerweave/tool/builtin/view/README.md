@@ -82,6 +82,8 @@ python -m layerweave.tool.builtin.view.server DATABASE [--project 1] [--port 876
 - **更新以后不消失**：清单和默认文件夹都在本机用户目录，链接的文件在作者自己放的地方，软件更新都碰不到。放在 LayerWeave 安装目录里的文件加不进来（更新时会被换掉）。文件找不到时那一行留着，标"找不到"。
 - **网页上**：顶栏「插件」小窗，和命令改同一份清单：看哪些载入了、开关、去掉、加链接（人做二次开发时把自己正在写的插件链接进来）。有问题的插件按钮上标 `!`。
 - **改了马上跟上**：视图服务每次都重读清单；页面轮询时发现清单变了，新开的载入、关掉的拿下来，样式跟着拿掉，不用重启也不用刷新。插件文件改过以后，再点开「插件」小窗（或刷新）就换成新的。
+- **插件能放东西的位置**：顶栏页面、侧栏的一个标签、选中对象详情里的一段、某类对象在画布格子里画什么、键盘 `[ ]` 的跳转点。插件出错只在它自己那块写一句，不影响别的。
+- **样板**：仓库里的 `frontend/view/example-plugin/plugin.js`（「字数」：文字对象几个字、每秒几个字），一个文件，不用构建；`view_plugin add <仓库>/frontend/view/example-plugin` 就能试。
 - 插件只在页面里运行，数据从视图已有的接口拿（就是从 core 读出来的那份）；写入仍然只有批注和折叠两种。
 - 怎么写一个插件、插件能用哪些接口，见[工具包登记类型 · 视图插件](../developer/TOOL_TYPES.md#给自己的层配一个视图页面视图插件)。
 
@@ -91,7 +93,7 @@ python -m layerweave.tool.builtin.view.server DATABASE [--project 1] [--port 876
 |---|---|
 | `view_state` | 用户正在看哪儿：项目、当前画板、可见范围、播放头、选中的对象、圈出的一段、屏幕上的画板和层。用户说"这里""这段"时先读它 |
 | `view_note` | 读写批注：`list`（按楼；可只看 open / done 的楼，`--waiting 名字` 只看在等这个人回复的楼）、`add`（`--to object:16`、`--to layer:1 --span 6 8`，可以多个）、`reply 编号 正文`、`done` / `reopen`、`edit`（`edit 编号 --to object:18` 改指向，只有楼主能改）、`remove`。自动建批注层、填字段、建关联 |
-| `view_screenshot` | 把视图截成 PNG：整张画布、某一块画板（`--board`，可加 `--begin --end` 放大一段；`--layers` 只画某些层，写编号、层名或 `上级/名字`）、一览网格（`--view assets`）或插件的页面（比如接缝 `--view cuts`）；`--focus` 对准某个对象，`--note` 对准某条批注（框住它指的地方，右侧标出这一楼），`--link` 按用户「复制链接」得到的地址拍，`--changes N` 标出最近 N 次操作的改动，`--notes` 打开批注列表，`--links` 画出全部关系线，`--full-page` 把接缝页、一览页截成一整张长图。等页面把图片、封面、波形加载完才拍 |
+| `view_screenshot` | 把视图截成 PNG：整张画布、某一块画板（`--board`，可加 `--begin --end` 放大一段；`--layers` 只画某些层，写编号、层名或 `上级/名字`）、一览网格（`--view assets`）或插件的页面（比如接缝 `--view cuts`）；`--focus` 对准某个对象，`--note` 对准某条批注（框住它指的地方，右侧标出这一楼），`--link` 按用户「复制链接」得到的地址拍，`--changes N` 标出最近 N 次操作的改动，`--notes` 打开批注列表（`--side` 打开别的侧栏，插件的侧栏写插件的名字），`--links` 画出全部关系线，`--full-page` 把接缝页、一览页截成一整张长图。等页面把图片、封面、波形加载完才拍 |
 | `view_fold` | 两边的折叠：不带动作时列出；`fold 层编号… --by 名字 --why 原因` 折叠 AI 这边的；`unfold` 展开；`unfold --side user --why 理由` 把用户折叠的展开给用户看（写了理由就留一条批注）。截图的返回里也列出两边的折叠 |
 | `view_layout` | 查看或调整画板：同单位的根上下拼（`merge --side above/below`）、左右接（`merge --side left/right`）或拆开（`split`）、移动（`move`）、恢复自动排版（`reset`）。和网页改的是同一份排版 |
 | `view_at` | 按时刻读：某个根的某一刻（`--root 1 --at 12.5`）或一段（`--range 10 15`）上，每层是什么（没有就写是哪种空）、这些东西之间的关联、指着它们的待处理批注。不给参数就读用户此刻在视图里看的地方：圈出了一段读那一段，否则读播放头。用户说"这里""这一刻"时先读它 |
@@ -158,7 +160,8 @@ npm run dev          # 开发：接口转给已经在跑的视图服务（默认
 | `src/canvas/` | React Flow 画布（`Flow.tsx`）、画板节点（`BoardNode.tsx`）、对象色块、关系线；`drop.ts` 从页面上找出鼠标落点，交给 `dropRule.ts` |
 | `src/side/` | 右侧面板：此刻、改动、批注 |
 | `src/views/` | 一览页 |
-| `src/plugin/` | 插件接口（`host.ts`：插件能用的东西）和载入（`registry.ts`：按清单载入、拿下来；`plan.ts`：和清单对一遍）；顶栏的「插件」小窗是 `src/PluginManager.tsx` |
+| `src/plugin/` | 插件接口（`host.ts`：插件能用的东西和栏位）、载入（`registry.ts`：按清单载入、拿下来；`plan.ts`：和清单对一遍、画布格子找谁来画）、出错保护（`slots.tsx`）；顶栏的「插件」小窗是 `src/PluginManager.tsx`，插件画的格子是 `canvas/Media.tsx` 的 `PluginCanvas` |
+| `example-plugin/` | 样板插件「字数」：不用构建的一个 js，类型注释随 `npm run build` 检查；不随软件分发 |
 | `plugins/<名字>/` | 内置插件的源码，编译到 `view/plugins/<名字>/plugin.js`（`vite.plugins.config.ts`），再在 `plugins.py` 的 `BUILTIN` 里写上；接缝在 `plugins/cuts/` |
 | `src/store.ts`、`sync.ts`、`camera.ts`、`actions.ts` | 状态；和服务同步（轮询、保存排版、报告"正在看哪儿"、写批注）；镜头；用户操作 |
 | `src/capture.ts`、`params.ts` | 截图约定：地址参数，以及加载完以后设 `window.__layerweaveReady` |

@@ -45,19 +45,33 @@
 | 步骤 | 做法 | 接缝的写法 |
 |---|---|---|
 | 1. 写插件 | 一个 ES 模块，默认导出 `(host) => ViewPlugin`。`host` 给 React（和视图共用一份，插件不要自己打包）、读项目的 `useView()`、`selectObject` / `startWalk` / `toast` / `markReady` 这些动作、`Img` / `Thumb` / `Frame` 小部件和 `kindOf`、`fmt`、`lanes` 等工具函数。接口定义在 `frontend/view/src/plugin/host.ts`，版本号是 `host.api` | `plugins/cuts/index.tsx` |
-| 2. 返回什么 | `label`（顶栏标签上的字）、`handles`（管哪些种类的对象；项目里一个都没有就不显示标签）、`page`（页面组件）；可选的 `jumpPoints(model, board)` 给键盘 `[ ]` 提供跳转点。名字不用写，由清单定（也是地址里的 `view=`） | `label: '接缝'`、`handles: ['image', 'video']`、`jumpPoints` 是接缝的时刻 |
+| 2. 返回什么 | `label`（标签上的字）、`handles`（管哪些种类的对象；项目里一个都没有就不显示它的页面和侧栏），再加上要用的栏位（见下表）。名字不用写，由清单定（也是地址里的 `view=`、`side=`） | 接缝：`label: '接缝'`、`handles: ['image', 'video']`、`page`、`jumpPoints`；样板「字数」：`side`、`objectDetail`、`block` |
 | 3. 编译 | 不打包 React：JSX 编译成 `h(...)`，`h` 在插件被加载时从 `host.React.createElement` 拿。样式写成字符串，用 `host.addStyle` 加进页面 | `vite.plugins.config.ts`：`npm run build` 会编译 `plugins/` 下每个插件 |
 | 4. 放好、加进清单 | 编译好的 js 放在自己的目录里，最好一个插件一个文件夹（入口叫 `plugin.js`，同一个文件夹里的拆出去的代码、图片、样式也能访问）。不要放进 LayerWeave 的安装目录，软件更新时会被换掉。然后 `view_plugin add 路径`（或网页顶栏「插件」里加）；小插件可以放在默认文件夹 `~/.layerweave/view/plugins/<名字>/`，加的时候只写名字。工具包的说明里写上这一步 | 接缝是内置的：写在 `view/plugins.py` 的 `BUILTIN` 里，随视图包分发（pyproject 的 package-data 有 `plugins/*/*.js`） |
 | 5. 截图 | 截图页面上画完要调 `host.markReady()`，`view_screenshot --view <name>` 就能拍 | 接缝页在页面出来以后调 |
 | 6. 测试 | 计算写成纯函数，工具函数从参数传进来，测试里传视图真正的那些 | `plugins/cuts/cuts.test.ts` |
 
+插件能放东西的位置（栏位）：
+
+| 栏位 | 字段 | 给什么 | 例子 |
+|---|---|---|---|
+| 顶栏页面 | `page` | 一个组件，顶栏多一个标签，点开是它 | 接缝页 |
+| 侧栏 | `side` | 一个组件，侧栏多一个标签（和「此刻」「批注」并排） | 样板的「字数」：每个文字层多少字 |
+| 对象详情 | `objectDetail` | 一个组件，收到 `{object, model}`；选中对象的详情里多一段。设了 `handles` 时只给这些种类的对象；没话说就返回 `null` | 样板：几个字、每秒几个字 |
+| 画布格子 | `block` | `{kinds, types, draw(ctx, o, {width, height, unit, layer})}`：某类对象的格子里画什么，换掉默认的缩略图、画面、波形。`types` 按对象的类型名（`o.type`，配置里的类型，比如 `text`）认，`kinds` 按 `kindOf` 认；两个插件都认时，清单里排在前面的画 | 样板：文字格子底下一条，越快越长、越红 |
+| 键盘 `[ ]` | `jumpPoints(model, board)` | 一串时刻（画板时间），`[ ]` 在它们之间跳 | 接缝的时刻 |
+
+样板插件：仓库里的 `frontend/view/example-plugin/plugin.js`（「字数」）。一个文件，不用构建，用到侧栏、对象详情、画布格子三个栏位；复制这个文件夹，放到 LayerWeave 安装目录以外的地方改成自己的。它的类型注释在 `npm run build` 时一起检查，接口改了它会先报错。
+
 要点：
 
+- 每个栏位都包在出错保护里：插件的组件出错，只在它自己那块写一句"出错了"，记进「插件」小窗，视图和别的插件照常。
+- 画布格子（`block`）：视图给一块 canvas（设备像素，按镜头停下时的缩放），排进和缩略图同一个重画队列，每帧最多画 8 毫秒。只在格子大小变了、镜头停下换了缩放、对象变了时才再调 `draw`，平移和拖动时不调；格子太小、只画色块的那一档不调。`draw` 要等图片之类的就返回 Promise，截图会等它画完。
 - 插件只在页面里运行，读视图服务已有的数据；写入仍然只有视图自己的两种（批注、折叠）。插件不带 Python 写入口，不碰数据库。
 - 清单改了不用重启视图服务，页面自己跟上。有问题的（名字不合规矩、文件不在、重名、在安装目录里）不载入，在 `view_plugin` 和网页小窗里标出原因。
 - 一个插件载入失败，页面只提示一句、在小窗里标出原因，不影响别的插件和视图本身。
 - 开发时：把自己的插件链接进来，改完重新构建，再点开网页上的「插件」小窗（或刷新页面）就换成新的。
-- `host` 的接口只加不改；改了要在这里写明，并改 `host.api` 的版本号。
+- `host` 的接口只加不改；改了要在这里写明，并改 `host.api` 的版本号。现在是 2：1 只有页面和跳转点，2 加了侧栏、对象详情、画布格子。
 
 ## 相关说明
 

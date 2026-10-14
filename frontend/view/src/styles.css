@@ -50,6 +50,8 @@ select { background: var(--panel); padding: 3px 6px; }
 .plugins-add input.as { flex: none; width: 8em; }
 .plugins-error { color: #ff8fa8; margin: 6px 0 0; white-space: pre-wrap; }
 .plugins-note { font-size: 12px; margin: 8px 0 0; }
+.plugin-crash { color: #ff8fa8; font-size: 12px; margin: 8px 0; }
+.plugin-detail { margin: 8px 0; padding-top: 6px; border-top: 1px dashed var(--line); }
 
 .body { flex: 1; min-height: 0; display: flex; }
 .canvas-view { flex: 1; min-width: 0; display: flex; }
@@ -120,6 +122,7 @@ select { background: var(--panel); padding: 3px 6px; }
 .obj.missing { background: repeating-linear-gradient(45deg, #3a2a2a, #3a2a2a 6px, #2a1f1f 6px, #2a1f1f 12px); color: #f2b0b0; }
 .obj.sel { outline: 2px solid var(--sel); outline-offset: -1px; z-index: 2; }
 .obj img, .obj video, .obj canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .85; }
+.obj canvas.plugin-paint { opacity: 1; }
 .obj .ends { position: absolute; inset: 0; display: flex; justify-content: space-between; pointer-events: none; }
 .obj .ends img, .obj .ends canvas { position: static; width: 64px; height: 100%; object-fit: cover; opacity: .9; }
 .obj .lab { position: absolute; left: 4px; right: 4px; bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 2px rgba(0, 0, 0, .8); }
@@ -157,7 +160,7 @@ select { background: var(--panel); padding: 3px 6px; }
 .side h2 small, .side h2 span { color: var(--dim); font-weight: normal; font-size: 12px; }
 .side h3 { font-size: 12px; color: var(--dim); margin: 14px 0 6px; font-weight: normal; }
 .side h3.seg { color: #dfe8ff; }
-.side-tabs { display: flex; gap: 4px; padding-top: 10px; }
+.side-tabs { display: flex; flex-wrap: wrap; gap: 4px; padding-top: 10px; }
 .card { border: 1px solid var(--line); border-radius: 6px; padding: 8px; margin-bottom: 8px; background: var(--bg); }
 .card.sel { border-color: var(--sel); }
 .card .meta { color: var(--dim); font-size: 11px; margin-bottom: 6px; }

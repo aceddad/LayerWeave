@@ -5,7 +5,7 @@ AI 看到的就是用户在视图里看到的：画板的排版用用户那份�
 
 python -m layerweave.tool.builtin.view.screenshot DATABASE PROJECT_ID 输出.png
        [--view canvas|assets|插件页面，如 cuts] [--board 根层编号] [--begin 起点 --end 终点] [--layers 1 字幕 画面/原画] [--playhead 位置] [--select 对象编号]
-       [--focus 对象编号] [--note 批注编号] [--link 用户复制的链接] [--changes 最近几次操作] [--notes] [--links] [--full-page]
+       [--focus 对象编号] [--note 批注编号] [--link 用户复制的链接] [--changes 最近几次操作] [--notes | --side 侧栏] [--links] [--full-page]
        [--width 1600 --height 900] [--browser 浏览器路径] [--wait-ms 20000]
 """
 import argparse
@@ -204,7 +204,7 @@ def link_query(link, project_id):
 
 
 def capture(database, project_id, output, *, view=None, board=None, begin=None, end=None, layers=None, playhead=None,
-            select=None, focus=None, note=None, link=None, changes=None, notes=False, links=False, full_page=False,
+            select=None, focus=None, note=None, link=None, changes=None, notes=False, side=None, links=False, full_page=False,
             width=1600, height=900, browser=None, wait_ms=20000, state_root=None):
     query = link_query(link, project_id) if link else {}   # 先检查参数，再找浏览器、起服务
     layer_ids = resolve_layers(database, project_id, layers) if layers else None
@@ -212,6 +212,9 @@ def capture(database, project_id, output, *, view=None, board=None, begin=None, 
     pages = [p["name"] for p in loadable(state_root)]   # 本机插件清单里开着的（view_plugin）
     if view not in ("canvas", "assets", *pages):
         raise ValueError(f"没有叫 {view} 的页面：canvas、assets，或者开着的插件的页面（{'、'.join(pages) or '现在没有开着的插件'}；view_plugin 看全部）")
+    side = side or ("notes" if notes else None)
+    if side and side not in ("now", "changes", "notes", "walk", *pages):
+        raise ValueError(f"没有叫 {side} 的侧栏：now、changes、notes、walk，或者开着的插件的侧栏（{'、'.join(pages) or '现在没有开着的插件'}）")
     browser = find_browser(browser)
     if browser is None:
         raise FileNotFoundError("找不到 Chrome、Edge 或 Chromium：用 --browser 或环境变量 LAYERWEAVE_BROWSER 指定浏览器路径")
@@ -220,8 +223,8 @@ def capture(database, project_id, output, *, view=None, board=None, begin=None, 
     query.update({"project": project_id, "view": view, "record": 0, "capture": 1})
     if links:
         query["links"] = 1
-    if notes:
-        query["side"] = "notes"
+    if side:
+        query["side"] = side
     if full_page and view != "canvas":
         query["full"] = 1
     for key, value in (("board", board), ("begin", begin), ("end", end), ("playhead", playhead), ("select", select),
@@ -310,6 +313,7 @@ COMMANDS = [{
         "link": {"type": "string", "description": "用户在视图里点「复制链接」得到的地址；按它拍同一个位置（画板、范围、播放头、选中的对象、对准的批注）。其他参数会覆盖链接里的同名设置"},
         "changes": {"type": "integer", "description": "标出最近这么多次操作改过的对象和删除、移动前的位置，右侧列出改动"},
         "notes": {"type": "boolean", "description": "右侧打开批注列表（画布上的批注标记总是显示）", "default": False},
+        "side": {"type": "string", "description": "右侧打开哪一栏：now（此刻）、changes、notes、walk，或者插件的侧栏（插件在清单里的名字，view_plugin 列出来的那个）；notes 同 --notes"},
         "links": {"type": "boolean", "description": "画出全部关系线（bind）；不画时只画选中对象的", "default": False},
         "full_page": {"type": "boolean", "description": "接缝页、一览页按内容高度截整页（最多 16000 像素）", "default": False},
         "width": {"type": "integer", "default": 1600}, "height": {"type": "integer", "default": 900},
@@ -344,13 +348,14 @@ def main():
     p.add_argument("--note", type=int, help="对准这条批注：框住它指的地方，右侧标出这一楼")
     p.add_argument("--link", help="用户在视图里点「复制链接」得到的地址：按它拍同一个位置")
     p.add_argument("--notes", action="store_true", help="右侧打开批注列表")
+    p.add_argument("--side", help="右侧打开哪一栏：now、changes、notes、walk，或者插件的侧栏（插件的名字）")
     p.add_argument("--links", action="store_true", help="画出全部关系线"); p.add_argument("--full-page", action="store_true", help="接缝、一览页截整页")
     p.add_argument("--width", type=int, default=1600); p.add_argument("--height", type=int, default=900)
     p.add_argument("--browser"); p.add_argument("--wait-ms", type=int, default=20000)
     a = p.parse_args()
     try:
         result = capture(a.database, a.project_id, a.output, view=a.view, board=a.board, begin=a.begin, end=a.end, layers=a.layers,
-                         playhead=a.playhead, select=a.select, focus=a.focus, note=a.note, link=a.link, changes=a.changes, notes=a.notes, links=a.links,
+                         playhead=a.playhead, select=a.select, focus=a.focus, note=a.note, link=a.link, changes=a.changes, notes=a.notes, side=a.side, links=a.links,
                          full_page=a.full_page, width=a.width, height=a.height,
                          browser=a.browser, wait_ms=a.wait_ms)
     except (OSError, RuntimeError, ValueError, subprocess.TimeoutExpired) as error:

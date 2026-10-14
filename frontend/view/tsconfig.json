@@ -9,7 +9,9 @@
     "noEmit": true,
     "skipLibCheck": true,
     "isolatedModules": true,
-    "types": []
+    "types": [],
+    "allowJs": true,
+    "checkJs": true
   },
-  "include": ["src", "plugins"]
+  "include": ["src", "plugins", "example-plugin"]
 }

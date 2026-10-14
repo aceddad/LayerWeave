@@ -25,7 +25,7 @@ from layerweave.support.paths import PACKAGE_ROOT
 
 HERE = Path(__file__).resolve().parent
 NAME = re.compile(r"[a-z][a-z0-9_-]{0,39}")
-RESERVED = {"canvas", "assets"}        # 视图自己的页面
+RESERVED = {"canvas", "assets", "now", "changes", "notes", "walk"}   # 视图自己的页面和侧栏：插件的名字也用在 view=、side= 里
 # 视图自带的插件：编译好的 js 在视图包里（frontend/view/plugins 构建出来），清单里只记它开没开
 BUILTIN = {
     "cuts": {"path": HERE / "plugins" / "cuts" / "plugin.js", "about": "接缝：同一条轨道里前后相接的画面并排；键盘 [ ] 在接缝之间跳"},
@@ -103,7 +103,7 @@ def list_plugins(root=None):
             continue   # 内置插件的开关
         path = _resolve(str(row.get("path", "")), root)
         if not NAME.fullmatch(name) or name in RESERVED:
-            problem = f"名字 {name!r} 不合规矩：小写字母开头，字母、数字、- 和 _，不能叫 canvas、assets"
+            problem = f"名字 {name!r} 不合规矩：小写字母开头，字母、数字、- 和 _，不能和视图自己的页面、侧栏重名（{'、'.join(sorted(RESERVED))}）"
         elif name in seen:
             problem = f"和{'内置的' if name in BUILTIN else '前面的'} {name} 重名"
         else:
@@ -149,7 +149,7 @@ def add_plugin(target, *, name=None, root=None):
         path = path / "plugin.js"
     name = (name or _name_from(path)).strip()
     if not NAME.fullmatch(name) or name in RESERVED:
-        raise ValueError(f"名字 {name!r} 不合规矩：小写字母开头，字母、数字、- 和 _，最多 40 个字，不能叫 canvas、assets；用 --name 起一个")
+        raise ValueError(f"名字 {name!r} 不合规矩：小写字母开头，字母、数字、- 和 _，最多 40 个字，不能和视图自己的页面、侧栏重名（{'、'.join(sorted(RESERVED))}）；用 --name 起一个")
     if problem := _problem(path):
         raise ValueError(problem + ("（只写名字时，找的是默认文件夹 " + str(home(root) / "plugins") + " 下面的 <名字>/plugin.js）" if bare else ""))
     rows = _read(root)
@@ -195,11 +195,13 @@ def switch_plugin(name, on, *, root=None):
 
 def describe(result):
     lines = []
+    width = max([len(p["name"]) for p in result["plugins"]] + [8]) + 2
     for p in result["plugins"]:
         state = "有问题" if p["problem"] else ("开" if p["on"] else "关")
         where = "内置" if p["source"] == "builtin" else p["path"]
-        lines.append(f"{p['name']:<14}{state:<4}{where}" + (f"\n{'':<18}{p['problem']}" if p["problem"] else "")
-                     + (f"\n{'':<18}{p['about']}" if p["about"] else ""))
+        pad = " " * (width + 4)
+        lines.append(f"{p['name']:<{width}}{state:<4}{where}" + (f"\n{pad}{p['problem']}" if p["problem"] else "")
+                     + (f"\n{pad}{p['about']}" if p["about"] else ""))
     if result.get("problem"):
         lines.append("清单有问题：" + result["problem"])
     lines.append(f"清单：{result['file']}；只写名字的插件放在 {Path(result['folder']) / '<名字>' / 'plugin.js'}")

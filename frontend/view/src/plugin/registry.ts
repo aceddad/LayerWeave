@@ -6,6 +6,7 @@ import {kindOf} from '../model/kinds';
 import type {Model} from '../model/model';
 import {getState, setState} from '../store';
 import {toast} from '../sync';
+import {SIDES} from '../types';
 import type {Board, PluginList} from '../types';
 import {makeHost} from './host';
 import type {LoadedPlugin, PluginFactory, ViewPlugin} from './host';
@@ -45,15 +46,17 @@ async function sync() {
       loaded.set(row.name, {url: row.url!, plugin: {...plugin, name: row.name}, dispose: () => styles.forEach((el) => el.remove())});
     } catch (error) {
       styles.forEach((el) => el.remove());
-      errors[row.name] = (error as Error).message || String(error);
-      if (before[row.name] !== errors[row.name]) toast(`插件「${row.name}」没有载入上：${errors[row.name]}`, 6000);
+      errors[row.name] = '没有载入上：' + ((error as Error).message || String(error));
+      if (before[row.name] !== errors[row.name]) toast(`插件「${row.name}」${errors[row.name]}`, 6000);
     }
   }
   for (const row of wanted) if (!loaded.has(row.name) && !errors[row.name] && before[row.name]) errors[row.name] = before[row.name];
   const plugins = wanted.map((r) => loaded.get(r.name)?.plugin).filter((p): p is LoadedPlugin => !!p);
-  // 正在看的页面属于一个没载入（或刚关掉）的插件：回到画布
+  // 正在看的页面、侧栏属于一个没载入（或刚关掉）的插件：回到画布、「此刻」
   const s = getState(), known = ['canvas', 'assets', ...plugins.filter((p) => p.page).map((p) => p.name)];
-  setState({plugins, pluginList: list, pluginErrors: errors, view: known.includes(s.view) ? s.view : 'canvas'});
+  const sides = [...SIDES, ...plugins.filter((p) => p.side).map((p) => p.name)];
+  setState({plugins, pluginList: list, pluginErrors: errors, view: known.includes(s.view) ? s.view : 'canvas',
+            side: sides.includes(s.side) ? s.side : 'now'});
 }
 
 // 项目里有没有这个插件管的对象：没有就不显示它的标签

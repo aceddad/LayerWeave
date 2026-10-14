@@ -13,6 +13,7 @@ import {getState, setState, useStore, waitingOf} from './store';
 import {loadProjects, poll, report} from './sync';
 import {AssetsView} from './views/AssetsView';
 import {loadPlugins} from './plugin/registry';
+import {PluginBoundary} from './plugin/slots';
 
 export function App() {
   const {view, page, message, notice, name, hasData, waiting} = useStore(useShallow((s) => ({
@@ -53,7 +54,7 @@ export function App() {
       <Header />
       <div className="body">
         {view === 'canvas' && <div className="canvas-view"><ReactFlowProvider><Flow /></ReactFlowProvider><SidePanel /></div>}
-        {view !== 'canvas' && view !== 'assets' && page && createElement(page)}
+        {view !== 'canvas' && view !== 'assets' && page && <PluginBoundary key={view} name={view}>{createElement(page)}</PluginBoundary>}
         {view === 'assets' && <AssetsView />}
       </div>
       {message && <p className="message">{message}</p>}

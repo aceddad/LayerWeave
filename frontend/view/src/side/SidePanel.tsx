@@ -1,7 +1,10 @@
-// 右侧面板：此刻 / 改动 / 批注
+// 右侧面板：此刻 / 改动 / 批注 / 沿着读，后面是插件的侧栏（项目里没有它管的对象时不显示）
+import {createElement} from 'react';
 import {useShallow} from 'zustand/react/shallow';
 import {setSide} from '../actions';
-import {useStore, waitingOf} from '../store';
+import {pluginApplies} from '../plugin/registry';
+import {PluginBoundary} from '../plugin/slots';
+import {useModel, useStore, waitingOf} from '../store';
 import type {Side} from '../types';
 import {ChangesPanel} from './ChangesPanel';
 import {NotesPanel} from './NotesPanel';
@@ -16,7 +19,10 @@ const TABS: {side: Side; label: string; title: string}[] = [
 ];
 
 export function SidePanel() {
-  const {side, waiting, me} = useStore(useShallow((s) => ({side: s.side, me: s.me, waiting: waitingOf(s).length})));
+  const model = useModel();
+  const {side, waiting, me, plugins} = useStore(useShallow((s) => ({side: s.side, me: s.me, waiting: waitingOf(s).length, plugins: s.plugins})));
+  const mine = plugins.filter((p) => p.side && pluginApplies(p, model));
+  const current = mine.find((p) => p.name === side);
   return (
     <aside className="side">
       <nav className="side-tabs">
@@ -24,7 +30,10 @@ export function SidePanel() {
           {t.label}
           {t.side === 'notes' && waiting > 0 && <i className="badge" title={`有 ${waiting} 楼在等你（署名：${me}）回复`}>{waiting}</i>}
         </button>)}
+        {mine.map((p) => <button key={p.name} className={`plugin-tab${side === p.name ? ' on' : ''}`} title={p.title ?? `插件「${p.name}」`}
+                                 onClick={() => setSide(p.name)}>{p.label}</button>)}
       </nav>
+      {current && <PluginBoundary key={current.name} name={current.name}>{createElement(current.side!)}</PluginBoundary>}
       {side === 'now' && <NowPanel />}
       {side === 'changes' && <ChangesPanel />}
       {side === 'notes' && <NotesPanel />}

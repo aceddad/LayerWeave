@@ -8,15 +8,16 @@ import {selectObject, startWalk} from '../actions';
 import {Frame, Img, Thumb} from '../canvas/Media';
 import {markReady} from '../capture';
 import {kindOf, lastAt} from '../model/kinds';
-import type {Model} from '../model/model';
+import type {Model, ObjWithLayer} from '../model/model';
 import {keyOf, lanes, rootsOf} from '../model/model';
 import {fmt, fmtSpan, isSec} from '../model/units';
 import {CAPTURE, FULL, numParam} from '../params';
 import {useModel, useStore} from '../store';
 import {toast} from '../sync';
-import type {Board} from '../types';
+import type {Board, Layer, Obj} from '../types';
 
-export const PLUGIN_API = 1;   // 接口版本：插件可以按它判断宿主够不够新
+// 接口版本：插件可以按它判断宿主够不够新。1：页面、跳转点；2：加了侧栏、对象详情、画布格子
+export const PLUGIN_API = 2;
 
 export interface ViewSnapshot {
   model: Model | null; boards: Board[]; project: number | null; frames: boolean;
@@ -40,12 +41,30 @@ export interface PluginHost {
          lanes: typeof lanes; keyOf: typeof keyOf; rootsOf: typeof rootsOf};
 }
 
+// 画布格子里画东西：视图给一块 canvas（设备像素，按镜头停下时的缩放），排进和缩略图同一个重画队列（每帧最多画 8 毫秒）。
+// 只在格子大小变了、镜头停下换了缩放、对象变了时才再画；平移、拖动时不画。格子太小（只画色块的那一档）时不画
+export interface BlockBox {
+  width: number; height: number;   // canvas 的像素
+  unit: string;                    // 这个对象所在的根的单位（isSec(unit) 判断是不是秒）
+  layer: Layer;                    // 对象所在的层
+}
+export interface BlockPainter {
+  kinds?: string[];                // 按 kindOf 认：image、video、audio、text、file、other
+  types?: string[];                // 按对象的类型名认（o.type），工具包自己登记的新类型用这个
+  // 画进 ctx（已经清空）。要等图片之类的就返回 Promise，截图会等它画完
+  draw(ctx: CanvasRenderingContext2D, o: Obj, box: BlockBox): void | Promise<void>;
+}
+
+// 插件能放东西的位置（栏位）。每个位置都包在出错保护里：插件出错只在它自己那块写一句，不影响别的
 export interface ViewPlugin {
-  name?: string;                         // 不用写：名字由清单定（view_plugin add --name），也是地址里的 view=
-  label: string;                         // 顶栏标签上的字
+  name?: string;                         // 不用写：名字由清单定（view_plugin add --name），也是地址里的 view=、side=
+  label: string;                         // 顶栏标签、侧栏标签上的字
   title?: string;                        // 标签的说明
-  handles?: string[];                    // 管哪些种类的对象（kindOf：image、video、audio、text……）；项目里一个都没有时不显示标签
-  page?: React.ComponentType;            // 专用页面
+  handles?: string[];                    // 管哪些种类的对象（kindOf）：项目里一个都没有时不显示它的页面和侧栏；对象详情只给这些种类的对象
+  page?: React.ComponentType;            // 顶栏：专用页面
+  side?: React.ComponentType;            // 侧栏：一个标签（和「此刻」「批注」并排），点开是这个组件
+  objectDetail?: React.ComponentType<{object: ObjWithLayer; model: Model}>;   // 对象详情里的一段（侧栏「此刻」里选中的对象）；没话说就返回 null
+  block?: BlockPainter;                  // 画布上：某类对象的格子里画什么（换掉默认的缩略图、画面、波形）
   jumpPoints?: (model: Model, board: Board) => number[];   // 键盘 [ ] 在这些时刻之间跳（画板时间）
 }
 

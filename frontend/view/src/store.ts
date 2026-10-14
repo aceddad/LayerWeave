@@ -61,7 +61,7 @@ export const useStore = create<State>((set) => ({
   projects: [], project: null, data: null, boards: [], serial: null, version: null,
   frames: false, live: false, message: '', notice: null,
   view: viewParam || 'canvas',                            // 插件的页面要等插件加载完才知道有没有；没有就回画布（registry.ts）
-  side: params.has('walk') ? 'walk' : params.get('side') === 'notes' || params.has('note') ? 'notes' : params.has('changes') ? 'changes' : 'now',
+  side: params.has('walk') ? 'walk' : params.get('side') === 'notes' || params.has('note') ? 'notes' : params.has('changes') ? 'changes' : params.get('side') || 'now',   // 插件的侧栏：载入完才知道有没有，没有就回「此刻」
   walk: params.has('walk') ? {from: params.get('walk')!, direction: (params.get('walkdir') as WalkDirection) || 'both',
                                depth: Number(params.get('walkdepth') || 3)} : null,
   walkResult: null,

@@ -1,4 +1,5 @@
-// 对象卡片：此刻面板、选中对象的详情都用它
+// 对象卡片：此刻面板、选中对象的详情都用它；选中对象的详情里有插件给的段落（objectDetail）
+import {createElement} from 'react';
 import {frameUrl} from '../api';
 import {goToTarget, selectObject, startWalk} from '../actions';
 import {Img, Thumb} from '../canvas/Media';
@@ -9,14 +10,15 @@ import type {ObjWithLayer} from '../model/model';
 import {fmt, isSec} from '../model/units';
 import {CAPTURE} from '../params';
 import {useShallow} from 'zustand/react/shallow';
+import {PluginBoundary} from '../plugin/slots';
 import {activeBoard, setState, useModel, useNotes, useStore} from '../store';
 
 export function Card({o, full = false, local = null}: {o: ObjWithLayer; full?: boolean; local?: number | null}) {
   const model = useModel()!;
   const notes = useNotes();
-  const {project, frames, selected, playhead, onActive, offset} = useStore(useShallow((s) => {
+  const {project, frames, selected, playhead, onActive, offset, plugins} = useStore(useShallow((s) => {
     const act = activeBoard(s);
-    return {project: s.project!, frames: s.frames, selected: s.selected, playhead: s.playhead,
+    return {project: s.project!, frames: s.frames, selected: s.selected, playhead: s.playhead, plugins: s.plugins,
             onActive: !!act && act.rows.flat().includes(o.layer.root!), offset: model.offsetOf(s.boards, o.layer.root!)};
   }));
   const unit = model.unitOfRoot(o.layer.root);
@@ -61,6 +63,10 @@ export function Card({o, full = false, local = null}: {o: ObjWithLayer; full?: b
           </div>;
         })}
       </div>}
+      {full && plugins.filter((p) => p.objectDetail && (!p.handles?.length || p.handles.includes(k))).map((p) =>
+        <div key={p.name} className="plugin-detail" data-plugin={p.name}>
+          <PluginBoundary name={p.name}>{createElement(p.objectDetail!, {object: o, model})}</PluginBoundary>
+        </div>)}
       {full && <pre>{JSON.stringify(o.information, null, 1)}</pre>}
       {full && o.tips && <pre>备注：{o.tips}</pre>}
     </div>

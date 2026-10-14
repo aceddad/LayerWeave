@@ -1,4 +1,5 @@
 // "复制链接"：把现在看的位置写成视图地址的参数。截图工具 view_screenshot --link 读同样的参数，拍到同一个画面
+import {SIDES} from '../types';
 import type {Side, View} from '../types';
 
 export interface LinkState {
@@ -20,6 +21,7 @@ export function linkQuery(s: LinkState): string {
   if (s.layers?.size) q.set('layers', [...s.layers].sort((p, q2) => p - q2).join(','));
   if (s.side === 'notes') { if (s.note != null) q.set('note', String(s.note)); else q.set('side', 'notes'); }
   if (s.side === 'changes' && s.changes) q.set('changes', String(s.changes));
+  if (!SIDES.includes(s.side)) q.set('side', s.side);   // 插件的侧栏
   if (s.side === 'walk' && s.walk) {
     q.set('walk', s.walk.from);
     if (s.walk.direction !== 'both') q.set('walkdir', s.walk.direction);

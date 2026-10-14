@@ -1,9 +1,10 @@
 // 轨道上的一个对象：色块 + 缩略图 / 视频首尾帧 / 波形 / 文字，角上是改动、批注、跨项目关系的标记。
 // 缩得很小时只画色块：格子在屏幕上只有十几像素高时，几百张缩略图每一帧都要重画，平移画布只剩每秒 11 帧（藏掉图片是 33 帧，2026-10-14 量的）。
-// 截图时照旧全画，AI 截全图也看得到缩略图
+// 截图时照旧全画，AI 截全图也看得到缩略图。插件可以接手某一类对象的格子里画什么（ViewPlugin.block）
 import {Handle, Position} from '@xyflow/react';
 import {memo} from 'react';
 import {CAPTURE} from '../params';
+import {painterFor} from '../plugin/plan';
 import {handleKeysOf, hotOf, useStore} from '../store';
 import {kindOf, lastAt} from '../model/kinds';
 import type {Mark} from '../model/changes';
@@ -11,7 +12,7 @@ import type {Item} from '../model/model';
 import {LANE, PAD} from '../model/model';
 import type {Thread} from '../model/notes';
 import {fmt, isSec} from '../model/units';
-import {BlockFrame, BlockThumb} from './Media';
+import {BlockFrame, BlockThumb, PluginCanvas} from './Media';
 import {Waveform} from './Waveform';
 
 interface Props {
@@ -34,8 +35,12 @@ export const ObjectBlock = memo(function ObjectBlock({item, a, pps, unit, projec
     const h = (LANE - 4) * s.settledZoom;
     return h < 16 || w * s.settledZoom < 6 ? 0 : h < 60 ? 1 : 2;
   });
+  // 有插件认这一类对象（ViewPlugin.block）：格子里由插件画，换掉默认的缩略图、画面、波形。表按插件列表缓存，这里只查一下
+  const painter = useStore((s) => painterFor(s.plugins, o));
   let inner = null;
-  if (!missing && o.media?.url && (detail > 0 || k === 'audio')) {
+  if (painter) {
+    if (detail > 0) inner = <PluginCanvas key={painter.name} name={painter.name} painter={painter.painter} o={o} layer={item.layer} unit={unit} />;
+  } else if (!missing && o.media?.url && (detail > 0 || k === 'audio')) {
     if (k === 'image') inner = <BlockThumb project={project} o={o} width={detail === 1 ? 160 : 320} frames={frames} />;
     else if (k === 'video') inner = frames && w >= 150
       ? <span className="ends"><BlockFrame project={project} o={o} at={0.05} frames /><BlockFrame project={project} o={o} at={lastAt(o, isSec(unit))} frames /></span>

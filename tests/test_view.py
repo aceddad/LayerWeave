@@ -746,6 +746,21 @@ class ViewTests(unittest.TestCase):
         for part in ("view=cuts", f"board={self.board}", f"select={self.image.id}", "record=0"):   # 链接里的 record=1 不算数
             self.assertIn(part, linked["page"])
 
+    @unittest.skipIf(find_browser() is None, "本机没有 Chrome、Edge 或 Chromium")
+    def test_example_plugin_fills_side_detail_and_blocks(self):
+        # 仓库里的样板插件「字数」：链接进来，侧栏、对象详情、文字格子里都由它画；截图等它画完
+        from layerweave.tool.builtin.view.plugins import plugin
+        example = Path(__file__).resolve().parents[1] / "frontend" / "view" / "example-plugin"
+        self.assertEqual(plugin("add", str(example), root=self.state_root)["added"], "example-plugin")
+        with self.assertRaisesRegex(ValueError, "没有叫 nope 的侧栏"):
+            capture(self.database, self.project, Path(self.temp.name) / "x.png", side="nope", state_root=self.state_root)
+        with self.assertRaisesRegex(ValueError, "不合规矩"):
+            plugin("add", str(example), name="notes", root=self.state_root)                 # 视图自己侧栏的名字
+        shot = capture(self.database, self.project, Path(self.temp.name) / "shots" / "words.png", board=self.main_layer,
+                       select=self.text_at_0, side="example-plugin", width=1000, height=600, wait_ms=15000, state_root=self.state_root)
+        self.assertTrue(shot["ready"])
+        self.assertIn("side=example-plugin", shot["page"])
+
     def test_screenshot_link_keeps_only_view_parameters(self):
         link = f"http://127.0.0.1:8765/?project={self.project}&board=1&begin=8&end=14&select=16&note=42&record=1&capture=0&x=1"
         self.assertEqual(link_query(link, self.project), {"board": "1", "begin": "8", "end": "14", "select": "16", "note": "42"})

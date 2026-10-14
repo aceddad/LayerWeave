@@ -50,7 +50,7 @@ export function PluginManager({onClose}: {onClose: () => void}) {
   const status = (row: PluginRow): [string, string] => {
     if (row.problem) return ['bad', row.problem];
     if (!row.on) return ['off', '关着'];
-    if (errors[row.name]) return ['bad', '没有载入上：' + errors[row.name]];
+    if (errors[row.name]) return ['bad', errors[row.name]];
     const p = plugins.find((x) => x.name === row.name);
     if (!p) return ['wait', '正在载入'];
     if (!pluginApplies(p, model)) return ['idle', '这个项目里没有它管的对象，所以顶栏上不出现'];

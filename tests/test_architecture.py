@@ -118,6 +118,16 @@ except ValueError:
     pass
 else:
     raise AssertionError("class restoration must report missing config")
+from layerweave.support.api import register_tables, table_specs
+register_tables(c, {"layer_state": {"id_source":"provided", "fields":{"fold":"TEXT"},
+    "logical_references":[{"fields":["project_id","id"],"kind":"layer"}],
+    "exchange":{"on_copy":"skip"}}})
+with transaction(c) as write:
+    spare = write.create("layer", {"type":"text","config_ref":"layers/text.toml"}, project_id=p)
+    write.create("layer_state", {"id":spare["id"],"fold":"closed"}, project_id=p)
+    write.delete("layer", spare["id"], project_id=p)
+assert read_record(c,"layer_state",project_id=p,id=spare["id"])["fold"] == "closed"
+assert table_specs(c)["layer_state"]["exchange"] == {"on_copy":"skip"}
 assert not any(n == "layerweave.tool" or n.startswith("layerweave.tool.") for n in sys.modules)
 ''')
 
@@ -133,6 +143,23 @@ snapshot = export_project(c,made["data"]["project_id"],op="add")
 again = import_project(c,snapshot)
 assert again["ok"] and again["data"]["status"] == "completed", again
 assert again["data"]["project_id"] != made["data"]["project_id"]
+from layerweave.support.api import register_tables
+register_tables(c, {
+    "layer_state":{"id_source":"provided","fields":{"fold":"TEXT"},
+        "logical_references":[{"fields":["project_id","id"],"kind":"layer"}]},
+    "read_state":{"id_source":"provided","fields":{"reads":"TEXT"},
+        "logical_references":[{"fields":["project_id","id"],"kind":"object"}],"exchange":{"on_copy":"skip"}},
+})
+with transaction(c) as write:
+    write.create("layer_state",{"id":layer.id,"fold":"closed"},project_id=p)
+    write.create("read_state",{"id":obj.id,"reads":"{}"},project_id=p)
+q = again["data"]["project_id"]
+copied = import_project(c,export_project(c,p,op="add"),project_id=q)
+assert copied["ok"] and copied["checks"]["status"] == "not_run", copied
+assert copied["data"]["counts"]["skipped"] == 1 and copied["data"]["issues"][0]["code"] == "copy_policy"
+mapped = next(m["target"]["id"] for m in copied["data"]["id_map"] if m["source"]["kind"] == "layer")
+assert mapped != layer.id and read_record(c,"layer_state",project_id=q)[0]["id"] == mapped
+assert read_record(c,"read_state",project_id=q) == []
 ''',
             "usage/records": '''
 from layerweave.tool.builtin.usage.records.dispatch import dispatch

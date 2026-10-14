@@ -38,6 +38,8 @@ review_note 是调用接口时的 kind。默认建立 tool_review_note 表；如
 | scoped | 默认 true，记录使用 (project_id, id)，并引用实际存在的项目 |
 | id_source | auto（默认）或 provided；provided 创建时由 data.id 提供正整数 |
 | references | 显式外键：fields 按目标主键顺序列出本表列，kind 指定目标种类 |
+| logical_references | 默认 []；与 references 同样的写法，只声明引用含义，不建立外键 |
+| exchange | 可选的交换元信息；on_copy 为 include（默认）或 skip，详见下文 |
 | table | 可选的物理表名，默认 tool_ 加上 kind |
 
 kind、表名、字段名使用字母开头的字母、数字和下划线。id/project_id 身份列由支撑建立，不放进 fields；内置表和种类保持原定义。普通列沿用 SQLite 的存储类型行为，业务内容的检查由工具决定。
@@ -72,11 +74,55 @@ result = run_operation(connection, work)
 
 基础支撑默认不运行内容检查；原有检测包不会凭表声明自动生成语义规则。工具可按自己的需要提供 checker。结构检查与内容检查的分工继续见[API](../../src/layerweave/support/API.md#提交后的可选检查)。
 
+## 逻辑引用与复制策略
+
+有些记录只是附着状态：例如一行折叠状态与一个层共用编号，但删层时允许状态暂留，撤销删层后还能重新使用它。这时用 logical_references，不要为了让交换工具识别编号而添加硬外键。
+
+以下两张示例表分别复用层、对象的身份：
+
+~~~python
+register_tables(connection, {
+    "layer_state": {
+        "id_source": "provided",
+        "fields": {"fold": {"type": "TEXT", "default": ""}},
+        "logical_references": [{"fields": ["project_id", "id"], "kind": "layer"}],
+    },
+    "read_state": {
+        "id_source": "provided",
+        "fields": {"reads": {"type": "JSON", "default": {}}},
+        "logical_references": [{"fields": ["project_id", "id"], "kind": "object"}],
+        "exchange": {"on_copy": "skip"},
+    },
+})
+~~~
+
+声明层、对象以外的工具 kind 也一样。引用源列须为 INTEGER，数量和顺序对应目标主键；目标 kind 须已登记或在同批声明中。普通业务列同样可以声明，例如 ["project_id", "object_id"]；不要求一定复用 id。exchange 的 refs 用最后一列作为引用名，同一名称不能有互相矛盾的引用声明。
+
+| 行为 | references | logical_references |
+|---|---|---|
+| 建立 SQL 外键，保证目标存在 | 是 | 否 |
+| 参与删除和恢复的引用限制 | 是 | 否 |
+| 交换时发现相关记录、转换已声明编号 | 是 | 是 |
+
+逻辑引用允许目标暂时不存在，不自动清理残留状态，也不触发级联操作。scoped 表原有的 project 外键仍在；删除整个项目时，调用方仍需处理其工具记录。
+
+交换工具复制时，层编号由 8 变为 21，引用该层的 layer_state.id 也变为 21。找不到来源目标的映射时，沿用交换的外部引用规则，默认跳过并报告；不会仅因目标库恰好有一个 8 就绑定过去。
+
+on_copy=skip 表示这张表的已有记录不随交换复制，适合已读进度、临时选择等状态；include 表示参与正常复制，并不保证引用不成立时也强行写入。skip 不限制普通 CRUD、update/delete 或全新数据创建。交换以“op=add 且节点带正整数旧 id”识别复制；全新 provided 记录的目标编号放在 data.id，或通过 refs 取得，节点不填旧 id。
+
+导出仍保留这些状态记录和表声明，便于原项目更新；导入复制时逐条报告 copy_policy、effect=skipped。工具不解析 JSON/TEXT 内容中的隐含编号。若 reads 内保存了旧对象编号，选择整行不复制可以让新项目重新开始记录已读状态；仅重映射主键不会转换这些内容。文件示例与反馈字段见[交换格式](../../src/layerweave/tool/builtin/usage/exchange/FORMAT.md#工具表)。
+
+目前逻辑引用的收集、重映射和 on_copy 由交换包消费；普通 copy_subtree 等其他工具的范围没有因此扩大。需要其他复制方式时，在对应工具中显式接入这些声明。
+
 ## 历史、撤销与升级
 
-安装 history 包后，read_history 支持工具 kind；安装 undo 包后，undo_operation 会将一个操作中的核心记录和工具记录一起恢复。更新仍按原操作改变的顶层字段比较冲突，JSON 列作为整体；创建、删除按整条记录比较。声明的引用参与恢复判断，后来的工具记录引用了某个目标时，会阻止把目标独自撤销掉。
+安装 history 包后，read_history 支持工具 kind；安装 undo 包后，undo_operation 会将一个操作中的核心记录和工具记录一起恢复。更新仍按原操作改变的顶层字段比较冲突，JSON 列作为整体；创建、删除按整条记录比较。声明的硬引用参与恢复判断，后来的工具记录通过硬引用依赖某个目标时，会阻止把目标独自撤销掉；逻辑引用不产生这种限制。
 
-register_tables 在独立的统一写会话内原子执行。重复相同声明可直接调用；升级时传入完整声明，并在 fields 中追加新列。新增非空列提供默认值，以保留现有行。已有列、表名、身份形式、id_source 和引用保持不变；删列、改类型、改引用及接管已有未登记表，需要另行明确迁移方案。
+register_tables 在独立的统一写会话内原子执行。重复相同声明可直接调用；升级时传入完整声明，并在 fields 中追加新列。新增非空列提供默认值，以保留现有行。已有列、表名、身份形式、id_source 和硬引用保持不变；删列、改类型、改硬引用及接管已有未登记表，需要另行明确迁移方案。
+
+logical_references 和 exchange 可以对已有表补充或修改，只更新 _layerweave_tables 内的声明，不重建业务表。旧库缺少这两项时，读取默认是 [] 和 on_copy=include；省略它们的旧 register_tables 调用会保留已经登记的值。确需清除时，在完整声明里显式传 logical_references=[] 或 exchange={"on_copy":"include"}。
+
+修改 Python 声明后，工具应在初始化或显式升级阶段对旧库再次调用 register_tables，完成后再导出。仅修改源代码不会改变库内声明；只读查询也不会替工具升级。交换导入准备表时可补入新逻辑引用，但会保留目标已有引用，任一方声明 skip 就保留 skip；解除元信息应由开发者明确登记，不能靠一份旧导出文件覆盖。
 
 声明维护不写成普通 changes 日志，也不由内容撤销回退。旧日志保留原始快照；恢复时为后来新增的列补上声明默认值，并继续遵守原有冲突判断。注册失败时，新建表、新增列和声明一起回滚。
 
@@ -84,7 +130,7 @@ register_tables 在独立的统一写会话内原子执行。重复相同声明�
 
 工具表获得记录级读写、真实变更日志、事务和按操作恢复能力。层树查询、子树复制/搬移、实例 load/save 和 bind 的层/对象语义继续保持原有范围；工具表的内容不会自动变成层或对象。
 
-若工具表的数据应随某层复制、剪切或生成关联，由对应工具显式组合现有原语，使用同一写会话完成。支撑不根据列名猜测业务归属。文件、KEY 配置与缓存仍可由工具单独管理，按需选择要纳入业务库的数据。
+若工具表的数据应随某层交换复制，声明硬引用或逻辑引用；其他剪切、复制或生成关联的业务，由对应工具显式组合现有原语，使用同一写会话完成。支撑不根据列名猜测业务归属。文件、KEY 配置与缓存仍可由工具单独管理，按需选择要纳入业务库的数据。
 
 完整的临时数据库示例：
 
@@ -93,5 +139,7 @@ python -X utf8 -B examples/tool_tables.py
 ```
 
 该[示例](../../examples/tool_tables.py)实际执行混合修改、历史查询、撤销、重做和关闭重开；不写用户项目数据库。
+
+[逻辑引用示例](../../examples/logical_references.py)演示编号错开后状态跟随新层、已读记录不复制，以及整批撤销。运行 python -X utf8 -B examples/logical_references.py。
 
 实际工具接入可参考[版本登记工具](../../src/layerweave/tool/builtin/developer/versions/README.md)：它声明独立的 component_version 表，通过公共 register_tables、run_operation 和 read_record 完成管理，不修改 core/support，也不依赖历史或撤销包才能运行。

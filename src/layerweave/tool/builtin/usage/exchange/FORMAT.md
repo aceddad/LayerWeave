@@ -93,7 +93,7 @@
 - {"kind":"object","project_id":1,"id":8}：来源完整身份，优先查本文件映射。
 - 在完整身份上加 external=true：明确直接使用该目标库身份，不做来源映射。
 
-层的引用名为 father，对象为 layer，bind 为 source/target；工具表使用 references 中最后一列的名称，例如 object_id，或使用 id 表示“本表身份引用某个层”。转换仅发生在这些声明位置，不扫描 information 内部数字。
+层的引用名为 father，对象为 layer，bind 为 source/target；工具表使用 references 或 logical_references 中最后一列的名称，例如 object_id，或使用 id 表示“本表身份引用某个层”。转换仅发生在这些声明位置，不扫描 information、其他 JSON 或 TEXT 内容中的数字。
 
 导出文件的普通数字引用会自动按来源身份映射，无需手工改写为 refs。add 若引用文件外目标，默认跳过依赖项并报告；external_refs=preserve 明确保留原完整引用。也可传 reference_map：
 
@@ -112,11 +112,32 @@
 
 ## 工具表
 
-tables 沿用 register_tables 的声明：table、fields、scoped、id_source、references。导入先独立准备这些表；已有列、身份及引用不能被文件改写，目标表后来增加的其他列保留。业务失败或撤销不会删除已准备的空表，schema 字段明确报告这个阶段。
+tables 沿用 register_tables 的声明：table、fields、scoped、id_source、references、logical_references、exchange。导入先独立准备这些表；已有列、身份及硬引用不能被文件改写，目标表后来增加的其他列保留。业务失败或撤销不会删除已准备的空表或回退声明，schema 字段明确报告这个阶段。
+
+logical_references 默认 []，沿用 references 的 fields/kind 写法；两者都参与范围收集与编号转换，但只有 references 建立数据库外键。声明和旧库升级的完整规则见[工具表开发指导](../../../../../../docs/build-with-layerweave/03-managed-tables.md#逻辑引用与复制策略)。例如，附着某层且与层共用编号的状态：
+
+~~~json
+{
+  "id_source": "provided",
+  "fields": {"fold": {"type": "TEXT", "default": ""}},
+  "logical_references": [{"fields": ["project_id", "id"], "kind": "layer"}],
+  "exchange": {"on_copy": "include"}
+}
+~~~
+
+把它放在 tables 下对应 kind 的声明中。与目标无外键不代表复制时可以猜目标：声明的引用找不到映射，仍按外部引用或依赖跳过规则报告。
+
+exchange.on_copy 可为 include（默认）或 skip。skip 只跳过“op=add 且节点 id 是正整数”的来源记录复制；同项目复制、跨项目及跨库复制行为一致。普通 CRUD、update、delete、无 op 的上下文不受此项限制。全新 add 不填节点 id；provided 表所需目标编号放 data.id，或使用 refs.id 取得。不要把全新记录的目标编号当作节点旧 id。
+
+导出始终保留所选状态记录和复制策略，便于原项目更新或把 update 改成 add；导入时才执行 skip。每条按策略跳过的记录计入 counts.skipped，产生 issues.code=copy_policy、effect=skipped、pointer 定位，data.status=partial；其依赖项也不会回退使用目标库同号旧记录。确需给新记录初始化状态时，另写不带旧 id 的 add 节点。
+
+准备已有表时，逻辑引用合并并去重；同一引用名含义冲突则报错。来源或目标任一方声明 skip，就保留 skip。旧文件缺少这些元信息或只带默认值，不会清除目标库已经登记的规则。要清除或更改已有规则，通过 register_tables 显式登记完整声明；不要借导入文件解除目标元信息。
 
 scoped 工具表在当前项目内处理；独立表按本表 ID 定位。完整项目导出包含本项目全部 scoped 工具记录，以及明确引用该项目的全局工具记录；局部导出根据声明引用收集相关工具记录，并补足这些记录明确引用的工具数据。用于 update/delete 的时间范围中，上下文层不作为收集其关联及工具状态的起点。删除导出中，仅为补足引用而带入的共享工具资料没有 op，不随从属记录删除；显式 include_global 选中的记录仍使用所选 op。未被选中的全局记录用 omitted_tool_records 计数；include_global=True 才额外带入所有全局工具记录。
 
 auto 表创建时由目标发号；provided 表若 id 声明为其他记录的引用，跟随引用映射，否则使用节点 id 或明确的 data.id。冲突会报错，不自动覆盖或随机重编号。需要特殊 ID/簇规则时，先在目标登记相应规则和词条；source_numbering 是来源说明，不自动加载代码或更换已有簇。
+
+on_copy 不改变其他复制工具的行为，也不意味着支撑会自动清理状态。对旧库补充声明后再导出；否则文件无法表达原本没有登记的关系。嵌在 JSON/TEXT 中的编号不自动改写，可以由外部工具转换，或对这类临时状态声明 on_copy=skip。
 
 ## 原状态摘要与反馈
 

@@ -45,6 +45,8 @@ def table_specs(connection=None):
             f"SELECT kind, definition FROM {quote(CATALOG)} ORDER BY kind"))
     for spec in result.values():
         spec.setdefault("id_source", "auto")
+        spec.setdefault("logical_references", [])
+        spec.setdefault("exchange", {"on_copy": "include"})
     return result
 
 
@@ -91,12 +93,35 @@ def _column(raw):
     return column
 
 
+def normalize_exchange_options(raw):
+    """仅规范化交换元信息；不控制 CRUD、删除或恢复。"""
+    if not isinstance(raw, dict) or set(raw) - {"on_copy"}:
+        raise InputError("exchange 只支持 on_copy", code="table_definition", field="exchange")
+    policy = raw.get("on_copy", "include")
+    if policy not in ("include", "skip"):
+        raise InputError("exchange.on_copy 使用 include 或 skip", code="table_definition", field="exchange.on_copy")
+    return {"on_copy": policy}
+
+
+def _reference_list(raw, field):
+    if not isinstance(raw, (list, tuple)):
+        raise InputError(f"{field} 需要引用声明列表", code="table_definition", field=field)
+    result = []
+    for ref in raw:
+        if not isinstance(ref, dict) or set(ref) != {"fields", "kind"} or not isinstance(ref["fields"], (list, tuple)):
+            raise InputError("引用声明需要 fields 列表和目标 kind", code="table_definition", field=field)
+        candidate = {"fields": list(ref["fields"]), "kind": ref["kind"]}
+        if candidate not in result:
+            result.append(candidate)
+    return result
+
+
 def _definition(kind, definition):
     _identifier(kind)
     if kind.lower() in SPECS:
         raise InputError("工具声明不能覆盖内置种类", code="table_definition", field="kind")
-    if set(definition) - {"table", "fields", "scoped", "references", "id_source"}:
-        raise InputError("表声明支持 table、fields、scoped、references、id_source", code="table_definition")
+    if set(definition) - {"table", "fields", "scoped", "references", "id_source", "logical_references", "exchange"}:
+        raise InputError("表声明支持 table、fields、scoped、references、id_source、logical_references、exchange", code="table_definition")
     table = _identifier(definition.get("table", "tool_" + kind))
     scoped = definition.get("scoped", True)
     if type(scoped) is not bool:
@@ -111,15 +136,14 @@ def _definition(kind, definition):
             raise InputError("id/project_id 由支撑管理；字段名不能仅大小写不同", code="table_definition", field=field)
         columns[field] = _column(declaration)
     refs = [{"fields": ["project_id"], "kind": "project"}] if scoped else []
-    for ref in definition.get("references", []):
-        if set(ref) != {"fields", "kind"} or not isinstance(ref["fields"], (list, tuple)):
-            raise InputError("引用声明需要 fields 列表和目标 kind", code="table_definition", field="references")
-        candidate = {"fields": list(ref["fields"]), "kind": ref["kind"]}
-        if candidate not in refs:
-            refs.append(candidate)
+    for ref in _reference_list(definition.get("references", []), "references"):
+        if ref not in refs:
+            refs.append(ref)
     return {"table": table, "fields": list(columns), "columns": columns, "extra": [],
             "json": [name for name, column in columns.items() if column["type"] == "JSON"],
-            "scoped": scoped, "id_source": id_source, "order": '"id"', "references": refs}
+            "scoped": scoped, "id_source": id_source, "order": '"id"', "references": refs,
+            "logical_references": _reference_list(definition.get("logical_references", []), "logical_references"),
+            "exchange": normalize_exchange_options(definition.get("exchange", {}))}
 
 
 def _column_sql(name, column):
@@ -149,29 +173,43 @@ def _create_sql(spec, specs):
 
 
 def register_tables(connection, definitions):
-    """原子创建一组工具表，或为已登记表新增列；声明持久化，不记为业务内容操作。"""
+    """原子建表/追加列及更新逻辑引用、交换元信息；声明不进入业务撤销。"""
     from layerweave.support.transaction import transaction
 
     proposed = {kind: _definition(kind, raw) for kind, raw in definitions.items()}
     with transaction(connection):
         existing = table_specs(connection)
+        for kind, spec in proposed.items():
+            if kind in existing:
+                # 旧调用方和旧声明文件省略新字段时，不抹掉已登记的关系信息。
+                for field in ("logical_references", "exchange"):
+                    if field not in definitions[kind]:
+                        spec[field] = deepcopy(existing[kind][field])
         specs = {**existing, **proposed}
         names = [spec["table"].lower() for spec in specs.values()]
         if len(set(names)) != len(names) or CATALOG.lower() in names or any(name.startswith("sqlite_") for name in names):
             raise InputError("表名重复或使用了保留名称", code="table_definition", field="table")
         for kind, spec in proposed.items():
-            for ref in spec["references"]:
-                target = specs.get(ref["kind"])
-                available = {name for name, col in spec["columns"].items() if col["type"] == "INTEGER"} | {"id"}
-                if spec["scoped"]:
-                    available.add("project_id")
-                if target is None or ref["kind"] == "change" or len(ref["fields"]) != (2 if target["scoped"] else 1) or any(name not in available for name in ref["fields"]):
-                    raise InputError(f"{kind} 的引用需要对应目标身份的整数列", code="table_definition", field="references")
+            available = {name for name, col in spec["columns"].items() if col["type"] == "INTEGER"} | {"id"}
+            if spec["scoped"]:
+                available.add("project_id")
+            for category in ("references", "logical_references"):
+                for ref in spec[category]:
+                    target = specs.get(ref["kind"]) if isinstance(ref["kind"], str) else None
+                    if target is None or ref["kind"] == "change" or len(ref["fields"]) != (2 if target["scoped"] else 1) or any(not isinstance(name, str) or name not in available for name in ref["fields"]):
+                        raise InputError(f"{kind} 的引用需要对应目标身份的整数列", code="table_definition", field=category)
+            # exchange 按最后一列命名引用；同一列不能被新的逻辑声明解释成两个目标。
+            known = {ref["fields"][-1]: ref for ref in spec["references"]}
+            for ref in spec["logical_references"]:
+                name = ref["fields"][-1]
+                if name in known and known[name] != ref:
+                    raise InputError(f"{kind}.{name} 已有不同的引用含义", code="table_definition", field="logical_references")
+                known[name] = ref
             old = existing.get(kind)
             if old is not None:
                 if any(not same_value(spec[name], old[name]) for name in ("table", "scoped", "references", "id_source")) or any(
                     name not in spec["columns"] or not same_value(col, spec["columns"][name]) for name, col in old["columns"].items()):
-                    raise InputError(f"{kind} 已登记；允许新增列，已有列、身份和引用保持不变", code="table_definition_changed")
+                    raise InputError(f"{kind} 已登记；允许新增列或调整逻辑引用/交换策略，已有列、身份和硬引用保持不变", code="table_definition_changed")
             elif _exists(connection, spec["table"]):
                 raise InputError(f"{spec['table']} 已存在但未登记；请明确迁移到新的托管表", code="table_exists")
         if proposed:

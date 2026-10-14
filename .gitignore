@@ -10,6 +10,7 @@ scratch/
 output/*
 !output/2026-10-10-gap-help-undo-report.md
 !output/2026-10-12-interface-migration.md
+!output/2026-10-15-logical-references-handoff.md
 *.sqlite3
 *.sqlite3-*
 .env

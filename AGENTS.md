@@ -8,7 +8,7 @@
 - 修改代码或增加封装：先读[开发指南](docs/developer-conventions.md)，再读对应配置、API 和实现专题。
 - 一批操作共同提交：读[事务内组合](docs/build-with-layerweave/04-composing-tools.md)，使用 *_in_session(write, ...)；独立工具入口不嵌套，检测由最外层配置。
 - 持续刷新视图或缓存：读[增量接入](docs/build-with-layerweave/05-incremental-reading.md)，初始数据与日志游标共用读取快照；业务日志从 support.api.read_changes 连续读取。
-- 接入工具自己的表：读[工具表开发指导](docs/build-with-layerweave/03-managed-tables.md)，字段、身份、引用和恢复的范围以此为准。
+- 接入工具自己的表：读[工具表开发指导](docs/build-with-layerweave/03-managed-tables.md)，字段、身份、引用和恢复的范围以此为准；随交换复制的附着状态用 logical_references 与 exchange.on_copy 声明。
 - 分辨路径或调度名称：读[入口与标识](docs/developer-conventions.md#入口路径与调度标识)，区分配置、技能、命令、发号词条和组件名称。
 - 维护组件版本与更新说明：读[版本登记](src/layerweave/tool/builtin/developer/versions/README.md)，更新组件自己的 component.toml；sync 自动登记并核对，read 只看上次记录。
 - 开放工具自己的 ID 或扩展发号：读[编号模块](src/layerweave/support/numbering/README.md)，规则使用当前写会话；发号不创建业务行，簇成员集中登记。

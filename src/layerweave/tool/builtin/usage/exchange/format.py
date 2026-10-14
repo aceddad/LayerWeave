@@ -36,7 +36,18 @@ def fingerprint(connection, kind, row, spec):
 
 def table_definition(spec):
     return {"table": spec["table"], "fields": deepcopy(spec["columns"]), "scoped": spec["scoped"],
-            "references": deepcopy(spec["references"]), "id_source": spec["id_source"]}
+            "references": deepcopy(spec["references"]), "id_source": spec["id_source"],
+            "logical_references": deepcopy(spec.get("logical_references", [])),
+            "exchange": deepcopy(spec.get("exchange", {"on_copy": "include"}))}
+
+
+def relation_definitions(spec):
+    """交换同时理解硬/逻辑引用；数据库约束与恢复依赖仍仅使用硬引用。"""
+    result = list(spec["references"])
+    for ref in spec.get("logical_references", []):
+        if ref not in result:
+            result.append(ref)
+    return result
 
 
 def identity(kind, project_id, id, specs):
@@ -53,7 +64,7 @@ def references(kind, row, specs):
         return [(side, (row.get(side + "_kind"), row.get(side + "_project_id"), row.get(side + "_id")),
                  (side + "_project_id", side + "_id")) for side in ("source", "target")]
     result = []
-    for ref in specs[kind]["references"]:
+    for ref in relation_definitions(specs[kind]):
         values = [row.get(field) for field in ref["fields"]]
         if any(value is None for value in values):
             continue

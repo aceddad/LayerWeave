@@ -25,4 +25,4 @@ namespaces = false
 "layerweave.support.numbering" = ["README.md"]
 "layerweave.tool.builtin.developer.keys" = ["example.json", "README.md"]
 "layerweave.tool.builtin.developer.versions" = ["README.md"]
-"layerweave.tool.builtin.view" = ["web/*", "web/assets/*", "README.md"]
+"layerweave.tool.builtin.view" = ["web/*", "web/assets/*", "plugins/*/*.js", "README.md"]

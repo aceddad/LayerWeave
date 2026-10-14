@@ -19,6 +19,7 @@ from .data import extract_frame, find_ffmpeg, list_projects, media_path, open_re
 from .layout import layout_serial, load_layout, reconcile, save_layout
 from .fold import set_folds
 from .at import read_spans
+from .plugins import find_plugins
 from .walk import walk_from
 from .note import add_note, remove_note, retarget_note, set_read, update_note
 from .state import read_state, write_state
@@ -32,8 +33,9 @@ mimetypes.add_type("video/mp4", ".mp4")
 class ViewHandler(SimpleHTTPRequestHandler):
     """静态网页 + 只读 JSON 接口 + 引用的文件（支持 Range，视频可以拖动）。"""
 
-    def __init__(self, *args, database, version, state_root, record_state, **kwargs):
+    def __init__(self, *args, database, version, state_root, record_state, plugins=(), **kwargs):
         self.database, self.version, self.state_root, self.record_state = database, version, state_root, record_state
+        self.plugins = plugins
         super().__init__(*args, directory=str(WEB_ROOT), **kwargs)
 
     def log_message(self, *args):
@@ -94,6 +96,12 @@ class ViewHandler(SimpleHTTPRequestHandler):
                                        "serial": layout_serial(self.database, self.state_root)})
             if url.path == "/api/state":
                 return self.send_json(read_state(self.database, self.state_root))
+            if url.path == "/api/plugins":
+                # 视图插件（plugins.py）：页面按这个列表一个个 import()
+                return self.send_json([{"name": p["name"], "url": f"/plugins/{p['name']}.js", "component": p["component"]} for p in self.plugins])
+            if match := re.fullmatch(r"/plugins/([a-z][a-z0-9_-]*)\.js", url.path):
+                found = next((p for p in self.plugins if p["name"] == match[1]), None)
+                return self.send_file(found["path"]) if found else self.send_json({"error": "没有这个插件"}, HTTPStatus.NOT_FOUND)
             if url.path == "/api/capabilities":
                 return self.send_json({"frames": find_ffmpeg() is not None})
             if match := re.fullmatch(r"/frame/(\d+)/(\d+)", url.path):
@@ -280,7 +288,8 @@ def make_server(database, *, port=0, state_root=None, record_state=True):
         with lock:
             return watcher.execute("PRAGMA data_version").fetchone()[0]
 
-    handler = partial(ViewHandler, database=database, version=version, state_root=state_root, record_state=record_state)
+    plugins = find_plugins()["plugins"]   # 启动时找一次；装了新插件要重启视图服务
+    handler = partial(ViewHandler, database=database, version=version, state_root=state_root, record_state=record_state, plugins=plugins)
     server = ViewServer(("127.0.0.1", port), handler)
     server.watcher = watcher
     return server, f"http://127.0.0.1:{server.server_address[1]}/"

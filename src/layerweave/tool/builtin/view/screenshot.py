@@ -4,7 +4,7 @@ AI 看到的就是用户在视图里看到的：画板的排版用用户那份�
 页面把图片、视频封面、波形都加载完才举手，截图工具通过浏览器调试接口等到它再拍，不会拍到还没出图的空色块。
 
 python -m layerweave.tool.builtin.view.screenshot DATABASE PROJECT_ID 输出.png
-       [--view canvas|cuts|assets] [--board 根层编号] [--begin 起点 --end 终点] [--layers 1 字幕 画面/原画] [--playhead 位置] [--select 对象编号]
+       [--view canvas|assets|插件页面，如 cuts] [--board 根层编号] [--begin 起点 --end 终点] [--layers 1 字幕 画面/原画] [--playhead 位置] [--select 对象编号]
        [--focus 对象编号] [--note 批注编号] [--link 用户复制的链接] [--changes 最近几次操作] [--notes] [--links] [--full-page]
        [--width 1600 --height 900] [--browser 浏览器路径] [--wait-ms 20000]
 """
@@ -29,6 +29,7 @@ from layerweave.support.api import read_record
 
 from .data import open_readonly, order_layers
 from .fold import read_folds
+from .plugins import find_plugins
 from .server import make_server
 
 CANDIDATES = [
@@ -207,18 +208,21 @@ def capture(database, project_id, output, *, view=None, board=None, begin=None, 
             width=1600, height=900, browser=None, wait_ms=20000, state_root=None):
     query = link_query(link, project_id) if link else {}   # 先检查参数，再找浏览器、起服务
     layer_ids = resolve_layers(database, project_id, layers) if layers else None
+    view = view or query.get("view") or "canvas"
+    pages = [p["name"] for p in find_plugins()["plugins"]]
+    if view not in ("canvas", "assets", *pages):
+        raise ValueError(f"没有叫 {view} 的页面：canvas、assets，或者插件的页面（{'、'.join(pages) or '现在没有装插件'}）")
     browser = find_browser(browser)
     if browser is None:
         raise FileNotFoundError("找不到 Chrome、Edge 或 Chromium：用 --browser 或环境变量 LAYERWEAVE_BROWSER 指定浏览器路径")
     output = Path(output).resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
-    view = view or query.get("view") or "canvas"
-    query.update({"project": project_id, "view": view if view in ("assets", "cuts") else "canvas", "record": 0, "capture": 1})
+    query.update({"project": project_id, "view": view, "record": 0, "capture": 1})
     if links:
         query["links"] = 1
     if notes:
         query["side"] = "notes"
-    if full_page and view in ("assets", "cuts"):
+    if full_page and view != "canvas":
         query["full"] = 1
     for key, value in (("board", board), ("begin", begin), ("end", end), ("playhead", playhead), ("select", select),
                        ("focus", focus), ("note", note), ("changes", changes)):
@@ -294,7 +298,7 @@ COMMANDS = [{
     "context": ["database", "project_id"],
     "parameters": {
         "output": {"type": "string", "required": True, "description": "由 AI 指定的 PNG 输出路径"},
-        "view": {"type": "string", "description": "canvas（画布）、cuts（接缝：前后相接的画面并排）或 assets（一览：按种类列出所有对象）；省略时是画布，给了 link 时按链接"},
+        "view": {"type": "string", "description": "canvas（画布）、assets（一览：按种类列出所有对象），或插件的页面，比如 cuts（接缝插件：前后相接的画面并排）；省略时是画布，给了 link 时按链接"},
         "board": {"type": "integer", "description": "只拍这个根层所在的画板；省略时拍整张画布"},
         "begin": {"type": "number", "description": "画板显示的起点，用这块画板的单位；和 end 一起用"},
         "end": {"type": "number", "description": "画板显示的终点"},
@@ -332,7 +336,7 @@ def main():
     p = argparse.ArgumentParser(description="视图截图（给 AI 看）", formatter_class=argparse.RawDescriptionHelpFormatter,
                                 epilog=help_examples(COMMANDS))
     p.add_argument("database", type=Path); p.add_argument("project_id", type=int); p.add_argument("output", type=Path)
-    p.add_argument("--view", choices=("canvas", "cuts", "assets"), help="省略时是画布，给了 --link 时按链接")
+    p.add_argument("--view", help="canvas（画布）、assets（一览）或插件的页面（比如 cuts 接缝）；省略时是画布，给了 --link 时按链接")
     p.add_argument("--board", type=int, help="只拍这个根层所在的画板")
     p.add_argument("--begin", type=float); p.add_argument("--end", type=float)
     p.add_argument("--layers", nargs="+", help="编号、层名或 上级/名字"); p.add_argument("--playhead", type=float); p.add_argument("--select", type=int)

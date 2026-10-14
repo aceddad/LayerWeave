@@ -367,6 +367,35 @@ class ViewTests(unittest.TestCase):
         with closing(open_readonly(self.database)) as c:
             self.assertEqual(project_view(c, self.database, self.project)["noteReads"][str(top)]["用户"], later)
 
+    def test_plugins_are_declared_found_and_served(self):
+        from layerweave.tool.builtin.view.plugins import find_plugins
+        found = find_plugins()
+        self.assertEqual([p["name"] for p in found["plugins"]], ["cuts"])                   # 接缝是视图包自己登记的插件
+        self.assertEqual(found["issues"], [])
+        self.assertEqual(self.json("/api/plugins"), [{"name": "cuts", "url": "/plugins/cuts.js", "component": "layerweave.view"}])
+        status, headers, body = self.get("/plugins/cuts.js")
+        self.assertEqual((status, headers["Content-Type"].split(";")[0]), (200, "text/javascript"))
+        self.assertIn(b"export", body)
+        with self.assertRaises(HTTPError):
+            self.get("/plugins/nope.js")
+        # 别的工具包的登记：不合规矩的都记成问题，不加载
+        root = Path(self.temp.name) / "tools"
+        good, bad = root / "good", root / "bad"
+        (good / "web").mkdir(parents=True)
+        bad.mkdir(parents=True)
+        (good / "web" / "p.js").write_text("export default () => ({name: 'mine', label: '我的'});", encoding="utf-8")
+        (good / "component.toml").write_text('name = "x.good"\nversion = "1"\n[[view_plugins]]\nname = "mine"\nentry = "web/p.js"\n'
+                                             '[[view_plugins]]\nname = "mine"\nentry = "web/p.js"\n', encoding="utf-8")
+        (bad / "component.toml").write_text('name = "x.bad"\nversion = "1"\n[[view_plugins]]\nname = "canvas"\nentry = "p.js"\n'
+                                            '[[view_plugins]]\nname = "far"\nentry = "../good/web/p.js"\n'
+                                            '[[view_plugins]]\nname = "gone"\nentry = "none.js"\n', encoding="utf-8")
+        found = find_plugins([root])
+        self.assertEqual([p["name"] for p in found["plugins"]], ["mine"])
+        self.assertEqual(len(found["issues"]), 4)                                             # 重名、保留名、出了目录、文件不在
+        from layerweave.tool.builtin.view.screenshot import capture
+        with self.assertRaisesRegex(ValueError, "没有叫 nope 的页面"):
+            capture(self.database, self.project, Path(self.temp.name) / "x.png", view="nope")
+
     def test_screenshot_layers_by_name_or_path(self):
         with closing(open_database(self.database)) as c:
             again = ImageLayer(name="原画", father=self.voice)                     # 另一个根下面也有"原画"

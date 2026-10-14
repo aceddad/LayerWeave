@@ -16,6 +16,7 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 
 export const api = {
   capabilities: () => get<{frames: boolean}>('/api/capabilities'),
+  plugins: () => get<{name: string; url: string}[]>('/api/plugins'),
   projects: () => get<ProjectSummary[]>('/api/projects'),
   project: (id: number) => get<ProjectData>(`/api/project/${id}`),
   layout: (id: number) => get<Layout>(`/api/layout/${id}`),

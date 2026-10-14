@@ -1,7 +1,7 @@
 // LayerWeave 视图：画布上每个根（连同子树）是一块时间轴画板；上下 = 同时，左右 = 接续。
 // 只读，写入只有视图自己的两样：批注（只写批注层）和折叠（只写视图的表 view_fold）；"用户正在看哪儿"和画板排版记在本机，不写业务库。
 import {ReactFlowProvider} from '@xyflow/react';
-import {useEffect} from 'react';
+import {createElement, useEffect} from 'react';
 import {useShallow} from 'zustand/react/shallow';
 import {goToTarget, keyStep, locateNote} from './actions';
 import {Flow} from './canvas/Flow';
@@ -12,10 +12,11 @@ import {SidePanel} from './side/SidePanel';
 import {getState, setState, useStore, waitingOf} from './store';
 import {loadProjects, poll, report} from './sync';
 import {AssetsView} from './views/AssetsView';
-import {CutsView} from './views/CutsView';
+import {loadPlugins} from './plugin/registry';
 
 export function App() {
-  const {view, message, notice, name, hasData, waiting} = useStore(useShallow((s) => ({
+  const {view, page, message, notice, name, hasData, waiting} = useStore(useShallow((s) => ({
+    page: s.plugins.find((p) => p.name === s.view)?.page,
     view: s.view, message: s.message, notice: s.notice, name: s.data?.project.name, hasData: !!s.data,
     waiting: waitingOf(s).length,
   })));
@@ -23,6 +24,7 @@ export function App() {
   useEffect(() => {
     if (CAPTURE) document.body.classList.add('capture');
     if (FULL) document.body.classList.add('full');
+    loadPlugins();
     loadProjects().then(poll).catch((error) => { setState({message: '读取失败：' + error.message}); markReady(); });
     if (CAPTURE) return;
     const timer = setInterval(poll, 2000);
@@ -51,7 +53,7 @@ export function App() {
       <Header />
       <div className="body">
         {view === 'canvas' && <div className="canvas-view"><ReactFlowProvider><Flow /></ReactFlowProvider><SidePanel /></div>}
-        {view === 'cuts' && <CutsView />}
+        {view !== 'canvas' && view !== 'assets' && page && createElement(page)}
         {view === 'assets' && <AssetsView />}
       </div>
       {message && <p className="message">{message}</p>}

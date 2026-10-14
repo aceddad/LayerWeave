@@ -1,11 +1,10 @@
 // 批注成楼、接缝、改动标记、关系、空当、键盘跳转、链接、时间写法
 import {describe, expect, it} from 'vitest';
 import {changeMarks} from '../changes';
-import {cutList} from '../cuts';
 import {decimalsOf, fmtLength, gapAt, trackGaps} from '../gaps';
 import {refLabel, relationsOf} from '../labels';
 import {linkQuery} from '../link';
-import {cutPoints, editPoints, stepObject, stepTime, stepTrack} from '../navigate';
+import {editPoints, stepObject, stepTime, stepTrack} from '../navigate';
 import {noteIndex, noteList, noteThreads, readBy, waitingFor} from '../notes';
 import {withFolds, withNoteStatus, withRead} from '../optimistic';
 import {fmt, fmtSpan, ticks} from '../units';
@@ -54,24 +53,6 @@ describe('批注成楼', () => {
     expect(waitingFor(threads, '用户', {'31': {用户: 32}}).map((t) => t.top.id)).toEqual([31]);   // 读到 32，后面还有 33
     expect(waitingFor(threads, '用户', {'31': {用户: 33}}).map((t) => t.top.id)).toEqual([]);
     expect(readBy(threads[0], '用户', {'31': {用户: 33}})).toBe(true);
-  });
-});
-
-describe('接缝', () => {
-  const m = model(chapters());
-
-  it('同一轨道里前后相接的图片、视频；接续的两段之间也算；文字和音频不算', () => {
-    const cuts = cutList(m, [board([[1, 10]]), board([[20]])], {});
-    expect(cuts.map((c) => [c.a.o.id, c.b.o.id, c.gap])).toEqual([[3, 4, 0], [4, 5, 1], [5, 14, 0]]);
-  });
-
-  it('按下一段的开始时间筛选', () => {
-    expect(cutList(m, [board([[1, 10]])], {begin: 5}).map((c) => c.b.o.id)).toEqual([5, 14]);
-  });
-
-  it('重叠的对象在不同小行里，各自和同一小行的前一个相接', () => {
-    const d = data([root(1, '根', [0, 10])], [layer(1, '根', 1, null), layer(2, 'a', 1, 1, [obj(3, 0, 3), obj(4, 1, 2), obj(5, 3, 4)])]);
-    expect(cutList(model(d), [board([[1]])], {}).map((c) => [c.a.o.id, c.b.o.id])).toEqual([[3, 5]]);
   });
 });
 
@@ -163,12 +144,11 @@ describe('键盘跳转', () => {
     expect(stepTrack(m, b, 3, 0, -1)).toBeNull();
   });
 
-  it('没选中对象时在剪辑点之间跳；[ ] 在接缝之间跳', () => {
+  it('没选中对象时在剪辑点之间跳（[ ] 的接缝跳转点由接缝插件给，测试在 plugins/cuts）', () => {
     const points = editPoints(m, b);
     expect(points).toEqual([0, 1, 3, 4, 8, 9, 10, 12, 15]);
     expect([stepTime(points, 4, 1), stepTime(points, 4, -1), stepTime(points, 15, 1), stepTime(points, 0, -1)]).toEqual([8, 3, null, null]);
     expect(stepTime(points, 4.0000001, -1)).toBe(3);
-    expect(cutPoints(m, b)).toEqual([4, 9, 10]);
   });
 });
 

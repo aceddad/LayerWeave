@@ -1,0 +1,68 @@
+// 视图插件的接口：插件是一个编译好的 ES 模块，默认导出一个函数 (host) => ViewPlugin。
+// 视图服务按各工具包 component.toml 里的 [[view_plugins]] 找到它们（view/plugins.py），页面启动时用 import() 加载（plugin/registry.ts）。
+// 插件只拿到这里给的东西：React（和视图共用一份，插件不要自己打包）、读项目的钩子、几个动作、画图的小部件和工具函数。
+// 写入照旧只有视图自己的两种（批注、折叠）；插件不碰数据库。改这里就是改插件接口：只加不改，改了要在 TOOL_TYPES.md 写明
+import * as React from 'react';
+import {useShallow} from 'zustand/react/shallow';
+import {selectObject, startWalk} from '../actions';
+import {Frame, Img, Thumb} from '../canvas/Media';
+import {markReady} from '../capture';
+import {kindOf, lastAt} from '../model/kinds';
+import type {Model} from '../model/model';
+import {keyOf, lanes, rootsOf} from '../model/model';
+import {fmt, fmtSpan, isSec} from '../model/units';
+import {CAPTURE, FULL, numParam} from '../params';
+import {useModel, useStore} from '../store';
+import {toast} from '../sync';
+import type {Board} from '../types';
+
+export const PLUGIN_API = 1;   // 接口版本：插件可以按它判断宿主够不够新
+
+export interface ViewSnapshot {
+  model: Model | null; boards: Board[]; project: number | null; frames: boolean;
+  playhead: number | null; selected: number | null;
+}
+
+export interface PluginHost {
+  api: number;
+  React: typeof React;
+  capture: boolean;        // 截图页面：画完要调 markReady()
+  full: boolean;           // 截整页（--full-page）：页面不要限高
+  useView(): ViewSnapshot;
+  selectObject(id: number): void;          // 选中对象，切回画布并飞过去
+  startWalk(ref: string): void;            // 侧栏"沿着读"从这里开始（"object:16"）
+  toast(text: string): void;
+  markReady(): void;
+  addStyle(css: string): void;             // 插件自己的样式；卸掉插件，样式跟着不见
+  numParam(name: string): number | null;   // 地址参数（截图、复制链接用的那些）
+  components: {Img: typeof Img; Thumb: typeof Thumb; Frame: typeof Frame};
+  util: {kindOf: typeof kindOf; lastAt: typeof lastAt; isSec: typeof isSec; fmt: typeof fmt; fmtSpan: typeof fmtSpan;
+         lanes: typeof lanes; keyOf: typeof keyOf; rootsOf: typeof rootsOf};
+}
+
+export interface ViewPlugin {
+  name: string;                          // 页面的名字，也是地址里的 view=（例如 cuts）
+  label: string;                         // 顶栏标签上的字
+  title?: string;                        // 标签的说明
+  handles?: string[];                    // 管哪些种类的对象（kindOf：image、video、audio、text……）；项目里一个都没有时不显示标签
+  page?: React.ComponentType;            // 专用页面
+  jumpPoints?: (model: Model, board: Board) => number[];   // 键盘 [ ] 在这些时刻之间跳（画板时间）
+}
+
+export type PluginFactory = (host: PluginHost) => ViewPlugin;
+
+export function makeHost(): PluginHost {
+  return {
+    api: PLUGIN_API, React, capture: CAPTURE, full: FULL,
+    useView: () => {
+      const model = useModel();
+      const s = useStore(useShallow((st) => ({boards: st.boards, project: st.project, frames: st.frames, playhead: st.playhead, selected: st.selected})));
+      return {model, ...s};
+    },
+    selectObject: (id) => selectObject(id), startWalk, toast: (text) => toast(text), markReady,
+    addStyle: (css) => { const el = document.createElement('style'); el.textContent = css; document.head.appendChild(el); },
+    numParam,
+    components: {Img, Thumb, Frame},
+    util: {kindOf, lastAt, isSec, fmt, fmtSpan, lanes, keyOf, rootsOf},
+  };
+}

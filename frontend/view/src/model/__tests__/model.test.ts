@@ -1,7 +1,6 @@
 // 画面模型：接续偏移、轨道合并、小行、画板尺寸。期望值按 model.ts 顶部的常量手算
 import {describe, expect, it} from 'vitest';
 import {FOLD, HEAD, ROW, RULER, STRIP, lanes} from '../model';
-import {cutList} from '../cuts';
 import {aiFolded, chapters, data, folded, layer, model, obj, root} from './fixtures';
 
 const board = (rows: number[][], extra = {}) => ({rows, x: 0, y: 0, pps: null, ...extra});
@@ -61,12 +60,11 @@ describe('轨道', () => {
     expect(m.trackLayout(m.rowTracks([1])[1], [1]).fold).toMatchObject({layers: [2, 8], below: 1, objects: 4});
   });
 
-  it('左右接续时，合起来的轨道里有一个层折叠了，整条就折叠；折叠的轨道不列接缝', () => {
+  it('左右接续时，合起来的轨道里有一个层折叠了，整条就折叠', () => {
     const m = model(folded(chapters(), 13));                 // 只折叠了第二章的「画面」
     const track = m.rowTracks([1, 10])[1];
     expect(m.foldOf(track)).toEqual({by: '用户', tips: '太乱'});
     expect(m.trackLayout(track, [1, 10]).fold!.layers).toEqual([2, 13]);
-    expect(cutList(m, [board([[1, 10]])], {})).toEqual([]);
   });
 
   it('人和 AI 各有一份：对方折叠的照常画，只标出来；自己这边的才收起', () => {

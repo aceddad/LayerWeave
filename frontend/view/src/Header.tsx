@@ -6,17 +6,17 @@ import {fitBoards, zoomBy} from './camera';
 import {keyOf} from './model/model';
 import {fmt} from './model/units';
 import {activeBoard, modelOf, setState, useModel, useStore} from './store';
+import {pluginApplies} from './plugin/registry';
 import {loadProject} from './sync';
 import type {View} from './types';
 
-const VIEWS: {view: View; label: string; title?: string}[] = [
-  {view: 'canvas', label: '画布'},
-  {view: 'cuts', label: '接缝', title: '同一条轨道里前后相接的画面：上一段的最后一帧和下一段的第一帧并排'},
-  {view: 'assets', label: '一览', title: '按种类列出项目里所有的对象：图片、视频、音频、文字……点一下回到画布上的位置'},
-];
+// 画布、插件的页面（比如接缝；项目里没有它管的对象时不显示）、一览
+const CANVAS = {view: 'canvas' as View, label: '画布', title: undefined as string | undefined};
+const ASSETS = {view: 'assets' as View, label: '一览', title: '按种类列出项目里所有的对象：图片、视频、音频、文字……点一下回到画布上的位置'};
 
 export function Header() {
   const model = useModel();
+  const plugins = useStore((s) => s.plugins);
   const {projects, project, view, playhead, links, live, unit} = useStore(useShallow((s) => {
     const act = activeBoard(s);
     return {projects: s.projects, project: s.project, view: s.view, playhead: s.playhead, links: s.links, live: s.live,
@@ -53,7 +53,7 @@ export function Header() {
         {projects.map((p) => <option key={p.id} value={p.id}>{p.id} · {p.name || '未命名'}</option>)}
       </select>
       <nav className="tabs">
-        {VIEWS.map((v) => <button key={v.view} className={view === v.view ? 'on' : ''} title={v.title} onClick={() => setView(v.view)}>{v.label}</button>)}
+        {[CANVAS, ...plugins.filter((p) => p.page && pluginApplies(p, model)).map((p) => ({view: p.name, label: p.label, title: p.title})), ASSETS].map((v) => <button key={v.view} className={view === v.view ? 'on' : ''} title={v.title} onClick={() => setView(v.view)}>{v.label}</button>)}
       </nav>
       <input className="find" type="search" placeholder="找对象：名字、文字、文件名、#编号" title="回车找下一个，Shift+回车找上一个"
              value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') search(e.shiftKey); }} />

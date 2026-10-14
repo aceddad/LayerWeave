@@ -117,7 +117,7 @@ export interface ChangeOp {
   items: ChangeItem[];
 }
 
-export type View = 'canvas' | 'cuts' | 'assets';
+export type View = string;   // canvas、assets，或某个插件的页面名（比如接缝插件的 cuts）
 export type Side = 'now' | 'changes' | 'notes' | 'walk';
 
 // 沿着读（服务端 view/walk.py 的结果）：从起点顺着关联一步步往外走，按步数排好

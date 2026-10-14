@@ -36,6 +36,26 @@
 
 条目只是工具自己的结构、不算项目内容时（比如界面状态、任务记录），用[工具自己的表](../../../../../docs/build-with-layerweave/03-managed-tables.md)更合适，不必登记成层。
 
+## 给自己的层配一个视图页面：视图插件
+
+登记了新类型以后，如果想在视图里给它一个专用页面（像接缝页那样），写一个视图插件。插件装上就出现，不用重新编译视图；卸掉就消失，视图照常工作。接缝就是视图的第一个插件：源码在仓库 `frontend/view/plugins/cuts/`，编译结果在 `view/plugins/cuts/plugin.js`。
+
+| 步骤 | 做法 | 接缝的写法 |
+|---|---|---|
+| 1. 写插件 | 一个 ES 模块，默认导出 `(host) => ViewPlugin`。`host` 给 React（和视图共用一份，插件不要自己打包）、读项目的 `useView()`、`selectObject` / `startWalk` / `toast` / `markReady` 这些动作、`Img` / `Thumb` / `Frame` 小部件和 `kindOf`、`fmt`、`lanes` 等工具函数。接口定义在 `frontend/view/src/plugin/host.ts`，版本号是 `host.api` | `plugins/cuts/index.tsx` |
+| 2. 返回什么 | `name`（页面名，也是地址里的 `view=`）、`label`（顶栏标签上的字）、`handles`（管哪些种类的对象；项目里一个都没有就不显示标签）、`page`（页面组件）；可选的 `jumpPoints(model, board)` 给键盘 `[ ]` 提供跳转点 | `name: 'cuts'`、`handles: ['image', 'video']`、`jumpPoints` 是接缝的时刻 |
+| 3. 编译 | 不打包 React：JSX 编译成 `h(...)`，`h` 在插件被加载时从 `host.React.createElement` 拿。样式写成字符串，用 `host.addStyle` 加进页面 | `vite.plugins.config.ts`：`npm run build` 会编译 `plugins/` 下每个插件 |
+| 4. 登记 | 在自己工具包的 `component.toml` 里加 `[[view_plugins]]`：`name`、`entry`（相对这个目录的 .js 文件）。打包时把这个 .js 一起带上 | 视图包的 `component.toml`：`entry = "plugins/cuts/plugin.js"`；pyproject 的 package-data 加 `plugins/*/*.js` |
+| 5. 截图 | 截图页面上画完要调 `host.markReady()`，`view_screenshot --view <name>` 就能拍 | 接缝页在页面出来以后调 |
+| 6. 测试 | 计算写成纯函数，工具函数从参数传进来，测试里传视图真正的那些 | `plugins/cuts/cuts.test.ts` |
+
+要点：
+
+- 插件只在页面里运行，读视图服务已有的数据；写入仍然只有视图自己的两种（批注、折叠）。插件不带 Python 写入口，不碰数据库。
+- 视图服务启动时找一次插件（`view/plugins.py`，只读 TOML，不导入代码）：现在找包里内置的工具包。装了新插件要重启视图服务。登记有问题的（名字不合规矩、入口不在目录里、文件不存在、重名）不加载，记成问题。
+- 一个插件加载失败，页面只提示一句，不影响别的插件和视图本身。
+- `host` 的接口只加不改；改了要在这里写明，并改 `host.api` 的版本号。
+
 ## 相关说明
 
 - 批注层的读写工具和页面行为：[视图工具](../view/README.md#批注层用一个层当有序列表)

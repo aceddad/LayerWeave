@@ -1,18 +1,20 @@
-// 接缝页：同一条轨道里前后相接的图片和视频，上一段的最后一帧和下一段的第一帧并排，用来查衔接
-import {useEffect} from 'react';
-import {useShallow} from 'zustand/react/shallow';
-import {selectObject} from '../actions';
-import {Frame, Thumb} from '../canvas/Media';
-import {markReady} from '../capture';
-import {cutGroupKey, cutList} from '../model/cuts';
-import type {Cut, CutItem} from '../model/cuts';
-import {kindOf, lastAt} from '../model/kinds';
-import type {Model} from '../model/model';
-import {fmt, fmtSpan, isSec} from '../model/units';
-import {numParam} from '../params';
-import {useModel, useStore} from '../store';
+// 接缝插件（视图的第一个插件）：同一条轨道里前后相接的图片和视频，上一段的最后一帧和下一段的第一帧并排，用来查衔接——
+// 比如上一段球落在地上，下一段却从桌上开始。另外给键盘 [ ] 提供跳转点（接缝的时刻）。
+// 编译成 view/plugins/cuts/plugin.js（vite.plugins.config.ts），由视图包的 component.toml 里的 [[view_plugins]] 登记。
+// 只用宿主给的东西（host）：React 是宿主那一份，JSX 编译成 h(...)，h 在插件被加载时从 host.React 拿
+import type {PluginHost, ViewPlugin} from '../../src/plugin/host';
+import type {Model} from '../../src/model/model';
+import {cutGroupKey, cutList, cutPoints} from './cuts';
+import type {Cut, CutItem} from './cuts';
+import css from './cuts.css?raw';
+
+let host: PluginHost;
+// JSX 编译成 h(...)、<>…</> 编译成 Fragment（vite.plugins.config.ts）；类型检查按 react-jsx，看不见这两个的用法
+let h: PluginHost['React']['createElement'];
+let Fragment: PluginHost['React']['Fragment'];
 
 function Shot({model, it, end, project, frames}: {model: Model; it: CutItem; end: boolean; project: number; frames: boolean}) {
+  const {Thumb, Frame} = host.components, {kindOf, lastAt, isSec} = host.util;
   const o = it.o, unit = model.unitOfRoot(it.root);
   if (o.media && !o.media.available) return <div className="shot missing">文件不存在<br />{o.media.source}</div>;
   if (!o.media?.url) return <div className="shot missing">没有文件</div>;
@@ -21,13 +23,14 @@ function Shot({model, it, end, project, frames}: {model: Model; it: CutItem; end
 }
 
 function CutRow({model, cut, project, frames}: {model: Model; cut: Cut; project: number; frames: boolean}) {
+  const {kindOf, fmt, fmtSpan} = host.util;
   const unit = model.unitOfRoot(cut.a.root);
   const what = (it: CutItem, end: boolean) => (kindOf(it.o) === 'video' ? (end ? '最后一帧' : '第一帧') : '图片');
   const when = (it: CutItem, t: number) => fmt(t - it.offset, model.unitOfRoot(it.root)) + (it.offset ? `（画板 ${fmt(t, unit)}）` : '');
   const gap = Math.abs(cut.gap) < 1e-6 ? '紧接' : cut.gap > 0 ? `中间空 ${fmtSpan(cut.gap, unit)}` : `叠了 ${fmtSpan(-cut.gap, unit)}`;
   const name = (it: CutItem) => `#${it.o.id} ${it.o.name || (it.o.media?.source || '').split(/[\\/]/).pop()}`;
   return (
-    <div className="cut" onClick={() => selectObject(cut.b.o.id)}>
+    <div className="cut" onClick={() => host.selectObject(cut.b.o.id)}>
       <figure><Shot model={model} it={cut.a} end project={project} frames={frames} />
         <figcaption>{name(cut.a)} 的{what(cut.a, true)}<br /><small>结束于 {when(cut.a, cut.a.end)}</small></figcaption></figure>
       <div className="cut-mid"><b>→</b><small>{gap}</small>
@@ -38,14 +41,13 @@ function CutRow({model, cut, project, frames}: {model: Model; cut: Cut; project:
   );
 }
 
-export function CutsView() {
-  const model = useModel();
-  const {boards, project, frames} = useStore(useShallow((s) => ({boards: s.boards, project: s.project!, frames: s.frames})));
-  useEffect(() => { if (model) markReady(); }, [model]);
-  if (!model) return null;
-  const cuts = cutList(model, boards, {board: numParam('board'), begin: numParam('begin'), end: numParam('end')});
+function CutsPage() {
+  const {model, boards, project, frames} = host.useView();
+  host.React.useEffect(() => { if (model) host.markReady(); }, [model]);
+  if (!model || project == null) return null;
+  const cuts = cutList(host.util, model, boards, {board: host.numParam('board'), begin: host.numParam('begin'), end: host.numParam('end')});
   const groups = new Map<string, Cut[]>();
-  for (const c of cuts) { const key = cutGroupKey(c); if (!groups.has(key)) groups.set(key, []); groups.get(key)!.push(c); }
+  for (const c of cuts) { const key = cutGroupKey(host.util, c); if (!groups.has(key)) groups.set(key, []); groups.get(key)!.push(c); }
   return (
     <main className="cuts-view">
       {!cuts.length && <p className="hint">没有接缝：同一条轨道里至少要有前后两个图片或视频。</p>}
@@ -58,4 +60,16 @@ export function CutsView() {
       })}
     </main>
   );
+}
+
+export default function cuts(given: PluginHost): ViewPlugin {
+  host = given;
+  h = given.React.createElement;
+  Fragment = given.React.Fragment;
+  given.addStyle(css);
+  return {
+    name: 'cuts', label: '接缝', title: '同一条轨道里前后相接的画面：上一段的最后一帧和下一段的第一帧并排',
+    handles: ['image', 'video'], page: CutsPage,
+    jumpPoints: (model, board) => cutPoints(given.util, model, board),
+  };
 }

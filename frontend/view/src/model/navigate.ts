@@ -3,7 +3,6 @@
 // ↑/↓ 选中上一条、下一条有对象的轨道上离这一刻最近的对象
 // [ / ] 播放头跳到上一个、下一个接缝
 import type {Board} from '../types';
-import {cutList} from './cuts';
 import type {Item, Model} from './model';
 
 const EPS = 1e-6;
@@ -53,8 +52,3 @@ export function stepTime(points: number[], t: number, dir: -1 | 1): number | nul
   return null;
 }
 
-// 接缝的时刻：下一段开始的地方（和接缝页一样，只算图片和视频）
-export function cutPoints(model: Model, board: Board): number[] {
-  const set = new Set(cutList(model, [board], {}).map((c) => +c.b.begin.toFixed(6)));
-  return [...set].sort((p, q) => p - q);
-}

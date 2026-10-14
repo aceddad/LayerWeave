@@ -3,7 +3,8 @@ import {focusNote, focusObject, focusTime, revealObject, revealTime, visibleRang
 import {sizeOf, split} from './model/layoutOps';
 import {linkQuery} from './model/link';
 import {keyOf} from './model/model';
-import {cutPoints, editPoints, stepObject, stepTime, stepTrack} from './model/navigate';
+import {editPoints, stepObject, stepTime, stepTrack} from './model/navigate';
+import {jumpPoints} from './plugin/registry';
 import {activeBoard, getState, modelOf, setState} from './store';
 import {api} from './api';
 import {foldAction, loadChanges, loadWalk, report, saveLayout, selectionInfo, toast} from './sync';
@@ -110,7 +111,12 @@ export function keyStep(key: string): boolean {
     requestAnimationFrame(() => requestAnimationFrame(() => revealObject(item.o.id)));
     report();
   };
-  if (key === '[' || key === ']') { moveTo(stepTime(cutPoints(model, b), s.playhead ?? -Infinity, dir)); return true; }
+  // [ ]：插件给的跳转点（接缝插件给接缝的时刻）；没有插件给就不跳
+  if (key === '[' || key === ']') {
+    if (!s.plugins.some((p) => p.jumpPoints)) { toast('[ ] 的跳转点由插件提供（比如接缝插件），现在没有装'); return true; }
+    moveTo(stepTime(jumpPoints(model, b), s.playhead ?? -Infinity, dir));
+    return true;
+  }
   if (key === 'ArrowLeft' || key === 'ArrowRight') {
     if (onBoard) pick(stepObject(model, b, sel!.id, dir), false);
     else moveTo(stepTime(editPoints(model, b), s.playhead ?? -Infinity, dir));

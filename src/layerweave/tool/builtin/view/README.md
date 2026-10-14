@@ -69,7 +69,7 @@ python -m layerweave.tool.builtin.view.server DATABASE [--project 1] [--port 876
 | 身份 | 一条记录的身份就是它挂着的层：（项目，层编号），`id_source = "provided"`，不另外发号，不占项目编号 |
 | 字段 | `user_fold` / `ai_fold`：那一边谁折叠的，空着就是没折叠；`user_tips` / `ai_tips`：那一边的说明 |
 | 两边 | 网页是人这边（按网页里的署名记）；`view_fold` 命令和截图是 AI 这边。各改各的，都能展开对方的；网页不替 AI 折叠，AI 不替人折叠 |
-| 引用 | 不声明引用：层被使用工具删掉时不受阻挡；编号不回收，留下的记录不会被新层误认，视图读的时候忽略 |
+| 引用 | 不声明引用：层被使用工具删掉时不受阻挡；编号不回收，留下的记录不会被新层误认，视图读的时候忽略。因此用 JSON 交换把项目复制（`--op add`）到别处时，折叠和已读不跟着换编号：复制以后在新项目里重新折叠（同一个库里导出、改、写回不受影响）。已经问 astra 有没有更好的办法 |
 | 日志 | 写入走统一写会话，进改动日志（种类 `view_fold`），可以撤销；视图的"改动"面板不列它们，画布上直接看得到 |
 
 ## 插件
@@ -138,6 +138,7 @@ python -m layerweave.tool.builtin.view.frame DATABASE 1 16 输出.jpg --at 3.75
 - 折叠分两边：AI 折叠只影响 AI 这边（截图里收成细条，内容没画出来），折叠时写上原因。用户折叠的层在截图里照常画出、标着"用户折叠了"——那只说明用户现在不关注，判断时照常检查。开工时用 `view_fold` 看一眼两边的折叠：用户可能展开了 AI 折叠的层，想让 AI 看回来。
 - 换方向时，旧的层不删，挪进一个专门放旧东西的根层（手书里叫"杂物区"），挪完马上用 `view_fold fold 根层编号 --by 自己的名字 --why 换方向留下的旧版本` 在 AI 这边折叠，免得旧东西占着画面、混进判断。用户那边要不要收起由用户自己定。
 - 用户圈出一段后，`view_state` 的 `selection` 给出那一段在哪个根上、那个根自己的起止；要给这一段写批注，用 `view_note add --to layer:根编号 --span 起点 终点`。
+- 要改用户圈出的那一段，和 JSON 交换（`usage/exchange`）配着用：`view_state` 读出根和起止 → `exchange.cli export DATABASE 项目 --layer-ids 根编号 --begin 起点 --end 终点 --include-baseline --output 文件` → 改 JSON → `apply`。编号不变，挂在上面的批注不断；视图两秒内自己刷新，改完用 `view_screenshot` 或 `view_at` 看一眼。
 - 改动的文字清单也可以用使用工具里的 `read_history`；视图的用处是把改动放回画面里看。
 - 截图自动查找 Chrome、Edge 或 Chromium，也可以用 `--browser` 或环境变量 `LAYERWEAVE_BROWSER` 指定。浏览器使用临时的独立配置，不会碰到用户正在用的浏览器；截图页面不记录状态、不改排版、不写批注和折叠。返回里的 `ready` 为 False 时，表示等待时间内没加载完，图里可能缺缩略图。
 - "正在看哪儿"记在本机用户目录 `~/.layerweave/view/` 下，每个数据库一份，不写进业务库。

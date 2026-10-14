@@ -761,6 +761,39 @@ class ViewTests(unittest.TestCase):
         self.assertTrue(shot["ready"])
         self.assertIn("side=example-plugin", shot["page"])
 
+    def test_bench_synthetic_project_and_verdicts(self):
+        # view_bench 的合成项目：构成照手书，两块画板，图片、音频是生成的文件；判定按门槛、超过的写明
+        from layerweave.tool.builtin.view.bench import GATES, describe, make_synthetic, summarize
+        db, project, counts = make_synthetic(Path(self.temp.name) / "bench", 200)
+        self.assertEqual(counts, {"text": 104, "image": 74, "note": 20, "audio": 2})
+        with closing(open_readonly(db)) as c:
+            data = project_view(c, db, project)
+        objects = [o for layer in data["layers"] for o in layer.get("objects", [])]
+        self.assertEqual(len(objects), 200)
+        self.assertEqual(len(data["roots"]), 3)                                      # 两块画板，加上批注层
+        self.assertTrue(all(o["media"]["available"] for o in objects if o.get("media")))
+        self.assertEqual((Path(self.temp.name) / "bench" / "media" / "img0.png").read_bytes()[:8], b"\x89PNG\r\n\x1a\n")
+        runs = [{"open": 0.8, "click": 40, "board_drag": 20, "zoom_pan": 7, "zoom_pan_plugin": 50},
+                {"open": 0.6, "click": 60, "board_drag": None, "zoom_pan": 9, "zoom_pan_plugin": 40}]
+        rows = {row["key"]: row for row in summarize(runs, baseline_runs=runs[:1])}
+        self.assertEqual(set(rows), set(GATES))
+        self.assertEqual((rows["open"]["value"], rows["click"]["value"], rows["board_drag"]["value"]), (0.7, 50, 20))
+        self.assertTrue(rows["zoom_pan"]["ok"])
+        self.assertFalse(rows["zoom_pan_plugin"]["ok"])
+        self.assertEqual(rows["click"]["baseline"], 40)
+        text = describe({"title": "t", "rows": list(rows.values()), "passed": False})
+        self.assertIn("超过门槛", text)
+        self.assertIn("基线", text)
+
+    @unittest.skipIf(find_browser() is None, "本机没有 Chrome、Edge 或 Chromium")
+    def test_bench_measures_in_a_browser(self):
+        from layerweave.tool.builtin.view.bench import GATES, bench
+        result = bench(objects=150, rounds=1, clicks=3, moves=8)
+        self.assertEqual([row["key"] for row in result["rows"]], list(GATES))
+        self.assertTrue(all(row["value"] is not None for row in result["rows"]), result["text"])   # 每一项都量到了（快慢看机器，不在这里判）
+        self.assertIsInstance(result["passed"], bool)
+        self.assertGreater(result["runs"]["现在"][0]["scene_plugin"]["插件画的格子"], 0)              # 插件那一项真的有插件在画
+
     def test_screenshot_link_keeps_only_view_parameters(self):
         link = f"http://127.0.0.1:8765/?project={self.project}&board=1&begin=8&end=14&select=16&note=42&record=1&capture=0&x=1"
         self.assertEqual(link_query(link, self.project), {"board": "1", "begin": "8", "end": "14", "select": "16", "note": "42"})

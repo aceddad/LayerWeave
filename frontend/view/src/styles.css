@@ -59,6 +59,8 @@ select { background: var(--panel); padding: 3px 6px; }
 
 /* React Flow：画板节点不要默认的框和光标；拖动中的画板半透明 */
 .react-flow__node-board { cursor: default; }
+/* 拖画板时把它单独放一层：合成器整块挪，不用每帧重画里面的格子。看全图时格子里有 300 张缩略图的项目：帧间隔 p95 35→21 毫秒（2026-10-15，view_bench） */
+.react-flow__node-board.dragging { will-change: transform; }
 .react-flow__node.dragging .board { opacity: .85; box-shadow: 0 12px 40px rgba(0, 0, 0, .6); }
 .react-flow__pane { cursor: grab; }
 .react-flow__pane.dragging { cursor: grabbing; }

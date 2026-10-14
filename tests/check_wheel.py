@@ -73,8 +73,8 @@ assert {str(ROOT)!r} not in sys.path
                              env=env, capture_output=True, text=True, encoding="utf-8", timeout=30)
         assert run.returncode == 0, run.stdout + run.stderr
         data = json.loads(run.stdout)
-        assert data["status"] == "completed" and len(data["items"]) == 40, data
-        print("ordinary install CLI: 40 commands discovered, no editable source fallback")
+        assert data["status"] == "completed" and len(data["items"]) == 41, data
+        print("ordinary install CLI: 41 commands discovered, no editable source fallback")
 
 
 if __name__ == "__main__":

@@ -35,9 +35,9 @@ mimetypes.add_type("video/mp4", ".mp4")
 class ViewHandler(SimpleHTTPRequestHandler):
     """静态网页 + 只读 JSON 接口 + 引用的文件（支持 Range，视频可以拖动）。"""
 
-    def __init__(self, *args, database, version, state_root, record_state, **kwargs):
+    def __init__(self, *args, database, version, state_root, record_state, web_root=None, **kwargs):
         self.database, self.version, self.state_root, self.record_state = database, version, state_root, record_state
-        super().__init__(*args, directory=str(WEB_ROOT), **kwargs)
+        super().__init__(*args, directory=str(web_root or WEB_ROOT), **kwargs)
 
     def log_message(self, *args):
         pass
@@ -292,8 +292,8 @@ class ViewServer(ThreadingHTTPServer):
         self.watcher.close()   # 关掉监视用的只读连接，数据库文件才能被移动或删除
 
 
-def make_server(database, *, port=0, state_root=None, record_state=True):
-    """建好服务但不启动；port=0 时由系统分配。返回 (server, url)。"""
+def make_server(database, *, port=0, state_root=None, record_state=True, web_root=None):
+    """建好服务但不启动；port=0 时由系统分配。返回 (server, url)。web_root：换一份网页（view_bench 拿来和别的构建对比）。"""
     database = Path(database).resolve()
     if not database.is_file():
         raise FileNotFoundError(f"数据库不存在：{database}")
@@ -305,7 +305,8 @@ def make_server(database, *, port=0, state_root=None, record_state=True):
         with lock:
             return watcher.execute("PRAGMA data_version").fetchone()[0]
 
-    handler = partial(ViewHandler, database=database, version=version, state_root=state_root, record_state=record_state)
+    handler = partial(ViewHandler, database=database, version=version, state_root=state_root, record_state=record_state,
+                      web_root=Path(web_root) if web_root else None)
     server = ViewServer(("127.0.0.1", port), handler)
     server.watcher = watcher
     return server, f"http://127.0.0.1:{server.server_address[1]}/"

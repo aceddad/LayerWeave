@@ -17,9 +17,10 @@ from layerweave.tool.builtin.view.fold import fold
 from layerweave.tool.builtin.view.layout import arrange, chain_offsets, layout_path, merge, reconcile, split
 from layerweave.tool.builtin.view.note import add_note, list_notes, note, remove_note, threads, update_note, waiting_for
 from layerweave.tool.builtin.view.notes import AXIS, LAYER_REF, OBJECT_REF
-from layerweave.tool.builtin.view.screenshot import capture, find_browser, link_query
+from layerweave.tool.builtin.view.screenshot import capture, find_browser, link_query, resolve_layers
 from layerweave.tool.builtin.view.server import make_server
 from layerweave.tool.builtin.view.state import read_state
+from layerweave.tool.builtin.view.at import read_at
 from layerweave.tool.builtin.view.walk import read_along
 
 
@@ -37,7 +38,9 @@ class ViewTests(unittest.TestCase):
                 self.project = write.create("project", {"name": "视图测试"})["id"]
             main = TextLayer(name="主线", axis={"unit": "秒", "precision": 0.001})
             save_layer(c, self.project, main)
-            save_object(c, self.project, Text(layer=main.id, begin=0, end=4, information={"text": "第一段"}))
+            first = Text(layer=main.id, begin=0, end=4, information={"text": "第一段"})
+            save_object(c, self.project, first)
+            self.text_at_0 = first.id
             art = ImageLayer(name="原画", father=main.id)
             save_layer(c, self.project, art)
             self.image = Image(layer=art.id, begin=1, end=3, information={"source": "media/a.png"})
@@ -363,6 +366,87 @@ class ViewTests(unittest.TestCase):
             self.assertEqual(json.loads(response.read())["reader"], "用户")
         with closing(open_readonly(self.database)) as c:
             self.assertEqual(project_view(c, self.database, self.project)["noteReads"][str(top)]["用户"], later)
+
+    def test_screenshot_layers_by_name_or_path(self):
+        with closing(open_database(self.database)) as c:
+            again = ImageLayer(name="原画", father=self.voice)                     # 另一个根下面也有"原画"
+            save_layer(c, self.project, again)
+        self.assertEqual(resolve_layers(self.database, self.project, ["旁白", str(self.board)]), [self.voice, self.board])
+        self.assertEqual(resolve_layers(self.database, self.project, ["主线/原画", "旁白/原画"]), [self.art_layer, again.id])
+        with self.assertRaisesRegex(ValueError, "有 2 个"):
+            resolve_layers(self.database, self.project, ["原画"])
+        with self.assertRaisesRegex(ValueError, "没有叫"):
+            resolve_layers(self.database, self.project, ["没有这层"])
+        with self.assertRaisesRegex(ValueError, "没有层 #"):
+            resolve_layers(self.database, self.project, ["99999"])
+
+    def test_at_reads_every_layer_at_a_moment(self):
+        top = add_note(self.database, self.project, "这张图对吗", targets=[("object", self.project, self.image.id)], author="用户")["note"]
+        band = add_note(self.database, self.project, "这两秒", targets=[("layer", self.project, self.art_layer)], span=(1.5, 2.5))["note"]
+        add_note(self.database, self.project, "后面的事", targets=[("layer", self.project, self.art_layer)], span=(7, 8))
+        at = read_at(self.database, self.project, root=self.main_layer, at=2)
+        m = at["moments"][0]
+        self.assertEqual([(r["layer"]["name"], [o["id"] for o in r["objects"]]) for r in m["layers"]],
+                         [("主线", [self.text_at_0]), ("原画", [self.image.id])])
+        image = m["layers"][1]["objects"][0]
+        self.assertEqual((image["outside"], image["noted"]), (1, True))          # 图指着主线这一层（不在这一刻里）；有批注指着它
+        self.assertEqual(sorted(n["id"] for n in m["notes"]), sorted([top, band]))   # 圈的时间不重叠的那条不算
+        self.assertIn("1–3 秒", at["text"])
+        # 没东西的层写是哪种空
+        later = read_at(self.database, self.project, root=self.main_layer, at=7)["moments"][0]
+        self.assertEqual([r["gap"]["kind"] for r in later["layers"]], ["after", "after"])
+        self.assertIn("已经结束：最后一个在 6 秒 结束", read_at(self.database, self.project, root=self.main_layer, at=7)["text"])
+        gap = read_at(self.database, self.project, root=self.voice, at=1)["moments"][0]["layers"][0]["gap"]
+        self.assertEqual(gap["kind"], "before")
+        # 一段：和这一段重叠的都算
+        span = read_at(self.database, self.project, root=self.main_layer, range=(3.5, 5.5))["moments"][0]
+        self.assertEqual([o["id"] for o in span["layers"][1]["objects"]], [self.missing.id, self.web.id])
+        # 不给根：读用户在视图里看的地方
+        from layerweave.tool.builtin.view.state import write_state
+        write_state(self.database, {"project": self.project, "playhead_at": [{"root": self.main_layer, "name": "主线", "local": 2.0}]},
+                    self.state_root)
+        here = read_at(self.database, self.project, state_root=self.state_root)
+        self.assertTrue(here["from_view"])
+        self.assertEqual(here["moments"][0]["begin"], 2.0)
+        write_state(self.database, {"project": self.project, "selection": {"root": self.main_layer, "name": "主线", "begin": 3.5, "end": 5.5}},
+                    self.state_root)
+        self.assertEqual(read_at(self.database, self.project, state_root=self.state_root)["moments"][0]["end"], 5.5)
+        # 网页：几段一起读
+        page = self.json(f"/api/at/{self.project}?span={self.main_layer}:2:2&span={self.voice}:3:3")
+        self.assertEqual([m["root"] for m in page["moments"]], [self.main_layer, self.voice])
+        with self.assertRaisesRegex(ValueError, "根层"):
+            read_at(self.database, self.project, root=self.art_layer, at=2)
+        with self.assertRaisesRegex(ValueError, "--at"):
+            read_at(self.database, self.project, root=self.main_layer)
+
+    def test_retarget_keeps_the_thread(self):
+        top = add_note(self.database, self.project, "挂错了", targets=[("object", self.project, self.image.id)], author="用户")["note"]
+        reply = note(self.database, self.project, "reply", text="嗯", note_id=top, author="Claude")["note"]
+        note(self.database, self.project, "read", note_id=top, author="用户")
+        moved = note(self.database, self.project, "edit", note_id=top, to=[f"layer:{self.main_layer}"], span=(8, 6))
+        self.assertEqual(moved["targets"], [f"layer:{self.main_layer}"])
+        notes = {n["id"]: n for n in note(self.database, self.project)["notes"]}
+        self.assertEqual([(t["kind"], t["id"]) for t in notes[top]["targets"]], [("layer", self.main_layer)])
+        self.assertEqual(notes[top]["span"], {"begin": 6.0, "end": 8.0})                      # 起止写反了也认
+        self.assertEqual((notes[reply]["thread"], notes[top]["text"]), (top, "挂错了"))          # 楼、回复、正文都在
+        with closing(open_readonly(self.database)) as c:
+            self.assertIn(str(top), project_view(c, self.database, self.project)["noteReads"])   # 已读记录还在
+        # 改回对象、同时改正文；去掉圈的时间
+        note(self.database, self.project, "edit", text="改了", note_id=top, to=[f"object:{self.image.id}"])
+        notes = {n["id"]: n for n in note(self.database, self.project)["notes"]}
+        self.assertEqual(([(t["kind"], t["id"]) for t in notes[top]["targets"]], notes[top]["span"], notes[top]["text"]),
+                         ([("object", self.image.id)], None, "改了"))
+        with self.assertRaisesRegex(ValueError, "回复"):
+            note(self.database, self.project, "edit", note_id=reply, to=[f"object:{self.image.id}"])
+        with self.assertRaisesRegex(ValueError, "没有对象"):
+            note(self.database, self.project, "edit", note_id=top, to=["object:99999"])
+        with self.assertRaisesRegex(ValueError, "span"):
+            note(self.database, self.project, "edit", note_id=top, to=[f"object:{self.image.id}"], span=(1, 2))
+        # 网页：改成写给整个项目
+        body = json.dumps({"action": "retarget", "note": top, "targets": []}).encode()
+        with urlopen(Request(self.url + f"api/notes/{self.project}", data=body), timeout=10) as response:
+            self.assertEqual(json.loads(response.read())["targets"], [])
+        self.assertEqual({n["id"]: n for n in note(self.database, self.project)["notes"]}[top]["targets"], [])
 
     def test_walk_reads_along_relations_step_by_step(self):
         top = add_note(self.database, self.project, "这张图要换吗？", targets=[("object", self.project, self.image.id)], author="用户")["note"]

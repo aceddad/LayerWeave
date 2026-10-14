@@ -28,6 +28,29 @@ function composeTarget(): Target {
   return {kind: 'project', label: '整个项目'};
 }
 
+// "写给"的东西 → 请求里的 targets、span（写新批注、改指向共用）
+function targetBody(target: Target): Record<string, unknown> {
+  if (target.kind === 'object' || target.kind === 'layer') return {targets: [{kind: target.kind, id: target.id}]};
+  if (target.kind === 'span') return {targets: [{kind: 'layer', id: target.root}], span: {begin: target.begin, end: target.end}};
+  return {targets: []};
+}
+
+// 改指向：和写新批注一样，指向页面上现在选中的东西（圈出的一段 > 点选的层 > 选中的对象 > 整个项目）。
+// 选择一变"改成指向"跟着变，所以单独订阅选择；回复不能改（服务端会拒绝），按钮只在楼主上
+function Retarget({note, onDone}: {note: Note; onDone: () => void}) {
+  useStore(useShallow((s) => ({sel: s.sel, targetLayer: s.targetLayer, selected: s.selected, wholeProject: s.wholeProject})));
+  const target = composeTarget();
+  const apply = async () => { if (await noteAction({action: 'retarget', note: note.id, ...targetBody(target)})) onDone(); };
+  return (
+    <div className="note-row retarget">
+      改成指向：<b>{target.label}</b>
+      {target.kind !== 'project' && <a href="#" onClick={(e) => { e.preventDefault(); setState({wholeProject: true}); }}>改成整个项目</a>}
+      <span className="grow" /><button onClick={onDone}>取消</button><button onClick={apply}>改</button>
+      <p className="hint">先在画布上选中新的对象、点一个层名，或者在尺子上圈出一段。楼号、回复、已读都不变。</p>
+    </div>
+  );
+}
+
 function Targets({model, note}: {model: Model; note: Note}) {
   if (!note.targets.length) return <span className="note-target whole">整个项目</span>;
   return <>{note.targets.map((t, i) => {
@@ -50,7 +73,7 @@ function ReadButton({thread, me, read}: {thread: Thread; me: string; read: boole
 
 function NoteCard({model, note, floors, top, number, waiting, thread, me, read}: {model: Model; note: Note; floors: Map<number, number>; top?: Note;
   number?: number; waiting?: boolean; thread?: Thread; me?: string; read?: boolean}) {
-  const [mode, setMode] = useState<'view' | 'edit' | 'reply' | 'delete'>('view');
+  const [mode, setMode] = useState<'view' | 'edit' | 'reply' | 'delete' | 'retarget'>('view');
   const [draft, setDraft] = useState('');
   const isTop = !top;
   const open = (next: typeof mode) => { setMode(next); setDraft(next === 'edit' ? note.text : ''); };
@@ -81,13 +104,16 @@ function NoteCard({model, note, floors, top, number, waiting, thread, me, read}:
           ? <><span className="confirm">删除这条{isTop && floors.size > 1 ? '（回复会留下）' : ''}？</span>
               <button onClick={async () => { if (await noteAction({action: 'remove', note: note.id})) setMode('view'); }}>删除</button>
               <button onClick={() => setMode('view')}>取消</button></>
-          : <><button onClick={() => open('reply')}>回复</button><button onClick={() => open('edit')}>改</button><button onClick={() => open('delete')}>删</button></>)}
+          : <><button onClick={() => open('reply')}>回复</button><button onClick={() => open('edit')}>改</button>
+              {isTop && <button title="改这一楼指着的东西（挂错了不用删了重发）" onClick={() => open('retarget')}>改指向</button>}
+              <button onClick={() => open('delete')}>删</button></>)}
       </div>
       {mode === 'edit'
         ? <><textarea className="note-box" rows={3} autoFocus value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={keys} />
             <div className="note-row"><span className="grow" /><button onClick={() => setMode('view')}>取消</button><button onClick={save}>保存</button></div></>
         : <div className="note-text">{note.text}</div>}
       {isTop && <div className="note-where">→ <Targets model={model} note={note} /></div>}
+      {mode === 'retarget' && <Retarget note={note} onDone={() => setMode('view')} />}
       {mode === 'reply' && <div className="note-replybox">
         <textarea className="note-box" rows={2} autoFocus value={draft} placeholder={`回复 ${isTop ? '楼主' : floors.get(note.id) + ' 楼'}……（Ctrl+回车发送）`}
                   onChange={(e) => setDraft(e.target.value)} onKeyDown={keys} />
@@ -119,8 +145,7 @@ function Compose({me}: {me: string}) {
   const add = async () => {
     const body: Record<string, unknown> = {action: 'add', text: text.trim(), author: me.trim()};
     if (!body.text) return toast('先写点什么');
-    if (target.kind === 'object' || target.kind === 'layer') body.targets = [{kind: target.kind, id: target.id}];
-    if (target.kind === 'span') { body.targets = [{kind: 'layer', id: target.root}]; body.span = {begin: target.begin, end: target.end}; }
+    Object.assign(body, targetBody(target));
     if (await noteAction(body)) { setText(''); setState({wholeProject: false}); }
   };
   return (

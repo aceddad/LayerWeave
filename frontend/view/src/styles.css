@@ -118,8 +118,12 @@ select { background: var(--panel); padding: 3px 6px; }
 /* 批注标记 */
 .obj .note-n { position: absolute; left: 2px; top: 2px; font-style: normal; font-size: 10px; line-height: 14px; padding: 0 3px; border-radius: 7px; background: #fff3c4; color: #3a2a00; z-index: 1; }
 .note-dot { font-style: normal; font-size: 10px; line-height: 14px; padding: 0 3px; border-radius: 7px; background: #fff3c4; color: #3a2a00; flex: none; }
-.noteband { position: absolute; top: 0; bottom: 0; background: rgba(255, 210, 63, .14); border-left: 2px solid #ffd23f; border-right: 2px solid #ffd23f; z-index: 1; cursor: pointer; overflow: hidden; }
-.noteband span { position: absolute; left: 4px; bottom: 2px; font-size: 10px; color: #ffe48a; white-space: nowrap; text-shadow: 0 1px 2px #000; }
+/* 圈一段时间的批注：带子本身不接鼠标，下面的对象照样点得到（原来整条带子挡住了，修补方案第 10 条）；
+   两边的竖线（各 6 像素宽的可点区域）和标签能点，点了打开这一楼 */
+.noteband { position: absolute; top: 0; bottom: 0; background: rgba(255, 210, 63, .14); border-left: 2px solid #ffd23f; border-right: 2px solid #ffd23f; z-index: 4; overflow: hidden; pointer-events: none; }   /* 盖在选中、高亮的格子上面：带子不接鼠标，标签和竖线要点得到 */
+.noteband::before, .noteband::after { content: ''; position: absolute; top: 0; bottom: 0; width: 6px; pointer-events: auto; cursor: pointer; }
+.noteband::before { left: 0; } .noteband::after { right: 0; }
+.noteband span { position: absolute; left: 4px; bottom: 2px; font-size: 10px; color: #ffe48a; white-space: nowrap; text-shadow: 0 1px 2px #000; pointer-events: auto; cursor: pointer; }
 
 /* 右侧面板 */
 .side { width: clamp(240px, 28vw, 340px); flex: none; border-left: 1px solid var(--line); background: var(--panel); overflow: auto; padding: 0 12px 16px; }

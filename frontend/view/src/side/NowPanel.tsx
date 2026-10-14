@@ -4,6 +4,7 @@ import {useShallow} from 'zustand/react/shallow';
 import {gapAt} from '../model/gaps';
 import type {Gap} from '../model/gaps';
 import {fmt, fmtSpan} from '../model/units';
+import {copyMoment} from '../actions';
 import {activeBoard, useModel, useStore} from '../store';
 import {Card} from './Card';
 
@@ -52,7 +53,9 @@ export function NowPanel() {
   }
   return (
     <section>
-      <h2>此刻 <span>{playhead != null && act ? `${fmt(playhead, unit)} · ${act.rows.map((row) => row.map((r) => model.nameOf(r)).join(' → ')).join(' ＋ ')}` : ''}</span></h2>
+      <h2>此刻 <span>{playhead != null && act ? `${fmt(playhead, unit)} · ${act.rows.map((row) => row.map((r) => model.nameOf(r)).join(' → ')).join(' ＋ ')}` : ''}</span>
+        {playhead != null && act && <button className="walk-btn" title="把这一刻（圈出了一段就是那一段）每层是什么、怎么连着、哪些批注指着它们，复制成文字，贴给 AI；和 AI 用的 view_at 一样"
+                                            onClick={copyMoment}>复制文字版</button>}</h2>
       {sel && <><h3>选中的对象</h3><Card o={sel} full /></>}
       {blocks}
       {playhead != null && !cards && <p className="hint">这一刻没有对象。</p>}

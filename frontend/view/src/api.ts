@@ -22,6 +22,7 @@ export const api = {
   saveLayout: (id: number, boards: Board[]) => post<Layout & {recorded?: boolean}>(`/api/layout/${id}`, {boards}),
   version: () => get<{version: number; layout: number}>('/api/version'),
   changes: (id: number, limit: number) => get<ChangeOp[]>(`/api/changes/${id}?limit=${limit}`),
+  at: (id: number, spans: string[]) => get<{text: string}>(`/api/at/${id}?${spans.map((s) => `span=${encodeURIComponent(s)}`).join('&')}`),
   walk: (id: number, from: string, direction: WalkDirection, depth: number) =>
     get<WalkResult>(`/api/walk/${id}?from=${encodeURIComponent(from)}&direction=${direction}&depth=${depth}`),
   state: (body: unknown) => post('/api/state', body),

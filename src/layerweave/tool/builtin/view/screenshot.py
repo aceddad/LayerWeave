@@ -4,7 +4,7 @@ AI 看到的就是用户在视图里看到的：画板的排版用用户那份�
 页面把图片、视频封面、波形都加载完才举手，截图工具通过浏览器调试接口等到它再拍，不会拍到还没出图的空色块。
 
 python -m layerweave.tool.builtin.view.screenshot DATABASE PROJECT_ID 输出.png
-       [--view canvas|cuts|assets] [--board 根层编号] [--begin 起点 --end 终点] [--layers 1 5] [--playhead 位置] [--select 对象编号]
+       [--view canvas|cuts|assets] [--board 根层编号] [--begin 起点 --end 终点] [--layers 1 字幕 画面/原画] [--playhead 位置] [--select 对象编号]
        [--focus 对象编号] [--note 批注编号] [--link 用户复制的链接] [--changes 最近几次操作] [--notes] [--links] [--full-page]
        [--width 1600 --height 900] [--browser 浏览器路径] [--wait-ms 20000]
 """
@@ -25,7 +25,9 @@ import time
 from urllib.parse import parse_qs, urlencode, urlparse
 from urllib.request import urlopen
 
-from .data import open_readonly
+from layerweave.support.api import read_record
+
+from .data import open_readonly, order_layers
 from .fold import read_folds
 from .server import make_server
 
@@ -153,6 +155,40 @@ def _devtools_port(profile, deadline):
     raise RuntimeError("浏览器没有打开调试接口：确认 --browser 指向 Chrome、Edge 或 Chromium")
 
 
+def resolve_layers(database, project_id, items):
+    """--layers 的每一项：编号，或层名，或带上级的路径（"画面/原画"，从任意一级往下写都行）。
+    重名又没写路径时报错，列出候选让人选；网页地址里只用编号。"""
+    with closing(open_readonly(database)) as connection:
+        rows = order_layers(read_record(connection, "layer", project_id=project_id))
+    by_id = {row["id"]: row for row in rows}
+
+    def path(row):
+        names, seen = [], set()
+        while row is not None and row["id"] not in seen:
+            seen.add(row["id"])
+            names.append(row["name"] or "")
+            row = by_id.get(row["father"])
+        return list(reversed(names))
+
+    out = []
+    for item in items:
+        text = str(item).strip()
+        if text.isdigit():
+            if int(text) not in by_id:
+                raise ValueError(f"项目 {project_id} 里没有层 #{text}")
+            out.append(int(text))
+            continue
+        want = [part for part in text.split("/") if part]
+        found = [row for row in rows if want and path(row)[-len(want):] == want]
+        if not found:
+            raise ValueError(f"没有叫「{text}」的层")
+        if len(found) > 1:
+            listed = "；".join(f"#{row['id']} {'/'.join(path(row))}" for row in found)
+            raise ValueError(f"叫「{text}」的层有 {len(found)} 个：{listed}。写编号，或者带上级写成 上级/名字")
+        out.append(found[0]["id"])
+    return out
+
+
 # 页面认识的地址参数（截图约定见 README）；--link 只取这些
 LINK_KEYS = ("view", "board", "begin", "end", "playhead", "select", "focus", "note", "changes", "layers", "side", "links",
              "walk", "walkdir", "walkdepth")
@@ -170,6 +206,7 @@ def capture(database, project_id, output, *, view=None, board=None, begin=None, 
             select=None, focus=None, note=None, link=None, changes=None, notes=False, links=False, full_page=False,
             width=1600, height=900, browser=None, wait_ms=20000, state_root=None):
     query = link_query(link, project_id) if link else {}   # 先检查参数，再找浏览器、起服务
+    layer_ids = resolve_layers(database, project_id, layers) if layers else None
     browser = find_browser(browser)
     if browser is None:
         raise FileNotFoundError("找不到 Chrome、Edge 或 Chromium：用 --browser 或环境变量 LAYERWEAVE_BROWSER 指定浏览器路径")
@@ -187,8 +224,8 @@ def capture(database, project_id, output, *, view=None, board=None, begin=None, 
                        ("focus", focus), ("note", note), ("changes", changes)):
         if value is not None:
             query[key] = value
-    if layers:
-        query["layers"] = ",".join(str(i) for i in layers)
+    if layer_ids:
+        query["layers"] = ",".join(str(i) for i in layer_ids)
     server, url = make_server(database, state_root=state_root, record_state=False)
     page = url + "?" + urlencode(query)
     threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -261,7 +298,7 @@ COMMANDS = [{
         "board": {"type": "integer", "description": "只拍这个根层所在的画板；省略时拍整张画布"},
         "begin": {"type": "number", "description": "画板显示的起点，用这块画板的单位；和 end 一起用"},
         "end": {"type": "number", "description": "画板显示的终点"},
-        "layers": {"type": "array", "description": "只显示这些层"},
+        "layers": {"type": "array", "description": "只显示这些层：编号、层名，或带上级的路径（画面/原画）；重名时报错并列出候选"},
         "playhead": {"type": "number", "description": "播放头位置（落在 board 指定的画板上，省略 board 时是第一块）；右侧会列出这一刻每层的内容"},
         "select": {"type": "integer", "description": "选中并展开详情的对象编号"},
         "focus": {"type": "integer", "description": "把镜头移到这个对象上（放在画面左上三分之一处）"},
@@ -298,7 +335,7 @@ def main():
     p.add_argument("--view", choices=("canvas", "cuts", "assets"), help="省略时是画布，给了 --link 时按链接")
     p.add_argument("--board", type=int, help="只拍这个根层所在的画板")
     p.add_argument("--begin", type=float); p.add_argument("--end", type=float)
-    p.add_argument("--layers", type=int, nargs="+"); p.add_argument("--playhead", type=float); p.add_argument("--select", type=int)
+    p.add_argument("--layers", nargs="+", help="编号、层名或 上级/名字"); p.add_argument("--playhead", type=float); p.add_argument("--select", type=int)
     p.add_argument("--focus", type=int, help="把镜头移到这个对象上"); p.add_argument("--changes", type=int, help="标出最近几次操作的改动")
     p.add_argument("--note", type=int, help="对准这条批注：框住它指的地方，右侧标出这一楼")
     p.add_argument("--link", help="用户在视图里点「复制链接」得到的地址：按它拍同一个位置")

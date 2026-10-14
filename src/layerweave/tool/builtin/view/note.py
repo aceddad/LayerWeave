@@ -122,20 +122,30 @@ def _run(database, work):
     return {**(result["data"] or {}), "operation_id": result["operation_id"]}
 
 
+def _span(span, targets):
+    """span 只和指向层的关联一起用；起止写反了就换过来。"""
+    if span is None:
+        return None
+    begin, end = span
+    if not any(kind == "layer" for kind, _, _ in targets):
+        raise ValueError("span 表示某个层时间轴上的一段，要和指向那个层的关联（--to layer:编号）一起用")
+    return {"begin": float(begin), "end": float(end)} if end >= begin else {"begin": float(end), "end": float(begin)}
+
+
+def _check_targets(write, project_id, targets):
+    for kind, target_project, target_id in targets:
+        if target_project == project_id and write.read(kind, project_id=project_id, id=target_id) is None:
+            raise ValueError(f"项目 {project_id} 里没有{'层' if kind == 'layer' else '对象'} #{target_id}")
+
+
 def add_note(database, project_id, text, *, targets=(), span=None, author=None):
     """写一条批注，接在最后。targets 是 (kind, project, id) 列表；span 只和指向层的关联一起用。"""
     if not isinstance(text, str) or not text.strip():
         raise ValueError("批注正文不能为空")
-    if span is not None:
-        begin, end = span
-        if not any(kind == "layer" for kind, _, _ in targets):
-            raise ValueError("span 表示某个层时间轴上的一段，要和指向那个层的关联（--to layer:编号）一起用")
-        span = {"begin": float(begin), "end": float(end)} if end >= begin else {"begin": float(end), "end": float(begin)}
+    span = _span(span, targets)
 
     def work(write):
-        for kind, target_project, target_id in targets:
-            if target_project == project_id and write.read(kind, project_id=project_id, id=target_id) is None:
-                raise ValueError(f"项目 {project_id} 里没有{'层' if kind == 'layer' else '对象'} #{target_id}")
+        _check_targets(write, project_id, targets)
         layer = _note_layer(write, project_id)
         existing = write.read("object", project_id=project_id, filters={"layer": layer["id"]})
         index = int(max((row["end"] for row in existing), default=0))
@@ -177,6 +187,36 @@ def update_note(database, project_id, note_id, *, text=None, status=None):
             information["status"] = status
         write.update("object", note_id, {"information": information}, project_id=project_id)
         return {"note": note_id, "status": information.get("status", "open")}
+    return _run(database, work)
+
+
+def retarget_note(database, project_id, note_id, targets, span=None):
+    """改楼主指着的东西：换掉它发出的关联，楼号、正文、回复、已读都不动；一次写完，可以撤销。
+    targets 为空就是改成写给整个项目。回复不能改：它指着楼主，改了就不是这一楼的了。"""
+    targets = list(dict.fromkeys(targets))
+    span = _span(span, targets)
+
+    def work(write):
+        row = _own_note(write, project_id, note_id)
+        _check_targets(write, project_id, targets)
+        old = write.read("bind", filters={"source_project_id": project_id, "source_kind": "object", "source_id": note_id})
+        for bind in old:
+            target = bind["target_kind"] == "object" and bind["target_project_id"] == project_id \
+                and write.read("object", project_id=project_id, id=bind["target_id"])
+            layer = target and write.read("layer", project_id=project_id, id=target["layer"])
+            if layer and is_note_layer(layer):
+                raise ValueError(f"#{note_id} 是回复（指着 #{bind['target_id']}），不能改指向；要改，改楼主的")
+        for bind in old:
+            write.delete("bind", bind["id"])
+        for kind, target_project, target_id in targets:
+            write.create("bind", {"source_kind": "object", "source_project_id": project_id, "source_id": note_id,
+                                  "target_kind": kind, "target_project_id": target_project, "target_id": target_id, "tips": ""})
+        information = dict(row["information"]) if isinstance(row["information"], dict) else {}
+        information.pop("span", None)
+        if span:
+            information["span"] = span
+        write.update("object", note_id, {"information": information}, project_id=project_id)
+        return {"note": note_id, "targets": [f"{k}:{i}" if p == project_id else f"{k}:{p}:{i}" for k, p, i in targets]}
     return _run(database, work)
 
 
@@ -274,6 +314,11 @@ def note(database, project_id, action="list", *, text=None, to=None, span=None, 
     if action in ("done", "reopen"):
         return update_note(database, project_id, note_id, status="done" if action == "done" else "open")
     if action == "edit":
+        if to is not None:                                  # --to：改指向（可以同时改正文）
+            result = retarget_note(database, project_id, note_id, [parse_target(item, project_id) for item in to], span=span)
+            if text:
+                result = {**result, **update_note(database, project_id, note_id, text=text)}
+            return result
         return update_note(database, project_id, note_id, text=text)
     if action == "remove":
         return remove_note(database, project_id, note_id)
@@ -292,7 +337,7 @@ COMMANDS = [{
     "parameters": {
         "action": {"type": "string", "description": "list、add、reply、done、reopen、edit、remove、read 或 unread", "default": "list"},
         "text": {"type": "string", "description": "add、reply、edit 时的批注正文"},
-        "to": {"type": "array", "description": "add 时指向的东西：object:编号、layer:编号，或跨项目的 object:项目:编号；可以多个"},
+        "to": {"type": "array", "description": "add 时指向的东西：object:编号、layer:编号，或跨项目的 object:项目:编号；可以多个。edit 带 to 就是改指向（只有楼主能改，回复不能）；给空列表改成写给整个项目"},
         "span": {"type": "array", "description": "add 时指向层的一段空白时间 [起点, 终点]，用那个层的单位；要和 layer:编号 一起用"},
         "author": {"type": "string", "description": "谁写的，例如 用户、Claude；read、unread 时是谁标已读"},
         "note_id": {"type": "integer", "description": "reply（被回复的那条）、done、reopen、edit、remove、read、unread 时的批注编号（read 按它所在的楼）"},
@@ -307,6 +352,7 @@ COMMANDS = [{
         {"cli": "python -m layerweave.tool.builtin.view.note DATABASE 1 --waiting Claude"},
         {"cli": "python -m layerweave.tool.builtin.view.note DATABASE 1 reply 41 \"已经改了\" --author Claude"},
         {"cli": "python -m layerweave.tool.builtin.view.note DATABASE 1 done 40"},
+        {"cli": "python -m layerweave.tool.builtin.view.note DATABASE 1 edit 40 --to object:18"},
         {"cli": "python -m layerweave.tool.builtin.view.note DATABASE 1 read 40 --author Claude"},
         {"cli": "python -m layerweave.tool.builtin.view.note DATABASE 1 --status done"},
     ],

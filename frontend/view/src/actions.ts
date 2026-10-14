@@ -5,7 +5,8 @@ import {linkQuery} from './model/link';
 import {keyOf} from './model/model';
 import {cutPoints, editPoints, stepObject, stepTime, stepTrack} from './model/navigate';
 import {activeBoard, getState, modelOf, setState} from './store';
-import {foldAction, loadChanges, loadWalk, report, saveLayout, toast} from './sync';
+import {api} from './api';
+import {foldAction, loadChanges, loadWalk, report, saveLayout, selectionInfo, toast} from './sync';
 import type {Ref, Side, View, WalkDirection} from './types';
 
 // 点画板：放播放头；点在色块上就选中它；点在尺子上只放播放头并取消圈出的一段
@@ -123,6 +124,22 @@ export function keyStep(key: string): boolean {
   return false;
 }
 
+// 此刻面板的"复制文字版"：圈出了一段就读那一段，否则读播放头（每一行各一刻），和 AI 用的 view_at 同一份文字
+export async function copyMoment() {
+  const s = getState(), model = modelOf(s), b = activeBoard(s);
+  if (!model || !b || s.project == null) return;
+  const sel = selectionInfo();
+  const spans = sel ? [`${sel.root}:${sel.begin}:${sel.end}`]
+    : s.playhead == null ? [] : b.rows.map((row) => model.segmentAt(row, s.playhead!)).filter(Boolean)
+      .map((seg) => { const t = +(s.playhead! - seg!.offset).toFixed(6); return `${seg!.root}:${t}:${t}`; });
+  if (!spans.length) return toast('先在画板上点一下，放好播放头');
+  try {
+    const {text} = await api.at(s.project, spans);
+    if (await writeClipboard(text)) toast('已复制这一刻的文字版：每层是什么、怎么连着、哪些批注指着它们。贴给 AI 就行');
+    else { setState({message: text}); setTimeout(() => setState({message: ''}), 15000); }
+  } catch (error) { toast('读不到这一刻：' + (error as Error).message); }
+}
+
 // 复制链接：现在看的位置（画板、看得见的范围、播放头、选中的对象、对准的批注）。贴给 AI，它用 view_screenshot --link 拍同一个画面
 export async function copyLink() {
   const s = getState(), act = activeBoard(s);
@@ -136,7 +153,7 @@ export async function copyLink() {
   setTimeout(() => setState({message: ''}), 10000);
 }
 
-async function writeClipboard(text: string): Promise<boolean> {
+export async function writeClipboard(text: string): Promise<boolean> {
   try { await navigator.clipboard.writeText(text); return true; } catch { /* 有的内嵌浏览器不给剪贴板接口，换老办法 */ }
   const box = document.createElement('textarea');
   box.value = text;

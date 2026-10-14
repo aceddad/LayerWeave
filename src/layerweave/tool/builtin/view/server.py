@@ -18,8 +18,9 @@ from urllib.parse import parse_qs, urlparse
 from .data import extract_frame, find_ffmpeg, list_projects, media_path, open_readonly, project_roots, project_view, recent_changes, thumbnail, waveform
 from .layout import layout_serial, load_layout, reconcile, save_layout
 from .fold import set_folds
+from .at import read_spans
 from .walk import walk_from
-from .note import add_note, remove_note, set_read, update_note
+from .note import add_note, remove_note, retarget_note, set_read, update_note
 from .state import read_state, write_state
 
 WEB_ROOT = Path(__file__).with_name("web")
@@ -72,6 +73,13 @@ class ViewHandler(SimpleHTTPRequestHandler):
                 limit = max(1, min(100, int(parse_qs(url.query).get("limit", ["10"])[0])))
                 with closing(open_readonly(self.database)) as connection:
                     return self.send_json(recent_changes(connection, int(match[1]), limit))
+            if match := re.fullmatch(r"/api/at/(\d+)", url.path):
+                # 按时刻读（at.py）：span=根:起点:终点，可以给几个；"此刻"面板的"复制文字版"用
+                spans = [tuple(float(x) if i else int(x) for i, x in enumerate(item.split(":"))) for item in parse_qs(url.query).get("span", [])]
+                if not spans or any(len(s) != 3 for s in spans):
+                    return self.send_json({"error": "span 写成 根:起点:终点"}, HTTPStatus.BAD_REQUEST)
+                with closing(open_readonly(self.database)) as connection:
+                    return self.send_json(read_spans(connection, int(match[1]), spans))
             if match := re.fullmatch(r"/api/walk/(\d+)", url.path):
                 # 沿着读（walk.py）：侧栏「沿着读」按步列出
                 q = parse_qs(url.query)
@@ -195,6 +203,13 @@ class ViewHandler(SimpleHTTPRequestHandler):
                 result = update_note(self.database, project_id, int(payload["note"]), status="done" if action == "done" else "open")
             elif action == "edit":
                 result = update_note(self.database, project_id, int(payload["note"]), text=payload.get("text"))
+            elif action == "retarget":
+                # 改指向：和写新批注一样指向页面上选中的东西；回复不能改（note.py 会拒绝）
+                targets = [(t["kind"], int(t.get("project", project_id)), int(t["id"])) for t in payload.get("targets", [])
+                           if t.get("kind") in ("object", "layer")]
+                span = payload.get("span")
+                result = retarget_note(self.database, project_id, int(payload["note"]), targets,
+                                       span=(span["begin"], span["end"]) if isinstance(span, dict) else None)
             elif action == "remove":
                 result = remove_note(self.database, project_id, int(payload["note"]))
             elif action in ("read", "unread"):

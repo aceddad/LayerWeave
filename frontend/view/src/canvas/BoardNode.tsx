@@ -143,7 +143,7 @@ const Section = memo(function Section({board, layout, sec}: {board: Board; layou
     const target = e.target as HTMLElement;
     if (target.closest('.seg-chip')) return;
     const band = target.closest<HTMLElement>('.noteband');
-    if (band) setState({side: 'notes'});
+    if (band) { setState({side: 'notes', noteFocus: Number(band.dataset.note)}); return; }
     const obj = target.closest<HTMLElement>('.obj');
     clickBoard(key, xToTime(board, toFlow(e.clientX, e.clientY).x), obj ? Number(obj.dataset.id) : null, false);
   };

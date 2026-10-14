@@ -34,7 +34,7 @@ def parse_start(text, project_id):
     return parts[0], int(parts[1]) if len(parts) == 3 else project_id, int(parts[-1])
 
 
-def _num(value):
+def num(value):
     return f"{value:.3f}".rstrip("0").rstrip(".") if isinstance(value, (int, float)) else "?"
 
 
@@ -42,7 +42,7 @@ def _ref(kind, owner, number, project_id):
     return f"{kind}:{number}" if owner == project_id else f"{kind}:{owner}:{number}"
 
 
-class _Layers:
+class Layers:
     """项目里的层：名字、类型、所在的根和根的单位（写位置时用）。"""
 
     def __init__(self, connection, project_id):
@@ -75,6 +75,15 @@ def _step(kind, owner, number, depth, project_id, layers, connection):
         step.update(name=row["name"], type="note" if row["config_ref"] == NOTE_LAYER_REF else row["type"],
                     root=layers.root.get(number), unit=layers.unit(number))
         return step
+    return object_step(row, layers, project_id, connection, depth)
+
+
+def object_step(row, layers, project_id, connection, depth=0):
+    """一个对象怎么写：名字、类型、所在层、位置（按根的单位）、文字或文件；批注另记署名、状态、是不是回复。按时刻读（at.py）也用它。"""
+    owner, number = project_id, row["id"]
+    step = {"ref": _ref("object", owner, number, project_id), "kind": "object", "project": owner, "id": number, "depth": depth,
+            "status": "found", "name": "", "type": "", "layer": None, "root": None, "unit": "", "begin": None, "end": None,
+            "text": None, "source": None, "note": None, "via": []}
     info = row["information"] if isinstance(row["information"], dict) else {}
     layer = layers.rows.get(row["layer"])
     text = info.get("text") if isinstance(info.get("text"), str) else None
@@ -104,7 +113,7 @@ def walk_from(connection, project_id, start, *, direction="both", depth=3, max_n
         raise ValueError("数量上限至少是 1")
     kind, owner, number = parse_start(start, project_id)
     with read_snapshot(connection):
-        layers = _Layers(connection, project_id)
+        layers = Layers(connection, project_id)
         first = _step(kind, owner, number, 0, project_id, layers, connection)
         if first["status"] != "found":
             raise ValueError(f"起点 {start} {'在别的项目里' if first['status'] == 'other_project' else '不存在'}")
@@ -162,7 +171,7 @@ def label(step):
     return f"{number}「{name}」" if name else number
 
 
-def _facts(step):
+def facts(step):
     if step["status"] != "found":
         return []
     if step["kind"] == "layer":
@@ -172,12 +181,12 @@ def _facts(step):
         note = step["note"]
         facts += [note["author"] or "没署名", "回复" if note["reply"] else "已处理" if note["status"] == "done" else "待处理"]
         if note.get("span"):
-            facts.append(f"圈的是 {_num(note['span'].get('begin'))}–{_num(note['span'].get('end'))}")
+            facts.append(f"圈的是 {num(note['span'].get('begin'))}–{num(note['span'].get('end'))}")
     else:
         facts.append(step["type"])
         if step["layer"]:
             facts.append(f"层「{step['layer']['name']}」")
-        facts.append(f"{_num(step['begin'])}–{_num(step['end'])}{' ' + step['unit'] if step['unit'] else ''}")
+        facts.append(f"{num(step['begin'])}–{num(step['end'])}{' ' + step['unit'] if step['unit'] else ''}")
         if step["source"]:
             facts.append(f"文件 {step['source']}")
     return facts
@@ -199,7 +208,7 @@ def describe(result):
             break
         lines.append(f"第 {depth} 步")
         for step in here:
-            lines.append("  " + " · ".join([label(step)] + _facts(step)))
+            lines.append("  " + " · ".join([label(step)] + facts(step)))
             if step["text"]:
                 text = " ".join(step["text"].split())
                 lines.append("    " + (text if len(text) <= LINE_LIMIT else text[:LINE_LIMIT] + f"…（共 {len(text)} 字，--json 看全文）"))

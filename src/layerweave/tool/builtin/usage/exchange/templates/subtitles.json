@@ -1,0 +1,17 @@
+{
+  "format_version": 1,
+  "name": "字幕起始结构",
+  "when": "创建字幕文字层，包含一条可替换的示例字幕",
+  "project": {"data": {"name": "字幕项目"}},
+  "items": [
+    {
+      "kind": "layer", "op": "add", "key": "subtitles",
+      "data": {"name": "字幕", "config_ref": "layers/text.toml", "axis": {"unit": "second", "precision": 0.001}},
+      "children": [
+        {"kind": "object", "op": "add", "key": "first-line",
+         "data": {"name": "示例字幕", "config_ref": "objects/text.toml", "begin": 0, "end": 2,
+                  "information": {"text": "在这里填写第一句字幕"}}}
+      ]
+    }
+  ]
+}

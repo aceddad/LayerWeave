@@ -31,6 +31,8 @@ def check(wheel):
         resources += list(package.rglob("component.toml"))
         resources.append(package / "tool/builtin/developer/versions/README.md")
         resources.append(package / "support/numbering/README.md")
+        resources += list((package / "tool/builtin/usage/exchange/templates").glob("*.json"))
+        resources += list((package / "tool/builtin/usage/exchange").glob("*.md"))
         for path in resources:
             member = "layerweave/" + path.relative_to(package).as_posix()
             assert member in names, f"Missing package resource: {member}"
@@ -73,8 +75,8 @@ assert {str(ROOT)!r} not in sys.path
                              env=env, capture_output=True, text=True, encoding="utf-8", timeout=30)
         assert run.returncode == 0, run.stdout + run.stderr
         data = json.loads(run.stdout)
-        assert data["status"] == "completed" and len(data["items"]) == 41, data
-        print("ordinary install CLI: 41 commands discovered, no editable source fallback")
+        assert data["status"] == "completed" and len(data["items"]) == 44, data
+        print("ordinary install CLI: 44 commands discovered, no editable source fallback")
 
 
 if __name__ == "__main__":

@@ -34,6 +34,7 @@
 | 只修改几个字段，或一次组合多个修改 | run_operation 或 transaction 中的 write 原语；高级工具见[事务内组合](04-composing-tools.md) |
 | 使用 Python 派生实例，或保存整层与装载对象 | load_layer/load_object、save_layer/save_object |
 | 使用现成的查询展示、编辑、历史或撤销 | 对应的[内部工具包](../../src/layerweave/tool/builtin/README.md) |
+| 用 JSON 表达批量操作或复用场景模板 | [交换工具](../../src/layerweave/tool/builtin/usage/exchange/README.md)；新模板只需添加 JSON |
 | 声明工具表、复用层编号或共享发号 | [工具表](03-managed-tables.md)与[编号模块](../../src/layerweave/support/numbering/README.md)；可运行示例在[示例索引](../examples.md) |
 | 让 AI 发现工具用途、调用方式与版本 | [命令声明](../../src/layerweave/tool/builtin/shared/help/COMMANDS.md)负责使用说明，[组件声明](../../src/layerweave/tool/builtin/developer/versions/README.md#声明放在哪里)负责版本登记 |
 

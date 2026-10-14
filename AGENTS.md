@@ -3,6 +3,7 @@
 可独立增减的软件操作包统称为“内部工具”，放在 src/layerweave/tool/builtin；基础读写、事务和发号位于 support。供层原型 tools 引用的外置技能放在 src/layerweave/tool/skills。
 
 - 操作项目内容：从[使用工具](src/layerweave/tool/builtin/usage/README.md)选择操作，参数和示例由各工具 help 提供。
+- 用 JSON 批量操作或套用模板：读[交换工具](src/layerweave/tool/builtin/usage/exchange/README.md)，格式与引用见 FORMAT，自行扩充见 DEVELOPMENT；归属不符跳过并报告。
 - 借用 LayerWeave 开发自己的工具：先读[AI 开发指导](docs/build-with-layerweave/README.md)，按篇选择嵌套时序或有序管理等接入方式。
 - 修改代码或增加封装：先读[开发指南](docs/developer-conventions.md)，再读对应配置、API 和实现专题。
 - 一批操作共同提交：读[事务内组合](docs/build-with-layerweave/04-composing-tools.md)，使用 *_in_session(write, ...)；独立工具入口不嵌套，检测由最外层配置。

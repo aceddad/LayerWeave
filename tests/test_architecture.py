@@ -17,7 +17,7 @@ from layerweave.support.storage.database import SCHEMA_PATH
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = ROOT / "src/layerweave"
 PACKAGES = ("usage/records", "usage/query", "usage/editing", "usage/history", "usage/undo",
-            "usage/validation", "usage/text", "shared/help", "developer/database", "developer/skills", "developer/keys", "developer/versions",
+            "usage/validation", "usage/text", "usage/exchange", "shared/help", "developer/database", "developer/skills", "developer/keys", "developer/versions",
             "view")   # visualization 分支：视图工具包
 
 FIXTURE = '''
@@ -124,6 +124,17 @@ assert not any(n == "layerweave.tool" or n.startswith("layerweave.tool.") for n 
 
     def test_each_complete_package_works_alone(self):
         actions = {
+            "usage/exchange": '''
+from layerweave.tool.builtin.usage.exchange import export_project, import_project, template_help
+assert len(template_help()["items"]) == 3
+doc = template_help("storyboard")["items"][0]["document"]
+made = import_project(c,doc,new_project=True)
+assert made["ok"] and made["checks"]["status"] == "not_run", made
+snapshot = export_project(c,made["data"]["project_id"],op="add")
+again = import_project(c,snapshot)
+assert again["ok"] and again["data"]["status"] == "completed", again
+assert again["data"]["project_id"] != made["data"]["project_id"]
+''',
             "usage/records": '''
 from layerweave.tool.builtin.usage.records.dispatch import dispatch
 from layerweave.tool.builtin.usage.records.save import save_object_with_checks

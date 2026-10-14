@@ -1,0 +1,35 @@
+{
+  "format_version": 1,
+  "name": "手书多模块起始结构",
+  "when": "用多个 root 分别管理含义、图片、视频和资源；各模块按需扩充对象",
+  "project": {"data": {"name": "手书项目", "tips": "示例结构可改名、增减；媒体由 AI 选择自己的输出目录"}},
+  "items": [
+    {"kind": "layer", "op": "add", "key": "meaning", "data": {"name": "内涵控制", "config_ref": "layers/text.toml"},
+     "children": [
+       {"kind": "layer", "op": "add", "data": {"name": "含义推测", "config_ref": "layers/text.toml"}},
+       {"kind": "layer", "op": "add", "data": {"name": "理解与意境素材", "config_ref": "layers/text.toml"}},
+       {"kind": "layer", "op": "add", "data": {"name": "赋予的意境与含义", "config_ref": "layers/text.toml"}}
+     ]},
+    {"kind": "layer", "op": "add", "key": "images", "data": {"name": "图片控制", "config_ref": "layers/text.toml"},
+     "children": [
+       {"kind": "layer", "op": "add", "data": {"name": "意愿说明", "config_ref": "layers/text.toml"}},
+       {"kind": "layer", "op": "add", "data": {"name": "SVG 草图", "config_ref": "layers/image.toml"}},
+       {"kind": "layer", "op": "add", "data": {"name": "成品图片", "config_ref": "layers/image.toml"}}
+     ]},
+    {"kind": "layer", "op": "add", "key": "video", "data": {"name": "视频控制", "config_ref": "layers/text.toml"},
+     "children": [
+       {"kind": "layer", "op": "add", "data": {"name": "意愿说明", "config_ref": "layers/text.toml"}},
+       {"kind": "layer", "op": "add", "data": {"name": "首尾帧", "config_ref": "layers/image.toml"}},
+       {"kind": "layer", "op": "add", "data": {"name": "模型", "config_ref": "layers/model.toml"}},
+       {"kind": "layer", "op": "add", "data": {"name": "动作", "config_ref": "layers/active.toml"}},
+       {"kind": "layer", "op": "add", "data": {"name": "成片", "config_ref": "layers/movie.toml"}}
+     ]},
+    {"kind": "layer", "op": "add", "key": "resources", "data": {"name": "资源管理", "config_ref": "layers/text.toml"},
+     "children": [
+       {"kind": "layer", "op": "add", "data": {"name": "图片", "config_ref": "layers/image.toml"}},
+       {"kind": "layer", "op": "add", "data": {"name": "视频", "config_ref": "layers/movie.toml"}},
+       {"kind": "layer", "op": "add", "data": {"name": "代码", "config_ref": "layers/text.toml"}},
+       {"kind": "layer", "op": "add", "data": {"name": "结果", "config_ref": "layers/image.toml"}}
+     ]}
+  ]
+}

@@ -86,13 +86,22 @@ again = upsert_objects(c,p,layer.id,[{"name":"sync","tips":"update"}])
 assert again["ok"] and again["data"]["items"][0]["record"]["id"] == synced_id
 assert len(read_changes(c,after=cursor)["changes"]) == 2
 assert walk_relations(c,p,"object",synced_id)["nodes"][0]["record"]["tips"] == "update"
+from layerweave.tool.builtin.usage.exchange import export_project, import_project, template_help
+templates = template_help()
+assert len(templates["items"]) == 3, templates
+made = import_project(c,template_help("storyboard")["items"][0]["document"],new_project=True)
+assert made["ok"] and made["data"]["status"] == "completed", made
+snapshot = export_project(c,made["data"]["project_id"],op="add")
+copied = import_project(c,snapshot)
+assert copied["ok"] and copied["data"]["counts"]["created"] == 4, copied
+assert undo_operation(c,copied["operation_id"])["ok"]
 assert read_support("combined", "text")["status"] == "completed"
 commands = command_help()
-assert len(commands["items"]) == 41 and commands["status"] == "completed", commands
+assert len(commands["items"]) == 44 and commands["status"] == "completed", commands
 from layerweave.tool.builtin.developer.versions import manage_versions
 versions = manage_versions(c)
 assert versions["ok"] and versions["data"]["status"] == "completed", versions
-assert len(versions["data"]["items"]) == 14, versions   # 基础部分 + 12 个内置工具包 + visualization 分支的视图工具包
+assert len(versions["data"]["items"]) == 15, versions   # 基础部分 + 13 个内置工具包 + visualization 分支的视图工具包
 assert all(row["status"] == "online" for row in versions["data"]["items"]), versions
 assert manage_versions(c,"read",name="layerweave.versions")["data"]["items"][0]["version"] == "0.1.0"
 from layerweave.tool.builtin.developer.keys.service import manage_keys, get_key

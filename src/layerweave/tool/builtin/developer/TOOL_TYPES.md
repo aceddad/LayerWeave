@@ -38,22 +38,25 @@
 
 ## 给自己的层配一个视图页面：视图插件
 
-登记了新类型以后，如果想在视图里给它一个专用页面（像接缝页那样），写一个视图插件。插件装上就出现，不用重新编译视图；卸掉就消失，视图照常工作。接缝就是视图的第一个插件：源码在仓库 `frontend/view/plugins/cuts/`，编译结果在 `view/plugins/cuts/plugin.js`。
+登记了新类型以后，如果想在视图里给它一个专用页面（像接缝页那样），写一个视图插件。插件开着就出现，不用重新编译视图；关掉就消失，视图照常工作。接缝就是视图的第一个插件：源码在仓库 `frontend/view/plugins/cuts/`，编译结果在 `view/plugins/cuts/plugin.js`。
+
+插件由视图管：视图有一份本机清单（`~/.layerweave/view/plugins.json`），清单里有的、开着的才载入。工具包不用在 `component.toml` 里写任何东西，视图也不扫描目录。不管工具包多大，在视图这里都只是一行：名字和一个编译好的 js。
 
 | 步骤 | 做法 | 接缝的写法 |
 |---|---|---|
 | 1. 写插件 | 一个 ES 模块，默认导出 `(host) => ViewPlugin`。`host` 给 React（和视图共用一份，插件不要自己打包）、读项目的 `useView()`、`selectObject` / `startWalk` / `toast` / `markReady` 这些动作、`Img` / `Thumb` / `Frame` 小部件和 `kindOf`、`fmt`、`lanes` 等工具函数。接口定义在 `frontend/view/src/plugin/host.ts`，版本号是 `host.api` | `plugins/cuts/index.tsx` |
-| 2. 返回什么 | `name`（页面名，也是地址里的 `view=`）、`label`（顶栏标签上的字）、`handles`（管哪些种类的对象；项目里一个都没有就不显示标签）、`page`（页面组件）；可选的 `jumpPoints(model, board)` 给键盘 `[ ]` 提供跳转点 | `name: 'cuts'`、`handles: ['image', 'video']`、`jumpPoints` 是接缝的时刻 |
+| 2. 返回什么 | `label`（顶栏标签上的字）、`handles`（管哪些种类的对象；项目里一个都没有就不显示标签）、`page`（页面组件）；可选的 `jumpPoints(model, board)` 给键盘 `[ ]` 提供跳转点。名字不用写，由清单定（也是地址里的 `view=`） | `label: '接缝'`、`handles: ['image', 'video']`、`jumpPoints` 是接缝的时刻 |
 | 3. 编译 | 不打包 React：JSX 编译成 `h(...)`，`h` 在插件被加载时从 `host.React.createElement` 拿。样式写成字符串，用 `host.addStyle` 加进页面 | `vite.plugins.config.ts`：`npm run build` 会编译 `plugins/` 下每个插件 |
-| 4. 登记 | 在自己工具包的 `component.toml` 里加 `[[view_plugins]]`：`name`、`entry`（相对这个目录的 .js 文件）。打包时把这个 .js 一起带上 | 视图包的 `component.toml`：`entry = "plugins/cuts/plugin.js"`；pyproject 的 package-data 加 `plugins/*/*.js` |
+| 4. 放好、加进清单 | 编译好的 js 放在自己的目录里，最好一个插件一个文件夹（入口叫 `plugin.js`，同一个文件夹里的拆出去的代码、图片、样式也能访问）。不要放进 LayerWeave 的安装目录，软件更新时会被换掉。然后 `view_plugin add 路径`（或网页顶栏「插件」里加）；小插件可以放在默认文件夹 `~/.layerweave/view/plugins/<名字>/`，加的时候只写名字。工具包的说明里写上这一步 | 接缝是内置的：写在 `view/plugins.py` 的 `BUILTIN` 里，随视图包分发（pyproject 的 package-data 有 `plugins/*/*.js`） |
 | 5. 截图 | 截图页面上画完要调 `host.markReady()`，`view_screenshot --view <name>` 就能拍 | 接缝页在页面出来以后调 |
 | 6. 测试 | 计算写成纯函数，工具函数从参数传进来，测试里传视图真正的那些 | `plugins/cuts/cuts.test.ts` |
 
 要点：
 
 - 插件只在页面里运行，读视图服务已有的数据；写入仍然只有视图自己的两种（批注、折叠）。插件不带 Python 写入口，不碰数据库。
-- 视图服务启动时找一次插件（`view/plugins.py`，只读 TOML，不导入代码）：现在找包里内置的工具包。装了新插件要重启视图服务。登记有问题的（名字不合规矩、入口不在目录里、文件不存在、重名）不加载，记成问题。
-- 一个插件加载失败，页面只提示一句，不影响别的插件和视图本身。
+- 清单改了不用重启视图服务，页面自己跟上。有问题的（名字不合规矩、文件不在、重名、在安装目录里）不载入，在 `view_plugin` 和网页小窗里标出原因。
+- 一个插件载入失败，页面只提示一句、在小窗里标出原因，不影响别的插件和视图本身。
+- 开发时：把自己的插件链接进来，改完重新构建，再点开网页上的「插件」小窗（或刷新页面）就换成新的。
 - `host` 的接口只加不改；改了要在这里写明，并改 `host.api` 的版本号。
 
 ## 相关说明

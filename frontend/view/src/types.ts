@@ -118,6 +118,23 @@ export interface ChangeOp {
 }
 
 export type View = string;   // canvas、assets，或某个插件的页面名（比如接缝插件的 cuts）
+
+// 本机插件清单（/api/plugins，view/plugins.py）：内置的在前，然后是链接来的
+export interface PluginRow {
+  name: string;                    // 清单里的名字，也是页面的 view=
+  source: 'builtin' | 'link';
+  path: string;                    // js 文件在哪
+  on: boolean;
+  problem: string | null;          // 有问题就不载入：文件不在、重名、在安装目录里……
+  about: string;                   // 内置插件的一句说明
+  url?: string;                    // 开着、没问题的才有：页面 import() 它
+}
+export interface PluginList {
+  plugins: PluginRow[];
+  file: string;                    // 清单文件在哪
+  folder: string;                  // 只写名字的插件放在这个文件夹下面
+  problem: string | null;          // 清单本身坏了
+}
 export type Side = 'now' | 'changes' | 'notes' | 'walk';
 
 // 沿着读（服务端 view/walk.py 的结果）：从起点顺着关联一步步往外走，按步数排好

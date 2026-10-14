@@ -1,6 +1,6 @@
 // 接缝插件（视图的第一个插件）：同一条轨道里前后相接的图片和视频，上一段的最后一帧和下一段的第一帧并排，用来查衔接——
 // 比如上一段球落在地上，下一段却从桌上开始。另外给键盘 [ ] 提供跳转点（接缝的时刻）。
-// 编译成 view/plugins/cuts/plugin.js（vite.plugins.config.ts），由视图包的 component.toml 里的 [[view_plugins]] 登记。
+// 编译成 view/plugins/cuts/plugin.js（vite.plugins.config.ts），是视图的内置插件（view/plugins.py 的 BUILTIN），本机清单里可以关掉。
 // 只用宿主给的东西（host）：React 是宿主那一份，JSX 编译成 h(...)，h 在插件被加载时从 host.React 拿
 import type {PluginHost, ViewPlugin} from '../../src/plugin/host';
 import type {Model} from '../../src/model/model';

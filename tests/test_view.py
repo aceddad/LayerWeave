@@ -367,34 +367,104 @@ class ViewTests(unittest.TestCase):
         with closing(open_readonly(self.database)) as c:
             self.assertEqual(project_view(c, self.database, self.project)["noteReads"][str(top)]["用户"], later)
 
-    def test_plugins_are_declared_found_and_served(self):
-        from layerweave.tool.builtin.view.plugins import find_plugins
-        found = find_plugins()
-        self.assertEqual([p["name"] for p in found["plugins"]], ["cuts"])                   # 接缝是视图包自己登记的插件
-        self.assertEqual(found["issues"], [])
-        self.assertEqual(self.json("/api/plugins"), [{"name": "cuts", "url": "/plugins/cuts.js", "component": "layerweave.view"}])
-        status, headers, body = self.get("/plugins/cuts.js")
+    def test_plugin_list_add_switch_remove_and_serve(self):
+        from layerweave.tool.builtin.view.plugins import PACKAGE_ROOT, list_plugins, loadable, plugin
+        root = self.state_root
+        # 什么都没登记：只有内置的接缝，开着
+        found = list_plugins(root)
+        self.assertEqual([(p["name"], p["source"], p["on"], p["problem"]) for p in found["plugins"]], [("cuts", "builtin", True, None)])
+        listed = self.json("/api/plugins")
+        self.assertRegex(listed["plugins"][0]["url"], r"^/plugins/cuts/plugin\.js\?v=\d+$")
+        status, headers, body = self.get("/plugins/cuts/plugin.js")
         self.assertEqual((status, headers["Content-Type"].split(";")[0]), (200, "text/javascript"))
         self.assertIn(b"export", body)
+        for bad in ("/plugins/nope/plugin.js", "/plugins/cuts/../../server.py", "/plugins/cuts/%2e%2e/%2e%2e/server.py"):
+            with self.assertRaises(HTTPError, msg=bad):
+                self.get(bad)
+        # 链接：js 文件、放着 plugin.js 的文件夹、默认文件夹里只写名字；名字默认用文件夹名或文件名
+        tools = Path(self.temp.name) / "tools"
+        (tools / "abcd" / "web").mkdir(parents=True)
+        (tools / "abcd" / "web" / "Timeline.js").write_text("export default () => ({label: '时间线'});", encoding="utf-8")
+        (tools / "abcd" / "web" / "icon.svg").write_text("<svg/>", encoding="utf-8")
+        (tools / "abcd" / "web" / "secret.txt").write_text("不是网页文件", encoding="utf-8")
+        (tools / "board").mkdir()
+        (tools / "board" / "plugin.js").write_text("export default () => ({label: '分镜'});", encoding="utf-8")
+        (root / "plugins" / "mine").mkdir(parents=True)
+        (root / "plugins" / "mine" / "plugin.js").write_text("export default () => ({label: '我的'});", encoding="utf-8")
+        self.assertEqual(plugin("add", str(tools / "abcd" / "web" / "Timeline.js"), root=root)["added"], "timeline")
+        self.assertEqual(plugin("add", str(tools / "board"), root=root)["added"], "board")
+        self.assertEqual(plugin("add", "mine", root=root)["added"], "mine")
+        saved = json.loads((root / "plugins.json").read_text(encoding="utf-8"))["plugins"]
+        self.assertEqual(saved[2], {"name": "mine", "path": "mine/plugin.js", "on": True})     # 默认文件夹里的记相对路径
+        # 加不进来的：不写清单
+        before = (root / "plugins.json").read_text(encoding="utf-8")
+        inside = PACKAGE_ROOT / "tool" / "builtin" / "view" / "plugins" / "cuts" / "plugin.js"
+        for target, kw, message in [(str(tools / "abcd" / "web" / "Timeline.js"), {"name": "again"}, "已经加过了"),
+                                    (str(tools / "board"), {}, "已经有叫 board"),
+                                    (str(tools / "none.js"), {}, "找不到文件"),
+                                    (str(tools / "abcd" / "web" / "secret.txt"), {"name": "txt"}, "不是 js"),
+                                    (str(tools / "board" / "plugin.js"), {"name": "canvas"}, "不合规矩"),
+                                    (str(tools / "board" / "plugin.js"), {"name": "cuts"}, "内置插件的名字"),
+                                    ("nobody", {}, "默认文件夹"),
+                                    (str(inside), {"name": "inside"}, "安装目录")]:
+            with self.assertRaisesRegex(ValueError, message, msg=target):
+                plugin("add", target, root=root, **kw)
+        self.assertEqual((root / "plugins.json").read_text(encoding="utf-8"), before)
+        # 服务每次都重读清单：不用重启；插件文件夹里的网页文件给，别的不给
+        listed = {p["name"]: p for p in self.json("/api/plugins")["plugins"]}
+        self.assertEqual(list(listed), ["cuts", "timeline", "board", "mine"])
+        self.assertRegex(listed["timeline"]["url"], r"^/plugins/timeline/Timeline\.js\?v=\d+$")
+        self.assertEqual(self.get("/plugins/timeline/icon.svg")[0], 200)
         with self.assertRaises(HTTPError):
-            self.get("/plugins/nope.js")
-        # 别的工具包的登记：不合规矩的都记成问题，不加载
-        root = Path(self.temp.name) / "tools"
-        good, bad = root / "good", root / "bad"
-        (good / "web").mkdir(parents=True)
-        bad.mkdir(parents=True)
-        (good / "web" / "p.js").write_text("export default () => ({name: 'mine', label: '我的'});", encoding="utf-8")
-        (good / "component.toml").write_text('name = "x.good"\nversion = "1"\n[[view_plugins]]\nname = "mine"\nentry = "web/p.js"\n'
-                                             '[[view_plugins]]\nname = "mine"\nentry = "web/p.js"\n', encoding="utf-8")
-        (bad / "component.toml").write_text('name = "x.bad"\nversion = "1"\n[[view_plugins]]\nname = "canvas"\nentry = "p.js"\n'
-                                            '[[view_plugins]]\nname = "far"\nentry = "../good/web/p.js"\n'
-                                            '[[view_plugins]]\nname = "gone"\nentry = "none.js"\n', encoding="utf-8")
-        found = find_plugins([root])
-        self.assertEqual([p["name"] for p in found["plugins"]], ["mine"])
-        self.assertEqual(len(found["issues"]), 4)                                             # 重名、保留名、出了目录、文件不在
-        from layerweave.tool.builtin.view.screenshot import capture
-        with self.assertRaisesRegex(ValueError, "没有叫 nope 的页面"):
-            capture(self.database, self.project, Path(self.temp.name) / "x.png", view="nope")
+            self.get("/plugins/timeline/secret.txt")
+        # 开关：内置的关掉只记一行，开回来就删掉这一行；关着的不给文件、不算截图能用的页面
+        serial = self.json("/api/version")["plugins"]
+        plugin("off", "cuts", root=root)
+        plugin("off", "board", root=root)
+        self.assertIn({"name": "cuts", "on": False}, json.loads((root / "plugins.json").read_text(encoding="utf-8"))["plugins"])
+        self.assertNotEqual(self.json("/api/version")["plugins"], serial)                        # 网页轮询靠它发现清单改了
+        self.assertEqual([p["name"] for p in loadable(root)], ["timeline", "mine"])
+        self.assertNotIn("url", {p["name"]: p for p in self.json("/api/plugins")["plugins"]}["cuts"])
+        with self.assertRaises(HTTPError):
+            self.get("/plugins/cuts/plugin.js")
+        with self.assertRaisesRegex(ValueError, "没有叫 cuts 的页面"):
+            capture(self.database, self.project, Path(self.temp.name) / "x.png", view="cuts", state_root=root)
+        plugin("on", "cuts", root=root)
+        self.assertFalse(any(r["name"] == "cuts" for r in json.loads((root / "plugins.json").read_text(encoding="utf-8"))["plugins"]))
+        # 去掉：只删清单里的一行，不删文件；内置的去不掉
+        with self.assertRaisesRegex(ValueError, "去不掉"):
+            plugin("remove", "cuts", root=root)
+        plugin("remove", "board", root=root)
+        self.assertTrue((tools / "board" / "plugin.js").is_file())
+        # 文件不见了：那一行留着，标"找不到"，不载入
+        (tools / "abcd" / "web" / "Timeline.js").rename(tools / "abcd" / "web" / "moved.js")
+        rows = {p["name"]: p for p in list_plugins(root)["plugins"]}
+        self.assertIn("找不到文件", rows["timeline"]["problem"])
+        self.assertEqual([p["name"] for p in loadable(root)], ["cuts", "mine"])
+        # 网页也能改（和命令同一份）；截图用的服务不写
+        body = json.dumps({"action": "off", "target": "mine"}).encode()
+        with urlopen(Request(self.url + "api/plugins", data=body), timeout=10) as response:
+            self.assertFalse({p["name"]: p for p in json.loads(response.read())["plugins"]}["mine"]["on"])
+        with self.assertRaises(HTTPError) as caught:
+            urlopen(Request(self.url + "api/plugins", data=json.dumps({"action": "add", "target": "nobody"}).encode()), timeout=10)
+        self.assertIn("默认文件夹", json.loads(caught.exception.read())["error"])
+        quiet, url = make_server(self.database, state_root=root, record_state=False)
+        threading.Thread(target=quiet.serve_forever, daemon=True).start()
+        try:
+            with urlopen(Request(url + "api/plugins", data=json.dumps({"action": "on", "target": "mine"}).encode()), timeout=10) as response:
+                self.assertEqual(json.loads(response.read()), {"recorded": False})
+        finally:
+            quiet.shutdown()
+            quiet.server_close()
+        self.assertFalse({p["name"]: p for p in list_plugins(root)["plugins"]}["mine"]["on"])
+        # 清单坏了：内置的照常，问题报出来；写的时候不覆盖坏文件
+        (root / "plugins.json").write_text("{坏了", encoding="utf-8")
+        broken = list_plugins(root)
+        self.assertEqual([p["name"] for p in broken["plugins"]], ["cuts"])
+        self.assertIn("读不了", broken["problem"])
+        with self.assertRaisesRegex(ValueError, "读不了"):
+            plugin("off", "cuts", root=root)
+        self.assertEqual((root / "plugins.json").read_text(encoding="utf-8"), "{坏了")
 
     def test_screenshot_layers_by_name_or_path(self):
         with closing(open_database(self.database)) as c:

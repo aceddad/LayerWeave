@@ -1,4 +1,4 @@
-// 顶栏：项目、视图（画布 / 接缝 / 一览）、找对象、时钟、复制链接、关系线开关、画布缩放、在线指示
+// 顶栏：项目、视图（画布 / 插件的页面 / 一览）、找对象、时钟、复制链接、插件、关系线开关、画布缩放、在线指示
 import {useState} from 'react';
 import {useShallow} from 'zustand/react/shallow';
 import {copyLink, selectObject, setView} from './actions';
@@ -6,7 +6,9 @@ import {fitBoards, zoomBy} from './camera';
 import {keyOf} from './model/model';
 import {fmt} from './model/units';
 import {activeBoard, modelOf, setState, useModel, useStore} from './store';
+import {CAPTURE} from './params';
 import {pluginApplies} from './plugin/registry';
+import {PluginManager} from './PluginManager';
 import {loadProject} from './sync';
 import type {View} from './types';
 
@@ -24,6 +26,9 @@ export function Header() {
   }));
   const [find, setFind] = useState({q: '', hits: [] as number[], at: -1});
   const [query, setQuery] = useState('');
+  const [pluginsOpen, setPluginsOpen] = useState(false);
+  // 有问题的插件（文件不在、没载入上……）：按钮上标一个 !
+  const trouble = useStore((s) => (s.pluginList?.plugins ?? []).filter((r) => r.on && (r.problem || s.pluginErrors[r.name])).length + (s.pluginList?.problem ? 1 : 0));
 
   const search = (back: boolean) => {
     const q = query.trim().toLowerCase();
@@ -61,6 +66,9 @@ export function Header() {
       <div className="spacer" />
       <span className="clock" title="播放头位置（当前画板的单位）">{playhead != null ? fmt(playhead, unit) : '—'}</span>
       <button title="复制现在看的位置（画板、范围、播放头、选中的对象、对准的批注）。贴给 AI，它能拍到同样的画面" onClick={copyLink}>复制链接</button>
+      {!CAPTURE && <button className={`plugin-toggle${pluginsOpen ? ' on' : ''}`} title={trouble ? `插件：有 ${trouble} 个有问题，点开看` : '插件：看、开关、加链接'}
+                           onClick={() => setPluginsOpen(!pluginsOpen)}>插件{trouble ? <b className="trouble">!</b> : null}</button>}
+      {pluginsOpen && <PluginManager onClose={() => setPluginsOpen(false)} />}
       {view === 'canvas' && <>
         <label className="toggle" title="画出全部关系线；不勾时只画选中对象的">
           <input type="checkbox" checked={links} onChange={(e) => setState({links: e.target.checked})} /> 关系线

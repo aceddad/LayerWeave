@@ -29,7 +29,7 @@ from layerweave.support.api import read_record
 
 from .data import open_readonly, order_layers
 from .fold import read_folds
-from .plugins import find_plugins
+from .plugins import loadable
 from .server import make_server
 
 CANDIDATES = [
@@ -209,9 +209,9 @@ def capture(database, project_id, output, *, view=None, board=None, begin=None, 
     query = link_query(link, project_id) if link else {}   # 先检查参数，再找浏览器、起服务
     layer_ids = resolve_layers(database, project_id, layers) if layers else None
     view = view or query.get("view") or "canvas"
-    pages = [p["name"] for p in find_plugins()["plugins"]]
+    pages = [p["name"] for p in loadable(state_root)]   # 本机插件清单里开着的（view_plugin）
     if view not in ("canvas", "assets", *pages):
-        raise ValueError(f"没有叫 {view} 的页面：canvas、assets，或者插件的页面（{'、'.join(pages) or '现在没有装插件'}）")
+        raise ValueError(f"没有叫 {view} 的页面：canvas、assets，或者开着的插件的页面（{'、'.join(pages) or '现在没有开着的插件'}；view_plugin 看全部）")
     browser = find_browser(browser)
     if browser is None:
         raise FileNotFoundError("找不到 Chrome、Edge 或 Chromium：用 --browser 或环境变量 LAYERWEAVE_BROWSER 指定浏览器路径")

@@ -1,6 +1,6 @@
 // 视图插件的构建：plugins/<名字>/index.tsx → src/layerweave/tool/builtin/view/plugins/<名字>/plugin.js（ES 模块，默认导出 (host) => ViewPlugin）。
 // 不打包 React：JSX 编译成 h(...)，h 和 Fragment 在插件被加载时从宿主给的 host.React 拿（见 plugins/cuts/index.tsx）。
-// npm run build 先构建网页、再构建插件；视图包的 component.toml 里 [[view_plugins]] 登记每个插件的入口
+// npm run build 先构建网页、再构建插件；构建出来的是视图的内置插件，要在 view/plugins.py 的 BUILTIN 里写上名字和路径
 import {defineConfig} from 'vite';
 import {existsSync, readdirSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';

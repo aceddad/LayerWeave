@@ -88,7 +88,7 @@ assert len(read_changes(c,after=cursor)["changes"]) == 2
 assert walk_relations(c,p,"object",synced_id)["nodes"][0]["record"]["tips"] == "update"
 assert read_support("combined", "text")["status"] == "completed"
 commands = command_help()
-assert len(commands["items"]) == 39 and commands["status"] == "completed", commands
+assert len(commands["items"]) == 40 and commands["status"] == "completed", commands
 from layerweave.tool.builtin.developer.versions import manage_versions
 versions = manage_versions(c)
 assert versions["ok"] and versions["data"]["status"] == "completed", versions

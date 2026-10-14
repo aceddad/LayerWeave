@@ -1,39 +1,59 @@
-// 加载插件：问视图服务有哪些（/api/plugins），一个个 import()，把 host 交给它，登记返回的 ViewPlugin。
-// 一个插件加载失败只提示一句，不影响别的插件和视图本身；没有任何插件时视图照常工作
+// 载入插件：问视图服务本机清单里有哪些（/api/plugins），开着的一个个 import()，把 host 交给它，登记返回的 ViewPlugin。
+// 清单改了（顶栏「插件」小窗、view_plugin 命令）就再对一遍：新开的载入，关掉、去掉的拿下来、样式跟着拿掉，不用刷新页面。
+// 一个插件载入失败只记下原因、提示一句，不影响别的插件和视图本身；没有任何插件时视图照常工作
 import {api} from '../api';
 import {kindOf} from '../model/kinds';
 import type {Model} from '../model/model';
 import {getState, setState} from '../store';
 import {toast} from '../sync';
-import type {Board} from '../types';
+import type {Board, PluginList} from '../types';
 import {makeHost} from './host';
-import type {PluginFactory, ViewPlugin} from './host';
+import type {LoadedPlugin, PluginFactory, ViewPlugin} from './host';
+import {plan} from './plan';
 
-let loading: Promise<void> | null = null;
-export const pendingPlugins = () => loading;
+interface Loaded { url: string; plugin: LoadedPlugin; dispose: () => void }
+const loaded = new Map<string, Loaded>();
+let queue: Promise<void> = Promise.resolve();
+let first: Promise<void> | null = null;
 
+// 页面启动时载入一次
 export function loadPlugins(): Promise<void> {
-  loading ??= (async () => {
-    let list: {name: string; url: string}[] = [];
-    try { list = await api.plugins(); } catch { /* 老的视图服务没有这个接口：当作没有插件 */ }
-    const host = makeHost(), plugins: ViewPlugin[] = [];
-    for (const item of list) {
-      try {
-        const mod = await import(/* @vite-ignore */ item.url) as {default?: PluginFactory};
-        if (typeof mod.default !== 'function') throw new Error('没有默认导出的函数');
-        const plugin = mod.default(host);
-        if (!plugin?.name || !plugin.label) throw new Error('返回的插件缺 name 或 label');
-        plugins.push(plugin);
-      } catch (error) {
-        toast(`插件「${item.name}」没有加载上：${(error as Error).message}`, 6000);
-      }
+  first ??= refreshPlugins();
+  return first;
+}
+
+// 按清单再对一遍；一次只对一遍，后来的排在后面
+export function refreshPlugins(): Promise<void> {
+  queue = queue.then(sync, sync);
+  return queue;
+}
+
+async function sync() {
+  let list: PluginList;
+  try { list = await api.plugins(); } catch { return; }   // 服务停了：下次再对
+  const {wanted, drop, load} = plan(list.plugins, loaded);
+  for (const name of drop) { loaded.get(name)!.dispose(); loaded.delete(name); }
+  const errors: Record<string, string> = {};
+  const before = getState().pluginErrors;
+  for (const row of load) {
+    const styles: HTMLStyleElement[] = [];
+    try {
+      const mod = await import(/* @vite-ignore */ row.url!) as {default?: PluginFactory};
+      if (typeof mod.default !== 'function') throw new Error('没有默认导出的函数');
+      const plugin = mod.default(makeHost(styles));
+      if (!plugin?.label) throw new Error('返回的插件缺 label');
+      loaded.set(row.name, {url: row.url!, plugin: {...plugin, name: row.name}, dispose: () => styles.forEach((el) => el.remove())});
+    } catch (error) {
+      styles.forEach((el) => el.remove());
+      errors[row.name] = (error as Error).message || String(error);
+      if (before[row.name] !== errors[row.name]) toast(`插件「${row.name}」没有载入上：${errors[row.name]}`, 6000);
     }
-    const s = getState();
-    // 地址里给的是插件的页面（比如 view=cuts），插件却不在：回到画布
-    const known = ['canvas', 'assets', ...plugins.filter((p) => p.page).map((p) => p.name)];
-    setState({plugins, view: known.includes(s.view) ? s.view : 'canvas'});
-  })();
-  return loading;
+  }
+  for (const row of wanted) if (!loaded.has(row.name) && !errors[row.name] && before[row.name]) errors[row.name] = before[row.name];
+  const plugins = wanted.map((r) => loaded.get(r.name)?.plugin).filter((p): p is LoadedPlugin => !!p);
+  // 正在看的页面属于一个没载入（或刚关掉）的插件：回到画布
+  const s = getState(), known = ['canvas', 'assets', ...plugins.filter((p) => p.page).map((p) => p.name)];
+  setState({plugins, pluginList: list, pluginErrors: errors, view: known.includes(s.view) ? s.view : 'canvas'});
 }
 
 // 项目里有没有这个插件管的对象：没有就不显示它的标签

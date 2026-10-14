@@ -7,6 +7,7 @@ import type {Note} from './model/notes';
 import {withFolds, withNoteStatus, withRead} from './model/optimistic';
 import type {Model} from './model/model';
 import {CAPTURE, RECORD, VIEWER, numParam} from './params';
+import {refreshPlugins} from './plugin/registry';
 import {activeBoard, getState, modelOf, notesOf, setState} from './store';
 import type {Board, FoldRow, Layout} from './types';
 
@@ -131,6 +132,11 @@ export async function poll() {
     const v = await api.version();
     const s = getState();
     setState({live: true});
+    // 插件清单被 view_plugin 命令（或另一个窗口）改了：重新对一遍，新开的载入、关掉的拿下来
+    if (v.plugins != null && v.plugins !== s.pluginSerial) {
+      setState({pluginSerial: v.plugins});
+      if (s.pluginSerial != null) refreshPlugins();
+    }
     if (s.dragging || s.project == null) return;
     if (s.version != null && v.version !== s.version) { setState({version: v.version}); await loadProject(s.project); return; }
     setState({version: v.version});

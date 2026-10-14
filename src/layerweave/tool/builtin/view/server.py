@@ -1,4 +1,4 @@
-"""视图服务：本机网页，只读查看项目——画布上每个根一块时间轴画板，另有接缝页和一览页。只监听 127.0.0.1，以只读方式打开数据库。
+"""视图服务：本机网页，只读查看项目——画布上每个根一块时间轴画板，另有一览页和插件的页面（比如接缝）。只监听 127.0.0.1，以只读方式打开数据库。
 
 python -m layerweave.tool.builtin.view.server DATABASE [--port 8765] [--project ID]
 然后用浏览器打开打印出来的地址。数据库被工具修改后，页面会在两秒内自动刷新。
@@ -13,13 +13,13 @@ import mimetypes
 from pathlib import Path
 import re
 import threading
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 from .data import extract_frame, find_ffmpeg, list_projects, media_path, open_readonly, project_roots, project_view, recent_changes, thumbnail, waveform
 from .layout import layout_serial, load_layout, reconcile, save_layout
 from .fold import set_folds
 from .at import read_spans
-from .plugins import find_plugins
+from .plugins import list_plugins, list_serial, plugin as plugin_action, plugin_file
 from .walk import walk_from
 from .note import add_note, remove_note, retarget_note, set_read, update_note
 from .state import read_state, write_state
@@ -27,15 +27,16 @@ from .state import read_state, write_state
 WEB_ROOT = Path(__file__).with_name("web")
 FRAMES = {}   # 抽出来的视频帧缓存：(文件, 修改时间, 秒) → JPEG
 mimetypes.add_type("text/javascript", ".js")
+mimetypes.add_type("text/javascript", ".mjs")
+mimetypes.add_type("application/wasm", ".wasm")
 mimetypes.add_type("video/mp4", ".mp4")
 
 
 class ViewHandler(SimpleHTTPRequestHandler):
     """静态网页 + 只读 JSON 接口 + 引用的文件（支持 Range，视频可以拖动）。"""
 
-    def __init__(self, *args, database, version, state_root, record_state, plugins=(), **kwargs):
+    def __init__(self, *args, database, version, state_root, record_state, **kwargs):
         self.database, self.version, self.state_root, self.record_state = database, version, state_root, record_state
-        self.plugins = plugins
         super().__init__(*args, directory=str(WEB_ROOT), **kwargs)
 
     def log_message(self, *args):
@@ -70,7 +71,8 @@ class ViewHandler(SimpleHTTPRequestHandler):
                     data = project_view(connection, self.database, int(match[1]))
                 return self.send_json(data) if data else self.send_json({"error": "项目不存在"}, HTTPStatus.NOT_FOUND)
             if url.path == "/api/version":
-                return self.send_json({"version": self.version(), "layout": layout_serial(self.database, self.state_root)})
+                return self.send_json({"version": self.version(), "layout": layout_serial(self.database, self.state_root),
+                                       "plugins": list_serial(self.state_root)})
             if match := re.fullmatch(r"/api/changes/(\d+)", url.path):
                 limit = max(1, min(100, int(parse_qs(url.query).get("limit", ["10"])[0])))
                 with closing(open_readonly(self.database)) as connection:
@@ -97,11 +99,18 @@ class ViewHandler(SimpleHTTPRequestHandler):
             if url.path == "/api/state":
                 return self.send_json(read_state(self.database, self.state_root))
             if url.path == "/api/plugins":
-                # 视图插件（plugins.py）：页面按这个列表一个个 import()
-                return self.send_json([{"name": p["name"], "url": f"/plugins/{p['name']}.js", "component": p["component"]} for p in self.plugins])
-            if match := re.fullmatch(r"/plugins/([a-z][a-z0-9_-]*)\.js", url.path):
-                found = next((p for p in self.plugins if p["name"] == match[1]), None)
-                return self.send_file(found["path"]) if found else self.send_json({"error": "没有这个插件"}, HTTPStatus.NOT_FOUND)
+                # 视图插件（plugins.py）：本机清单里的全部。开着、没问题的带 url，页面按顺序 import()；
+                # 每次都重读清单，改了不用重启。v 是文件的修改时间：插件改过以后，页面不会用到老的那份
+                result = list_plugins(self.state_root)
+                for p in result["plugins"]:
+                    if p["on"] and not p["problem"]:
+                        entry = Path(p["path"])
+                        p["url"] = f"/plugins/{p['name']}/{entry.name}?v={entry.stat().st_mtime_ns}"
+                return self.send_json(result)
+            if match := re.fullmatch(r"/plugins/([a-z][a-z0-9_-]*)/(.+)", url.path):
+                # 插件的入口和它旁边的文件（拆出去的代码、图片、样式），只限这个文件夹里的网页文件
+                path = plugin_file(match[1], unquote(match[2]), self.state_root)
+                return self.send_file(path) if path else self.send_json({"error": "没有这个插件文件"}, HTTPStatus.NOT_FOUND)
             if url.path == "/api/capabilities":
                 return self.send_json({"frames": find_ffmpeg() is not None})
             if match := re.fullmatch(r"/frame/(\d+)/(\d+)", url.path):
@@ -162,8 +171,9 @@ class ViewHandler(SimpleHTTPRequestHandler):
         layout = re.fullmatch(r"/api/layout/(\d+)", path)
         notes = re.fullmatch(r"/api/notes/(\d+)", path)
         folds = re.fullmatch(r"/api/folds/(\d+)", path)
-        if path != "/api/state" and not layout and not notes and not folds:
-            return self.send_json({"error": "只支持 /api/state、/api/layout/<项目>、/api/notes/<项目>、/api/folds/<项目>"}, HTTPStatus.NOT_FOUND)
+        plugins = path == "/api/plugins"
+        if path != "/api/state" and not layout and not notes and not folds and not plugins:
+            return self.send_json({"error": "只支持 /api/state、/api/layout/<项目>、/api/notes/<项目>、/api/folds/<项目>、/api/plugins"}, HTTPStatus.NOT_FOUND)
         length = int(self.headers.get("Content-Length", 0))
         if length > 65536:
             return self.send_json({"error": "内容过大"}, HTTPStatus.REQUEST_ENTITY_TOO_LARGE)
@@ -175,6 +185,13 @@ class ViewHandler(SimpleHTTPRequestHandler):
             return self.send_json({"recorded": False})
         if notes:
             return self.write_note(int(notes[1]), payload)
+        if plugins:
+            # 网页顶栏的「插件」：和 view_plugin 命令改同一份本机清单（加链接、去掉、开、关）
+            try:
+                return self.send_json(plugin_action(payload.get("action"), payload.get("target"), name=payload.get("name") or None,
+                                                    root=self.state_root))
+            except (ValueError, OSError) as error:
+                return self.send_json({"error": str(error)}, HTTPStatus.BAD_REQUEST)
         if folds:
             # 视图的另一种写入：折叠，只写视图自己的表 view_layer（fold.py）。网页是人这边：
             # 自己这边能折叠、展开、写备注；AI 那边只能展开（让 AI 看回来）
@@ -288,8 +305,7 @@ def make_server(database, *, port=0, state_root=None, record_state=True):
         with lock:
             return watcher.execute("PRAGMA data_version").fetchone()[0]
 
-    plugins = find_plugins()["plugins"]   # 启动时找一次；装了新插件要重启视图服务
-    handler = partial(ViewHandler, database=database, version=version, state_root=state_root, record_state=record_state, plugins=plugins)
+    handler = partial(ViewHandler, database=database, version=version, state_root=state_root, record_state=record_state)
     server = ViewServer(("127.0.0.1", port), handler)
     server.watcher = watcher
     return server, f"http://127.0.0.1:{server.server_address[1]}/"
@@ -297,7 +313,7 @@ def make_server(database, *, port=0, state_root=None, record_state=True):
 
 COMMANDS = [{
     "name": "view_server",
-    "summary": "在本机启动只读视图网页：画布上的时间轴画板、接缝页、一览页，数据库变化后自动刷新",
+    "summary": "在本机启动只读视图网页：画布上的时间轴画板、一览页、插件的页面，数据库变化后自动刷新",
     "entrypoint": "layerweave.tool.builtin.view.server:serve",
     "cli": "python -m layerweave.tool.builtin.view.server",
     "read_only": True,

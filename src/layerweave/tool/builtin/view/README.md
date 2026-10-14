@@ -74,12 +74,16 @@ python -m layerweave.tool.builtin.view.server DATABASE [--project 1] [--port 876
 
 ## 插件
 
-某一类层或对象的专用页面做成插件：装上就出现在顶栏，不用重新编译视图；卸掉就消失，视图照常工作。接缝就是一个插件。
+某一类层或对象的专用页面做成插件：开着就出现在顶栏，不用重新编译视图；关掉就消失，视图照常工作。接缝就是一个插件。
 
-- 工具包在自己的 `component.toml` 里写 `[[view_plugins]]`（`name`、`entry`）。视图服务启动时找出来（`plugins.py`），页面用 `import()` 加载。
-- 插件只在页面里运行，读视图已有的数据；写入仍然只有批注和折叠两种。
+- **视图管一份本机清单**：`~/.layerweave/view/plugins.json`，每行一个插件：名字、编译好的 js 在哪、开没开。清单里有的、开着的才载入，不扫描任何目录。不管多大的工具包，在这里都只是一行。
+- **内置的**（接缝）写在 `plugins.py` 的 `BUILTIN` 里，跟着软件更新；清单只记它开没开，去不掉，只能关。
+- **链接来的**：`view_plugin add 路径`，路径可以是 js 文件、放着 `plugin.js` 的文件夹，或者只写名字（默认文件夹 `~/.layerweave/view/plugins/<名字>/plugin.js`）。去掉只删清单里的一行，不删文件。
+- **更新以后不消失**：清单和默认文件夹都在本机用户目录，链接的文件在作者自己放的地方，软件更新都碰不到。放在 LayerWeave 安装目录里的文件加不进来（更新时会被换掉）。文件找不到时那一行留着，标"找不到"。
+- **网页上**：顶栏「插件」小窗，和命令改同一份清单：看哪些载入了、开关、去掉、加链接（人做二次开发时把自己正在写的插件链接进来）。有问题的插件按钮上标 `!`。
+- **改了马上跟上**：视图服务每次都重读清单；页面轮询时发现清单变了，新开的载入、关掉的拿下来，样式跟着拿掉，不用重启也不用刷新。插件文件改过以后，再点开「插件」小窗（或刷新）就换成新的。
+- 插件只在页面里运行，数据从视图已有的接口拿（就是从 core 读出来的那份）；写入仍然只有批注和折叠两种。
 - 怎么写一个插件、插件能用哪些接口，见[工具包登记类型 · 视图插件](../developer/TOOL_TYPES.md#给自己的层配一个视图页面视图插件)。
-- 现在只找包里内置的工具包；装在包外面的工具包怎么找，跟着 LayerWeave 以后定的做法走。
 
 ## 给 AI 用
 
@@ -92,6 +96,7 @@ python -m layerweave.tool.builtin.view.server DATABASE [--project 1] [--port 876
 | `view_layout` | 查看或调整画板：同单位的根上下拼（`merge --side above/below`）、左右接（`merge --side left/right`）或拆开（`split`）、移动（`move`）、恢复自动排版（`reset`）。和网页改的是同一份排版 |
 | `view_at` | 按时刻读：某个根的某一刻（`--root 1 --at 12.5`）或一段（`--range 10 15`）上，每层是什么（没有就写是哪种空）、这些东西之间的关联、指着它们的待处理批注。不给参数就读用户此刻在视图里看的地方：圈出了一段读那一段，否则读播放头。用户说"这里""这一刻"时先读它 |
 | `view_walk` | 沿着关联读：`object:16`（或 `layer:5`）出发，按步数列出每一步是什么——名字、所在层、位置、文字或文件、批注的署名和状态——以及是从哪一个、顺着哪条关联到的。`--direction both/out/in`、`--depth`（默认 3）、`--max`（默认 60）；到了上限会写明还有几条关联没走、几个没列出。读一楼批注的来龙去脉、一个对象牵连到什么，用它 |
+| `view_plugin` | 视图插件的清单：不带动作时列出（内置还是链接、开没开、有什么问题）；`add 路径 [--name 名字]` 加链接、`remove 名字` 去掉（不删文件）、`on` / `off 名字` 开关。和网页顶栏「插件」改同一份，页面自己会跟上 |
 | `view_frame` | 取视频对象在某一刻的画面（JPEG），按时间轴全局时间或视频自身时间，`--last` 取最后一帧；需要 ffmpeg |
 
 ```sh
@@ -153,8 +158,8 @@ npm run dev          # 开发：接口转给已经在跑的视图服务（默认
 | `src/canvas/` | React Flow 画布（`Flow.tsx`）、画板节点（`BoardNode.tsx`）、对象色块、关系线；`drop.ts` 从页面上找出鼠标落点，交给 `dropRule.ts` |
 | `src/side/` | 右侧面板：此刻、改动、批注 |
 | `src/views/` | 一览页 |
-| `src/plugin/` | 插件接口（`host.ts`：插件能用的东西）和加载（`registry.ts`） |
-| `plugins/<名字>/` | 视图插件的源码，编译到 `view/plugins/<名字>/plugin.js`（`vite.plugins.config.ts`）；接缝在 `plugins/cuts/` |
+| `src/plugin/` | 插件接口（`host.ts`：插件能用的东西）和载入（`registry.ts`：按清单载入、拿下来；`plan.ts`：和清单对一遍）；顶栏的「插件」小窗是 `src/PluginManager.tsx` |
+| `plugins/<名字>/` | 内置插件的源码，编译到 `view/plugins/<名字>/plugin.js`（`vite.plugins.config.ts`），再在 `plugins.py` 的 `BUILTIN` 里写上；接缝在 `plugins/cuts/` |
 | `src/store.ts`、`sync.ts`、`camera.ts`、`actions.ts` | 状态；和服务同步（轮询、保存排版、报告"正在看哪儿"、写批注）；镜头；用户操作 |
 | `src/capture.ts`、`params.ts` | 截图约定：地址参数，以及加载完以后设 `window.__layerweaveReady` |
 

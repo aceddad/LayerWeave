@@ -6,9 +6,9 @@ import {Model} from './model/model';
 import {noteIndex, noteList, noteThreads, waitingFor} from './model/notes';
 import type {Note, NoteReads, Thread} from './model/notes';
 import type {Drop} from './model/dropRule';
-import type {ViewPlugin} from './plugin/host';
+import type {LoadedPlugin} from './plugin/host';
 import {VIEWER, numParam, params} from './params';
-import type {Board, ChangeOp, ProjectData, ProjectSummary, Side, View, WalkDirection, WalkResult} from './types';
+import type {Board, ChangeOp, PluginList, ProjectData, ProjectSummary, Side, View, WalkDirection, WalkResult} from './types';
 
 export type {Drop};
 
@@ -48,7 +48,10 @@ export interface State {
   dragging: boolean;
   drop: Drop | null;
   autoFit: boolean;
-  plugins: ViewPlugin[];  // 加载上的插件（plugin/registry.ts）
+  plugins: LoadedPlugin[];  // 载入了的插件，按清单的顺序（plugin/registry.ts）
+  pluginList: PluginList | null;           // 本机插件清单（顶栏「插件」小窗列出来）
+  pluginErrors: Record<string, string>;    // 开着但没载入上的插件：名字 → 原因
+  pluginSerial: number | null;             // 清单文件的修改时间：命令改了清单，轮询时发现，页面跟着重新对一遍
   settledZoom: number;   // 镜头停下来时的缩放：格子按它决定画多细（缩放过程中不换，免得每跨一档几百个格子一起重画）
   set: (patch: Partial<State> | ((s: State) => Partial<State>)) => void;
 }
@@ -70,7 +73,7 @@ export const useStore = create<State>((set) => ({
   sel: null, targetLayer: null, wholeProject: false,
   noteFilter: 'open', noteFocus: numParam('note'), me: localStorage.getItem('lw-author') || '用户', reads: {},
   canvasW: Math.max(600, window.innerWidth - 340), canvasH: Math.max(400, window.innerHeight - 50),
-  dragging: false, drop: null, autoFit: true, settledZoom: 0, plugins: [],
+  dragging: false, drop: null, autoFit: true, settledZoom: 0, plugins: [], pluginList: null, pluginErrors: {}, pluginSerial: null,
   set: (patch) => set(patch as any),
 }));
 

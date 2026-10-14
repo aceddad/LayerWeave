@@ -25,6 +25,32 @@ select { background: var(--panel); padding: 3px 6px; }
 .live.ok { color: #2fbf8f; }
 .toggle { display: flex; align-items: center; gap: 4px; color: var(--dim); font-size: 12px; white-space: nowrap; cursor: pointer; }
 
+/* 顶栏「插件」小窗：本机插件清单 */
+.bar { position: relative; }
+.plugin-toggle .trouble { color: var(--play); margin-left: 3px; }
+.plugins-box { position: absolute; right: 12px; top: calc(100% + 4px); width: 520px; max-height: 70vh; overflow: auto; z-index: 70;
+               background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; box-shadow: 0 6px 24px rgba(0, 0, 0, .5); }
+.plugins-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+.plugins-head .hint { font-size: 12px; }
+.plugins-list { list-style: none; margin: 0 0 8px; padding: 0; }
+.plugin-row { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); }
+.plugin-row .dot { flex: none; width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; background: #3a3f4b; }
+.plugin-row.ok .dot { background: #2fbf8f; }
+.plugin-row.idle .dot, .plugin-row.wait .dot { background: var(--dim); }
+.plugin-row.bad .dot { background: var(--play); }
+.plugin-row .what { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.plugin-row .what small { color: var(--dim); font-size: 12px; }
+.plugin-row .where { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plugin-row.bad .state { color: #ff8fa8; }
+.plugin-row code, .plugins-note code { font: 11px ui-monospace, Consolas, monospace; color: var(--dim); }
+.plugin-row .toggle { margin-top: 2px; }
+.plugin-row .keep { width: 46px; flex: none; }
+.plugins-add { display: flex; gap: 6px; }
+.plugins-add input { flex: 1; min-width: 0; padding: 3px 8px; }
+.plugins-add input.as { flex: none; width: 8em; }
+.plugins-error { color: #ff8fa8; margin: 6px 0 0; white-space: pre-wrap; }
+.plugins-note { font-size: 12px; margin: 8px 0 0; }
+
 .body { flex: 1; min-height: 0; display: flex; }
 .canvas-view { flex: 1; min-width: 0; display: flex; }
 .flow { flex: 1; min-width: 0; position: relative; }

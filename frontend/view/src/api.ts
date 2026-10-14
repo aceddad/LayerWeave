@@ -1,5 +1,5 @@
 // 和本机视图服务说话；接口说明见 view/README.md
-import type {Board, ChangeOp, Layout, ProjectData, ProjectSummary, WalkDirection, WalkResult} from './types';
+import type {Board, ChangeOp, Layout, PluginList, ProjectData, ProjectSummary, WalkDirection, WalkResult} from './types';
 
 async function get<T>(path: string): Promise<T> {
   const response = await fetch(path);
@@ -16,12 +16,15 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 
 export const api = {
   capabilities: () => get<{frames: boolean}>('/api/capabilities'),
-  plugins: () => get<{name: string; url: string}[]>('/api/plugins'),
+  plugins: () => get<PluginList>('/api/plugins'),
+  // 插件清单：加链接（target 是路径或默认文件夹里的名字）、去掉、开、关；和 view_plugin 命令改同一份
+  plugin: (body: {action: 'add' | 'remove' | 'on' | 'off'; target: string; name?: string}) =>
+    post<PluginList & {recorded?: boolean}>('/api/plugins', body),
   projects: () => get<ProjectSummary[]>('/api/projects'),
   project: (id: number) => get<ProjectData>(`/api/project/${id}`),
   layout: (id: number) => get<Layout>(`/api/layout/${id}`),
   saveLayout: (id: number, boards: Board[]) => post<Layout & {recorded?: boolean}>(`/api/layout/${id}`, {boards}),
-  version: () => get<{version: number; layout: number}>('/api/version'),
+  version: () => get<{version: number; layout: number; plugins?: number}>('/api/version'),
   changes: (id: number, limit: number) => get<ChangeOp[]>(`/api/changes/${id}?limit=${limit}`),
   at: (id: number, spans: string[]) => get<{text: string}>(`/api/at/${id}?${spans.map((s) => `span=${encodeURIComponent(s)}`).join('&')}`),
   walk: (id: number, from: string, direction: WalkDirection, depth: number) =>

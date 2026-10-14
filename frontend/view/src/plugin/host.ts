@@ -1,5 +1,5 @@
 // 视图插件的接口：插件是一个编译好的 ES 模块，默认导出一个函数 (host) => ViewPlugin。
-// 视图服务按各工具包 component.toml 里的 [[view_plugins]] 找到它们（view/plugins.py），页面启动时用 import() 加载（plugin/registry.ts）。
+// 视图管一份本机插件清单（view/plugins.py；view_plugin 命令和顶栏「插件」小窗改它），页面按清单用 import() 载入（plugin/registry.ts）。
 // 插件只拿到这里给的东西：React（和视图共用一份，插件不要自己打包）、读项目的钩子、几个动作、画图的小部件和工具函数。
 // 写入照旧只有视图自己的两种（批注、折叠）；插件不碰数据库。改这里就是改插件接口：只加不改，改了要在 TOOL_TYPES.md 写明
 import * as React from 'react';
@@ -33,7 +33,7 @@ export interface PluginHost {
   startWalk(ref: string): void;            // 侧栏"沿着读"从这里开始（"object:16"）
   toast(text: string): void;
   markReady(): void;
-  addStyle(css: string): void;             // 插件自己的样式；卸掉插件，样式跟着不见
+  addStyle(css: string): void;             // 插件自己的样式；插件关掉、去掉时跟着拿掉
   numParam(name: string): number | null;   // 地址参数（截图、复制链接用的那些）
   components: {Img: typeof Img; Thumb: typeof Thumb; Frame: typeof Frame};
   util: {kindOf: typeof kindOf; lastAt: typeof lastAt; isSec: typeof isSec; fmt: typeof fmt; fmtSpan: typeof fmtSpan;
@@ -41,7 +41,7 @@ export interface PluginHost {
 }
 
 export interface ViewPlugin {
-  name: string;                          // 页面的名字，也是地址里的 view=（例如 cuts）
+  name?: string;                         // 不用写：名字由清单定（view_plugin add --name），也是地址里的 view=
   label: string;                         // 顶栏标签上的字
   title?: string;                        // 标签的说明
   handles?: string[];                    // 管哪些种类的对象（kindOf：image、video、audio、text……）；项目里一个都没有时不显示标签
@@ -50,8 +50,10 @@ export interface ViewPlugin {
 }
 
 export type PluginFactory = (host: PluginHost) => ViewPlugin;
+export type LoadedPlugin = ViewPlugin & {name: string};   // 载入以后：名字是清单里的
 
-export function makeHost(): PluginHost {
+// styles：这个插件加的样式，插件拿下来时一起拿掉
+export function makeHost(styles: HTMLStyleElement[] = []): PluginHost {
   return {
     api: PLUGIN_API, React, capture: CAPTURE, full: FULL,
     useView: () => {
@@ -60,7 +62,7 @@ export function makeHost(): PluginHost {
       return {model, ...s};
     },
     selectObject: (id) => selectObject(id), startWalk, toast: (text) => toast(text), markReady,
-    addStyle: (css) => { const el = document.createElement('style'); el.textContent = css; document.head.appendChild(el); },
+    addStyle: (css) => { const el = document.createElement('style'); el.textContent = css; document.head.appendChild(el); styles.push(el); },
     numParam,
     components: {Img, Thumb, Frame},
     util: {kindOf, lastAt, isSec, fmt, fmtSpan, lanes, keyOf, rootsOf},

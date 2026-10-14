@@ -1,5 +1,5 @@
 // 和本机视图服务说话；接口说明见 view/README.md
-import type {Board, ChangeOp, Layout, ProjectData, ProjectSummary} from './types';
+import type {Board, ChangeOp, Layout, ProjectData, ProjectSummary, WalkDirection, WalkResult} from './types';
 
 async function get<T>(path: string): Promise<T> {
   const response = await fetch(path);
@@ -22,6 +22,8 @@ export const api = {
   saveLayout: (id: number, boards: Board[]) => post<Layout & {recorded?: boolean}>(`/api/layout/${id}`, {boards}),
   version: () => get<{version: number; layout: number}>('/api/version'),
   changes: (id: number, limit: number) => get<ChangeOp[]>(`/api/changes/${id}?limit=${limit}`),
+  walk: (id: number, from: string, direction: WalkDirection, depth: number) =>
+    get<WalkResult>(`/api/walk/${id}?from=${encodeURIComponent(from)}&direction=${direction}&depth=${depth}`),
   state: (body: unknown) => post('/api/state', body),
   note: (id: number, body: unknown) => post<{error?: string; recorded?: boolean; note?: number}>(`/api/notes/${id}`, body),
   fold: (id: number, body: unknown) => post<{error?: string; recorded?: boolean}>(`/api/folds/${id}`, body),

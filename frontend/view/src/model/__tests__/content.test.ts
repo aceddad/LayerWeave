@@ -183,6 +183,13 @@ describe('复制链接', () => {
     expect(linkQuery({project: 2, view: 'canvas', side: 'notes'})).toBe('project=2&side=notes');
     expect(linkQuery({project: 1, view: 'cuts', side: 'now', board: 1, range: [0, 5]})).toBe('project=1&view=cuts&board=1');
   });
+
+  it('沿着读写起点；方向、步数不是默认的才写', () => {
+    expect(linkQuery({project: 1, view: 'canvas', side: 'walk', walk: {from: 'object:16', direction: 'both', depth: 3}})).toBe('project=1&walk=object%3A16');
+    expect(linkQuery({project: 1, view: 'canvas', side: 'walk', walk: {from: 'layer:5', direction: 'out', depth: 2}}))
+      .toBe('project=1&walk=layer%3A5&walkdir=out&walkdepth=2');
+    expect(linkQuery({project: 1, view: 'canvas', side: 'now', walk: {from: 'object:16', direction: 'both', depth: 3}})).toBe('project=1');
+  });
 });
 
 describe('时间写法', () => {

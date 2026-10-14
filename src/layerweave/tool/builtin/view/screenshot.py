@@ -154,7 +154,8 @@ def _devtools_port(profile, deadline):
 
 
 # 页面认识的地址参数（截图约定见 README）；--link 只取这些
-LINK_KEYS = ("view", "board", "begin", "end", "playhead", "select", "focus", "note", "changes", "layers", "side", "links")
+LINK_KEYS = ("view", "board", "begin", "end", "playhead", "select", "focus", "note", "changes", "layers", "side", "links",
+             "walk", "walkdir", "walkdepth")
 
 
 def link_query(link, project_id):

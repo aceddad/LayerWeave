@@ -20,6 +20,7 @@ from layerweave.tool.builtin.view.notes import AXIS, LAYER_REF, OBJECT_REF
 from layerweave.tool.builtin.view.screenshot import capture, find_browser, link_query
 from layerweave.tool.builtin.view.server import make_server
 from layerweave.tool.builtin.view.state import read_state
+from layerweave.tool.builtin.view.walk import read_along
 
 
 class ViewTests(unittest.TestCase):
@@ -362,6 +363,46 @@ class ViewTests(unittest.TestCase):
             self.assertEqual(json.loads(response.read())["reader"], "用户")
         with closing(open_readonly(self.database)) as c:
             self.assertEqual(project_view(c, self.database, self.project)["noteReads"][str(top)]["用户"], later)
+
+    def test_walk_reads_along_relations_step_by_step(self):
+        top = add_note(self.database, self.project, "这张图要换吗？", targets=[("object", self.project, self.image.id)], author="用户")["note"]
+        reply = note(self.database, self.project, "reply", text="先不换", note_id=top, author="Claude")["note"]
+        walked = read_along(self.database, self.project, f"object:{top}")
+        steps = {s["ref"]: s for s in walked["steps"]}
+        self.assertEqual([(s["ref"], s["depth"]) for s in walked["steps"]],
+                         [(f"object:{top}", 0), (f"object:{self.image.id}", 1), (f"object:{reply}", 1), (f"layer:{self.main_layer}", 2)])
+        self.assertEqual(steps[f"object:{top}"]["note"]["author"], "用户")
+        self.assertEqual(steps[f"object:{self.image.id}"]["via"][0]["arrow"], "from")         # 楼主指着这张图
+        self.assertEqual(steps[f"object:{reply}"]["via"][0]["arrow"], "to")                   # 回复指着楼主
+        self.assertTrue(steps[f"object:{reply}"]["note"]["reply"])
+        self.assertIsNone(steps[f"object:{reply}"]["note"]["status"])                         # 整楼的状态记在楼主上
+        self.assertEqual(steps[f"layer:{self.main_layer}"]["via"][0]["tips"], "这张图属于主线")
+        self.assertEqual(steps[f"object:{self.image.id}"]["source"], "media/a.png")
+        text = walked["text"]
+        self.assertIn(f"← #{top} 指着它", text)
+        self.assertIn(f"→ 它指着 #{top}", text)
+        self.assertIn("1–3 秒", text)
+        # 只顺着关联的方向：读不到回复；步数到了写明还有几条没走；数量到了写明几个没列出
+        out = read_along(self.database, self.project, f"object:{top}", direction="out")
+        self.assertEqual([s["ref"] for s in out["steps"]], [f"object:{top}", f"object:{self.image.id}", f"layer:{self.main_layer}"])
+        short = read_along(self.database, self.project, f"object:{top}", depth=1)
+        self.assertEqual((short["beyond"], len(short["steps"])), (1, 3))
+        self.assertIn("还连着 1 条关联没走", short["text"])
+        few = read_along(self.database, self.project, f"object:{top}", max_nodes=2)
+        self.assertEqual((len(few["steps"]), few["skipped"]), (2, 2))
+        # 成环：回复也指着这张图，同一张图只列一次，多出来的关联记成环
+        with closing(open_database(self.database)) as c, transaction(c) as write:
+            write.create("bind", {"source_kind": "object", "source_project_id": self.project, "source_id": reply,
+                                  "target_kind": "object", "target_project_id": self.project, "target_id": self.image.id, "tips": ""})
+        looped = read_along(self.database, self.project, f"object:{top}")
+        self.assertEqual((len(looped["steps"]), looped["loops"]), (4, 1))
+        # 网页用同一份结果
+        page = self.json(f"/api/walk/{self.project}?from=object:{top}&depth=1")
+        self.assertEqual([s["ref"] for s in page["steps"]], [f"object:{top}", f"object:{self.image.id}", f"object:{reply}"])
+        with self.assertRaisesRegex(ValueError, "不存在"):
+            read_along(self.database, self.project, "object:99999")
+        with self.assertRaisesRegex(ValueError, "方向"):
+            read_along(self.database, self.project, f"object:{top}", direction="up")
 
     def test_page_writes_notes_only_when_allowed(self):
         body = json.dumps({"action": "add", "text": "页面写的", "targets": [{"kind": "object", "id": self.image.id}],

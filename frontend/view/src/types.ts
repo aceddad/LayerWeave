@@ -118,4 +118,20 @@ export interface ChangeOp {
 }
 
 export type View = 'canvas' | 'cuts' | 'assets';
-export type Side = 'now' | 'changes' | 'notes';
+export type Side = 'now' | 'changes' | 'notes' | 'walk';
+
+// 沿着读（服务端 view/walk.py 的结果）：从起点顺着关联一步步往外走，按步数排好
+export type WalkDirection = 'both' | 'out' | 'in';
+export interface WalkVia { bind: number; other: string; arrow: 'from' | 'to'; tips: string }
+export interface WalkStep {
+  ref: string; kind: 'object' | 'layer'; project: number; id: number; depth: number;
+  status: 'found' | 'missing' | 'other_project';
+  name: string; type: string; layer: {id: number; name: string; type: string} | null; root: number | null; unit: string;
+  begin: number | null; end: number | null; text: string | null; source: string | null;
+  note: {author: string; status: 'open' | 'done' | null; reply: boolean; span: {begin: number; end: number} | null} | null;
+  via: WalkVia[];
+}
+export interface WalkResult {
+  start: string; direction: WalkDirection; depth: number; max_nodes: number;
+  steps: WalkStep[]; loops: number; beyond: number; skipped: number; text: string;
+}

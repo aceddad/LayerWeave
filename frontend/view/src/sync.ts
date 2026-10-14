@@ -34,7 +34,7 @@ export async function loadProject(id: number) {
   setState({project: id, data: adoptOrphans(data), reads: data.noteReads ?? {}});
   if (!announceNotes(before)) announceFolds(foldsBefore);
   applyLayout(layout, heights);
-  await loadChanges();
+  await Promise.all([loadChanges(), loadWalk()]);
   const s = getState(), model = modelOf(s)!;
   let active = s.active;
   if (s.selected != null && active == null) active = model.object(s.selected)?.layer.root ?? null;
@@ -104,6 +104,20 @@ export async function reloadLayout() {
   applyLayout(await api.layout(s.project));
   const now = getState(), model = modelOf(now)!;
   if (!model.boardOf(now.boards, now.active)) setState({active: now.boards[0] ? keyOf(now.boards[0]) : null});
+}
+
+// 沿着读：侧栏开着「沿着读」时按起点问服务端；项目重读后也重问一次（关联可能变了）
+let walking: Promise<void> | null = null;
+export const pendingWalk = () => walking;
+export function loadWalk(): Promise<void> {
+  const s = getState();
+  if (s.side !== 'walk' || !s.walk || s.project == null) return Promise.resolve();
+  const {from, direction, depth} = s.walk, project = s.project;
+  walking = api.walk(project, from, direction, depth).then((walkResult) => {
+    const now = getState();
+    if (now.project === project && now.walk?.from === from && now.walk.direction === direction && now.walk.depth === depth) setState({walkResult});
+  }).catch((error) => { setState({walkResult: null}); toast('读不到关联：' + (error as Error).message); });
+  return walking;
 }
 
 export async function loadChanges() {

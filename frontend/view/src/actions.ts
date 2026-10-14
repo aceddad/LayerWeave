@@ -5,8 +5,8 @@ import {linkQuery} from './model/link';
 import {keyOf} from './model/model';
 import {cutPoints, editPoints, stepObject, stepTime, stepTrack} from './model/navigate';
 import {activeBoard, getState, modelOf, setState} from './store';
-import {foldAction, loadChanges, report, saveLayout, toast} from './sync';
-import type {Ref, Side, View} from './types';
+import {foldAction, loadChanges, loadWalk, report, saveLayout, toast} from './sync';
+import type {Ref, Side, View, WalkDirection} from './types';
 
 // 点画板：放播放头；点在色块上就选中它；点在尺子上只放播放头并取消圈出的一段
 export function clickBoard(key: number, t: number, objectId: number | null, onRuler: boolean) {
@@ -67,7 +67,15 @@ export function goToTarget(ref: Ref, span: {begin: number; end: number} | null) 
 
 export async function setSide(side: Side) {
   setState({side});
-  await loadChanges();
+  await Promise.all([loadChanges(), loadWalk()]);
+}
+
+// 沿着读：从一个对象或层（"object:16"、"layer:5"）出发，侧栏切到「沿着读」。方向、步数沿用上一次的
+export function startWalk(from: string, change: {direction?: WalkDirection; depth?: number} = {}) {
+  const s = getState();
+  setState({walk: {from, direction: change.direction ?? s.walk?.direction ?? 'both', depth: change.depth ?? s.walk?.depth ?? 3}, side: 'walk',
+            walkResult: s.walk?.from === from ? s.walkResult : null});
+  loadWalk();
 }
 
 export function setView(view: View) {
@@ -121,7 +129,7 @@ export async function copyLink() {
   if (s.project == null) return;
   const query = linkQuery({project: s.project, view: s.view, side: s.side, board: act ? keyOf(act) : null,
                            range: s.view === 'canvas' && act ? visibleRange(act) : null, playhead: s.playhead, select: s.selected,
-                           layers: s.only, note: s.noteFocus, changes: s.changeLimit});
+                           layers: s.only, note: s.noteFocus, changes: s.changeLimit, walk: s.walk});
   const url = `${location.origin}${location.pathname}?${query}`;
   if (await writeClipboard(url)) return toast('已复制链接。贴给 AI，它用 view_screenshot --link 就能拍到这个画面');
   setState({message: '浏览器不让复制，请手动复制：' + url});

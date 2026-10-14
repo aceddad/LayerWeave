@@ -6,11 +6,13 @@ import type {Side} from '../types';
 import {ChangesPanel} from './ChangesPanel';
 import {NotesPanel} from './NotesPanel';
 import {NowPanel} from './NowPanel';
+import {WalkPanel} from './WalkPanel';
 
 const TABS: {side: Side; label: string; title: string}[] = [
   {side: 'now', label: '此刻', title: '播放头这一刻每层都有什么'},
   {side: 'changes', label: '改动', title: '最近几次操作改了什么；打开时画布上会标出来'},
   {side: 'notes', label: '批注', title: '批注：给人或 AI 留的意见、说明、待办'},
+  {side: 'walk', label: '沿着读', title: '从一个对象或一楼批注出发，顺着关联一步步往外读（对象详情、楼主卡片上的「沿着读」）'},
 ];
 
 export function SidePanel() {
@@ -26,6 +28,7 @@ export function SidePanel() {
       {side === 'now' && <NowPanel />}
       {side === 'changes' && <ChangesPanel />}
       {side === 'notes' && <NotesPanel />}
+      {side === 'walk' && <WalkPanel />}
     </aside>
   );
 }

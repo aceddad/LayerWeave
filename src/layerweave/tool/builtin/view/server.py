@@ -18,6 +18,7 @@ from urllib.parse import parse_qs, urlparse
 from .data import extract_frame, find_ffmpeg, list_projects, media_path, open_readonly, project_roots, project_view, recent_changes, thumbnail, waveform
 from .layout import layout_serial, load_layout, reconcile, save_layout
 from .fold import set_folds
+from .walk import walk_from
 from .note import add_note, remove_note, set_read, update_note
 from .state import read_state, write_state
 
@@ -71,6 +72,13 @@ class ViewHandler(SimpleHTTPRequestHandler):
                 limit = max(1, min(100, int(parse_qs(url.query).get("limit", ["10"])[0])))
                 with closing(open_readonly(self.database)) as connection:
                     return self.send_json(recent_changes(connection, int(match[1]), limit))
+            if match := re.fullmatch(r"/api/walk/(\d+)", url.path):
+                # 沿着读（walk.py）：侧栏「沿着读」按步列出
+                q = parse_qs(url.query)
+                with closing(open_readonly(self.database)) as connection:
+                    return self.send_json(walk_from(connection, int(match[1]), q.get("from", [""])[0],
+                                                    direction=q.get("direction", ["both"])[0], depth=int(q.get("depth", ["3"])[0]),
+                                                    max_nodes=int(q.get("max", ["60"])[0])))
             if match := re.fullmatch(r"/api/layout/(\d+)", url.path):
                 with closing(open_readonly(self.database)) as connection:
                     roots = project_roots(connection, int(match[1]))

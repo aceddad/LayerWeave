@@ -28,6 +28,7 @@ python -m layerweave.tool.builtin.view.server DATABASE [--project 1] [--port 876
 - **此刻**（右侧第一个标签）：点画板上任意位置，列出这一刻这块画板每层都有什么，视频会显示这一刻的画面；点色块会展开对象详情（含指向它的批注和它的关系）。这一刻没有对象的层写一行是哪种空："空着：6–9（3 秒）"是两个对象之间空着，"已经结束""还没开始"是在这层第一个对象之前或最后一个之后；整层都没有对象的容器层不写。播放头只在当前画板上，用这块画板的单位；落在接续的行上时，同时写出是哪一段的第几秒。
 - **改动**（右侧第二个标签）：列出最近 1～100 次操作改了什么——新建、删除、移动（前后位置）、改了哪些字段（information 里改了的键给出前后值）。打开时画布上标出改过的对象（角上的数字是倒数第几次操作），删除或移动之前的位置画成虚线框。点列表里的一条，镜头飞到那个对象或那个虚线框上。只读 changes 日志。
 - **批注**（右侧第三个标签）：按楼列出批注，可以只看待处理、已处理或"等我回复"的楼。先选中一个对象、点一个层名，或者在尺子上圈出一段，再写，批注就指向那里；什么都不选就是写给整个项目。每条都能回复，回复按楼显示（"3 楼 回复 2 楼"）；勾上楼主表示整楼已处理；改、删、回复都在卡片里完成（不用浏览器弹窗）。画布上，有待处理批注指着的色块和层名标 💬，指向一段时间的批注画成黄色的带子；点批注里的目标，镜头飞过去；点楼主上的「定位」，镜头框住这一楼指的全部地方，目标标成橙色虚线。
+- **沿着读**（右侧第四个标签）：从一个对象或一楼批注出发，顺着关联一步步往外读——它指着谁、谁指着它、再往外一步……批注指着对象、回复指着批注也都是关联，所以楼也能顺着读。入口是对象详情（「此刻」里选中的对象）和楼主卡片上的「沿着读」。按步数分组列出每一步的名字、所在层、位置、文字或文件，以及是从哪一个、顺着哪条关联（带说明）到的；可以只看一个方向（它指着谁 / 谁指着它），步数 1～5。点「去看」：对象就选中并飞过去，层就对准它，批注就对准它那一楼；「从这里读」换成从这一步出发。和 AI 用的 `view_walk` 是同一份结果。
 - **批注提醒**：按本机的署名（批注面板里填，默认「用户」）算"等我回复"的楼——还没处理、最后一句不是你说的，和 `view_note --waiting` 是同一条规则。批注标签上的红色数字、浏览器标签页标题前的 (2)、楼上的「等你回复」都是它。别人（比如 AI 用 `view_note`）写了新批注或回复时，右下角弹一条提示，点一下打开那一楼。
 - **关系线**：数据里的关联（bind）画成带箭头的线，跨画板也画；连到层的线接在层名上。平时只画选中对象的关系，顶栏勾上「关系线」画出全部。选中对象的详情里列出它的关系，点一条跳过去；另一头在别的项目时，色块角上标 ↗。
 - **接缝**（顶栏第二个标签）：同一条轨道里前后相接的图片和视频，把上一段的最后一帧和下一段的第一帧并排，写出两边的时间、是紧接还是中间空着；接续的两段之间也算。用来查衔接——比如上一段球落在地上，下一段却从桌上开始。点一个接缝回到画布上的那个位置。
@@ -80,6 +81,7 @@ python -m layerweave.tool.builtin.view.server DATABASE [--project 1] [--port 876
 | `view_screenshot` | 把视图截成 PNG：整张画布、某一块画板（`--board`，可加 `--begin --end` 放大一段）、接缝页（`--view cuts`）或素材网格；`--focus` 对准某个对象，`--note` 对准某条批注（框住它指的地方，右侧标出这一楼），`--link` 按用户「复制链接」得到的地址拍，`--changes N` 标出最近 N 次操作的改动，`--notes` 打开批注列表，`--links` 画出全部关系线，`--full-page` 把接缝页、素材页截成一整张长图。等页面把图片、封面、波形加载完才拍 |
 | `view_fold` | 两边的折叠：不带动作时列出；`fold 层编号… --by 名字 --why 原因` 折叠 AI 这边的；`unfold` 展开；`unfold --side user --why 理由` 把用户折叠的展开给用户看（写了理由就留一条批注）。截图的返回里也列出两边的折叠 |
 | `view_layout` | 查看或调整画板：同单位的根上下拼（`merge --side above/below`）、左右接（`merge --side left/right`）或拆开（`split`）、移动（`move`）、恢复自动排版（`reset`）。和网页改的是同一份排版 |
+| `view_walk` | 沿着关联读：`object:16`（或 `layer:5`）出发，按步数列出每一步是什么——名字、所在层、位置、文字或文件、批注的署名和状态——以及是从哪一个、顺着哪条关联到的。`--direction both/out/in`、`--depth`（默认 3）、`--max`（默认 60）；到了上限会写明还有几条关联没走、几个没列出。读一楼批注的来龙去脉、一个对象牵连到什么，用它 |
 | `view_frame` | 取视频对象在某一刻的画面（JPEG），按时间轴全局时间或视频自身时间，`--last` 取最后一帧；需要 ffmpeg |
 
 ```sh
@@ -88,6 +90,7 @@ python -m layerweave.tool.builtin.view.note DATABASE 1
 python -m layerweave.tool.builtin.view.note DATABASE 1 add "球应该落在桌子下面" --to object:16 --author Claude
 python -m layerweave.tool.builtin.view.note DATABASE 1 add "这两秒空着" --to layer:1 --span 6 8
 python -m layerweave.tool.builtin.view.note DATABASE 1 --waiting Claude
+python -m layerweave.tool.builtin.view.walk DATABASE 1 object:16
 python -m layerweave.tool.builtin.view.note DATABASE 1 reply 46 "改好了" --author Claude
 python -m layerweave.tool.builtin.view.note DATABASE 1 done 41
 python -m layerweave.tool.builtin.view.screenshot DATABASE 1 输出.png
@@ -110,6 +113,7 @@ python -m layerweave.tool.builtin.view.frame DATABASE 1 16 输出.jpg --at 3.75
 - 位置、播放头、时间范围都用对应画板的单位；不同画板的单位可能不同（比如一块是秒，一块是帧）。
 - 左右接续的画板上，`--begin --end --playhead` 用画板上的连续时间；`view_layout` 返回的 `offset` 是每一段在画板上的起点（画板时间 = 这一段自己的时间 + offset），`view_state` 的 `playhead_at` 给出播放头落在哪一段、是那一段自己的第几秒。
 - 开工前先看 `view_note --waiting 自己的名字`：用户在网页上提的问题、回复都在那里，回复用 `reply`。想看一条批注指的是哪里，用 `view_screenshot --note 编号`。
+- 用户问"这条批注说的是什么""这个镜头牵连到哪些"时，先 `view_walk` 读一遍再回答：批注指的东西、回复、关联的说明都在里面。
 - 用户贴来视图地址（「复制链接」）时，用 `view_screenshot --link 地址` 拍同一个画面；链接里的项目要和参数里的项目一致。
 - 折叠分两边：AI 折叠只影响 AI 这边（截图里收成细条，内容没画出来），折叠时写上原因。用户折叠的层在截图里照常画出、标着"用户折叠了"——那只说明用户现在不关注，判断时照常检查。开工时用 `view_fold` 看一眼两边的折叠：用户可能展开了 AI 折叠的层，想让 AI 看回来。
 - 用户圈出一段后，`view_state` 的 `selection` 给出那一段在哪个根上、那个根自己的起止；要给这一段写批注，用 `view_note add --to layer:根编号 --span 起点 终点`。

@@ -7,7 +7,7 @@ import {noteIndex, noteList, noteThreads, waitingFor} from './model/notes';
 import type {Note, NoteReads, Thread} from './model/notes';
 import type {Drop} from './model/dropRule';
 import {VIEWER, numParam, params} from './params';
-import type {Board, ChangeOp, ProjectData, ProjectSummary, Side, View} from './types';
+import type {Board, ChangeOp, ProjectData, ProjectSummary, Side, View, WalkDirection, WalkResult} from './types';
 
 export type {Drop};
 
@@ -39,6 +39,8 @@ export interface State {
   noteFilter: 'open' | 'done' | 'waiting';               // 已处理的楼只在"已处理"里出现，默认看待处理的
   noteFocus: number | null;                               // 镜头对准的那条批注（地址参数 note、批注上的"定位"）：它的楼和目标高亮
   me: string;                                             // 本机署名：写批注用，也用来算"等我回复"的楼
+  walk: {from: string; direction: WalkDirection; depth: number} | null;   // 沿着读的起点（侧栏「沿着读」）
+  walkResult: WalkResult | null;
   reads: NoteReads;                                       // 批注的已读（读项目时从 data.noteReads 拿；点"已读"先改这里，不等服务端，也不重建画面模型）
   canvasW: number;
   canvasH: number;
@@ -54,7 +56,10 @@ export const useStore = create<State>((set) => ({
   projects: [], project: null, data: null, boards: [], serial: null, version: null,
   frames: false, live: false, message: '', notice: null,
   view: viewParam === 'assets' || viewParam === 'cuts' ? viewParam : 'canvas',
-  side: params.get('side') === 'notes' || params.has('note') ? 'notes' : params.has('changes') ? 'changes' : 'now',
+  side: params.has('walk') ? 'walk' : params.get('side') === 'notes' || params.has('note') ? 'notes' : params.has('changes') ? 'changes' : 'now',
+  walk: params.has('walk') ? {from: params.get('walk')!, direction: (params.get('walkdir') as WalkDirection) || 'both',
+                               depth: Number(params.get('walkdepth') || 3)} : null,
+  walkResult: null,
   active: numParam('board'), playhead: numParam('playhead'), selected: numParam('select'),
   only: params.has('layers') ? new Set(params.get('layers')!.split(',').map(Number)) : null,
   showHidden: false, assetKind: 'all',

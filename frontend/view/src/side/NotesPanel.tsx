@@ -4,7 +4,7 @@
 // 已读 ≠ 已处理：已读只是"我看过了，别再提醒我"，按署名各记各的；之后有人再写一条，就又算没读
 import {useEffect, useRef, useState} from 'react';
 import {useShallow} from 'zustand/react/shallow';
-import {goToTarget, locateNote} from '../actions';
+import {goToTarget, locateNote, startWalk} from '../actions';
 import {refExists, refLabel} from '../model/labels';
 import type {Model} from '../model/model';
 import {lastOf, readBy, waitingFor} from '../model/notes';
@@ -76,6 +76,7 @@ function NoteCard({model, note, floors, top, number, waiting, thread, me, read}:
         {note.author && <b>{note.author}</b>}<small>#{note.id}</small>{waiting && <span className="wait-tag">等你回复</span>}<span className="grow" />
         {isTop && thread && me != null && <ReadButton thread={thread} me={me} read={!!read} />}
         {isTop && <button title="镜头对准这一楼指的地方，并标出来" onClick={() => locateNote(note.id)}>定位</button>}
+        {isTop && <button title="从这一楼出发，顺着关联往外读：它指的东西、回复、再往外一步……（侧栏「沿着读」）" onClick={() => startWalk(`object:${note.id}`)}>沿着读</button>}
         {RECORD && (mode === 'delete'
           ? <><span className="confirm">删除这条{isTop && floors.size > 1 ? '（回复会留下）' : ''}？</span>
               <button onClick={async () => { if (await noteAction({action: 'remove', note: note.id})) setMode('view'); }}>删除</button>

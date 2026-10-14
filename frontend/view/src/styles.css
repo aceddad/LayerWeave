@@ -139,6 +139,14 @@ select { background: var(--panel); padding: 3px 6px; }
 .card, .thread { content-visibility: auto; contain-intrinsic-size: auto 160px; }
 .card pre { white-space: pre-wrap; word-break: break-all; font-size: 11px; color: var(--dim); margin: 6px 0 0; max-height: 180px; overflow: auto; }
 .card .txt { white-space: pre-wrap; }
+.card .walk-btn { float: right; padding: 0 8px; font-size: 11px; }
+/* 沿着读 */
+.walk-step.gone { opacity: .6; }
+.walk-step .meta b { color: var(--text); font-weight: 600; }
+.walk-file { color: var(--dim); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.walk-thumb img { max-height: 120px; object-fit: contain; }
+.walk-text { white-space: pre-wrap; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
+.walk-via { color: #9fd0ff; font-size: 11px; margin-top: 4px; }
 .rels { margin-top: 8px; border-top: 1px solid var(--line); padding-top: 6px; }
 .rels-head { color: var(--dim); font-size: 11px; margin-bottom: 4px; }
 .rel { font-size: 12px; padding: 2px 0; }

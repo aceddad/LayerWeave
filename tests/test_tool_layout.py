@@ -37,6 +37,9 @@ class ToolLayoutTests(unittest.TestCase):
         view = ROOT / "src/layerweave/tool/builtin/view"
         self.assertTrue(view.is_dir())
         self.assertTrue((view / "web" / "index.html").is_file())   # visualization 分支：视图网页随包分发
+        # 打包只认带 __init__.py 的目录（namespaces = false）：没有它，整个视图包（模块、网页、内置插件）都不进安装包，
+        # 源码里却照常能导入、测试照常通过（2026-10-15 打包检查才发现，0.20.1 补上）
+        self.assertTrue((view / "__init__.py").is_file())
 
     def test_database_and_crud_execute_through_canonical_tools(self):
         with tempfile.TemporaryDirectory() as folder:

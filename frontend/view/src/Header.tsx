@@ -1,4 +1,4 @@
-// 顶栏：项目、视图（画布 / 接缝 / 素材）、找对象、时钟、复制链接、关系线开关、画布缩放、在线指示
+// 顶栏：项目、视图（画布 / 接缝 / 一览）、找对象、时钟、复制链接、关系线开关、画布缩放、在线指示
 import {useState} from 'react';
 import {useShallow} from 'zustand/react/shallow';
 import {copyLink, selectObject, setView} from './actions';
@@ -12,7 +12,7 @@ import type {View} from './types';
 const VIEWS: {view: View; label: string; title?: string}[] = [
   {view: 'canvas', label: '画布'},
   {view: 'cuts', label: '接缝', title: '同一条轨道里前后相接的画面：上一段的最后一帧和下一段的第一帧并排'},
-  {view: 'assets', label: '素材'},
+  {view: 'assets', label: '一览', title: '按种类列出项目里所有的对象：图片、视频、音频、文字……点一下回到画布上的位置'},
 ];
 
 export function Header() {

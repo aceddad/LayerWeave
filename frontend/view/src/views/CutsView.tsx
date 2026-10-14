@@ -15,7 +15,7 @@ import {useModel, useStore} from '../store';
 function Shot({model, it, end, project, frames}: {model: Model; it: CutItem; end: boolean; project: number; frames: boolean}) {
   const o = it.o, unit = model.unitOfRoot(it.root);
   if (o.media && !o.media.available) return <div className="shot missing">文件不存在<br />{o.media.source}</div>;
-  if (!o.media?.url) return <div className="shot missing">没有素材</div>;
+  if (!o.media?.url) return <div className="shot missing">没有文件</div>;
   if (kindOf(o) === 'image') return <div className="shot"><Thumb project={project} o={o} width={640} frames={frames} /></div>;
   return <div className="shot"><Frame project={project} o={o} at={end ? lastAt(o, isSec(unit)) : 0.05} frames={frames} /></div>;
 }

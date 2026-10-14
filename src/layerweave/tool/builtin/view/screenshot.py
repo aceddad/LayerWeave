@@ -287,14 +287,14 @@ def _shoot(profile, page, output, width, height, wait_ms, full_page=False):
 
 COMMANDS = [{
     "name": "view_screenshot",
-    "summary": "把视图页面截成 PNG：整张画布、某一块画板（可指定时间范围）、接缝页或素材网格；可以对准对象或批注、按用户复制的链接拍、标出最近的改动、画出关系线",
+    "summary": "把视图页面截成 PNG：整张画布、某一块画板（可指定时间范围）、接缝页或一览网格；可以对准对象或批注、按用户复制的链接拍、标出最近的改动、画出关系线",
     "entrypoint": "layerweave.tool.builtin.view.screenshot:capture",
     "cli": "python -m layerweave.tool.builtin.view.screenshot",
     "read_only": True,
     "context": ["database", "project_id"],
     "parameters": {
         "output": {"type": "string", "required": True, "description": "由 AI 指定的 PNG 输出路径"},
-        "view": {"type": "string", "description": "canvas（画布）、cuts（接缝：前后相接的画面并排）或 assets（素材网格）；省略时是画布，给了 link 时按链接"},
+        "view": {"type": "string", "description": "canvas（画布）、cuts（接缝：前后相接的画面并排）或 assets（一览：按种类列出所有对象）；省略时是画布，给了 link 时按链接"},
         "board": {"type": "integer", "description": "只拍这个根层所在的画板；省略时拍整张画布"},
         "begin": {"type": "number", "description": "画板显示的起点，用这块画板的单位；和 end 一起用"},
         "end": {"type": "number", "description": "画板显示的终点"},
@@ -307,7 +307,7 @@ COMMANDS = [{
         "changes": {"type": "integer", "description": "标出最近这么多次操作改过的对象和删除、移动前的位置，右侧列出改动"},
         "notes": {"type": "boolean", "description": "右侧打开批注列表（画布上的批注标记总是显示）", "default": False},
         "links": {"type": "boolean", "description": "画出全部关系线（bind）；不画时只画选中对象的", "default": False},
-        "full_page": {"type": "boolean", "description": "接缝页、素材页按内容高度截整页（最多 16000 像素）", "default": False},
+        "full_page": {"type": "boolean", "description": "接缝页、一览页按内容高度截整页（最多 16000 像素）", "default": False},
         "width": {"type": "integer", "default": 1600}, "height": {"type": "integer", "default": 900},
         "browser": {"type": "string", "description": "浏览器路径；省略时自动查找 Chrome、Edge、Chromium"},
         "wait_ms": {"type": "integer", "description": "最多等页面把图片、视频封面、波形加载完多久", "default": 20000},
@@ -340,7 +340,7 @@ def main():
     p.add_argument("--note", type=int, help="对准这条批注：框住它指的地方，右侧标出这一楼")
     p.add_argument("--link", help="用户在视图里点「复制链接」得到的地址：按它拍同一个位置")
     p.add_argument("--notes", action="store_true", help="右侧打开批注列表")
-    p.add_argument("--links", action="store_true", help="画出全部关系线"); p.add_argument("--full-page", action="store_true", help="接缝、素材页截整页")
+    p.add_argument("--links", action="store_true", help="画出全部关系线"); p.add_argument("--full-page", action="store_true", help="接缝、一览页截整页")
     p.add_argument("--width", type=int, default=1600); p.add_argument("--height", type=int, default=900)
     p.add_argument("--browser"); p.add_argument("--wait-ms", type=int, default=20000)
     a = p.parse_args()

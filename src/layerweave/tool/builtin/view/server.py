@@ -1,4 +1,4 @@
-"""视图服务：本机网页，只读查看项目——画布上每个根一块时间轴画板，另有素材预览。只监听 127.0.0.1，以只读方式打开数据库。
+"""视图服务：本机网页，只读查看项目——画布上每个根一块时间轴画板，另有接缝页和一览页。只监听 127.0.0.1，以只读方式打开数据库。
 
 python -m layerweave.tool.builtin.view.server DATABASE [--port 8765] [--project ID]
 然后用浏览器打开打印出来的地址。数据库被工具修改后，页面会在两秒内自动刷新。
@@ -30,7 +30,7 @@ mimetypes.add_type("video/mp4", ".mp4")
 
 
 class ViewHandler(SimpleHTTPRequestHandler):
-    """静态网页 + 只读 JSON 接口 + 素材文件（支持 Range，视频可以拖动）。"""
+    """静态网页 + 只读 JSON 接口 + 引用的文件（支持 Range，视频可以拖动）。"""
 
     def __init__(self, *args, database, version, state_root, record_state, **kwargs):
         self.database, self.version, self.state_root, self.record_state = database, version, state_root, record_state
@@ -100,7 +100,7 @@ class ViewHandler(SimpleHTTPRequestHandler):
                 with closing(open_readonly(self.database)) as connection:
                     path = media_path(connection, self.database, int(match[1]), int(match[2]))
                 if not path:
-                    return self.send_json({"error": "没有这个素材"}, HTTPStatus.NOT_FOUND)
+                    return self.send_json({"error": "没有这个文件"}, HTTPStatus.NOT_FOUND)
                 at = parse_qs(url.query).get("t", ["0"])[0]
                 seconds = "end" if at == "end" else round(float(at), 2)   # end：最后一帧
                 key = (str(path), path.stat().st_mtime_ns, seconds)
@@ -123,11 +123,11 @@ class ViewHandler(SimpleHTTPRequestHandler):
                     return self.send_json({"error": "算不了这个波形"}, HTTPStatus.NOT_FOUND)
                 return self.send_json({"rms": values})
             if match := re.fullmatch(r"/thumb/(\d+)/(\d+)", url.path):
-                # 图片缩略图：画布、素材页、接缝页用它；缩不了（没有 ffmpeg、svg、gif、解不开）就送原图
+                # 图片缩略图：画布、一览页、接缝页用它；缩不了（没有 ffmpeg、svg、gif、解不开）就送原图
                 with closing(open_readonly(self.database)) as connection:
                     path = media_path(connection, self.database, int(match[1]), int(match[2]))
                 if not path:
-                    return self.send_json({"error": "没有这个素材"}, HTTPStatus.NOT_FOUND)
+                    return self.send_json({"error": "没有这个文件"}, HTTPStatus.NOT_FOUND)
                 made = thumbnail(path, int(parse_qs(url.query).get("w", ["320"])[0]), self.state_root)
                 if made is None:
                     return self.send_file(path)
@@ -140,7 +140,7 @@ class ViewHandler(SimpleHTTPRequestHandler):
             if match := re.fullmatch(r"/media/(\d+)/(\d+)", url.path):
                 with closing(open_readonly(self.database)) as connection:
                     path = media_path(connection, self.database, int(match[1]), int(match[2]))
-                return self.send_file(path) if path else self.send_json({"error": "没有这个素材"}, HTTPStatus.NOT_FOUND)
+                return self.send_file(path) if path else self.send_json({"error": "没有这个文件"}, HTTPStatus.NOT_FOUND)
         except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
             return
         except (ValueError, OSError, RuntimeError) as error:
@@ -288,7 +288,7 @@ def make_server(database, *, port=0, state_root=None, record_state=True):
 
 COMMANDS = [{
     "name": "view_server",
-    "summary": "在本机启动只读视图网页：画布上的时间轴画板、素材预览，数据库变化后自动刷新",
+    "summary": "在本机启动只读视图网页：画布上的时间轴画板、接缝页、一览页，数据库变化后自动刷新",
     "entrypoint": "layerweave.tool.builtin.view.server:serve",
     "cli": "python -m layerweave.tool.builtin.view.server",
     "read_only": True,
@@ -299,8 +299,8 @@ COMMANDS = [{
     },
     "returns": "持续运行的本机网页服务；打印访问地址。",
     "examples": [{"cli": "python -m layerweave.tool.builtin.view.server DATABASE --project 1"}],
-    "notes": ["只监听 127.0.0.1，以只读方式打开数据库；素材只提供数据库里引用过、且存在的本地文件。",
-              "相对路径的素材相对于数据库文件所在目录解析。"],
+    "notes": ["只监听 127.0.0.1，以只读方式打开数据库；文件只提供数据库里引用过、且存在的本地文件。",
+              "相对路径的文件相对于数据库文件所在目录解析。"],
 }]
 
 

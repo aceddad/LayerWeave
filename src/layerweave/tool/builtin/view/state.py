@@ -46,7 +46,7 @@ def read_state(database, root=None):
 def describe(state):
     if state is None:
         return "视图还没有记录过状态：用户可能还没打开视图。"
-    view = {"canvas": "画布", "timeline": "画布", "assets": "素材"}.get(state.get("view"), state.get("view", "?"))
+    view = {"canvas": "画布", "timeline": "画布", "assets": "一览"}.get(state.get("view"), state.get("view", "?"))
     lines = [f"项目 {state.get('project')} · {view}视图 · {state['age_seconds']} 秒前更新"]
     board = state.get("board") or {}
     unit = board.get("unit") or ""

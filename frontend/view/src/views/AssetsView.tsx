@@ -1,4 +1,4 @@
-// 素材页：像资源管理器一样，用网格显示图片、视频封面、音频波形和文字；点一下回到画布上的对应位置
+// 一览（以前叫素材，地址里还是 view=assets）：像资源管理器一样，用网格显示图片、视频封面、音频波形和文字；点一下回到画布上的对应位置
 import {useEffect} from 'react';
 import {useShallow} from 'zustand/react/shallow';
 import {selectObject} from '../actions';
@@ -24,7 +24,7 @@ export function AssetsView() {
         {FILTERS.map((f) => <button key={f} className={kind === f ? 'on' : ''} onClick={() => setState({assetKind: f})}>{f === 'all' ? '全部' : KIND_LABEL[f]}</button>)}
       </div>
       <div className="grid">
-        {!items.length && <p className="hint">没有这类素材。</p>}
+        {!items.length && <p className="hint">没有这类对象。</p>}
         {items.map((o) => {
           const k = kindOf(o), missing = !!o.media && !o.media.available, unit = model.unitOfRoot(o.layer.root);
           return (

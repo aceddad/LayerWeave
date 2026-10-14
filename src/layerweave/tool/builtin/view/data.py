@@ -1,4 +1,4 @@
-"""视图读取：只读打开数据库，整理成网页需要的结构；素材文件只提供数据库里引用过的。"""
+"""视图读取：只读打开数据库，整理成网页需要的结构；文件只提供数据库里引用过的。"""
 from concurrent.futures import ThreadPoolExecutor
 import json
 import os
@@ -178,7 +178,7 @@ def _short(value, size=80):
 
 
 def _slim(record):
-    """改动前后只留认得出、定得了位的部分：名字、所在层、位置，以及文字或素材路径（截短）。"""
+    """改动前后只留认得出、定得了位的部分：名字、所在层、位置，以及文字或文件路径（截短）。"""
     if record is None:
         return None
     out = {k: record.get(k) for k in SLIM if k in record}

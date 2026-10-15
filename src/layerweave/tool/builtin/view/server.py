@@ -95,7 +95,7 @@ class ViewHandler(SimpleHTTPRequestHandler):
                 with closing(open_readonly(self.database)) as connection:
                     return self.send_json(read_spans(connection, int(match[1]), spans))
             if match := re.fullmatch(r"/api/walk/(\d+)", url.path):
-                # 沿着读（walk.py）：侧栏「沿着读」按步列出
+                # 沿读（walk.py）：侧栏「沿读」按步列出
                 q = parse_qs(url.query)
                 with closing(open_readonly(self.database)) as connection:
                     return self.send_json(walk_from(connection, int(match[1]), q.get("from", [""])[0],

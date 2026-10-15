@@ -14,10 +14,10 @@ import {fmt, fmtSpan, isSec} from '../model/units';
 import {CAPTURE, FULL, numParam} from '../params';
 import {useModel, useStore} from '../store';
 import {toast} from '../sync';
-import type {Board, Layer, Obj} from '../types';
+import type {Board} from '../types';
 
-// 接口版本：插件可以按它判断宿主够不够新。1：页面、跳转点；2：加了侧栏、对象详情、画布格子
-export const PLUGIN_API = 2;
+// 接口版本：插件可以按它判断宿主够不够新。1：页面、跳转点；2：加了侧栏、对象详情、画布格子；3：去掉画布格子（封装前收拾接口）
+export const PLUGIN_API = 3;
 
 export interface ViewSnapshot {
   model: Model | null; boards: Board[]; project: number | null; frames: boolean;
@@ -31,7 +31,7 @@ export interface PluginHost {
   full: boolean;           // 截整页（--full-page）：页面不要限高
   useView(): ViewSnapshot;
   selectObject(id: number): void;          // 选中对象，切回画布并飞过去
-  startWalk(ref: string): void;            // 侧栏"沿着读"从这里开始（"object:16"）
+  startWalk(ref: string): void;            // 侧栏"沿读"从这里开始（"object:16"）
   toast(text: string): void;
   markReady(): void;
   addStyle(css: string): void;             // 插件自己的样式；插件关掉、去掉时跟着拿掉
@@ -39,20 +39,6 @@ export interface PluginHost {
   components: {Img: typeof Img; Thumb: typeof Thumb; Frame: typeof Frame};
   util: {kindOf: typeof kindOf; lastAt: typeof lastAt; isSec: typeof isSec; fmt: typeof fmt; fmtSpan: typeof fmtSpan;
          lanes: typeof lanes; keyOf: typeof keyOf; rootsOf: typeof rootsOf};
-}
-
-// 画布格子里画东西：视图给一块 canvas（设备像素，可能脱离 DOM），排进和缩略图同一个同步预算队列；详见 TOOL_TYPES。
-// 只在格子大小变了、镜头停下换了缩放、对象变了时才再画；已准备好的格子不因纯位移重画，首次进入 near 范围仍会开始画。格子太小（只画色块的那一档）时不画
-export interface BlockBox {
-  width: number; height: number;   // canvas 的像素
-  unit: string;                    // 这个对象所在的根的单位（isSec(unit) 判断是不是秒）
-  layer: Layer;                    // 对象所在的层
-}
-export interface BlockPainter {
-  kinds?: string[];                // 按 kindOf 认：image、video、audio、text、file、other
-  types?: string[];                // 按对象的类型名认（o.type），工具包自己登记的新类型用这个
-  // 画进 ctx（已经清空）。要等图片之类的就返回 Promise，截图会等它画完
-  draw(ctx: CanvasRenderingContext2D, o: Obj, box: BlockBox): void | Promise<void>;
 }
 
 // 插件能放东西的位置（栏位）。每个位置都包在出错保护里：插件出错只在它自己那块写一句，不影响别的
@@ -64,7 +50,6 @@ export interface ViewPlugin {
   page?: React.ComponentType;            // 顶栏：专用页面
   side?: React.ComponentType;            // 侧栏：一个标签（和「此刻」「批注」并排），点开是这个组件
   objectDetail?: React.ComponentType<{object: ObjWithLayer; model: Model}>;   // 对象详情里的一段（侧栏「此刻」里选中的对象）；没话说就返回 null
-  block?: BlockPainter;                  // 画布上：某类对象的格子里画什么（换掉默认的缩略图、画面、波形）
   jumpPoints?: (model: Model, board: Board) => number[];   // 键盘 [ ] 在这些时刻之间跳（画板时间）
 }
 

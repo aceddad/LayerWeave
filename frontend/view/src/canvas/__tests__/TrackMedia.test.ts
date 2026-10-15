@@ -236,14 +236,12 @@ describe('shared track media lifecycle', () => {
     expect(mocks.peaks).toHaveBeenCalledTimes(2); // 镜头变化只重排共享表面，不重新采样波形。
     expect(root.children[0].calls.filter((c) => c[0] === 'drawImage').at(-1)![1]).toBe(stamp);
   });
-  it('keeps ordinary audio active at detail zero without adding near-viewport loading, but preserves plugin LOD', async () => {
+  it('keeps ordinary audio active at detail zero without adding near-viewport loading', async () => {
     mocks.capture = false; mocks.state = {settledZoom: .05};
-    const {surface} = fixture(), audio = new ElementStub(), plugin = new ElementStub(), draw = vi.fn();
+    const {surface} = fixture(), audio = new ElementStub();
     surface.add({...spec(1), kind: 'audio'}, audio as unknown as HTMLElement);
-    surface.add({...spec(2, 100), kind: 'audio', painter: {name: 'audio-plugin', painter: {draw}}}, plugin as unknown as HTMLElement);
     await drain();
-    expect(audio.dataset.mediaState).toBe('ready'); expect(plugin.dataset.mediaState).toBe('idle');
-    expect(mocks.peaks).toHaveBeenCalledOnce(); expect(draw).not.toHaveBeenCalled();
+    expect(audio.dataset.mediaState).toBe('ready'); expect(mocks.peaks).toHaveBeenCalledOnce();
   });
   it('retains the original 4096-pixel waveform on an extremely long object', async () => {
     const {root, surface} = fixture(1000000), node = new ElementStub();
@@ -269,78 +267,6 @@ describe('shared track media lifecycle', () => {
     const remove = surface.add({...spec(1), kind: 'audio'}, node as unknown as HTMLElement);
     frames.shift()?.(); await Promise.resolve(); expect(paintQueue.pending).toBeGreaterThan(0);
     remove(); await drain(); expect(paintQueue.pending).toBe(0);
-  });
-  it('keeps async plugins off the shared context and waits for their completed drawing', async () => {
-    const {root, surface} = fixture(), node = new ElementStub();
-    let finish!: () => void, pluginContext: unknown;
-    const deferred = new Promise<void>((resolve) => { finish = resolve; });
-    const plugin = {name: 'async-painter', painter: {draw: (ctx: CanvasRenderingContext2D) => { pluginContext = ctx; return deferred; }}};
-    surface.add({...spec(1), painter: plugin}, node as unknown as HTMLElement);
-    frames.shift()?.(); await Promise.resolve();
-    expect(root.children).toHaveLength(0); expect(node.dataset.mediaState).toBe('pending');
-    expect(node.dataset.mediaPlugin).toBe('async-painter');
-    finish(); await drain();
-    expect(node.dataset.mediaState).toBe('ready'); expect(pluginContext).not.toBe(root.children[0].ctx);
-  });
-  it('does not paste a plugin result after the object was removed', async () => {
-    const {root, surface} = fixture(), node = new ElementStub();
-    let finish!: () => void;
-    const deferred = new Promise<void>((resolve) => { finish = resolve; });
-    const remove = surface.add({...spec(1), painter: {name: 'slow', painter: {draw: () => deferred}}}, node as unknown as HTMLElement);
-    frames.shift()?.(); await Promise.resolve(); remove(); finish(); await drain();
-    expect(root.children).toHaveLength(0); expect(node.dataset.mediaState).toBeUndefined();
-  });
-  it('keeps a legitimate long-running plugin pending past eight seconds and later pastes it', async () => {
-    vi.useFakeTimers({toFake: ['setTimeout', 'clearTimeout', 'Date']});
-    const {root, surface} = fixture(), node = new ElementStub(); let finish!: () => void;
-    const deferred = new Promise<void>((resolve) => { finish = resolve; });
-    surface.add({...spec(1), painter: {name: 'long', painter: {draw: () => deferred}}}, node as unknown as HTMLElement);
-    frames.shift()?.(); await Promise.resolve();
-    await vi.advanceTimersByTimeAsync(9000);
-    expect(node.dataset.mediaState).toBe('pending'); expect(mediaPaintState().failed).toBe(0);
-    expect(root.children).toHaveLength(0);
-    finish(); await drain(); expect(node.dataset.mediaState).toBe('ready');
-  });
-  it('stops waiting for a removed plugin even when its Promise never resolves', async () => {
-    const {surface} = fixture(), node = new ElementStub();
-    const remove = surface.add({...spec(1), painter: {name: 'unmounted', painter: {draw: () => new Promise<void>(() => {})}}}, node as unknown as HTMLElement);
-    frames.shift()?.(); await Promise.resolve();
-    let idle = false; const waiting = paintQueue.idle().then(() => { idle = true; });
-    remove();
-    for (let i = 0; i < 10; i++) { await Promise.resolve(); frames.shift()?.(); }
-    await waiting; expect(idle).toBe(true); expect(mediaPaintState().failed).toBe(0);
-  });
-  it('finishes a new zoom generation without awaiting a superseded never-resolving plugin', async () => {
-    const {surface} = fixture(), node = new ElementStub(); let call = 0;
-    surface.add({...spec(1), painter: {name: 'replaced', painter: {draw: () => ++call === 1 ? new Promise<void>(() => {}) : Promise.resolve()}}}, node as unknown as HTMLElement);
-    frames.shift()?.(); await Promise.resolve();
-    mocks.state = {settledZoom: 2};
-    for (const fn of mocks.listeners) fn(mocks.state, {settledZoom: 1});
-    await drain();
-    expect(call).toBe(2); expect(node.dataset.mediaState).toBe('ready'); expect(mediaPaintState().pending).toBe(0);
-  });
-  it('does not let an older asynchronous zoom generation overwrite the new surface', async () => {
-    const {root, surface} = fixture(), node = new ElementStub(), finishes: (() => void)[] = [];
-    const painter = {name: 'zoom-painter', painter: {draw: () => new Promise<void>((resolve) => finishes.push(resolve))}};
-    surface.add({...spec(1), painter}, node as unknown as HTMLElement);
-    frames.shift()?.(); await Promise.resolve();
-    mocks.state = {settledZoom: 2};
-    for (const fn of mocks.listeners) fn(mocks.state, {settledZoom: 1});
-    frames.shift()?.(); await Promise.resolve();
-    expect(finishes).toHaveLength(2);
-    finishes[1]();
-    for (let i = 0; i < 12; i++) { frames.shift()?.(); await Promise.resolve(); }
-    finishes[0](); await drain();
-    const last = root.children[0].calls.filter((call) => call[0] === 'drawImage').at(-1)!;
-    expect((last[1] as ElementStub).width).toBe(200);
-    expect(node.dataset.mediaState).toBe('ready');
-  });
-  it('reports rejected plugins as failures rather than painted empty canvases', async () => {
-    const {root, surface} = fixture(), node = new ElementStub();
-    surface.add({...spec(1), painter: {name: 'broken', painter: {draw: async () => { throw new Error('no paint'); }}}}, node as unknown as HTMLElement);
-    await drain();
-    expect(root.children).toHaveLength(0); expect(node.dataset.mediaState).toBe('failed');
-    expect(mediaPaintState().failed).toBe(1); expect(mocks.failed).toHaveBeenCalledOnce();
   });
   it('settles image preparation when drawImage throws after decode', async () => {
     const {surface} = fixture(), node = new ElementStub();

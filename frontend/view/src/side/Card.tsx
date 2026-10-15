@@ -48,8 +48,8 @@ export function Card({o, full = false, local = null}: {o: ObjWithLayer; full?: b
   return (
     <div className={`card${o.id === selected ? ' sel' : ''}`}>
       <div className="meta">{`#${o.id} ${o.name} · ${o.type} · ${fmt(o.begin, unit)} – ${fmt(o.end, unit)}`}
-        {full && <button className="walk-btn" title="从这个对象出发，顺着关联往外读：挂在上面的批注、连着的对象、再往外一步……（侧栏「沿着读」）"
-                         onClick={() => startWalk(`object:${o.id}`)}>沿着读</button>}</div>
+        {full && <button className="walk-btn" title="从这个对象出发，顺着关联往外读：挂在上面的批注、连着的对象、再往外一步……（侧栏「沿读」）"
+                         onClick={() => startWalk(`object:${o.id}`)}>沿读</button>}</div>
       {body}
       {o.text != null && <div className="txt">{o.text}</div>}
       {said.length > 0 && <div className="rels"><div className="rels-head">批注</div>

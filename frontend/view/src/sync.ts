@@ -160,7 +160,7 @@ export async function reloadLayout() {
   if (!model.boardOf(now.boards, now.active)) setState({active: now.boards[0] ? keyOf(now.boards[0]) : null});
 }
 
-// 沿着读：侧栏开着「沿着读」时按起点问服务端；项目重读后也重问一次（关联可能变了）
+// 沿读：侧栏开着「沿读」时按起点问服务端；项目重读后也重问一次（关联可能变了）
 let walking: Promise<void> | null = null, walkSequence = 0, changesSequence = 0;
 export const pendingWalk = () => walking;
 export function loadWalk(): Promise<void> {

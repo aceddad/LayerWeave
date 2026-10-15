@@ -1,4 +1,4 @@
-// 右侧面板：此刻 / 改动 / 批注 / 沿着读，后面是插件的侧栏（项目里没有它管的对象时不显示）
+// 右侧面板：此刻 / 改动 / 批注 / 沿读，后面是插件的侧栏（项目里没有它管的对象时不显示）
 import {createElement} from 'react';
 import {useShallow} from 'zustand/react/shallow';
 import {setSide} from '../actions';
@@ -15,7 +15,7 @@ const TABS: {side: Side; label: string; title: string}[] = [
   {side: 'now', label: '此刻', title: '播放头这一刻每层都有什么'},
   {side: 'changes', label: '改动', title: '最近几次操作改了什么；打开时画布上会标出来'},
   {side: 'notes', label: '批注', title: '批注：给人或 AI 留的意见、说明、待办'},
-  {side: 'walk', label: '沿着读', title: '从一个对象或一楼批注出发，顺着关联一步步往外读（对象详情、楼主卡片上的「沿着读」）'},
+  {side: 'walk', label: '沿读', title: '从一个对象或一楼批注出发，顺着关联一步步往外读（对象详情、楼主卡片上的「沿读」）'},
 ];
 
 export function SidePanel() {

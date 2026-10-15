@@ -99,7 +99,7 @@ function NoteCard({model, note, floors, top, number, waiting, thread, me, read}:
         {note.author && <b>{note.author}</b>}<small>#{note.id}</small>{waiting && <span className="wait-tag">等你回复</span>}<span className="grow" />
         {isTop && thread && me != null && <ReadButton thread={thread} me={me} read={!!read} />}
         {isTop && <button title="镜头对准这一楼指的地方，并标出来" onClick={() => locateNote(note.id)}>定位</button>}
-        {isTop && <button title="从这一楼出发，顺着关联往外读：它指的东西、回复、再往外一步……（侧栏「沿着读」）" onClick={() => startWalk(`object:${note.id}`)}>沿着读</button>}
+        {isTop && <button title="从这一楼出发，顺着关联往外读：它指的东西、回复、再往外一步……（侧栏「沿读」）" onClick={() => startWalk(`object:${note.id}`)}>沿读</button>}
         {RECORD && (mode === 'delete'
           ? <><span className="confirm">删除这条{isTop && floors.size > 1 ? '（回复会留下）' : ''}？</span>
               <button onClick={async () => { if (await noteAction({action: 'remove', note: note.id})) setMode('view'); }}>删除</button>

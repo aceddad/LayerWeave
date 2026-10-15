@@ -124,7 +124,6 @@ select { background: var(--panel); padding: 3px 6px; }
 .obj.missing { background: repeating-linear-gradient(45deg, #3a2a2a, #3a2a2a 6px, #2a1f1f 6px, #2a1f1f 12px); color: #f2b0b0; }
 .obj.sel { outline: 2px solid var(--sel); outline-offset: -1px; z-index: 2; }
 .obj img, .obj video, .obj canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .85; }
-.obj canvas.plugin-paint { opacity: 1; }
 .obj canvas { pointer-events: none; }
 .media-atlas { position: absolute; inset: 0; pointer-events: none; }
 .media-atlas .media-tile { position: absolute; pointer-events: none; }
@@ -183,7 +182,7 @@ select { background: var(--panel); padding: 3px 6px; }
 .card pre { white-space: pre-wrap; word-break: break-all; font-size: 11px; color: var(--dim); margin: 6px 0 0; max-height: 180px; overflow: auto; }
 .card .txt { white-space: pre-wrap; }
 .card .walk-btn { float: right; padding: 0 8px; font-size: 11px; }
-/* 沿着读 */
+/* 沿读 */
 .walk-step.gone { opacity: .6; }
 .walk-step .meta b { color: var(--text); font-weight: 600; }
 .walk-file { color: var(--dim); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

@@ -747,8 +747,8 @@ class ViewTests(unittest.TestCase):
             self.assertIn(part, linked["page"])
 
     @unittest.skipIf(find_browser() is None, "本机没有 Chrome、Edge 或 Chromium")
-    def test_example_plugin_fills_side_detail_and_blocks(self):
-        # 仓库里的样板插件「字数」：链接进来，侧栏、对象详情、文字格子里都由它画；截图等它画完
+    def test_example_plugin_fills_side_and_detail(self):
+        # 仓库里的样板插件「字数」：链接进来，侧栏、对象详情由它画；截图等它画完
         from layerweave.tool.builtin.view.plugins import plugin
         example = Path(__file__).resolve().parents[1] / "frontend" / "view" / "example-plugin"
         self.assertEqual(plugin("add", str(example), root=self.state_root)["added"], "example-plugin")
@@ -773,13 +773,12 @@ class ViewTests(unittest.TestCase):
         self.assertEqual(len(data["roots"]), 3)                                      # 两块画板，加上批注层
         self.assertTrue(all(o["media"]["available"] for o in objects if o.get("media")))
         self.assertEqual((Path(self.temp.name) / "bench" / "media" / "img0.png").read_bytes()[:8], b"\x89PNG\r\n\x1a\n")
-        runs = [{"open": 0.8, "click": 40, "board_drag": 20, "zoom_pan": 7, "zoom_pan_plugin": 50},
-                {"open": 0.6, "click": 60, "board_drag": None, "zoom_pan": 9, "zoom_pan_plugin": 40}]
+        runs = [{"open": 0.8, "click": 40, "board_drag": 20, "zoom_pan": 50},
+                {"open": 0.6, "click": 60, "board_drag": None, "zoom_pan": 40}]
         rows = {row["key"]: row for row in summarize(runs, baseline_runs=runs[:1])}
         self.assertEqual(set(rows), set(GATES))
         self.assertEqual((rows["open"]["value"], rows["click"]["value"], rows["board_drag"]["value"]), (0.7, 50, 20))
-        self.assertTrue(rows["zoom_pan"]["ok"])
-        self.assertFalse(rows["zoom_pan_plugin"]["ok"])
+        self.assertFalse(rows["zoom_pan"]["ok"])
         self.assertEqual(rows["click"]["baseline"], 40)
         text = describe({"title": "t", "rows": list(rows.values()), "passed": False})
         self.assertIn("超过门槛", text)
@@ -792,7 +791,6 @@ class ViewTests(unittest.TestCase):
         self.assertEqual([row["key"] for row in result["rows"]], list(GATES))
         self.assertTrue(all(row["value"] is not None for row in result["rows"]), result["text"])   # 每一项都量到了（快慢看机器，不在这里判）
         self.assertIsInstance(result["passed"], bool)
-        self.assertGreater(result["runs"]["现在"][0]["scene_plugin"]["插件画的格子"], 0)              # 插件那一项真的有插件在画
 
     def test_view_tables_check_and_upgrade_old_declarations(self):
         # 旧库：视图的表按 0.21.0 以前的声明建（没有逻辑引用、复制策略），里面已经有折叠和已读

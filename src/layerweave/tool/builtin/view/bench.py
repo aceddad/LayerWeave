@@ -3,12 +3,13 @@
 门槛（2026-10-14 量手书项目时定的，0.13–0.14 的优化就是照着它们做的）：
 - 打开：从开始加载到首个对象进入 DOM ≤ 2 秒（不是已绘制或可操作时间）；
 - 点选对象：按下到画面画出来（事件计时），10 次的中位 ≤ 120 毫秒；
-- 拖画板、放大后平移、放大后平移（有插件画格子）：活跃拖动的 rAF 间隔 p95 ≤ 33 毫秒；另记最长帧和样本数。
+- 拖画板、放大后平移：活跃拖动的 rAF 间隔 p95 ≤ 33 毫秒；另记最长帧和样本数。
+  （0.23.0 以前还有"放大后平移，插件画格子"一项，随插件画格子一起去掉了。）
 
 不给数据库时造一个合成项目：800 个对象，构成照手书（文字一半、图片三成多、批注一成、几段音频），两块画板，
 图片和音频由这里生成，不依赖任何人的文件。也可以给一个真实的库（只读，不写任何东西）。
 条件照用户的电脑：1536×760、Windows 缩放 125%；浏览器关掉扩展、同步、后台联网。输入按有限的 60 Hz 节拍发送，
-记录实际输入和移动；空场景或没画出的插件标无效。默认 3 轮；--baseline 交替并反转先后顺序（ABBAAB）。
+记录实际输入和移动；空场景标无效。默认 3 轮；--baseline 交替并反转先后顺序（ABBAAB）。
 
 python -m layerweave.tool.builtin.view.bench [DATABASE --project 1] [--objects 800] [--rounds 3] [--baseline 网页目录] [--json]
 """
@@ -38,7 +39,6 @@ from layerweave.support.api import initialize_database, open_database, run_opera
 from .data import find_ffmpeg
 from .note import _note_layer
 from .notes import OBJECT_REF
-from .plugins import add_plugin
 from .screenshot import QUIET, DevTools, _devtools_port, find_browser
 from .server import WEB_ROOT, make_server
 
@@ -48,7 +48,6 @@ GATES = {
     "click": ("点选对象（中位）", "毫秒", 120),
     "board_drag": ("拖画板：帧间隔 p95", "毫秒", 33),
     "zoom_pan": ("放大后平移：帧间隔 p95", "毫秒", 33),
-    "zoom_pan_plugin": ("放大后平移，插件画格子：帧间隔 p95", "毫秒", 33),
 }
 WIDTH, HEIGHT, DPR = 1536, 760, 1.25
 
@@ -133,15 +132,6 @@ def make_synthetic(folder, objects=800, seed=7):
         if not result["ok"]:
             raise RuntimeError(f"造批注失败：{result.get('error')}")
     return database, project, counts
-
-
-# 量"插件画格子"用的插件：文字格子底下画一条（和样板插件「字数」一样的画法）
-PLUGIN_JS = """// view_bench 写的插件：文字格子底下画一条，量插件画格子以后平移还顺不顺
-export default () => ({label: '量', block: {kinds: ['text'], draw(ctx, o, {width, height}) {
-  ctx.fillStyle = 'hsl(' + (o.id * 37 % 120) + ', 75%, 42%)'; ctx.fillRect(0, height - Math.max(3, height * 0.14), width * ((o.id % 10) + 1) / 10, height);
-  (window.__lwBenchPluginPainted ??= new Set()).add(String(o.id));
-}}});
-"""
 
 
 # ---------- 页面里的测量 ----------
@@ -230,10 +220,8 @@ PANE = "(() => {" + DOM_HELPERS + """
 FLOW_CENTER = "(() => {" + DOM_HELPERS + "return bounds?[bounds.left+bounds.width*.45,bounds.top+bounds.height*.55]:null;})()"
 SCENE = "(() => {" + DOM_HELPERS + """
   const objects=[...document.querySelectorAll('.obj')],shown=objects.filter(visible);
-  const painted=window.__lwBenchPluginPainted??new Set();
   return {缩放:bounds?viewport().zoom:0,格子:shown.length,
     图:shown.filter(el=>el.classList.contains('image')&&drawn(el)).length,
-    插件画的格子:shown.filter(el=>painted.has(el.dataset.id)&&(!el.dataset.mediaState||el.dataset.mediaState==='ready')).length,
     objects:objects.length,canvas:document.querySelectorAll('.flow canvas').length,
     visible_images:shown.filter(el=>el.classList.contains('image')&&!el.classList.contains('missing')).length,
     failed_media:shown.filter(el=>el.dataset.mediaState==='failed').length,
@@ -386,15 +374,13 @@ def _warm(tab):
     _pan(tab, (-30, 0), 8)
 
 
-def _scene_issue(scene, *, images=False, plugin=False):
+def _scene_issue(scene, *, images=False):
     if not scene or not scene.get("格子"):
         return "视口内没有对象，不能以空画面的帧间隔判通过"
     if scene.get("failed_media", 0):
         return "可见媒体绘制失败"
     if images and not scene.get("图"):
         return "视口内没有已画好的图片"
-    if plugin and not scene.get("插件画的格子"):
-        return "视口内没有已画好的基准插件对象"
     return None
 
 
@@ -531,12 +517,12 @@ def _board_drag(tab, moves):
     return (result["active"]["p95_ms"] if reason is None else None), result
 
 
-def _zoom_pan(tab, url, moves, want_painted=False):
+def _zoom_pan(tab, url, moves):
     has_images = _anchor(tab, image=True) is not None
     _, ready = _focus(tab, url, image=has_images, text=not has_images)
     scene = _ev(tab, SCENE)
     issue = None if ready["ok"] else ready.get("reason", "媒体绘制未完成")
-    issue = issue or _scene_issue(scene, images=has_images, plugin=want_painted)
+    issue = issue or _scene_issue(scene, images=has_images)
     if issue:
         return None, scene, {"valid": False, "reason": issue, "ready": ready}
     _warm(tab)
@@ -545,8 +531,8 @@ def _zoom_pan(tab, url, moves, want_painted=False):
     for delta in ((-80, 0), (80, 0), (0, -40), (0, 40)):
         run = _pan(tab, delta, moves)
         issue = _motion_issue(run)
-        issue = issue or _scene_issue(run["before"], images=has_images, plugin=want_painted)
-        issue = issue or _scene_issue(run["after"], images=has_images, plugin=want_painted)
+        issue = issue or _scene_issue(run["before"], images=has_images)
+        issue = issue or _scene_issue(run["after"], images=has_images)
         runs.append(run)
         if issue:
             return None, scene, {"valid": False, "reason": issue, "runs": runs}
@@ -555,7 +541,7 @@ def _zoom_pan(tab, url, moves, want_painted=False):
     return stats["p95_ms"], scene, {"valid": True, "active": stats, "runs": runs, "ready": ready}
 
 
-def _session(browser, plain_url, plugin_url, clicks, moves):
+def _session(browser, plain_url, clicks, moves):
     """One fresh browser profile; normal UI mode throughout."""
     out = {"diagnostics": {}}
     with tempfile.TemporaryDirectory(prefix="lw-bench-browser-", ignore_cleanup_errors=True) as profile:
@@ -602,8 +588,6 @@ def _session(browser, plain_url, plugin_url, clicks, moves):
             out["board_drag"], out["diagnostics"]["board_drag"] = _board_drag(tab, max(8, moves))
             _open(tab, plain_url)
             out["zoom_pan"], out["scene"], out["diagnostics"]["zoom_pan"] = _zoom_pan(tab, plain_url, moves)
-            _open(tab, plugin_url)
-            out["zoom_pan_plugin"], out["scene_plugin"], out["diagnostics"]["zoom_pan_plugin"] = _zoom_pan(tab, plugin_url, moves, want_painted=True)
         finally:
             if tab:
                 tab.close()
@@ -705,24 +689,17 @@ def bench(database=None, project_id=None, *, objects=800, rounds=3, baseline=Non
             if not database.is_file():
                 raise FileNotFoundError(f"数据库不存在：{database}")
             what = f"{database.name} 的项目 {project_id}"
-        # 插件画格子那一项：另一份本机清单，链接上面那个小插件
-        (temp / "plugin").mkdir()
-        (temp / "plugin" / "plugin.js").write_text(PLUGIN_JS, encoding="utf-8")
-        add_plugin(temp / "plugin" / "plugin.js", name="bench", root=temp / "state-plugin")
         servers, variants = [], []
         try:
             for name, web in (("现在", None), *((("基线", baseline),) if baseline is not None else ())):
-                urls = []
-                for state in ("state", "state-plugin"):
-                    server, url = make_server(database, state_root=temp / state, record_state=False, web_root=web)
-                    threading.Thread(target=server.serve_forever, daemon=True).start()
-                    servers.append(server)
-                    urls.append(f"{url}?project={project_id}&record=0")
-                variants.append((name, *urls))
+                server, url = make_server(database, state_root=temp / "state", record_state=False, web_root=web)
+                threading.Thread(target=server.serve_forever, daemon=True).start()
+                servers.append(server)
+                variants.append((name, f"{url}?project={project_id}&record=0"))
             runs = {name: [] for name, *_ in variants}
             order = _run_order(variants, rounds)
-            for name, plain, plugin in order:
-                runs[name].append(_session(browser, plain, plugin, clicks, moves))
+            for name, plain in order:
+                runs[name].append(_session(browser, plain, clicks, moves))
         finally:
             for server in servers:
                 server.shutdown()
@@ -741,7 +718,7 @@ def bench(database=None, project_id=None, *, objects=800, rounds=3, baseline=Non
 
 COMMANDS = [{
     "name": "view_bench",
-    "summary": "视图的性能门槛：用无界面浏览器量打开、点选、拖画板、放大后平移（也量有插件画格子时），和门槛比，超过的标红。改了视图以后跑",
+    "summary": "视图的性能门槛：用无界面浏览器量打开、点选、拖画板、放大后平移，和门槛比，超过的标红。改了视图以后跑",
     "entrypoint": "layerweave.tool.builtin.view.bench:bench",
     "cli": "python -m layerweave.tool.builtin.view.bench",
     "read_only": True,
@@ -754,7 +731,7 @@ COMMANDS = [{
         "baseline": {"type": "string", "description": "另一份视图网页的目录（构建好的 view/web，比如改之前的），和现在的每轮交替量"},
         "browser": {"type": "string", "description": "浏览器路径；省略时自动找 Chrome、Edge、Chromium"},
     },
-    "returns": "rows（原有五项与门槛不变，增加 status/invalid_rounds/sample_counts/max_ms）、passed、runs（含 diagnostics：活跃帧、输入与实际位移、松手回调、就绪方式）、order、构建 hash、text。回调时机不是实际像素呈现时延。",
+    "returns": "rows（四项，门槛不变；0.23.0 随插件画格子一起去掉了第五项，增加 status/invalid_rounds/sample_counts/max_ms）、passed、runs（含 diagnostics：活跃帧、输入与实际位移、松手回调、就绪方式）、order、构建 hash、text。回调时机不是实际像素呈现时延。",
     "examples": [{"cli": "python -m layerweave.tool.builtin.view.bench"},
                  {"cli": "python -m layerweave.tool.builtin.view.bench --baseline D:/old/view/web --rounds 5"},
                  {"cli": "python -m layerweave.tool.builtin.view.bench DATABASE --project 1"}],
@@ -762,7 +739,7 @@ COMMANDS = [{
               "只读：起只监听本机的临时服务和独立配置的无界面浏览器（关掉扩展、同步），量完都关掉；合成项目放在临时目录，量完删掉。",
               "按 60 Hz 发送有限输入，浏览器可能合并事件；报告实际事件数。基线顺序 ABBAAB，原始数据保留最长帧和样本数。",
               "热身用于稳定连续拖动对照，不推断显卡频率。点选首个样本另外记录；正常模式等待媒体队列，旧构建使用明确标记的较弱 DOM 就绪检查。",
-              "标题先移入视口内部，保留产品自动平移；测量时若视口仍变动则标无效。空视口、图片没画好、插件没画好都不能通过。"],
+              "标题先移入视口内部，保留产品自动平移；测量时若视口仍变动则标无效。空视口、图片没画好都不能通过。"],
 }]
 
 

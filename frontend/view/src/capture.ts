@@ -36,7 +36,7 @@ export async function markReady() {
   started = true;
   await frames();
   await frames();
-  await pendingWalk();                  // 沿着读的结果可能挂载新的媒体，先让对应 DOM/effects 提交。
+  await pendingWalk();                  // 沿读的结果可能挂载新的媒体，先让对应 DOM/effects 提交。
   await frames();
   const images = [...document.querySelectorAll('img')];
   await Promise.all(images.filter((i) => !i.complete).map((i) => settle(i, ['load', 'error'])));

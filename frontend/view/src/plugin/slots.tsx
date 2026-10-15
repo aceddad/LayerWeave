@@ -1,4 +1,4 @@
-// 插件的栏位：出错保护——插件的组件出错只在它自己那块写一句（画布格子找谁来画在 plan.ts）
+// 插件的栏位：出错保护——插件的组件出错只在它自己那块写一句
 import {Component} from 'react';
 import type {ReactNode} from 'react';
 import {getState, setState} from '../store';

@@ -1,10 +1,9 @@
 // 轨道上的一个对象：色块 + 缩略图 / 视频首尾帧 / 波形 / 文字，角上是改动、批注、跨项目关系的标记。
 // 缩得很小时只画色块：格子在屏幕上只有十几像素高时，几百张缩略图每一帧都要重画，平移画布只剩每秒 11 帧（藏掉图片是 33 帧，2026-10-14 量的）。
-// 截图时照旧全画，AI 截全图也看得到缩略图。插件可以接手某一类对象的格子里画什么（ViewPlugin.block）
+// 截图时照旧全画，AI 截全图也看得到缩略图
 import {Handle, Position} from '@xyflow/react';
 import {memo, useMemo, useRef} from 'react';
 import {CAPTURE} from '../params';
-import {painterFor} from '../plugin/plan';
 import {handleKeysOf, hotOf, useStore} from '../store';
 import {kindOf, lastAt} from '../model/kinds';
 import type {Mark} from '../model/changes';
@@ -12,7 +11,7 @@ import type {Item} from '../model/model';
 import {LANE, PAD} from '../model/model';
 import type {Thread} from '../model/notes';
 import {fmt, isSec} from '../model/units';
-import {BlockFrame, BlockThumb, PluginCanvas} from './Media';
+import {BlockFrame, BlockThumb} from './Media';
 import {Waveform} from './Waveform';
 import {SHARED_MEDIA, useSharedMedia} from './TrackMedia';
 import type {MediaSpec} from './TrackMedia';
@@ -34,22 +33,17 @@ export const ObjectBlock = memo(function ObjectBlock({item, a, pps, unit, projec
   const left = (item.begin - a) * pps, w = Math.max(instant ? 8 : 3, (o.end - o.begin) * pps);
   const missing = !!o.media && !o.media.available;
   // 画得多细：按镜头停下来时格子在屏幕上的高度分三档（缩放过程中不换，停下来才一起换）。0 只画色块，1 用 160 宽的缩略图，2 用 320 宽的
-  // 有插件认这一类对象（ViewPlugin.block）：格子里由插件画，换掉默认的缩略图、画面、波形。表按插件列表缓存，这里只查一下
-  const painter = useStore((s) => painterFor(s.plugins, o));
   const ref = useRef<HTMLDivElement>(null);
-  // 缺失资源仍可能有插件；保留该特例原有的渐变背景和逐格画布。
-  const shared = SHARED_MEDIA && !missing && !!(painter || (o.media?.url && (k === 'image' || k === 'audio' || (k === 'video' && frames))));
+  const shared = SHARED_MEDIA && !missing && !!(o.media?.url && (k === 'image' || k === 'audio' || (k === 'video' && frames)));
   const detail = useLegacyDetail(w, !shared);
   const media = useMemo<MediaSpec | null>(() => shared ? {
-    o, layer: item.layer, kind: k, project, frames, unit, painter,
+    o, layer: item.layer, kind: k, project, frames, unit,
     rect: {x: left, y: PAD + item.lane * LANE, w, h: LANE - 4}, last: lastAt(o, isSec(unit)),
-  } : null, [shared, o, item.layer, item.lane, k, project, frames, unit, painter, left, w]);
+  } : null, [shared, o, item.layer, item.lane, k, project, frames, unit, left, w]);
   useSharedMedia(media, ref);
   let inner = null;
   if (shared) {
     // 媒体交给轨道表面；对象本身和所有交互仍在这里。
-  } else if (painter) {
-    if (detail > 0) inner = <PluginCanvas key={painter.name} name={painter.name} painter={painter.painter} o={o} layer={item.layer} unit={unit} />;
   } else if (!missing && o.media?.url && (detail > 0 || k === 'audio')) {
     if (k === 'image') inner = <BlockThumb project={project} o={o} width={detail === 1 ? 160 : 320} frames={frames} />;
     else if (k === 'video') inner = frames && w >= 150

@@ -4,8 +4,6 @@ import {frameUrl, thumbUrl} from '../api';
 import {viewport} from '../camera';
 import {CAPTURE, DECODE, LAZY} from '../params';
 import {useStore} from '../store';
-import type {BlockPainter} from '../plugin/host';
-import {pluginFailed} from '../plugin/slots';
 import type {Layer, Obj} from '../types';
 import {paintQueue} from './mediaQueue';
 import {mediaUrl} from './mediaUrl';
@@ -105,73 +103,6 @@ export function CanvasImg({src}: {src: string}) {
   }, [src]);
   useEffect(() => { schedule(state.current.draw); }, [zoom]);   // 镜头停下来换了缩放：按新的清晰度重画
   return <canvas ref={ref} />;
-}
-
-// ---------- 插件画的格子（ViewPlugin.block）：和缩略图同一个重画队列、同一套"只在需要时画" ----------
-// 格子大小变了、镜头停下换了缩放、对象变了才画；离画面近了才开始画；截图等它画完（draw 返回 Promise 时等 Promise）
-export function PluginCanvas({name, painter, o, layer, unit}: {name: string; painter: BlockPainter; o: Obj; layer: Layer; unit: string}) {
-  const ref = useRef<HTMLCanvasElement>(null);
-  const zoom = useStore((s) => s.settledZoom);
-  const state = useRef({w: 0, h: 0, zoom: 0, drawn: '', draw: () => {}});
-  state.current.zoom = zoom;
-  useEffect(() => {
-    const canvas = ref.current;
-    if (!canvas) return;
-    mark(canvas, 'idle');
-    const st = state.current;
-    st.drawn = '';
-    let alive = true, started = false, owner: object | null = null;
-    st.draw = () => {
-      if (!alive || !started || !st.w || !st.h) return;
-      const k = st.zoom || viewport().zoom || 1;
-      let cw = Math.max(1, Math.round(st.w * k)), ch = Math.max(1, Math.round(st.h * k));
-      const cap = 2048 / Math.max(cw, ch);
-      if (cap < 1) { cw = Math.max(1, Math.round(cw * cap)); ch = Math.max(1, Math.round(ch * cap)); }
-      const key = `${cw}x${ch}`;
-      if (key === st.drawn) return;
-      st.drawn = key;
-      if (owner) paintQueue.cancel(owner);
-      const generation = {}; owner = generation;
-      const current = () => alive && owner === generation;
-      mark(canvas, 'pending');
-      const failed = (error: unknown) => { if (current()) { mark(canvas, 'failed', error); pluginFailed(name, error); } };
-      try {
-        // 即使走逐格兼容路径，也不把当前显示画布交给可能迟到的异步插件。
-        const prepared = document.createElement('canvas'); prepared.width = cw; prepared.height = ch;
-        const result = painter.draw(prepared.getContext('2d')!, o, {width: cw, height: ch, unit, layer});
-        const commit = () => {
-          if (!current()) return;
-          paintQueue.schedule(generation, () => {
-            if (!current()) return;
-            try {
-              canvas.width = cw; canvas.height = ch;
-              canvas.getContext('2d')!.drawImage(prepared, 0, 0);
-              mark(canvas, 'ready');
-            } catch (error) { failed(error); }
-          });
-        };
-        if (result && typeof result.then === 'function') paintQueue.track(result.then(commit, failed), generation);
-        else commit();
-      } catch (error) { failed(error); }
-    };
-    const sizes = new ResizeObserver(([entry]) => {
-      const box = entry.devicePixelContentBoxSize?.[0];
-      st.w = box ? box.inlineSize : entry.contentRect.width * devicePixelRatio;
-      st.h = box ? box.blockSize : entry.contentRect.height * devicePixelRatio;
-      schedule(st.draw);
-    });
-    try { sizes.observe(canvas, {box: 'device-pixel-content-box'}); } catch { sizes.observe(canvas); }
-    const start = () => { started = true; schedule(st.draw); };
-    let near: IntersectionObserver | undefined;
-    if (CAPTURE) start();
-    else {
-      near = new IntersectionObserver((entries) => { if (entries.some((e) => e.isIntersecting)) { near!.disconnect(); start(); } }, {rootMargin: '600px'});
-      near.observe(canvas);
-    }
-    return () => { alive = false; if (owner) paintQueue.cancel(owner); paintQueue.cancel(st.draw); sizes.disconnect(); near?.disconnect(); legacy.delete(canvas); };
-  }, [name, painter, o, layer, unit]);
-  useEffect(() => { schedule(state.current.draw); }, [zoom]);
-  return <canvas ref={ref} className="plugin-paint" />;
 }
 
 // 画布上的格子用：图片格子的缩略图、视频格子的画面（有 ffmpeg 时）都画进 canvas；没有 ffmpeg 的视频照旧交给浏览器解码

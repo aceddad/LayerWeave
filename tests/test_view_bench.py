@@ -8,8 +8,8 @@ from unittest.mock import patch
 from layerweave.tool.builtin.view import bench as b
 
 
-def scene(*, x=0, y=0, node_x=0, objects=5, images=2, plugins=2):
-    return {"格子": objects, "图": images, "插件画的格子": plugins, "failed_media": 0,
+def scene(*, x=0, y=0, node_x=0, objects=5, images=2):
+    return {"格子": objects, "图": images, "failed_media": 0,
             "viewport": {"x": x, "y": y, "zoom": 1},
             "nodes": [{"id": "b1", "x": node_x, "y": 0}]}
 
@@ -21,11 +21,10 @@ def motion(*, pan=False):
 
 
 class BenchValidityTests(unittest.TestCase):
-    def test_empty_scene_and_missing_plugin_are_invalid(self):
+    def test_empty_scene_and_missing_images_are_invalid(self):
         self.assertIsNotNone(b._scene_issue(scene(objects=0)))
-        self.assertIsNotNone(b._scene_issue(scene(plugins=0), plugin=True))
         self.assertIsNotNone(b._scene_issue(scene(images=0), images=True))
-        self.assertIsNone(b._scene_issue(scene(), images=True, plugin=True))
+        self.assertIsNone(b._scene_issue(scene(), images=True))
 
     def test_failed_media_is_not_ready(self):
         value = scene()
@@ -56,13 +55,13 @@ class BenchValidityTests(unittest.TestCase):
 
     def test_summary_preserves_keys_and_cannot_hide_an_invalid_round(self):
         good = dict.fromkeys(b.GATES, 1)
-        bad = {**good, "diagnostics": {"zoom_pan_plugin": {"valid": False, "reason": "插件没有画出"}}}
+        bad = {**good, "diagnostics": {"zoom_pan": {"valid": False, "reason": "视口内没有已画好的图片"}}}
         rows = {r["key"]: r for r in b.summarize([good, bad])}
         self.assertEqual(set(rows), set(b.GATES))
-        self.assertEqual(rows["zoom_pan_plugin"]["rounds"], [1, None])
-        self.assertFalse(rows["zoom_pan_plugin"]["ok"])
-        self.assertEqual(rows["zoom_pan_plugin"]["status"], "invalid")
-        self.assertEqual(rows["zoom_pan_plugin"]["issues"], ["插件没有画出"])
+        self.assertEqual(rows["zoom_pan"]["rounds"], [1, None])
+        self.assertFalse(rows["zoom_pan"]["ok"])
+        self.assertEqual(rows["zoom_pan"]["status"], "invalid")
+        self.assertEqual(rows["zoom_pan"]["issues"], ["视口内没有已画好的图片"])
         self.assertTrue(rows["click"]["ok"])
 
     def test_summary_exposes_samples_and_max_without_changing_gate(self):

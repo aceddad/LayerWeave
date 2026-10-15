@@ -3,10 +3,9 @@
 // 不用构建：这一个文件就是插件。试一下：view_plugin add <仓库>/frontend/view/example-plugin（或者网页顶栏「插件」里加）。
 // 照着改成自己的：复制这个文件夹，放到 LayerWeave 安装目录以外的地方，改完再加进清单。
 //
-// 它用到了三个栏位（ViewPlugin 的字段，接口见 ../src/plugin/host.ts）：
+// 它用到了两个栏位（ViewPlugin 的字段，接口见 ../src/plugin/host.ts）：
 //   side          侧栏多一个「字数」标签：每个文字层一共多少字、最快的一段每秒几个字，点一行选中那一段
 //   objectDetail  选中文字对象时，详情里多一行：几个字、每秒几个字
-//   block         画布上文字格子的底下画一条：每秒字数越多越长、越红
 // 顶栏页面（page）和键盘跳转点（jumpPoints）的写法见接缝插件 ../plugins/cuts/index.tsx。
 //
 // 只用宿主给的东西：React 是宿主那一份（host.React），不要自己 import react。下面的注释类型给编辑器和类型检查用，删掉也能跑。
@@ -93,16 +92,5 @@ export default function plugin(host) {
     handles: ['text'],          // 项目里没有文字对象时，侧栏不出现「字数」；详情只给文字对象
     side: Side,
     objectDetail: Detail,
-    block: {
-      kinds: ['text'],
-      // 文字格子底下一条：每秒字数 / FAST 决定长度，越快越红。单位不是秒时不画
-      draw(ctx, o, {width, height, unit}) {
-        const rate = perSecond(o, isSec(unit));
-        if (rate == null) return;
-        const ratio = Math.min(1, rate / FAST), bar = Math.max(3, Math.round(height * 0.14));
-        ctx.fillStyle = `hsl(${Math.round(120 - 120 * ratio)}, 75%, 42%)`;
-        ctx.fillRect(0, height - bar, Math.max(2, width * ratio), bar);
-      },
-    },
   };
 }

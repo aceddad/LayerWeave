@@ -1,4 +1,4 @@
-// 沿着读：从一个对象或一楼批注出发，顺着关联一步步往外走（服务端 view/walk.py，和 AI 用的 view_walk 是同一份结果）。
+// 沿读：从一个对象或一楼批注出发，顺着关联一步步往外走（服务端 view/walk.py，和 AI 用的 view_walk 是同一份结果）。
 // 按步数分组列出，每一步写明是从哪一个、顺着哪条关联到的。「去看」：对象就选中并飞过去，层就对准它，批注就对准它那一楼；
 // 「从这里读」：换成从这一步出发
 import {useShallow} from 'zustand/react/shallow';
@@ -68,15 +68,15 @@ export function WalkPanel() {
   const {walk, result, project, frames} = useStore(useShallow((s) => ({walk: s.walk, result: s.walkResult, project: s.project, frames: s.frames})));
   if (!walk) return (
     <section>
-      <h2>沿着读</h2>
-      <p className="hint">点选一个对象（详情在「此刻」里），或者在批注的楼主卡片上点「沿着读」：从它出发，顺着关联一步步往外读——它指着谁、谁指着它、再往外一步……批注和回复也是关联，楼也能顺着读。</p>
+      <h2>沿读</h2>
+      <p className="hint">点选一个对象（详情在「此刻」里），或者在批注的楼主卡片上点「沿读」：从它出发，顺着关联一步步往外读——它指着谁、谁指着它、再往外一步……批注和回复也是关联，楼也能顺着读。</p>
     </section>
   );
   const steps = result?.steps ?? [];
   const depths = [...new Set(steps.map((s) => s.depth))];
   return (
     <section>
-      <h2>沿着读 <small>{steps.length ? `从 ${label(steps[0])} 出发，列出 ${steps.length} 个` : '读取中……'}</small></h2>
+      <h2>沿读 <small>{steps.length ? `从 ${label(steps[0])} 出发，列出 ${steps.length} 个` : '读取中……'}</small></h2>
       <div className="note-row filters">
         {DIRECTIONS.map((d) => <button key={d.value} className={walk.direction === d.value ? 'on' : ''} onClick={() => startWalk(walk.from, {direction: d.value})}>{d.label}</button>)}
         <span className="grow" />

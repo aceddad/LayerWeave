@@ -5,8 +5,6 @@ import {frameUrl, thumbUrl} from '../api';
 import {CAPTURE, params} from '../params';
 import {getState, useStore} from '../store';
 import type {Layer, Obj} from '../types';
-import type {BlockPainter} from '../plugin/host';
-import {pluginFailed} from '../plugin/slots';
 import {acquireImage, legacyPaintState} from './Media';
 import {detailAt, paintQueue, TILE_PIXELS, tileKeys} from './mediaQueue';
 import type {MediaRect} from './mediaQueue';
@@ -18,7 +16,7 @@ import type {ImageLease} from './imageCache';
 export const SHARED_MEDIA = params.get('media') !== 'legacy'; // 研发视觉对照，非持久配置。
 export interface MediaSpec {
   o: Obj; layer: Layer; unit: string; project: number; frames: boolean;
-  kind: string; rect: MediaRect; last: number | 'end'; painter?: {name: string; painter: BlockPainter} | null;
+  kind: string; rect: MediaRect; last: number | 'end';
 }
 interface Entry {
   spec: MediaSpec; node: HTMLElement; near: boolean; epoch: number; alive: boolean;
@@ -100,19 +98,16 @@ export class TrackSurface {
     this.tiles.clear(); this.retired = []; this.root = null;
   }
   add(spec: MediaSpec, node: HTMLElement) {
-    // 普通波形原本就立即加载、缩小时照画；插件接管音频则继续使用插件的 near/LOD。
-    const entry: Entry = {spec, node, near: CAPTURE || (spec.kind === 'audio' && !spec.painter),
+    // 波形原本就立即加载、缩小时照画。
+    const entry: Entry = {spec, node, near: CAPTURE || spec.kind === 'audio',
       epoch: 0, alive: true, keys: [], leases: [], pending: [], retired: [], job: {}, detail: -1, signature: ''};
     this.entries.add(entry); this.owners.set(node, entry);
     node.dataset.mediaState = 'idle';
-    if (spec.painter) node.dataset.mediaPlugin = spec.painter.name;
     if (this.root) this.observe(entry);
     return Object.assign(() => this.remove(entry), {update: (next: MediaSpec) => {
       if (entry.spec === next) return;
       entry.spec = next; entry.signature = '';
-      entry.near ||= CAPTURE || (next.kind === 'audio' && !next.painter);
-      if (next.painter) node.dataset.mediaPlugin = next.painter.name;
-      else delete node.dataset.mediaPlugin;
+      entry.near ||= CAPTURE || next.kind === 'audio';
       this.prepare(entry);
     }});
   }
@@ -125,7 +120,7 @@ export class TrackSurface {
     paintQueue.cancel(entry.job); this.observer?.unobserve(entry.node);
     this.entries.delete(entry); this.owners.delete(entry.node); this.errors.delete(entry);
     this.erase(entry);
-    delete entry.node.dataset.mediaState; delete entry.node.dataset.mediaPlugin; delete entry.node.dataset.atlas;
+    delete entry.node.dataset.mediaState; delete entry.node.dataset.atlas;
     this.clearRetired();
   }
   private erase(entry: Entry) {
@@ -144,14 +139,14 @@ export class TrackSurface {
     paintQueue.schedule(owner, () => {
       if (!entry.alive || !this.alive || epoch !== entry.epoch) return;
       const {spec} = entry, detail = detailAt(this.zoom, spec.rect.w, spec.rect.h, CAPTURE);
-      const audio = spec.kind === 'audio' && !spec.painter;
+      const audio = spec.kind === 'audio';
       if (!detail && !audio) { entry.detail = detail; entry.signature = ''; this.erase(entry); entry.node.dataset.mediaState = 'idle'; this.clearRetired(); return; }
       if (!entry.near) return; // 沿用已有的 near 下载规则，DOM 始终保留。
       const density = Math.max(0.01, this.scale);
       const ratio = Math.min(density, 2048 / Math.max(spec.rect.w, spec.rect.h));
       const size = audio ? waveformSize(Math.max(1, spec.rect.w - 2), Math.max(1, spec.rect.h - 2), devicePixelRatio) : null;
       const w = size?.width ?? Math.max(1, Math.round((spec.rect.w - 2) * ratio)), h = size?.height ?? Math.max(1, Math.round((spec.rect.h - 2) * ratio));
-      const direct = !spec.painter && (spec.kind === 'image' || spec.kind === 'video');
+      const direct = spec.kind === 'image' || spec.kind === 'video';
       const signature = direct ? 'direct:' + density + ':' + spec.rect.w + ':' + spec.rect.h : (audio ? 'wave' : detail) + ':' + w + ':' + h;
       if (entry.signature === signature && (entry.source || entry.direct)) { this.place(entry); return; }
       entry.node.dataset.mediaState = 'pending';
@@ -160,7 +155,6 @@ export class TrackSurface {
       const fail = (error: unknown) => {
         if (!current()) return;
         this.erase(entry); entry.node.dataset.mediaState = 'failed'; this.errors.set(entry, String(error));
-        if (spec.painter) pluginFailed(spec.painter.name, error);
         this.clearRetired();
       };
       const pending = entry.pending;
@@ -170,7 +164,7 @@ export class TrackSurface {
       };
       const work = this.paint(spec, detail, w, h, acquire, entry.direct).then((prepared) => {
         if (!current()) return;
-        // 准备完成以后，贴图也回到同一预算队列；异步插件不会取得共享 ctx。
+        // 准备完成以后，贴图也回到同一预算队列。
         paintQueue.schedule(owner, () => {
           if (!current()) return;
           try {
@@ -191,7 +185,7 @@ export class TrackSurface {
           ctx.fillStyle = this.backgrounds[spec.kind] || this.backgrounds.other;
           ctx.beginPath(); ctx.roundRect(0, 0, spec.rect.w, spec.rect.h, 4); ctx.fill();
           ctx.save(); ctx.beginPath(); ctx.roundRect(1, 1, Math.max(1, spec.rect.w - 2), Math.max(1, spec.rect.h - 2), 3); ctx.clip();
-          ctx.globalAlpha = spec.painter ? 1 : spec.kind === 'video' && spec.frames && spec.rect.w >= 150 ? .9 : .85;
+          ctx.globalAlpha = spec.kind === 'video' && spec.frames && spec.rect.w >= 150 ? .9 : .85;
           ctx.drawImage(inner, 1, 1, Math.max(1, spec.rect.w - 2), Math.max(1, spec.rect.h - 2)); ctx.restore();
           entry.source = output; entry.signature = signature; entry.detail = detail;
           entry.direct = undefined;
@@ -207,12 +201,8 @@ export class TrackSurface {
   }
   private async paint(spec: MediaSpec, detail: number, w: number, h: number,
                       acquire: (url: string) => Promise<HTMLImageElement | null>, previous?: DirectImage[]): Promise<PreparedMedia> {
-    if (!spec.painter && (spec.kind === 'image' || spec.kind === 'video')) return this.directImages(spec, acquire, previous);
+    if (spec.kind === 'image' || spec.kind === 'video') return this.directImages(spec, acquire, previous);
     const out = canvas(w, h), ctx = out.getContext('2d')!;
-    if (spec.painter) {
-      await spec.painter.painter.draw(ctx, spec.o, {width: w, height: h, unit: spec.unit, layer: spec.layer});
-      return {draw: () => out};
-    }
     if (spec.kind === 'audio') {
       const values = await peaksFor(mediaUrl(spec.o.media!.url!, spec.o.media?.source));
       return {failure: values ? undefined : '波形无法解码：对象 #' + spec.o.id,

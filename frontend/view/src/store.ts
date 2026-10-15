@@ -41,7 +41,7 @@ export interface State {
   noteFilter: 'open' | 'done' | 'waiting';               // 已处理的楼只在"已处理"里出现，默认看待处理的
   noteFocus: number | null;                               // 镜头对准的那条批注（地址参数 note、批注上的"定位"）：它的楼和目标高亮
   me: string;                                             // 本机署名：写批注用，也用来算"等我回复"的楼
-  walk: {from: string; direction: WalkDirection; depth: number} | null;   // 沿着读的起点（侧栏「沿着读」）
+  walk: {from: string; direction: WalkDirection; depth: number} | null;   // 沿读的起点（侧栏「沿读」）
   walkResult: WalkResult | null;
   reads: NoteReads;                                       // 批注的已读（读项目时从 data.noteReads 拿；点"已读"先改这里，不等服务端，也不重建画面模型）
   canvasW: number;

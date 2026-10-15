@@ -13,7 +13,7 @@ vi.mock('../../params', () => ({CAPTURE: false, DECODE: 'async', LAZY: 'lazy'}))
 vi.mock('../../camera', () => ({viewport: () => ({zoom: 1})}));
 vi.mock('../../store', () => ({useStore: () => 1}));
 vi.mock('../../plugin/slots', () => ({pluginFailed: hooks.failed}));
-import {CanvasImg, PluginCanvas, legacyPaintState} from '../Media';
+import {CanvasImg, legacyPaintState} from '../Media';
 import {Waveform} from '../Waveform';
 import {paintQueue} from '../mediaQueue';
 import type {Layer, Obj} from '../../types';
@@ -70,23 +70,5 @@ describe('current owners of legacy media and waveforms', () => {
     Waveform({url: '/media/1/unmounted-wave'}); const cleanup = mounted();
     await drain(); expect(paintQueue.pending).toBeGreaterThan(0);
     cleanup(); await expectIdle();
-  });
-  it('draws asynchronous legacy plugins offscreen and cancels only their obsolete wait', async () => {
-    const shown = hooks.canvas as CanvasStub; let finish!: () => void, context: unknown;
-    const work = new Promise<void>((resolve) => { finish = resolve; });
-    PluginCanvas({name: 'legacy-async', painter: {draw: (ctx) => { context = ctx; return work; }}, o: {} as Obj, layer: {} as Layer, unit: 's'});
-    const cleanup = mounted(); await drain();
-    expect(context).not.toBe(shown.context); expect(shown.dataset.mediaState).toBe('pending');
-    cleanup(); await expectIdle();
-    finish(); await drain();
-    expect(shown.context.drawImage).not.toHaveBeenCalled(); expect(hooks.failed).not.toHaveBeenCalled();
-  });
-  it('marks a live asynchronous legacy plugin ready only after its queued copy completes', async () => {
-    const shown = hooks.canvas as CanvasStub; let finish!: () => void;
-    const work = new Promise<void>((resolve) => { finish = resolve; });
-    PluginCanvas({name: 'legacy-live', painter: {draw: () => work}, o: {} as Obj, layer: {} as Layer, unit: 's'});
-    mounted(); await drain(); expect(shown.dataset.mediaState).toBe('pending');
-    finish(); await expectIdle();
-    expect(shown.dataset.mediaState).toBe('ready'); expect(shown.context.drawImage).toHaveBeenCalledOnce();
   });
 });

@@ -72,7 +72,7 @@ export async function setSide(side: Side) {
   await Promise.all([loadChanges(), loadWalk()]);
 }
 
-// 沿着读：从一个对象或层（"object:16"、"layer:5"）出发，侧栏切到「沿着读」。方向、步数沿用上一次的
+// 沿读：从一个对象或层（"object:16"、"layer:5"）出发，侧栏切到「沿读」。方向、步数沿用上一次的
 export function startWalk(from: string, change: {direction?: WalkDirection; depth?: number} = {}) {
   const s = getState();
   setState({walk: {from, direction: change.direction ?? s.walk?.direction ?? 'both', depth: change.depth ?? s.walk?.depth ?? 3}, side: 'walk',

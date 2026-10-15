@@ -151,7 +151,7 @@ export interface PluginList {
 export const SIDES = ['now', 'changes', 'notes', 'walk'];   // 视图自己的侧栏
 export type Side = string;   // 视图自己的侧栏，或某个插件的侧栏（插件的名字）
 
-// 沿着读（服务端 view/walk.py 的结果）：从起点顺着关联一步步往外走，按步数排好
+// 沿读（服务端 view/walk.py 的结果）：从起点顺着关联一步步往外走，按步数排好
 export type WalkDirection = 'both' | 'out' | 'in';
 export interface WalkVia { bind: number; other: string; arrow: 'from' | 'to'; tips: string }
 export interface WalkStep {

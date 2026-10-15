@@ -336,6 +336,10 @@ def serve(database, *, port=8765, project=None):
     if project is not None:
         url += f"?project={project}"
     print(f"视图已启动：{url}  （Ctrl+C 结束）", flush=True)
+    from .tables import check_tables   # 只读地查一下视图自己的表是不是旧声明；只提示，不替人升级
+    if check_tables(database)["upgrade_needed"]:
+        print("提示：这个库里视图的表（折叠、已读）是旧声明。要用 JSON 交换复制项目，先跑一次 "
+              "python -m layerweave.tool.builtin.view.tables DATABASE --upgrade（只改声明，不改数据）", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

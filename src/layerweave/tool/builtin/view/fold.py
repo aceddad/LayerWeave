@@ -27,6 +27,8 @@ TABLE = {KIND: {
     "id_source": "provided",
     "fields": {f"{side}_{field}": {"type": "TEXT", "nullable": False, "default": ""}
                for side in SIDES for field in ("fold", "tips")},
+    # 身份就是它挂着的层：逻辑引用（不是外键，不挡删层），JSON 交换复制项目时折叠跟着层换号。旧库要显式登记一次：view_tables --upgrade
+    "logical_references": [{"fields": ["project_id", "id"], "kind": "layer"}],
 }}
 
 

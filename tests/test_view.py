@@ -794,6 +794,70 @@ class ViewTests(unittest.TestCase):
         self.assertIsInstance(result["passed"], bool)
         self.assertGreater(result["runs"]["现在"][0]["scene_plugin"]["插件画的格子"], 0)              # 插件那一项真的有插件在画
 
+    def test_view_tables_check_and_upgrade_old_declarations(self):
+        # 旧库：视图的表按 0.21.0 以前的声明建（没有逻辑引用、复制策略），里面已经有折叠和已读
+        from layerweave.support.api import register_tables, table_specs
+        from layerweave.tool.builtin.view.fold import KIND, TABLE
+        from layerweave.tool.builtin.view.notes.reads import READ_KIND, READ_TABLE
+        from layerweave.tool.builtin.view.tables import check_tables, tables
+        self.assertEqual({t["kind"]: t["state"] for t in check_tables(self.database)["tables"]}, {KIND: "absent", READ_KIND: "absent"})
+        old = {kind: {k: v for k, v in spec.items() if k not in ("logical_references", "exchange")} for kind, spec in {**TABLE, **READ_TABLE}.items()}
+        with closing(open_database(self.database)) as c:
+            register_tables(c, old)
+            self.assertTrue(run_operation(c, lambda w: w.create(KIND, {"id": self.voice, "ai_fold": "Claude", "ai_tips": "旧库里的折叠"},
+                                                                project_id=self.project))["ok"])
+        checked = check_tables(self.database)
+        self.assertEqual({t["kind"]: (t["state"], t["differs"]) for t in checked["tables"]},
+                         {KIND: ("stale", ["logical_references"]), READ_KIND: ("stale", ["logical_references", "exchange"])})
+        self.assertIn("--upgrade", tables(self.database)["text"])
+        with closing(open_database(self.database)) as c:
+            before = c.execute("SELECT COUNT(*) FROM changes").fetchone()[0]
+        upgraded = tables(self.database, upgrade=True)
+        self.assertEqual(sorted(upgraded["upgraded"]), sorted([KIND, READ_KIND]))
+        self.assertFalse(upgraded["upgrade_needed"])
+        with closing(open_database(self.database)) as c:
+            specs = table_specs(c)
+            self.assertEqual(specs[KIND]["logical_references"], [{"fields": ["project_id", "id"], "kind": "layer"}])
+            self.assertEqual(specs[READ_KIND]["exchange"], {"on_copy": "skip"})
+            self.assertEqual(c.execute("SELECT COUNT(*) FROM changes").fetchone()[0], before)          # 只改声明，不进改动日志
+        self.assertEqual(fold(self.database, self.project)["folds"][0]["ai_tips"], "旧库里的折叠")          # 数据还在
+        self.assertEqual(tables(self.database, upgrade=True)["upgraded"], [])                             # 再跑一次什么也不做
+
+    def test_exchange_copy_moves_folds_with_layers_and_skips_read_marks(self):
+        # JSON 交换把项目复制到另一个库：层重新发号，折叠跟着层走；已读不复制（新项目里重新记）
+        try:
+            from layerweave.tool.builtin.usage.exchange import export_project, import_project
+        except ImportError:
+            self.skipTest("没有装 exchange 工具包")
+        from layerweave.tool.builtin.view.note import set_read
+        source = initialize_database(Path(self.temp.name) / "copy-source.sqlite3")
+        with closing(open_database(source)) as c:
+            with transaction(c) as w:
+                w.create("project", {"name": "不相干"})
+                project = w.create("project", {"name": "要复制的"})["id"]
+            lyrics, story = TextLayer(name="歌词", axis={"unit": "秒"}), TextLayer(name="故事", axis={"unit": "秒"})
+            save_layer(c, project, lyrics)
+            save_layer(c, project, story)
+            line = Text(layer=lyrics.id, begin=0, end=2, information={"text": "一句"})
+            save_object(c, project, line)
+        fold(source, project, "fold", layers=[story.id], by="Claude", why="复制的时候要跟着故事走")
+        top = add_note(source, project, "看一下这句", targets=[("object", project, line.id)], author="用户")["note"]
+        set_read(source, project, top, "Claude", read=True)
+        with closing(open_database(source)) as c:
+            document = export_project(c, project, op="add")
+        target = initialize_database(Path(self.temp.name) / "copy-target.sqlite3")
+        with closing(open_database(target)) as c:
+            result = import_project(c, document, new_project=True)
+            copied = read_record(c, "project")[-1]["id"]
+        self.assertTrue(result["ok"], result)
+        self.assertIn("copy_policy", {issue.get("code") for issue in result["data"]["issues"]})               # 已读明确跳过
+        with closing(open_readonly(target)) as c:
+            data = project_view(c, target, copied)
+        layers = {layer["name"]: layer["id"] for layer in data["layers"]}
+        self.assertNotEqual(layers["故事"], story.id)                                                     # 编号确实变了
+        self.assertEqual([(f["layer"], f["ai_tips"]) for f in data["folds"]], [(layers["故事"], "复制的时候要跟着故事走")])
+        self.assertEqual(data["noteReads"], {})
+
     def test_screenshot_link_keeps_only_view_parameters(self):
         link = f"http://127.0.0.1:8765/?project={self.project}&board=1&begin=8&end=14&select=16&note=42&record=1&capture=0&x=1"
         self.assertEqual(link_query(link, self.project), {"board": "1", "begin": "8", "end": "14", "select": "16", "note": "42"})

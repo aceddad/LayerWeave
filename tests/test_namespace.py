@@ -117,7 +117,7 @@ assert read_record(c,"read_cache",project_id=p) == []
 assert undo_operation(c,copied["operation_id"])["ok"]
 assert read_support("combined", "text")["status"] == "completed"
 commands = command_help()
-assert len(commands["items"]) == 44 and commands["status"] == "completed", commands
+assert len(commands["items"]) == 45 and commands["status"] == "completed", commands
 from layerweave.tool.builtin.developer.versions import manage_versions
 versions = manage_versions(c)
 assert versions["ok"] and versions["data"]["status"] == "completed", versions

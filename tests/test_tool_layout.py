@@ -26,14 +26,14 @@ class ToolLayoutTests(unittest.TestCase):
                                 "transfer_objects", "transfer_subtree", "undo_operation", "upsert_objects", "walk_relations",
                                 "export_project", "import_project", "template_help",
                                 # visualization 分支：视图工具包
-                                "view_at", "view_bench", "view_fold", "view_frame", "view_layout", "view_note", "view_plugin", "view_screenshot", "view_server", "view_state", "view_walk"})
-        self.assertEqual(len(overview["items"]), 44)
+                                "view_at", "view_bench", "view_fold", "view_frame", "view_layout", "view_note", "view_plugin", "view_screenshot", "view_server", "view_state", "view_tables", "view_walk"})
+        self.assertEqual(len(overview["items"]), 45)
         self.assertTrue(all(set(item) == {"name", "summary", "read_only", "cli"} for item in overview["items"]))
         groups = {}
         for command in command_help(sorted(names))["items"]:
             group = command["source"].split("/")[0]
             groups[group] = groups.get(group, 0) + 1
-        self.assertEqual(groups, {"usage": 27, "shared": 2, "developer": 4, "view": 11})
+        self.assertEqual(groups, {"usage": 27, "shared": 2, "developer": 4, "view": 12})
         view = ROOT / "src/layerweave/tool/builtin/view"
         self.assertTrue(view.is_dir())
         self.assertTrue((view / "web" / "index.html").is_file())   # visualization 分支：视图网页随包分发

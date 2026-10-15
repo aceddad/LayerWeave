@@ -10,6 +10,9 @@ READ_KIND = "view_note"
 READ_TABLE = {READ_KIND: {
     "id_source": "provided",
     "fields": {"reads": {"type": "TEXT", "nullable": False, "default": "{}"}},
+    # 身份就是楼主批注：逻辑引用（不挡删批注）。reads 里还有批注编号，交换工具不会换，所以复制项目时已读整张不带过去，新项目里重新记
+    "logical_references": [{"fields": ["project_id", "id"], "kind": "object"}],
+    "exchange": {"on_copy": "skip"},
 }}
 
 

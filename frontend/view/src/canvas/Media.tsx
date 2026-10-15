@@ -9,13 +9,15 @@ import {pluginFailed} from '../plugin/slots';
 import type {Layer, Obj} from '../types';
 import {paintQueue} from './mediaQueue';
 import {mediaUrl} from './mediaUrl';
+import {decodedImages} from './imageCache';
+import type {ImageLease} from './imageCache';
 
 export function Img({src}: {src: string}) {
   return <img loading={LAZY} decoding={DECODE} src={src} alt="" />;
 }
 
 // 图片对象的缩略图：服务端有 ffmpeg 时按宽度缩好（缩不了的它自己送原图）；没有 ffmpeg 时直接用原图。
-// 画布格子、一览网格用 320 宽，接缝页、侧栏卡片 640 宽；原图只在点开时看
+// 一览网格通常用 320，接缝页/侧栏卡片用 640；共享画布按实际显示尺寸在 TrackMedia 选源档位。
 export function Thumb({project, o, width, frames}: {project: number; o: Obj; width: number; frames: boolean}) {
   return <Img src={mediaUrl(frames ? thumbUrl(project, o.id, width) : o.media!.url!, o.media?.source)} />;
 }
@@ -29,16 +31,8 @@ export function Frame({project, o, at, frames}: {project: number; o: Obj; at: nu
 // 放大以后画面里有上百张缩略图时，用 <img> 平移会卡：浏览器每一帧都要把这些图重新画进画面（手书：放大到 1.6 倍、104 张图，
 // 95% 的帧在 35–55 毫秒以内；藏掉这些图就降到 7–14 毫秒）。画布里的内容画好就固定了，平移时只是整块挪动（实验里同样降到 7–14 毫秒，
 // 2026-10-14 量的）。清晰度按镜头停下来时的缩放算，换档时重画一次
-const images = new Map<string, Promise<HTMLImageElement | null>>();
-export function loadImage(src: string): Promise<HTMLImageElement | null> {
-  if (!images.has(src)) {
-    const img = new Image();
-    img.decoding = 'async';
-    img.src = src;
-    images.set(src, img.decode().then(() => img, () => null));
-  }
-  return images.get(src)!;
-}
+export const loadImage = (src: string) => decodedImages.load(src);
+export const acquireImage = (src: string) => decodedImages.acquire(src);
 
 // 旧逐格画布对照也使用共享预算队列；截图等待同时覆盖新旧两种绘制路径。
 const schedule = (draw: () => void) => paintQueue.schedule(draw, draw);
@@ -63,6 +57,7 @@ export function CanvasImg({src}: {src: string}) {
     st.img = undefined;
     st.drawn = '';
     let alive = true;
+    let lease: ImageLease | undefined;
     const owner = {};
     st.draw = () => {
       if (!alive || st.img === undefined) return;
@@ -95,7 +90,8 @@ export function CanvasImg({src}: {src: string}) {
     // 离画面近了才下载、解码（和 <img loading="lazy"> 一样）；截图时马上下
     const start = () => {
       mark(canvas, 'pending');
-      return paintQueue.track(loadImage(src).then((img) => {
+      lease = acquireImage(src);
+      return paintQueue.track(lease.promise.then((img) => {
         if (alive) { st.img = img; schedule(st.draw); }
       }, (error) => { if (alive) mark(canvas, 'failed', error); }), owner);
     };
@@ -105,7 +101,7 @@ export function CanvasImg({src}: {src: string}) {
       near = new IntersectionObserver((entries) => { if (entries.some((e) => e.isIntersecting)) { near!.disconnect(); start(); } }, {rootMargin: '600px'});
       near.observe(canvas);
     }
-    return () => { alive = false; paintQueue.cancel(owner); paintQueue.cancel(st.draw); sizes.disconnect(); near?.disconnect(); legacy.delete(canvas); };
+    return () => { alive = false; lease?.release(); paintQueue.cancel(owner); paintQueue.cancel(st.draw); sizes.disconnect(); near?.disconnect(); legacy.delete(canvas); };
   }, [src]);
   useEffect(() => { schedule(state.current.draw); }, [zoom]);   // 镜头停下来换了缩放：按新的清晰度重画
   return <canvas ref={ref} />;

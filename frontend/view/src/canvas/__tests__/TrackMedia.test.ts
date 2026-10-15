@@ -6,6 +6,8 @@ const mocks = vi.hoisted(() => ({
   image: vi.fn(async (_url: string) => ({naturalWidth: 160, naturalHeight: 90})),
   peaks: vi.fn(async (_url: string): Promise<number[] | null> => [1, .5]),
   capture: true,
+  released: vi.fn(),
+  nativeDecode: vi.fn(async () => {}),
 }));
 vi.mock('../../store', () => ({
   getState: () => mocks.state,
@@ -16,7 +18,8 @@ vi.mock('../../store', () => ({
 vi.mock('../../params', () => ({get CAPTURE() { return mocks.capture; }, params: new URLSearchParams()}));
 vi.mock('../../api', () => ({thumbUrl: (_p: number, id: number, width: number) => id + '/' + width,
   frameUrl: (_p: number, id: number, at: number) => id + '/' + at}));
-vi.mock('../Media', () => ({loadImage: mocks.image, legacyPaintState: () => []}));
+vi.mock('../Media', () => ({acquireImage: (url: string) => ({url, promise: mocks.image(url), release: vi.fn(() => mocks.released(url))}),
+  legacyPaintState: () => []}));
 vi.mock('../../plugin/slots', () => ({pluginFailed: mocks.failed}));
 vi.mock('../Waveform', async (original) => ({...await original<typeof import('../Waveform')>(), peaksFor: mocks.peaks}));
 import {TrackSurface, mediaPaintState} from '../TrackMedia';
@@ -71,17 +74,134 @@ function spec(id: number, x = 0, width = 100): MediaSpec {
     kind: 'image', unit: 's', project: 1, frames: false, last: 1, rect: {x, y: 2, w: width, h: 54}};
 }
 beforeEach(() => {
-  frames = []; surfaces = []; failImage = false; mocks.state = {settledZoom: 1}; mocks.failed.mockClear(); mocks.image.mockClear();
+  frames = []; surfaces = []; failImage = false; mocks.state = {settledZoom: 1}; mocks.failed.mockClear();
+  mocks.image.mockReset().mockResolvedValue({naturalWidth: 160, naturalHeight: 90});
+  mocks.released.mockClear(); mocks.nativeDecode.mockReset().mockResolvedValue(undefined);
   mocks.capture = true; mocks.peaks.mockReset().mockResolvedValue([1, .5]);
   vi.stubGlobal('requestAnimationFrame', (fn: () => void) => { frames.push(fn); return frames.length; });
   vi.stubGlobal('devicePixelRatio', 1);
   vi.stubGlobal('document', {createElement: () => new ElementStub()});
+  vi.stubGlobal('Image', class extends ElementStub {
+    src = ''; decoding = ''; naturalWidth = 160; naturalHeight = 90;
+    decode() { return mocks.nativeDecode(); }
+  });
   vi.stubGlobal('getComputedStyle', () => ({getPropertyValue: () => '#3d8bfd'}));
   vi.stubGlobal('IntersectionObserver', class {observe() {} unobserve() {} disconnect() {}});
 });
 afterEach(async () => { for (const surface of surfaces) surface.dispose(); await drain(); vi.useRealTimers(); vi.unstubAllGlobals(); });
 
 describe('shared track media lifecycle', () => {
+  it('draws decoded images directly and requests physical resolution without downsampling into an intermediate canvas', async () => {
+    vi.stubGlobal('devicePixelRatio', 1.25);
+    mocks.image.mockImplementation(async (url) => {
+      const w = Number(url.split('/').at(-1)); return {naturalWidth: w, naturalHeight: w * 9 / 16};
+    });
+    const {root, surface} = fixture(), node = new ElementStub();
+    surface.add({...spec(1, 0, 600), frames: true}, node as unknown as HTMLElement); await drain();
+    expect(mocks.image).toHaveBeenCalledWith('1/1280');
+    const last = root.children[0].calls.filter((call) => call[0] === 'drawImage').at(-1)!;
+    expect(last[1]).toMatchObject({naturalWidth: 1280}); expect(last.slice(-2)).toEqual([598, 52]);
+    expect(root.children[0].calls).toContainEqual(['scale', 1.25, 1.25]);
+    mocks.state = {settledZoom: .5};
+    for (const fn of mocks.listeners) fn(mocks.state, {settledZoom: 1});
+    await drain();
+    expect(mocks.image.mock.calls.at(-1)).toEqual(['1/1280']); // 已有足够高源，不退到更小源再放大。
+  });
+  it('upgrades a narrow target when cover needs a wide panoramic source, releasing the unused probe', async () => {
+    mocks.image.mockImplementation(async (url) => ({naturalWidth: Number(url.split('/').at(-1)), naturalHeight: 2}));
+    const {surface} = fixture(), node = new ElementStub();
+    surface.add({...spec(1, 0, 20), frames: true}, node as unknown as HTMLElement); await drain();
+    expect(mocks.image.mock.calls).toEqual([['1/160'], ['1/2048']]);
+    expect(mocks.released).toHaveBeenCalledWith('1/160');
+    expect(mocks.released).not.toHaveBeenCalledWith('1/2048');
+  });
+  it('keeps the two video-end destinations sharp and allocates no tiles for a huge empty middle', async () => {
+    mocks.image.mockResolvedValue({naturalWidth: 640, naturalHeight: 360});
+    const {root, surface} = fixture(1000000), node = new ElementStub();
+    surface.add({...spec(1, 0, 1000000), kind: 'video', frames: true}, node as unknown as HTMLElement); await drain();
+    expect(root.children.length).toBeLessThanOrEqual(4);
+    expect(root.children.every((tile) => tile.className === 'media-tile')).toBe(true);
+    expect(node.dataset.atlas).toBe('ends');
+    const drawings = root.children.flatMap((tile) => tile.calls.filter((call) => call[0] === 'drawImage'));
+    expect(drawings.length).toBeGreaterThan(0);
+    for (const call of drawings) { expect(call[1]).toMatchObject({naturalWidth: 640}); expect(call.slice(-2)).toEqual([64, 52]); }
+  });
+  it('preserves the displayed image and its lease until a source replacement is decoded and committed', async () => {
+    const a = {naturalWidth: 160, naturalHeight: 90}, b = {naturalWidth: 320, naturalHeight: 180};
+    mocks.image.mockResolvedValueOnce(a);
+    const {root, surface} = fixture(), node = new ElementStub(), original = spec(1);
+    original.o = {...original.o, media: {...original.o.media!, source: 'A.png'}};
+    const registration = surface.add(original, node as unknown as HTMLElement); await drain();
+    let finish!: (image: typeof b) => void;
+    mocks.image.mockImplementationOnce(() => new Promise((resolve) => { finish = resolve; }));
+    registration.update({...original, o: {...original.o, media: {...original.o.media!, source: 'B.png'}}});
+    for (let i = 0; i < 12; i++) { frames.shift()?.(); await Promise.resolve(); }
+    expect(node.dataset.mediaState).toBe('pending'); expect(node.dataset.atlas).toBe('ready');
+    expect(root.children[0].calls.filter((call) => call[0] === 'drawImage').at(-1)![1]).toBe(a);
+    expect(mocks.released).not.toHaveBeenCalledWith('/image?lw_source=A.png');
+    finish(b); await drain();
+    expect(root.children[0].calls.filter((call) => call[0] === 'drawImage').at(-1)![1]).toBe(b);
+    expect(mocks.released).toHaveBeenCalledWith('/image?lw_source=A.png');
+    expect(node.dataset.mediaState).toBe('ready');
+  });
+  it('cancels an obsolete source lease and cannot paste its late result over the latest source', async () => {
+    const {root, surface} = fixture(), node = new ElementStub(), original = spec(1);
+    original.o = {...original.o, media: {...original.o.media!, source: 'A.png'}};
+    const registration = surface.add(original, node as unknown as HTMLElement); await drain();
+    let oldFinish!: (image: {naturalWidth: number; naturalHeight: number}) => void;
+    mocks.image.mockImplementationOnce(() => new Promise((resolve) => { oldFinish = resolve; }));
+    registration.update({...original, o: {...original.o, media: {...original.o.media!, source: 'B.png'}}});
+    for (let i = 0; i < 8; i++) { frames.shift()?.(); await Promise.resolve(); }
+    const newest = {naturalWidth: 640, naturalHeight: 360}; mocks.image.mockResolvedValueOnce(newest);
+    registration.update({...original, o: {...original.o, media: {...original.o.media!, source: 'C.png'}}});
+    await drain(); expect(mocks.released).toHaveBeenCalledWith('/image?lw_source=B.png');
+    oldFinish({naturalWidth: 20, naturalHeight: 10}); await drain();
+    expect(root.children[0].calls.filter((call) => call[0] === 'drawImage').at(-1)![1]).toBe(newest);
+  });
+  it('reports a failed source replacement and releases both pending and displayed leases', async () => {
+    const {root, surface} = fixture(), node = new ElementStub(), original = spec(1);
+    const registration = surface.add(original, node as unknown as HTMLElement); await drain();
+    mocks.image.mockRejectedValueOnce(new Error('bad source'));
+    registration.update({...original, o: {...original.o, media: {...original.o.media!, source: 'bad.png'}}});
+    await drain();
+    expect(node.dataset.mediaState).toBe('failed'); expect(root.children).toHaveLength(0);
+    expect(mocks.released).toHaveBeenCalledWith('/image'); expect(mocks.released).toHaveBeenCalledWith('/image?lw_source=bad.png');
+  });
+  it('waits for native fallback decoding and does not move a shared decoded element into the DOM', async () => {
+    const cached = {naturalWidth: 2048, naturalHeight: 1152}; mocks.image.mockResolvedValue(cached);
+    let finish!: () => void;
+    mocks.nativeDecode.mockImplementationOnce(() => new Promise<void>((resolve) => { finish = resolve; }));
+    const {root, surface} = fixture(1000000), node = new ElementStub();
+    surface.add({...spec(1, 0, 1000000), frames: true}, node as unknown as HTMLElement);
+    for (let i = 0; i < 16; i++) { frames.shift()?.(); await Promise.resolve(); }
+    expect(root.children).toHaveLength(0); expect(node.dataset.mediaState).toBe('pending');
+    finish(); await drain();
+    expect(root.children[0].className).toBe('media-native');
+    expect(root.children[0].dataset.objectId).toBe('1'); expect(root.children[0].dataset.mediaSource).toBe('1/2048');
+    expect(root.children[0].children[0]).not.toBe(cached); expect(node.dataset.mediaState).toBe('ready');
+    surface.add({...spec(2, 0, 1000000), frames: true}, new ElementStub() as unknown as HTMLElement); await drain();
+    expect(root.children).toHaveLength(2);
+    expect(root.children[0].children[0]).not.toBe(root.children[1].children[0]);
+  });
+  it('keeps an old native fallback until the new DOM image has decoded', async () => {
+    const {root, surface} = fixture(1000000), node = new ElementStub(), original = spec(1, 0, 1000000);
+    const registration = surface.add(original, node as unknown as HTMLElement); await drain();
+    const old = root.children[0]; let finish!: () => void;
+    mocks.nativeDecode.mockImplementationOnce(() => new Promise<void>((resolve) => { finish = resolve; }));
+    registration.update({...original, o: {...original.o, media: {...original.o.media!, source: 'new.png'}}});
+    for (let i = 0; i < 16; i++) { frames.shift()?.(); await Promise.resolve(); }
+    expect(root.children).toEqual([old]); expect(mocks.released).not.toHaveBeenCalledWith('/image');
+    finish(); await drain();
+    expect(root.children).toHaveLength(1); expect(root.children[0]).not.toBe(old);
+    expect(mocks.released).toHaveBeenCalledWith('/image');
+  });
+  it('releases empty tile entries when an object moves to a distant position', async () => {
+    const {root, surface} = fixture(10000), node = new ElementStub(), original = spec(1);
+    const registration = surface.add(original, node as unknown as HTMLElement); await drain(); const old = root.children[0];
+    registration.update({...original, rect: {...original.rect, x: 5000}}); await drain();
+    expect(old.isConnected).toBe(false); expect(root.children).toHaveLength(1);
+    expect((surface as unknown as {tiles: Map<string, unknown>}).tiles.size).toBe(1);
+  });
   it('puts two images in one surface while keeping their object identities and readiness', async () => {
     const {root, surface} = fixture(), first = new ElementStub(), second = new ElementStub();
     surface.add(spec(1), first as unknown as HTMLElement);
@@ -232,7 +352,8 @@ describe('shared track media lifecycle', () => {
   it('bounds a very long object instead of allocating tiles for its whole duration', async () => {
     const {root, surface} = fixture(1000000), node = new ElementStub();
     surface.add(spec(1, 0, 1000000), node as unknown as HTMLElement); await drain();
-    expect(root.children).toHaveLength(1); expect(root.children[0].width).toBeLessThanOrEqual(2048);
+    expect(root.children).toHaveLength(1); expect(root.children[0].className).toBe('media-native');
+    expect(root.children[0].children).toHaveLength(1);
     expect(node.dataset.mediaState).toBe('ready');
   });
   it('replaces density after zoom without moving object DOM or exceeding tile dimensions', async () => {

@@ -291,7 +291,7 @@ def find_ffmpeg():
     return shutil.which("ffmpeg")
 
 
-THUMB_WIDTHS = (160, 320, 640, 1280)   # 只出这几种宽，免得缓存按任意宽度长
+THUMB_WIDTHS = (160, 320, 640, 1280, 2048)   # 只出这几种宽，免得缓存按任意宽度长
 THUMB_KEEP = {".svg", ".gif"}            # 不缩：矢量图本来就轻；动图缩了只剩第一帧
 _thumb_slots = threading.BoundedSemaphore(4)   # 同时最多几个 ffmpeg：页面一打开会同时要几百张
 

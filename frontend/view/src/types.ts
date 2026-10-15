@@ -66,6 +66,19 @@ export interface ProjectData {
   noteReads?: Record<string, Record<string, number>>;   // 批注的已读：{楼主: {名字: 读到的最后一条}}（视图自己的表 view_note）
 }
 
+// 原子操作页：after 是服务端用该条日志完整快照投影的值，不是另一次读取的最新值。
+export type ViewChange = {id: number; operation_id?: string; change_id?: number; undo_of?: string | null} & (
+  | {kind: 'object'; before_layer: number | null; after_layer: number | null; after: Obj | null}
+  | {kind: 'bind'; after: Bind | null}
+  | {kind: 'project'; after: ProjectSummary}
+  | {kind: 'view_layer'; after: FoldRow | null}
+  | {kind: 'view_note'; after: Record<string, number> | null}
+);
+export type ProjectPage = {next_cursor: number; has_more: boolean} & (
+  | {mode: 'snapshot'; data: ProjectData | null}
+  | {mode: 'delta'; changes: ViewChange[]}
+);
+
 // 一层的折叠：user / ai 是那一边谁折叠的（空着就是没折叠），tips 是说明
 export interface FoldRow {
   layer: number; user: string; user_tips: string; ai: string; ai_tips: string;

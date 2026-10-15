@@ -6,7 +6,7 @@ from pathlib import Path
 import sqlite3
 import threading
 
-from layerweave.support.api import read_project_details, read_record
+from layerweave.support.api import read_project_details, read_record, read_snapshot
 
 from .fold import read_folds
 from .notes import LAYER_REF as NOTE_LAYER_REF
@@ -107,6 +107,41 @@ def list_projects(connection):
 
 
 def project_view(connection, database, project_id):
+    # 关联和工具表也属于同一份画面，不能在详情的快照结束后另取一份。
+    with read_snapshot(connection):
+        return _project_view(connection, database, project_id)
+
+
+def object_view(obj, project_id, available=False):
+    """完整记录转换成画面对象；全量和增量共用，不重读较晚的业务记录。"""
+    info = obj["information"] if isinstance(obj["information"], dict) else {}
+    source, kind = info.get("source"), media_kind(info.get("source"))
+    return {
+        "id": obj["id"], "name": obj["name"], "type": obj["config_ref"].rsplit("/", 1)[-1].removesuffix(".toml"),
+        "begin": obj["begin"], "end": obj["end"], "tips": obj["tips"],
+        "text": info.get("text") if isinstance(info.get("text"), str) else None,
+        "media": None if kind is None else {"kind": kind, "source": source, "available": available,
+                                             "url": f"/media/{project_id}/{obj['id']}" if available else None},
+        "information": info,
+    }
+
+
+def object_views(database, project_id, objects):
+    """只检查本批对象的素材；同一对象在一页内的多个版本仍各自保留。"""
+    base = Path(database).resolve().parent
+    paths = [_local(base, row["information"].get("source")) if isinstance(row["information"], dict) else None
+             for row in objects]
+    exists = _existing(paths)
+    return [object_view(row, project_id, bool(exists.get(path))) for row, path in zip(objects, paths)]
+
+
+def bind_view(row):
+    return {"id": row["id"], "tips": row["tips"],
+            "source": {"kind": row["source_kind"], "project": row["source_project_id"], "id": row["source_id"]},
+            "target": {"kind": row["target_kind"], "project": row["target_project_id"], "id": row["target_id"]}}
+
+
+def _project_view(connection, database, project_id):
     """网页要的整理结果：层按树的顺序，每层记下所属的根；roots 列出每个根的轴和自己子树的时间范围。"""
     details = read_project_details(connection, project_id)
     if details is None:
@@ -135,16 +170,7 @@ def project_view(connection, database, project_id):
             source = info.get("source")
             kind = media_kind(source)
             available = bool(kind and exists.get(local.get(obj["id"])))
-            item = {
-                "id": obj["id"], "name": obj["name"], "type": obj["config_ref"].rsplit("/", 1)[-1].removesuffix(".toml"),
-                "begin": obj["begin"], "end": obj["end"], "tips": obj["tips"],
-                "text": info.get("text") if isinstance(info.get("text"), str) else None,
-                "media": None if kind is None else {
-                    "kind": kind, "source": source, "available": available,
-                    "url": f"/media/{project_id}/{obj['id']}" if available else None,
-                },
-                "information": info,
-            }
+            item = object_view(obj, project_id, available)
             objects.append(item)
             span = roots.get(root)
             if span is not None and isinstance(obj["begin"], (int, float)) and isinstance(obj["end"], (int, float)):
@@ -241,11 +267,7 @@ def project_binds(connection, project_id):
     found = {}
     for field in ("source_project_id", "target_project_id"):
         for row in read_record(connection, "bind", filters={field: project_id}):
-            found[row["id"]] = {
-                "id": row["id"], "tips": row["tips"],
-                "source": {"kind": row["source_kind"], "project": row["source_project_id"], "id": row["source_id"]},
-                "target": {"kind": row["target_kind"], "project": row["target_project_id"], "id": row["target_id"]},
-            }
+            found[row["id"]] = bind_view(row)
     return [found[key] for key in sorted(found)]
 
 

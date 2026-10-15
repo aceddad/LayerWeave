@@ -12,12 +12,17 @@ export const sameRef = (ref: Ref, kind: Ref['kind'], id: number, project: number
 
 export function noteList(model: Model): Note[] {
   const project = model.project;
+  const targets = new Map<number, Ref[]>();
+  for (const b of model.data.binds) if (b.source.kind === 'object' && b.source.project === project) {
+    if (!targets.has(b.source.id)) targets.set(b.source.id, []);
+    targets.get(b.source.id)!.push(b.target);
+  }
   const list: Note[] = model.data.layers.filter((l) => l.role === 'note').flatMap((l) => l.objects)
     .sort((p, q) => p.begin - q.begin || p.id - q.id)
     .map((o) => ({
       id: o.id, index: o.begin, text: o.information?.text ?? '', author: o.information?.author || '',
       status: o.information?.status === 'done' ? 'done' : 'open', span: o.information?.span || null,
-      targets: model.data.binds.filter((b) => sameRef(b.source, 'object', o.id, project)).map((b) => b.target),
+      targets: targets.get(o.id) ?? [],
       replyTo: null, thread: o.id,
     }));
   const byId = new Map(list.map((n) => [n.id, n]));

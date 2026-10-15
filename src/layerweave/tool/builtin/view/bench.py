@@ -1,14 +1,14 @@
 """视图的性能门槛（view_bench）：用无界面浏览器量几件用户感受得到的事，和门槛比，超过的标出来。
 
 门槛（2026-10-14 量手书项目时定的，0.13–0.14 的优化就是照着它们做的）：
-- 打开：从开始加载到画布上出现对象 ≤ 2 秒；
+- 打开：从开始加载到首个对象进入 DOM ≤ 2 秒（不是已绘制或可操作时间）；
 - 点选对象：按下到画面画出来（事件计时），10 次的中位 ≤ 120 毫秒；
-- 拖画板、放大后平移、放大后平移（有插件画格子）：帧间隔的第 95 百分位 ≤ 33 毫秒（每秒 30 帧以上）。
+- 拖画板、放大后平移、放大后平移（有插件画格子）：活跃拖动的 rAF 间隔 p95 ≤ 33 毫秒；另记最长帧和样本数。
 
 不给数据库时造一个合成项目：800 个对象，构成照手书（文字一半、图片三成多、批注一成、几段音频），两块画板，
 图片和音频由这里生成，不依赖任何人的文件。也可以给一个真实的库（只读，不写任何东西）。
-条件照用户的电脑：1536×760、Windows 缩放 125%；浏览器关掉扩展、同步、后台联网。笔记本显卡空闲会降频，单次数字能差一倍，
-所以默认量 3 轮取中位；--baseline 给另一份网页构建（比如改之前的），两份每轮交替量，看改动是变快还是变慢。
+条件照用户的电脑：1536×760、Windows 缩放 125%；浏览器关掉扩展、同步、后台联网。输入按有限的 60 Hz 节拍发送，
+记录实际输入和移动；空场景或没画出的插件标无效。默认 3 轮；--baseline 交替并反转先后顺序（ABBAAB）。
 
 python -m layerweave.tool.builtin.view.bench [DATABASE --project 1] [--objects 800] [--rounds 3] [--baseline 网页目录] [--json]
 """
@@ -16,6 +16,7 @@ import argparse
 from array import array
 from contextlib import closing
 import json
+import hashlib
 import math
 from pathlib import Path
 import random
@@ -28,6 +29,7 @@ import threading
 import time
 import unicodedata
 from urllib.request import urlopen
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 import wave
 import zlib
 
@@ -42,7 +44,7 @@ from .server import WEB_ROOT, make_server
 
 # 名字、单位、门槛（不超过就算过）
 GATES = {
-    "open": ("打开到出现对象", "秒", 2.0),
+    "open": ("首个对象进入 DOM", "秒", 2.0),
     "click": ("点选对象（中位）", "毫秒", 120),
     "board_drag": ("拖画板：帧间隔 p95", "毫秒", 33),
     "zoom_pan": ("放大后平移：帧间隔 p95", "毫秒", 33),
@@ -137,45 +139,155 @@ def make_synthetic(folder, objects=800, seed=7):
 PLUGIN_JS = """// view_bench 写的插件：文字格子底下画一条，量插件画格子以后平移还顺不顺
 export default () => ({label: '量', block: {kinds: ['text'], draw(ctx, o, {width, height}) {
   ctx.fillStyle = 'hsl(' + (o.id * 37 % 120) + ', 75%, 42%)'; ctx.fillRect(0, height - Math.max(3, height * 0.14), width * ((o.id % 10) + 1) / 10, height);
+  (window.__lwBenchPluginPainted ??= new Set()).add(String(o.id));
 }}});
 """
 
+
 # ---------- 页面里的测量 ----------
 FIRST_OBJ = """(() => { const seen = new MutationObserver(() => { if (document.querySelector('.obj')) { window.__firstObj = performance.now(); seen.disconnect(); } });
-  seen.observe(document, {subtree: true, childList: true}); })()"""
+  seen.observe(document, {subtree: true, childList: true}); })();"""
+# A callback timestamp is not a presentation timestamp. Keep the two clocks separate:
+# active intervals use rAF timestamps; first/release callback delays use performance.now.
+MEASURE_INIT = """
+(() => {
+  window.__benchDrag = {armed:false, active:false};
+  addEventListener('pointerdown', e => {
+    const m=window.__benchDrag; if(m.armed){m.active=true;m.start=performance.now();m.down=[e.clientX,e.clientY];}
+  }, true);
+  addEventListener('pointermove', e => {
+    const m=window.__benchDrag;if(m.active)m.pointers.push([performance.now(),e.timeStamp,e.clientX,e.clientY]);
+  }, true);
+  const finish = e => {const m=window.__benchDrag;if(m.active){m.active=false;m.end=performance.now();m.up=[e.clientX,e.clientY];}};
+  addEventListener('pointerup', finish, true);
+  addEventListener('pointercancel', finish, true);
+})();
+"""
+DRAG_ON = """
+(() => {
+  const m=window.__benchDrag={armed:true,active:false,frames:[],pointers:[]};
+  let last=null;
+  const tick=t=>{
+    if(window.__benchDrag!==m||!m.armed)return;
+    if(m.active){if(last!==null)m.frames.push(t-last);else m.first_callback_ms=performance.now()-m.start;last=t;}
+    else {last=null;if(m.end!==undefined&&m.release_callback_ms===undefined)m.release_callback_ms=performance.now()-m.end;}
+    requestAnimationFrame(tick);
+  };requestAnimationFrame(tick);return true;
+})()
+"""
+DRAG_OFF = "(() => {const m=window.__benchDrag;m.armed=false;return m;})()"
 EVENTS_ON = """(() => { window.__ev = []; window.__in = null;
-  new PerformanceObserver((l) => { for (const e of l.getEntries()) window.__ev.push([e.name, e.startTime, e.duration]); }).observe({type: 'event', durationThreshold: 16});
-  addEventListener('pointerdown', (e) => { window.__in = e.timeStamp; }, {capture: true}); return true; })()"""
-# 按下以后最长的那次事件计时（输入到下一次画出来）；比 16 毫秒短的浏览器不报，记 16
-EVENT_TOP = """(() => { const t = window.__in; const d = window.__ev.filter((e) => t != null && e[1] >= t - 1).map((e) => e[2]);
-  window.__ev = []; window.__in = null; return d.length ? Math.max(...d) : 16; })()"""
-FRAMES_ON = """(() => { window.__f = []; let last = performance.now();
-  const tick = (t) => { window.__f.push(t - last); last = t; if (window.__rec) requestAnimationFrame(tick); };
-  window.__rec = true; requestAnimationFrame(tick); return true; })()"""
-FRAMES_OFF = "(() => { window.__rec = false; return window.__f.slice(1); })()"
-VISIBLE_OBJ = """(() => { const els = [...document.querySelectorAll('.obj')].filter((el) => { const r = el.getBoundingClientRect();
-    return r.width > 16 && r.height > 8 && r.left > 0 && r.top > 60 && r.right < innerWidth - 360 && r.bottom < innerHeight - 20; });
-  const el = els[Math.floor(els.length * %s)]; if (!el) return null; const r = el.getBoundingClientRect();
-  const x = r.left + Math.min(r.width / 2, 30), y = r.top + r.height / 2, hit = document.elementFromPoint(x, y);
-  return hit && (hit === el || el.contains(hit)) ? [x, y] : null; })()"""
-BOARD_TITLE = """(() => { const t = [...document.querySelectorAll('.bhead b')].find((b) => { const r = b.getBoundingClientRect();
-  return r.top > 50 && r.bottom < innerHeight - 60 && r.left > 0 && r.left < innerWidth - 500; });
-  if (!t) return null; const r = t.getBoundingClientRect(); return [r.left + 20, r.top + r.height / 2]; })()"""
-PANE = """(() => { for (let y = 80; y < innerHeight - 60; y += 16) for (let x = 20; x < innerWidth - 380; x += 16) {
-  const el = document.elementFromPoint(x, y); if (el && el.classList.contains('react-flow__pane')) return [x, y]; } return null; })()"""
-# 图片最多的那条轨道的中间：对着它放大（没有图片就对着画布中间）
-AIM = """(() => { const rows = new Map();
-  for (const o of document.querySelectorAll('.obj.image')) { const t = o.closest('.track'); rows.set(t, (rows.get(t) || 0) + 1); }
-  const best = [...rows.entries()].sort((a, b) => b[1] - a[1])[0];
-  if (!best) return [(innerWidth - 360) * 0.45, innerHeight * 0.5];
-  const r = best[0].getBoundingClientRect(); return [Math.min(r.left + r.width * 0.45, innerWidth - 400), r.top + r.height / 2]; })()"""
-SCENE = """(() => { const vis = (el) => { const r = el.getBoundingClientRect(); return r.right > 0 && r.left < innerWidth - 340 && r.bottom > 40 && r.top < innerHeight; };
-  return {缩放: +(document.querySelector('.react-flow__viewport')?.style.transform.match(/scale\\(([\\d.]+)\\)/)?.[1] ?? 0),
-          格子: [...document.querySelectorAll('.obj')].filter(vis).length,
-          图: [...document.querySelectorAll('.obj.image canvas, .obj.image img')].filter(vis).length,
-          插件画的格子: [...document.querySelectorAll('.obj canvas.plugin-paint')].filter(vis).length}; })()"""
-GPU = """(() => { const gl = document.createElement('canvas').getContext('webgl'); if (!gl) return '没有 WebGL';
-  const x = gl.getExtension('WEBGL_debug_renderer_info'); return x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER); })()"""
+  new PerformanceObserver(l => {for(const e of l.getEntries())window.__ev.push([e.name,e.startTime,e.duration,e.interactionId]);})
+    .observe({type:'event',durationThreshold:16});
+  addEventListener('pointerdown', e=>{window.__in=e.timeStamp;}, {capture:true});return true;})()"""
+EVENT_TOP = """(() => {const t=window.__in;const d=window.__ev.filter(e=>t!=null&&e[1]>=t-1).map(e=>e[2]);
+  window.__ev=[];window.__in=null;return d.length?Math.max(...d):16;})()"""
+# These DOM readers work with both the old per-object canvas and shared media tiles.
+DOM_HELPERS = r"""
+const flow=document.querySelector('.flow'), bounds=flow?.getBoundingClientRect();
+const visible=el=>{const r=el.getBoundingClientRect();return bounds&&r.width>0&&r.height>0&&r.right>bounds.left&&r.left<bounds.right&&r.bottom>bounds.top&&r.top<bounds.bottom;};
+const point=el=>{
+  if(!el||!visible(el))return null;const r=el.getBoundingClientRect();
+  const l=Math.max(r.left,bounds.left),right=Math.min(r.right,bounds.right);
+  const t=Math.max(r.top,bounds.top),bottom=Math.min(r.bottom,bounds.bottom);
+  const w=right-l,h=bottom-t;if(w<=0||h<=0)return null;
+  // Minimum-width objects can overlap their neighbor at overview zoom. Try the
+  // exposed strip as well as the center; never click an occluding object instead.
+  const preferred=Math.max(l+w*.05,Math.min(r.left+Math.min(r.width/2,30),right-w*.05));
+  const xs=[...new Set([preferred,l+w*.05,l+w*.25,l+w*.5,l+w*.75,right-w*.05])];
+  const ys=[t+h*.5,t+h*.25,t+h*.75,t+h*.05,bottom-h*.05];
+  for(const y of ys)for(const x of xs){const hit=document.elementFromPoint(x,y);
+    if(hit&&(hit===el||el.contains(hit)))return [x,y];
+  }return null;
+};
+const viewport=()=>{const m=new DOMMatrixReadOnly(getComputedStyle(document.querySelector('.react-flow__viewport')).transform);return {x:m.e,y:m.f,zoom:m.a};};
+const drawn=el=>{
+  if(el.dataset.mediaState)return el.dataset.mediaState==='ready';
+  return [...el.querySelectorAll('canvas')].some(c=>c.width>0&&c.height>0&&(c.width!==300||c.height!==150))
+    ||[...el.querySelectorAll('img')].some(i=>i.complete&&i.naturalWidth>0);
+};
+"""
+VISIBLE_OBJ = "(() => {" + DOM_HELPERS + """
+  const els=[...document.querySelectorAll('.obj')].filter(el=>{
+    const r=el.getBoundingClientRect();return r.width>=6&&r.height>=8&&point(el);
+  });const el=els[Math.min(els.length-1,Math.floor(els.length*%s))];return el?{id:el.dataset.id,point:point(el)}:null;
+})()"""
+BOARD_TITLE = "(() => {" + DOM_HELPERS + """
+  for(const el of document.querySelectorAll('.bhead b')){const p=point(el);if(p)return p;}return null;
+})()"""
+BOARD_ANCHOR = "(() => {" + DOM_HELPERS + """
+  const el=[...document.querySelectorAll('.bhead b')].find(e=>visible(e));
+  if(!el)return null;const r=el.getBoundingClientRect(),node=el.closest('.react-flow__node');
+  return {id:node.dataset.id,point:[r.left+Math.min(r.width/2,20),r.top+r.height/2],
+    safe:[bounds.left+140,bounds.top+140],width:bounds.width,height:bounds.height};
+})()"""
+PANE = "(() => {" + DOM_HELPERS + """
+  if(!bounds)return null;
+  for(let y=bounds.top+70;y<bounds.bottom-70;y+=24)for(let x=bounds.left+70;x<bounds.right-70;x+=24){
+    const el=document.elementFromPoint(x,y);if(el?.classList.contains('react-flow__pane'))return [x,y];
+  }return null;
+})()"""
+FLOW_CENTER = "(() => {" + DOM_HELPERS + "return bounds?[bounds.left+bounds.width*.45,bounds.top+bounds.height*.55]:null;})()"
+SCENE = "(() => {" + DOM_HELPERS + """
+  const objects=[...document.querySelectorAll('.obj')],shown=objects.filter(visible);
+  const painted=window.__lwBenchPluginPainted??new Set();
+  return {缩放:bounds?viewport().zoom:0,格子:shown.length,
+    图:shown.filter(el=>el.classList.contains('image')&&drawn(el)).length,
+    插件画的格子:shown.filter(el=>painted.has(el.dataset.id)&&(!el.dataset.mediaState||el.dataset.mediaState==='ready')).length,
+    objects:objects.length,canvas:document.querySelectorAll('.flow canvas').length,
+    visible_images:shown.filter(el=>el.classList.contains('image')&&!el.classList.contains('missing')).length,
+    failed_media:shown.filter(el=>el.dataset.mediaState==='failed').length,
+    viewport:bounds?viewport():null,
+    nodes:[...document.querySelectorAll('.react-flow__node')].map(el=>{
+      const m=new DOMMatrixReadOnly(getComputedStyle(el).transform);return {id:el.dataset.id,x:m.e,y:m.f};
+    })};
+})()"""
+READY = " (async () => {" + DOM_HELPERS + """
+  const frames=()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+  await frames();
+  // Camera settling is 120 ms. Waiting here does not replace waiting for media work.
+  await new Promise(r=>setTimeout(r,150));
+  const started=performance.now();
+  if(typeof window.__layerweavePaintIdle==='function'){
+    const completed=await Promise.race([window.__layerweavePaintIdle().then(()=>true),new Promise(r=>setTimeout(()=>r(false),12000))]);
+    await frames();
+    const state=window.__layerweavePaintState?.();
+    return {ok:completed&&!state?.pending,method:'paint_queue',state,elapsed_ms:performance.now()-started};
+  }
+  // Older baseline builds do not expose a queue. This is an explicitly weaker DOM
+  // readiness check, not a claim that hidden media or arbitrary plugin promises settled.
+  let stable=null,last='';
+  while(performance.now()-started<12000){
+    await frames();
+    const els=[...document.querySelectorAll('.obj')].filter(visible);
+    const media=els.filter(el=>el.querySelector('canvas,img'));
+    const signature=media.map(el=>el.dataset.id+':'+drawn(el)).join('|');
+    if(media.every(drawn)&&signature===last){stable??=performance.now();if(performance.now()-stable>=150)return {ok:true,method:'legacy_visible_dom',elapsed_ms:performance.now()-started};}
+    else stable=null;
+    last=signature;
+  }
+  return {ok:false,method:'legacy_visible_dom',reason:'可见媒体未完成',elapsed_ms:performance.now()-started};
+})()"""
+GPU = """(() => {const gl=document.createElement('canvas').getContext('webgl');if(!gl)return '没有 WebGL';
+  const x=gl.getExtension('WEBGL_debug_renderer_info');return x?gl.getParameter(x.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER);})()"""
+
+
+class BenchTools(DevTools):
+    """Finite queued inputs; keep errors that the screenshot client's call discards."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.errors = []
+
+    def _message(self):
+        message = super()._message()
+        if "error" in message:
+            self.errors.append(message)
+        return message
+
+    def send(self, method, **params):
+        self.counter += 1
+        self._send(1, json.dumps({"id": self.counter, "method": method, "params": params}).encode())
 
 
 def _ev(tab, expression):
@@ -190,70 +302,262 @@ def _p95(frames):
     return round(frames[int(len(frames) * 0.95)], 1) if frames else None
 
 
-def _press(tab, x, y):
+def _frame_stats(frames):
+    return {"p95_ms": _p95(frames), "max_ms": round(max(frames), 1) if frames else None,
+            "sample_count": len(frames), "over_33_ms": sum(f > 33 for f in frames)}
+
+
+def _press(tab, x, y, *, button="left", buttons=1):
     tab.call("Input.dispatchMouseEvent", type="mouseMoved", x=x, y=y)
-    tab.call("Input.dispatchMouseEvent", type="mousePressed", x=x, y=y, button="left", clickCount=1, buttons=1)
+    tab.call("Input.dispatchMouseEvent", type="mousePressed", x=x, y=y, button=button, clickCount=1, buttons=buttons)
+
+
+def _send_moves(tab, start, step, moves, *, button="left", buttons=1):
+    """A finite 60 Hz schedule, independent of page acknowledgements."""
+    origin = time.perf_counter()
+    sent = []
+    for i in range(1, moves + 1):
+        delay = origin + i / 60 - time.perf_counter()
+        if delay > 0:
+            time.sleep(delay)
+        tab.send("Input.dispatchMouseEvent", type="mouseMoved", x=start[0] + i * step[0],
+                 y=start[1] + i * step[1], button=button, buttons=buttons)
+        sent.append((time.perf_counter() - origin) * 1000)
+    return sent
+
+
+def _measure_drag(tab, start, step, moves, *, pan=False):
+    before = _ev(tab, SCENE)
+    errors = len(tab.errors)
+    _ev(tab, DRAG_ON)
+    # React Flow's nopan nodes reject left-button panning even with Space. Its
+    # normal middle-button gesture works on both nodes and pane in old/new builds.
+    button, buttons = ("middle", 4) if pan else ("left", 1)
+    activation = [0, 0]
+    _press(tab, *start, button=button, buttons=buttons)
+    scheduled_start, scheduled_step = start, step
+    if not pan:
+        dx, dy = step[0] * moves, step[1] * moves
+        length = math.hypot(dx, dy)
+        if length:
+            distance = min(4, length / 2)
+            activation = [dx / length * distance, dy / length * distance]
+            scheduled_start = [start[0] + activation[0], start[1] + activation[1]]
+            scheduled_step = [(dx - activation[0]) / moves, (dy - activation[1]) / moves]
+            # Cross the drag threshold with a small, recorded step. Without
+            # this, a short smoke run's first 50 px move can become its origin.
+            tab.call("Input.dispatchMouseEvent", type="mouseMoved", x=scheduled_start[0],
+                     y=scheduled_start[1], button=button, buttons=buttons)
+            _ev(tab, "new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>r(true))))")
+    sent = _send_moves(tab, scheduled_start, scheduled_step, moves, button=button, buttons=buttons)
+    tab.call("Input.dispatchMouseEvent", type="mouseReleased", x=start[0] + moves * step[0],
+             y=start[1] + moves * step[1], button=button, clickCount=1)
+    # Keep release work outside active frame p95, but record its first callback.
+    _ev(tab, "new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>r(true))))")
+    measured = _ev(tab, DRAG_OFF)
+    ready = _ev(tab, READY)
+    after = _ev(tab, SCENE)
+    frames = measured.get("frames", [])
+    return {"active": _frame_stats(frames), "frames_ms": frames,
+            "first_callback_ms": measured.get("first_callback_ms"),
+            "release_callback_ms": measured.get("release_callback_ms"),
+            "active_ms": measured.get("end", 0) - measured.get("start", 0),
+            "pointers": measured.get("pointers", []), "actual_pointer_events": len(measured.get("pointers", [])),
+            "sent_moves_ms": sent, "before": before, "after": after, "ready": ready,
+            "cdp_errors": tab.errors[errors:], "input_displacement": [step[0] * moves, step[1] * moves],
+            "activation_displacement": activation, "button": button}
 
 
 def _drag(tab, start, step, moves):
-    """从 start 每 16 毫秒挪一步，松手以后再等几帧（拼接判断、换细节档也算在里面）；返回帧间隔。"""
-    x, y = start
-    _ev(tab, FRAMES_ON)
-    _press(tab, x, y)
-    for i in range(1, moves + 1):
-        tab.call("Input.dispatchMouseEvent", type="mouseMoved", x=x + i * step[0], y=y + i * step[1], button="left", buttons=1)
-        time.sleep(0.016)
-    tab.call("Input.dispatchMouseEvent", type="mouseReleased", x=x + moves * step[0], y=y + moves * step[1], button="left", clickCount=1)
-    time.sleep(0.3)
-    return _ev(tab, FRAMES_OFF) or []
+    """Active-only frame intervals; tab must use BenchTools to queue finite input."""
+    return _measure_drag(tab, start, step, moves)["frames_ms"]
+
+
+def _pan(tab, delta, moves=12):
+    spot = _ev(tab, FLOW_CENTER)
+    if not spot:
+        raise RuntimeError("没有可平移的画布")
+    return _measure_drag(tab, spot, (delta[0] / moves, delta[1] / moves), moves, pan=True)
 
 
 def _warm(tab):
-    """先空拖一下画布、不量：笔记本显卡空闲时降频，页面停下来以后的第一下拖动总是慢（不管画面里有什么，2026-10-15 量过：
-    第一下 p95 28–48 毫秒，紧接着的 7 毫秒），量的应该是视图本身，不是显卡醒过来的那一下。"""
-    spot = _ev(tab, PANE)
-    if spot:
-        _drag(tab, spot, (8, 0), 12)
-        _drag(tab, _ev(tab, PANE) or spot, (-8, 0), 12)
+    """Warm steady-motion measurement separately from the first interaction."""
+    _pan(tab, (30, 0), 8)
+    _pan(tab, (-30, 0), 8)
 
 
-def _open(tab, url):
-    tab.call("Page.navigate", url=url)
-    deadline = time.time() + 60
-    while time.time() < deadline:
-        first = _ev(tab, "window.__firstObj ?? null")
-        if first is not None:
-            time.sleep(2.5)   # 缩略图、波形下完再量别的
-            return round(first / 1000, 2)
-        time.sleep(0.05)
+def _scene_issue(scene, *, images=False, plugin=False):
+    if not scene or not scene.get("格子"):
+        return "视口内没有对象，不能以空画面的帧间隔判通过"
+    if scene.get("failed_media", 0):
+        return "可见媒体绘制失败"
+    if images and not scene.get("图"):
+        return "视口内没有已画好的图片"
+    if plugin and not scene.get("插件画的格子"):
+        return "视口内没有已画好的基准插件对象"
     return None
 
 
-def _zoom_pan(tab, moves, want_painted=False):
-    """对着图片最多的轨道滚轮放大到 1.6 倍，等格子里的东西画好，在原地附近左右上下各拖一次。"""
-    aim = _ev(tab, AIM)
-    for _ in range(16):
-        tab.call("Input.dispatchMouseEvent", type="mouseWheel", x=aim[0], y=aim[1], deltaX=0, deltaY=-120)
-        time.sleep(0.25)
-        if _ev(tab, SCENE)["缩放"] >= 1.6:
-            break
-    time.sleep(2.0)
-    if want_painted:
-        deadline = time.time() + 5
-        while time.time() < deadline and not _ev(tab, SCENE)["插件画的格子"]:
-            time.sleep(0.2)
-    scene = _ev(tab, SCENE)
+def _motion_issue(measured, *, board_id=None):
+    if measured.get("cdp_errors"):
+        return "浏览器拒绝了部分输入"
+    if not measured["ready"].get("ok"):
+        return "松手后绘制未完成"
+    if not measured["active"]["sample_count"] or not measured["actual_pointer_events"]:
+        return "没有测到有效拖动帧或输入"
+    before, after = measured["before"], measured["after"]
+    problem = _scene_issue(before) or _scene_issue(after)
+    if problem:
+        return problem
+    a, b = before["viewport"], after["viewport"]
+    dx, dy = measured["input_displacement"]
+    if board_id is not None:
+        if any(abs(a[k] - b[k]) > 0.1 for k in ("x", "y", "zoom")):
+            return "拖画板时发生边缘自动平移；本次不是纯画板拖动"
+        old = next((n for n in before["nodes"] if n["id"] == board_id), None)
+        new = next((n for n in after["nodes"] if n["id"] == board_id), None)
+        if old is None or new is None:
+            return "目标画板消失或被拼接"
+        actual = [(new["x"] - old["x"]) * a["zoom"], (new["y"] - old["y"]) * a["zoom"]]
+    else:
+        if abs(a["zoom"] - b["zoom"]) > 0.001:
+            return "平移过程中缩放发生变化"
+        if before["nodes"] != after["nodes"]:
+            return "本次移动了画板而不是平移视口"
+        actual = [b["x"] - a["x"], b["y"] - a["y"]]
+    measured["actual_displacement"] = actual
+    if any(abs(got - wanted) > 10 for got, wanted in zip(actual, (dx, dy))):
+        return "实际移动距离与输入不符"
+    return None
+
+
+def _open(tab, url):
+    previous = _ev(tab, "performance.timeOrigin")
+    tab.call("Page.navigate", url=url)
+    deadline = time.monotonic() + 60
+    while time.monotonic() < deadline:
+        try:
+            document = _ev(tab, "({origin:performance.timeOrigin,first:window.__firstObj??null})")
+        except RuntimeError as error:
+            if "context" not in str(error).lower():
+                raise
+            time.sleep(0.05)
+            continue
+        if document["origin"] != previous and document["first"] is not None:
+            ready = _ev(tab, READY)
+            return {"first_object_dom_s": round(document["first"] / 1000, 2), "ready": ready}
+        time.sleep(0.05)
+    return {"first_object_dom_s": None, "ready": {"ok": False, "reason": "没有对象进入 DOM"}}
+
+
+def _focus_url(url, object_id):
+    parts = urlsplit(url)
+    query = dict(parse_qsl(parts.query))
+    query["focus"] = str(object_id)
+    return urlunsplit(parts._replace(query=urlencode(query)))
+
+
+def _anchor(tab, *, image=False, text=False):
+    selector = ".obj.image:not(.missing)" if image else ".obj.text" if text else ".obj"
+    return _ev(tab, "(() => {const els=[...document.querySelectorAll(" + json.dumps(selector) +
+               ")];if(!els.length)return null;const track=els[0].closest('.track');"
+               "const row=els.filter(el=>el.closest('.track')===track);return row[Math.floor(row.length/2)].dataset.id;})()")
+
+
+def _target_expression(object_id):
+    return "(() => {" + DOM_HELPERS + "const el=document.querySelector(" + json.dumps('.obj[data-id="' + str(object_id) + '"]') + r""");
+      if(!el||!bounds)return null;const r=el.getBoundingClientRect(),hit=point(el);
+      const names=[...el.closest('.react-flow__node').querySelectorAll('.names.stick')].map(n=>n.getBoundingClientRect())
+        .filter(n=>n.bottom>r.top&&n.top<r.bottom&&n.right>bounds.left&&n.left<bounds.right);
+      const coveredUntil=Math.max(bounds.left,...names.map(n=>n.right));
+      const safeLeft=Math.max(bounds.left+60,coveredUntil+40),safeRight=bounds.right-100;
+      const cx=r.left+Math.min(r.width/2,30),cy=r.top+r.height/2;
+      const safeX=safeLeft<safeRight?(safeLeft+safeRight)/2:null,safeY=bounds.top+bounds.height*.4;
+      // Zooming around a narrow object can grow the sticky name column over it.
+      // Reveal it with a real pan before continuing, without hiding the column.
+      const reveal=!hit&&safeX!==null?[safeX-cx,safeY-cy]:null;
+      return {point:hit,width:r.width,height:r.height,reveal_delta:reveal,covered_until:coveredUntil};
+    })()"""
+
+
+def _target(tab, object_id):
+    return _ev(tab, _target_expression(object_id))
+
+
+def _focus(tab, url, *, image=False, text=False):
+    chosen = _anchor(tab, image=image, text=text)
+    if chosen is None:
+        return None, {"ok": False, "reason": "没有所需类型的对象"}
+    opened = _open(tab, _focus_url(url, chosen))
+    if not opened["ready"]["ok"]:
+        return None, opened["ready"]
+    # Use an actual object's hit point for every wheel, not the empty middle of a row.
+    reveals = 0
+    for _ in range(28):
+        target = _target(tab, chosen)
+        if not target or not target["point"]:
+            delta = target.get("reveal_delta") if target else None
+            if delta and any(abs(value) > 1 for value in delta) and reveals < 3:
+                _pan(tab, delta)
+                reveals += 1
+                continue
+            return None, {"ok": False, "reason": "指定对象没有可命中的可见位置"}
+        zoom = _ev(tab, SCENE)["缩放"]
+        if zoom >= 1.6 and target["width"] >= 8 and target["height"] >= 8:
+            return chosen, _ev(tab, READY)
+        if zoom >= 3.99:
+            return None, {"ok": False, "reason": "最大缩放下仍无法点选对象"}
+        tab.call("Input.dispatchMouseEvent", type="mouseWheel", x=target["point"][0],
+                 y=target["point"][1], deltaX=0, deltaY=-120)
+        time.sleep(0.04)
+    return None, {"ok": False, "reason": "未能对准可见对象"}
+
+
+def _board_drag(tab, moves):
+    anchor = _ev(tab, BOARD_ANCHOR)
+    if not anchor:
+        return None, {"valid": False, "reason": "没有可拖动的画板标题"}
+    # Move the camera through the normal middle-button interaction. The product keeps
+    # auto-pan enabled; keep this test's entire path away from its activation edges.
+    _pan(tab, (anchor["safe"][0] - anchor["point"][0], anchor["safe"][1] - anchor["point"][1]))
     _warm(tab)
-    frames, spot = [], _ev(tab, PANE) or aim
-    for step in ((-12, 0), (12, 0), (0, -6), (0, 6)):
-        frames += _drag(tab, spot, step, moves)
-        spot = _ev(tab, PANE) or spot
-    return _p95(frames), scene
+    anchor = _ev(tab, BOARD_ANCHOR)
+    if not anchor or not _ev(tab, BOARD_TITLE):
+        return None, {"valid": False, "reason": "无法把画板标题放进视口内部"}
+    distance = min(400, max(40, anchor["width"] - 300))
+    result = _measure_drag(tab, anchor["point"], (distance / moves, 0), moves)
+    reason = _motion_issue(result, board_id=anchor["id"])
+    result.update(valid=reason is None, reason=reason)
+    return (result["active"]["p95_ms"] if reason is None else None), result
+
+
+def _zoom_pan(tab, url, moves, want_painted=False):
+    has_images = _anchor(tab, image=True) is not None
+    _, ready = _focus(tab, url, image=has_images, text=not has_images)
+    scene = _ev(tab, SCENE)
+    issue = None if ready["ok"] else ready.get("reason", "媒体绘制未完成")
+    issue = issue or _scene_issue(scene, images=has_images, plugin=want_painted)
+    if issue:
+        return None, scene, {"valid": False, "reason": issue, "ready": ready}
+    _warm(tab)
+    runs = []
+    # Modest local excursions keep a populated neighborhood in view at large zoom.
+    for delta in ((-80, 0), (80, 0), (0, -40), (0, 40)):
+        run = _pan(tab, delta, moves)
+        issue = _motion_issue(run)
+        issue = issue or _scene_issue(run["before"], images=has_images, plugin=want_painted)
+        issue = issue or _scene_issue(run["after"], images=has_images, plugin=want_painted)
+        runs.append(run)
+        if issue:
+            return None, scene, {"valid": False, "reason": issue, "runs": runs}
+    frames = [frame for run in runs for frame in run["frames_ms"]]
+    stats = _frame_stats(frames)
+    return stats["p95_ms"], scene, {"valid": True, "active": stats, "runs": runs, "ready": ready}
 
 
 def _session(browser, plain_url, plugin_url, clicks, moves):
-    """开一个干净的无界面浏览器，量一轮。"""
-    out = {}
+    """One fresh browser profile; normal UI mode throughout."""
+    out = {"diagnostics": {}}
     with tempfile.TemporaryDirectory(prefix="lw-bench-browser-", ignore_cleanup_errors=True) as profile:
         process = subprocess.Popen([browser, "--headless=new", "--hide-scrollbars", "--mute-audio", "--no-first-run", "--no-default-browser-check",
                                     f"--user-data-dir={profile}", *QUIET, "--remote-debugging-port=0", f"--window-size={WIDTH},{HEIGHT}", "about:blank"],
@@ -262,36 +566,44 @@ def _session(browser, plain_url, plugin_url, clicks, moves):
         try:
             port, path = _devtools_port(profile, time.time() + 30)
             root = DevTools(f"ws://127.0.0.1:{port}{path}")
+            out["browser"] = root.call("Browser.getVersion")
             with urlopen(f"http://127.0.0.1:{port}/json/list", timeout=10) as response:
                 target = next(t for t in json.loads(response.read()) if t.get("type") == "page")
-            tab = DevTools(target["webSocketDebuggerUrl"], timeout=60)
+            tab = BenchTools(target["webSocketDebuggerUrl"], timeout=60)
             tab.call("Emulation.setDeviceMetricsOverride", width=WIDTH, height=HEIGHT, deviceScaleFactor=DPR, mobile=False)
-            tab.call("Page.enable")   # 不开的话，下面这段不会在新页面里跑
-            tab.call("Page.addScriptToEvaluateOnNewDocument", source=FIRST_OBJ)
-            out["open"] = _open(tab, plain_url)
+            tab.call("Page.enable")
+            tab.call("Page.addScriptToEvaluateOnNewDocument", source=FIRST_OBJ + "\n;\n" + MEASURE_INIT)
+            opened = _open(tab, plain_url)
+            out["open"] = opened["first_object_dom_s"]
+            out["diagnostics"]["open"] = opened
             out["gpu"] = _ev(tab, GPU)
-            # 点选：画面上不同位置的对象各点一下
+            _, ready = _focus(tab, plain_url, text=_anchor(tab, text=True) is not None)
             _ev(tab, EVENTS_ON)
-            times = []
-            for i in range(clicks):
-                spot = _ev(tab, VISIBLE_OBJ % (0.05 + 0.9 * i / max(1, clicks - 1)))
-                if not spot:
-                    continue
-                _press(tab, *spot)
-                tab.call("Input.dispatchMouseEvent", type="mouseReleased", x=spot[0], y=spot[1], button="left", clickCount=1)
-                time.sleep(0.6)
-                times.append(_ev(tab, EVENT_TOP))
+            times, chosen_ids = [], []
+            if ready["ok"]:
+                for i in range(clicks):
+                    spot = _ev(tab, VISIBLE_OBJ % (0.05 + 0.9 * i / max(1, clicks - 1)))
+                    if not spot:
+                        continue
+                    _press(tab, *spot["point"])
+                    tab.call("Input.dispatchMouseEvent", type="mouseReleased", x=spot["point"][0], y=spot["point"][1], button="left", clickCount=1)
+                    _ev(tab, READY)
+                    selected = _ev(tab, "document.querySelector('.obj.sel')?.dataset.id")
+                    if selected == spot["id"]:
+                        times.append(_ev(tab, EVENT_TOP))
+                        chosen_ids.append(selected)
             out["click"] = round(median(times)) if times else None
             out["click_all"] = [round(t) for t in times]
-            # 拖画板：往右平着拖 600 像素。斜着拖会经过下面那块画板，有时出拼接提示、有时不出，同一份构建量出来 28–70 毫秒两样
-            _warm(tab)
-            title = _ev(tab, BOARD_TITLE)
-            out["board_drag"] = _p95(_drag(tab, title, (15, 0), moves * 4 // 3)) if title else None
-            # 放大平移在重新打开的页面上量（record=0，刚才拖过的画板回到原位）：和下面"插件画格子"那一项是同一个画面，只差插件
+            out["diagnostics"]["click"] = {"sample_count": len(times), "object_ids": chosen_ids,
+                                           "first_ms": times[0] if times else None, "max_ms": max(times) if times else None,
+                                           "valid": bool(times), "ready": ready}
+            # Reload: selection/links produced by the click test must not alter drag work.
             _open(tab, plain_url)
-            out["zoom_pan"], out["scene"] = _zoom_pan(tab, moves)
+            out["board_drag"], out["diagnostics"]["board_drag"] = _board_drag(tab, max(8, moves))
+            _open(tab, plain_url)
+            out["zoom_pan"], out["scene"], out["diagnostics"]["zoom_pan"] = _zoom_pan(tab, plain_url, moves)
             _open(tab, plugin_url)
-            out["zoom_pan_plugin"], out["scene_plugin"] = _zoom_pan(tab, moves, want_painted=True)
+            out["zoom_pan_plugin"], out["scene_plugin"], out["diagnostics"]["zoom_pan_plugin"] = _zoom_pan(tab, plugin_url, moves, want_painted=True)
         finally:
             if tab:
                 tab.close()
@@ -307,7 +619,6 @@ def _session(browser, plain_url, plugin_url, clicks, moves):
                 process.kill()
     return out
 
-
 # ---------- 汇总 ----------
 def _width(text):
     return sum(2 if unicodedata.east_asian_width(ch) in "WF" else 1 for ch in text)
@@ -321,11 +632,18 @@ def summarize(runs, baseline_runs=None):
     """每一项取各轮的中位，和门槛比。runs：每轮一个 dict（_session 的结果）。"""
     rows = []
     for key, (label, unit, gate) in GATES.items():
-        values = [r.get(key) for r in runs]
+        values = [r.get(key) if r.get("diagnostics", {}).get(key, {}).get("valid", True) else None for r in runs]
         got = [v for v in values if v is not None]
         value = round(median(got), 2 if unit == "秒" else 1) if got else None
         row = {"key": key, "label": label, "unit": unit, "gate": gate, "value": value, "rounds": values,
-               "ok": value is not None and value <= gate}
+               "valid_rounds": len(got), "invalid_rounds": len(values) - len(got),
+               "ok": bool(values) and len(got) == len(values) and value is not None and value <= gate}
+        row["status"] = "invalid" if row["invalid_rounds"] or not values else "passed" if row["ok"] else "exceeded"
+        row["issues"] = [r.get("diagnostics", {}).get(key, {}).get("reason") or "本轮没有有效样本"
+                         for r, v in zip(runs, values) if v is None]
+        active = [r.get("diagnostics", {}).get(key, {}).get("active", {}) for r in runs]
+        row["sample_counts"] = [a.get("sample_count") for a in active]
+        row["max_ms"] = [a.get("max_ms") for a in active]
         if baseline_runs is not None:
             base = [r.get(key) for r in baseline_runs if r.get(key) is not None]
             row["baseline"] = round(median(base), 2 if unit == "秒" else 1) if base else None
@@ -340,17 +658,38 @@ def describe(result, color=False):
     lines = [result["title"]]
     has_base = any("baseline" in row for row in result["rows"])
     for row in result["rows"]:
-        verdict = "通过" if row["ok"] else "超过门槛" if row["value"] is not None else "没量到"
+        verdict = "测量无效" if row.get("status") == "invalid" else "通过" if row["ok"] else "超过门槛" if row["value"] is not None else "没量到"
         rounds = " / ".join("—" if v is None else (f"{v:.2f}" if row["unit"] == "秒" else f"{v:.0f}") for v in row["rounds"])
         line = (f"  {_pad(row['label'], 36)}{_pad(fmt(row['value'], row['unit']), 10)}门槛 {_pad(fmt(row['gate'], row['unit']), 10)}"
                 + (f"基线 {_pad(fmt(row.get('baseline'), row['unit']), 10)}" if has_base else "") + f"{_pad(verdict, 10)}各轮 {rounds}")
         lines.append(line if row["ok"] else red + line + end)
-    lines.append("全部通过。" if result["passed"] else red + "有超过门槛的项：先看最近的改动；数字忽高忽低时多量几轮（--rounds 5）。" + end)
+        if row.get("issues"):
+            lines.append("    " + "；".join(dict.fromkeys(row["issues"])))
+        if any(n is not None for n in row.get("sample_counts", [])):
+            lines.append("    活跃帧样本数 " + " / ".join("—" if n is None else str(n) for n in row["sample_counts"])
+                         + "；各轮最长帧 " + " / ".join("—" if n is None else f"{n:g} ms" for n in row["max_ms"]))
+    lines.append("全部通过。" if result["passed"] else red + "有超过门槛或无效的项；先核对场景，再比较改动（--baseline；必要时 --rounds 5）。" + end)
     return "\n".join(lines)
 
 
-def bench(database=None, project_id=None, *, objects=800, rounds=3, baseline=None, browser=None, clicks=10, moves=30):
+def _run_order(variants, rounds):
+    """AB / BA / AB gives each build the same count and alternates first position."""
+    return [item for index in range(rounds) for item in (variants if index % 2 == 0 else variants[::-1])]
+
+
+def _web_digest(directory):
+    digest = hashlib.sha256()
+    for path in sorted(Path(directory).rglob("*")):
+        if path.is_file():
+            digest.update(str(path.relative_to(directory)).replace("\\", "/").encode())
+            digest.update(path.read_bytes())
+    return digest.hexdigest()
+
+
+def bench(database=None, project_id=None, *, objects=800, rounds=3, baseline=None, browser=None, clicks=10, moves=120):
     """量 rounds 轮（有 baseline 时和它每轮交替），返回每一项的中位、门槛和判定。不给 database 时造合成项目。"""
+    if rounds < 1 or clicks < 1 or moves < 1:
+        raise ValueError("rounds、clicks 和 moves 必须大于 0")
     browser = find_browser(browser)
     if browser is None:
         raise FileNotFoundError("找不到 Chrome、Edge 或 Chromium：用 --browser 或环境变量 LAYERWEAVE_BROWSER 指定浏览器路径")
@@ -381,9 +720,9 @@ def bench(database=None, project_id=None, *, objects=800, rounds=3, baseline=Non
                     urls.append(f"{url}?project={project_id}&record=0")
                 variants.append((name, *urls))
             runs = {name: [] for name, *_ in variants}
-            for _ in range(rounds):
-                for name, plain, plugin in variants:
-                    runs[name].append(_session(browser, plain, plugin, clicks, moves))
+            order = _run_order(variants, rounds)
+            for name, plain, plugin in order:
+                runs[name].append(_session(browser, plain, plugin, clicks, moves))
         finally:
             for server in servers:
                 server.shutdown()
@@ -393,7 +732,10 @@ def bench(database=None, project_id=None, *, objects=800, rounds=3, baseline=Non
     title = (f"view_bench：{what}，{rounds} 轮取中位{'（和基线交替）' if baseline else ''}；{Path(browser).stem}，显卡 {gpu}，"
              f"{WIDTH}×{HEIGHT} 缩放 {DPR:g}，缩略图{'用 ffmpeg 缩' if find_ffmpeg() else '用原图（没有 ffmpeg）'}")
     result = {"title": title, "rows": rows, "passed": all(row["ok"] for row in rows), "runs": runs, "web": str(WEB_ROOT),
-              "baseline": str(baseline) if baseline else None}
+              "baseline": str(baseline) if baseline else None,
+              "method_version": 2, "order": [name for name, *_ in order],
+              "input_hz": 60, "moves": moves, "normal_mode": True,
+              "web_sha256": _web_digest(WEB_ROOT), "baseline_sha256": _web_digest(baseline) if baseline else None}
     return {**result, "text": describe(result)}
 
 
@@ -412,14 +754,15 @@ COMMANDS = [{
         "baseline": {"type": "string", "description": "另一份视图网页的目录（构建好的 view/web，比如改之前的），和现在的每轮交替量"},
         "browser": {"type": "string", "description": "浏览器路径；省略时自动找 Chrome、Edge、Chromium"},
     },
-    "returns": "rows（每一项：label、unit、gate 门槛、value 各轮中位、rounds 各轮、ok；有基线时还有 baseline）、passed、title、runs（每轮的原始数字）、text。",
+    "returns": "rows（原有五项与门槛不变，增加 status/invalid_rounds/sample_counts/max_ms）、passed、runs（含 diagnostics：活跃帧、输入与实际位移、松手回调、就绪方式）、order、构建 hash、text。回调时机不是实际像素呈现时延。",
     "examples": [{"cli": "python -m layerweave.tool.builtin.view.bench"},
                  {"cli": "python -m layerweave.tool.builtin.view.bench --baseline D:/old/view/web --rounds 5"},
                  {"cli": "python -m layerweave.tool.builtin.view.bench DATABASE --project 1"}],
-    "notes": ["门槛：打开 ≤ 2 秒；点选中位 ≤ 120 毫秒；拖画板、放大后平移的帧间隔 p95 ≤ 33 毫秒。有超过的退出码是 1。",
+    "notes": ["门槛：首个对象进入 DOM ≤ 2 秒；点选中位 ≤ 120 毫秒；活跃拖动帧间隔 p95 ≤ 33 毫秒。有超过或无效的退出码是 1。",
               "只读：起只监听本机的临时服务和独立配置的无界面浏览器（关掉扩展、同步），量完都关掉；合成项目放在临时目录，量完删掉。",
-              "一轮大约半分钟。笔记本显卡空闲会降频，单次数字能差一倍，所以看中位；比较改动用 --baseline 交替量。",
-              "每次量拖动之前先空拖一下不量：显卡空闲以后的第一下总是慢，和视图的代码无关。"],
+              "按 60 Hz 发送有限输入，浏览器可能合并事件；报告实际事件数。基线顺序 ABBAAB，原始数据保留最长帧和样本数。",
+              "热身用于稳定连续拖动对照，不推断显卡频率。点选首个样本另外记录；正常模式等待媒体队列，旧构建使用明确标记的较弱 DOM 就绪检查。",
+              "标题先移入视口内部，保留产品自动平移；测量时若视口仍变动则标无效。空视口、图片没画好、插件没画好都不能通过。"],
 }]
 
 

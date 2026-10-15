@@ -1,11 +1,11 @@
 // 顶栏：项目、视图（画布 / 插件的页面 / 一览）、找对象、时钟、复制链接、插件、关系线开关、画布缩放、在线指示
-import {useState} from 'react';
+import {useRef, useState} from 'react';
 import {useShallow} from 'zustand/react/shallow';
 import {copyLink, selectObject, setView} from './actions';
 import {fitBoards, zoomBy} from './camera';
 import {keyOf} from './model/model';
 import {fmt} from './model/units';
-import {activeBoard, modelOf, setState, useModel, useStore} from './store';
+import {activeBoard, getState, modelOf, setState, useModel, useStore} from './store';
 import {CAPTURE} from './params';
 import {pluginApplies} from './plugin/registry';
 import {PluginManager} from './PluginManager';
@@ -17,6 +17,7 @@ const CANVAS = {view: 'canvas' as View, label: '画布', title: undefined as str
 const ASSETS = {view: 'assets' as View, label: '一览', title: '按种类列出项目里所有的对象：图片、视频、音频、文字……点一下回到画布上的位置'};
 
 export function Header() {
+  const switching = useRef(0);
   const model = useModel();
   const plugins = useStore((s) => s.plugins);
   const {projects, project, view, playhead, links, live, unit} = useStore(useShallow((s) => {
@@ -46,9 +47,10 @@ export function Header() {
   };
 
   const switchProject = async (id: number) => {
+    const request = ++switching.current;
     setState({selected: null, playhead: null, active: null, sel: null, targetLayer: null, autoFit: true});
     await loadProject(id);
-    requestAnimationFrame(() => fitBoards());
+    requestAnimationFrame(() => { if (request === switching.current && getState().project === id) fitBoards(); });
   };
 
   return (

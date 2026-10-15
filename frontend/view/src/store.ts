@@ -19,6 +19,7 @@ export interface State {
   boards: Board[];
   serial: number | null;
   version: number | null;
+  cursor: number | null;                                  // 只有完整页应用成功才前移
   frames: boolean;
   live: boolean;
   message: string;
@@ -58,7 +59,7 @@ export interface State {
 
 const viewParam = params.get('view');
 export const useStore = create<State>((set) => ({
-  projects: [], project: null, data: null, boards: [], serial: null, version: null,
+  projects: [], project: null, data: null, boards: [], serial: null, version: null, cursor: null,
   frames: false, live: false, message: '', notice: null,
   view: viewParam || 'canvas',                            // 插件的页面要等插件加载完才知道有没有；没有就回画布（registry.ts）
   side: params.has('walk') ? 'walk' : params.get('side') === 'notes' || params.has('note') ? 'notes' : params.has('changes') ? 'changes' : params.get('side') || 'now',   // 插件的侧栏：载入完才知道有没有，没有就回「此刻」
@@ -86,19 +87,24 @@ export function modelOf(s: State): Model | null {
   if (!s.data) return null;
   const key = [s.data, s.only, s.showHidden, s.canvasW];
   if (modelCache && modelCache.key.every((v, i) => v === key[i])) return modelCache.model;
-  modelCache = {key, model: new Model(s.data, {viewer: VIEWER, only: s.only, showHidden: s.showHidden, canvasWidth: s.canvasW})};
+  modelCache = {key, model: new Model(s.data, {viewer: VIEWER, only: s.only, showHidden: s.showHidden, canvasWidth: s.canvasW}, modelCache?.model)};
   return modelCache.model;
 }
 export const useModel = () => useStore(modelOf);
 
 export interface NotesInfo { list: Note[]; threads: Thread[]; index: Map<string, Thread[]> }
-let notesCache: {model: Model; value: NotesInfo} | null = null;
+let notesCache: {project: number; layers: ProjectData['layers']; binds: ProjectData['binds']; key: unknown[]; value: NotesInfo} | null = null;
 export function notesOf(s: State): NotesInfo | null {
   const model = modelOf(s);
   if (!model) return null;
-  if (notesCache?.model !== model) {
+  if (notesCache?.project === model.project && notesCache.layers === model.data.layers && notesCache.binds === model.data.binds) return notesCache.value;
+  const key = [model.project, model.data.binds, ...model.data.layers.filter((l) => l.role === 'note')];
+  if (!notesCache || notesCache.key.length !== key.length || notesCache.key.some((v, i) => v !== key[i])) {
     const list = noteList(model), threads = noteThreads(list);
-    notesCache = {model, value: {list, threads, index: noteIndex(threads, model.project)}};
+    notesCache = {project: model.project, layers: model.data.layers, binds: model.data.binds, key, value: {list, threads, index: noteIndex(threads, model.project)}};
+  } else {
+    notesCache.layers = model.data.layers;
+    notesCache.binds = model.data.binds;
   }
   return notesCache.value;
 }

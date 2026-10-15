@@ -23,6 +23,7 @@ from .plugins import list_plugins, list_serial, plugin as plugin_action, plugin_
 from .walk import walk_from
 from .note import add_note, remove_note, retarget_note, set_read, update_note
 from .state import read_state, write_state
+from .incremental import project_snapshot, project_delta
 
 WEB_ROOT = Path(__file__).with_name("web")
 FRAMES = {}   # 抽出来的视频帧缓存：(文件, 修改时间, 秒) → JPEG
@@ -70,6 +71,15 @@ class ViewHandler(SimpleHTTPRequestHandler):
                 with closing(open_readonly(self.database)) as connection:
                     data = project_view(connection, self.database, int(match[1]))
                 return self.send_json(data) if data else self.send_json({"error": "项目不存在"}, HTTPStatus.NOT_FOUND)
+            if match := re.fullmatch(r"/api/project/(\d+)/(snapshot|delta)", url.path):
+                q = parse_qs(url.query)
+                with closing(open_readonly(self.database)) as connection:
+                    if match[2] == "snapshot":
+                        data = project_snapshot(connection, self.database, int(match[1]))
+                    else:
+                        data = project_delta(connection, self.database, int(match[1]), after=int(q.get("after", ["0"])[0]),
+                                             limit=max(1, min(1000, int(q.get("limit", ["100"])[0]))))
+                return self.send_json(data)
             if url.path == "/api/version":
                 return self.send_json({"version": self.version(), "layout": layout_serial(self.database, self.state_root),
                                        "plugins": list_serial(self.state_root)})

@@ -6,6 +6,8 @@ import {sizeOf} from './model/layoutOps';
 import {CAPTURE, params} from './params';
 import {activeBoard, getState, modelOf, notesOf, setState} from './store';
 import type {Board} from './types';
+import {liveBoard} from './canvas/dragState';
+export {liveBoard} from './canvas/dragState';
 
 let flow: ReactFlowInstance | null = null;
 let pane: HTMLElement | null = null;
@@ -24,17 +26,29 @@ function setView(x: number, y: number, zoom: number) {
 
 // 镜头停下来以后才换格子的细节档（Flow 的 onMoveEnd 和程序里设镜头都走这里）
 let settleTimer: ReturnType<typeof setTimeout> | undefined;
+let zoomReady: Promise<void> = Promise.resolve(), finishZoom: (() => void) | null = null;
+export const pendingZoom = () => zoomReady;
 export function settleZoom(delay = CAPTURE ? 0 : 120) {   // 截图时镜头只设一次，马上换档，免得拍到旧清晰度
   clearTimeout(settleTimer);
-  settleTimer = setTimeout(() => { if (flow) setState({settledZoom: flow.getViewport().zoom}); }, delay);
+  if (!finishZoom) zoomReady = new Promise<void>((resolve) => { finishZoom = resolve; });
+  settleTimer = setTimeout(() => {
+    const zoom = flow?.getViewport().zoom;
+    if (zoom != null && zoom !== getState().settledZoom) setState({settledZoom: zoom});
+    settleTimer = undefined;
+    const done = finishZoom;
+    finishZoom = null;
+    done?.();
+  }, delay);
 }
 
 // 画板时间 → 画布上的横坐标（世界坐标）
 export function timeToX(b: Board, t: number) {
+  b = liveBoard(b);
   const model = modelOf(getState())!;
   return (b.x ?? 0) + TRACKS_X + (t - model.extent(b)[0]) * model.pps(b);
 }
 export function xToTime(b: Board, worldX: number) {
+  b = liveBoard(b);
   const model = modelOf(getState())!;
   return model.extent(b)[0] + (worldX - (b.x ?? 0) - TRACKS_X) / model.pps(b);
 }

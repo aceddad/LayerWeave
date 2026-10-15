@@ -41,8 +41,8 @@ export interface PluginHost {
          lanes: typeof lanes; keyOf: typeof keyOf; rootsOf: typeof rootsOf};
 }
 
-// 画布格子里画东西：视图给一块 canvas（设备像素，按镜头停下时的缩放），排进和缩略图同一个重画队列（每帧最多画 8 毫秒）。
-// 只在格子大小变了、镜头停下换了缩放、对象变了时才再画；平移、拖动时不画。格子太小（只画色块的那一档）时不画
+// 画布格子里画东西：视图给一块 canvas（设备像素，可能脱离 DOM），排进和缩略图同一个同步预算队列；详见 TOOL_TYPES。
+// 只在格子大小变了、镜头停下换了缩放、对象变了时才再画；已准备好的格子不因纯位移重画，首次进入 near 范围仍会开始画。格子太小（只画色块的那一档）时不画
 export interface BlockBox {
   width: number; height: number;   // canvas 的像素
   unit: string;                    // 这个对象所在的根的单位（isSec(unit) 判断是不是秒）

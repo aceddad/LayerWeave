@@ -1,5 +1,5 @@
 // 和本机视图服务说话；接口说明见 view/README.md
-import type {Board, ChangeOp, Layout, PluginList, ProjectData, ProjectSummary, WalkDirection, WalkResult} from './types';
+import type {Board, ChangeOp, Layout, PluginList, ProjectData, ProjectPage, ProjectSummary, WalkDirection, WalkResult} from './types';
 
 async function get<T>(path: string): Promise<T> {
   const response = await fetch(path);
@@ -22,6 +22,8 @@ export const api = {
     post<PluginList & {recorded?: boolean}>('/api/plugins', body),
   projects: () => get<ProjectSummary[]>('/api/projects'),
   project: (id: number) => get<ProjectData>(`/api/project/${id}`),
+  snapshot: (id: number) => get<ProjectPage>(`/api/project/${id}/snapshot`),
+  delta: (id: number, after: number) => get<ProjectPage>(`/api/project/${id}/delta?after=${after}`),
   layout: (id: number) => get<Layout>(`/api/layout/${id}`),
   saveLayout: (id: number, boards: Board[]) => post<Layout & {recorded?: boolean}>(`/api/layout/${id}`, {boards}),
   version: () => get<{version: number; layout: number; plugins?: number}>('/api/version'),

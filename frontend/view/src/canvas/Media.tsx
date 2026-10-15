@@ -7,6 +7,8 @@ import {useStore} from '../store';
 import type {BlockPainter} from '../plugin/host';
 import {pluginFailed} from '../plugin/slots';
 import type {Layer, Obj} from '../types';
+import {paintQueue} from './mediaQueue';
+import {mediaUrl} from './mediaUrl';
 
 export function Img({src}: {src: string}) {
   return <img loading={LAZY} decoding={DECODE} src={src} alt="" />;
@@ -15,12 +17,12 @@ export function Img({src}: {src: string}) {
 // 图片对象的缩略图：服务端有 ffmpeg 时按宽度缩好（缩不了的它自己送原图）；没有 ffmpeg 时直接用原图。
 // 画布格子、一览网格用 320 宽，接缝页、侧栏卡片 640 宽；原图只在点开时看
 export function Thumb({project, o, width, frames}: {project: number; o: Obj; width: number; frames: boolean}) {
-  return <Img src={frames ? thumbUrl(project, o.id, width) : o.media!.url!} />;
+  return <Img src={mediaUrl(frames ? thumbUrl(project, o.id, width) : o.media!.url!, o.media?.source)} />;
 }
 
 export function Frame({project, o, at, frames}: {project: number; o: Obj; at: number | 'end'; frames: boolean}) {
-  if (frames) return <Img src={frameUrl(project, o.id, at)} />;
-  return <video muted preload="metadata" src={`${o.media!.url}#t=${at === 'end' ? 9999 : at}`} />;
+  if (frames) return <Img src={mediaUrl(frameUrl(project, o.id, at), o.media?.source)} />;
+  return <video muted preload="metadata" src={`${mediaUrl(o.media!.url!, o.media?.source)}#t=${at === 'end' ? 9999 : at}`} />;
 }
 
 // ---------- 画布上格子里的图：画进 <canvas>，只画一次 ----------
@@ -28,7 +30,7 @@ export function Frame({project, o, at, frames}: {project: number; o: Obj; at: nu
 // 95% 的帧在 35–55 毫秒以内；藏掉这些图就降到 7–14 毫秒）。画布里的内容画好就固定了，平移时只是整块挪动（实验里同样降到 7–14 毫秒，
 // 2026-10-14 量的）。清晰度按镜头停下来时的缩放算，换档时重画一次
 const images = new Map<string, Promise<HTMLImageElement | null>>();
-function loadImage(src: string): Promise<HTMLImageElement | null> {
+export function loadImage(src: string): Promise<HTMLImageElement | null> {
   if (!images.has(src)) {
     const img = new Image();
     img.decoding = 'async';
@@ -38,27 +40,15 @@ function loadImage(src: string): Promise<HTMLImageElement | null> {
   return images.get(src)!;
 }
 
-// 重画排队，每一帧最多画 8 毫秒：镜头停下来换缩放时上百张图要一起重画，一口气画完会卡一下（50–80 毫秒的长任务，2026-10-14 量的）
-const queue = new Set<() => void>();
-let pumping = false;
-function schedule(draw: () => void) {
-  queue.add(draw);
-  if (!pumping) { pumping = true; requestAnimationFrame(pump); }
-}
-function pump() {
-  const end = performance.now() + 8;
-  for (const draw of queue) {
-    queue.delete(draw);
-    draw();
-    if (performance.now() > end) break;
-  }
-  if (queue.size) requestAnimationFrame(pump);
-  else pumping = false;
-}
+// 旧逐格画布对照也使用共享预算队列；截图等待同时覆盖新旧两种绘制路径。
+const schedule = (draw: () => void) => paintQueue.schedule(draw, draw);
 
-// 截图要等这些画完再举手（capture.ts）
-const drawing = new Set<Promise<void>>();
-export const pendingThumbs = () => [...drawing];
+// 当前挂载画布的反馈；等待由有 owner 的共享队列负责，不等待全局缓存全集。
+const legacy = new Map<HTMLCanvasElement, {state: string; error?: string}>();
+const mark = (canvas: HTMLCanvasElement, state: string, error?: unknown) => {
+  canvas.dataset.mediaState = state; legacy.set(canvas, {state, error: error == null ? undefined : String(error)});
+};
+export const legacyPaintState = () => [...legacy.values()];
 
 export function CanvasImg({src}: {src: string}) {
   const ref = useRef<HTMLCanvasElement>(null);
@@ -68,18 +58,15 @@ export function CanvasImg({src}: {src: string}) {
   useEffect(() => {
     const canvas = ref.current;
     if (!canvas) return;
+    mark(canvas, 'idle');
     const st = state.current;
     st.img = undefined;
     st.drawn = '';
-    let alive = true, finish = () => {};
-    if (CAPTURE) {
-      const done = new Promise<void>((resolve) => { finish = resolve; setTimeout(resolve, 8000); });
-      drawing.add(done);
-      done.then(() => drawing.delete(done));
-    }
+    let alive = true;
+    const owner = {};
     st.draw = () => {
       if (!alive || st.img === undefined) return;
-      if (!st.img) { finish(); return; }
+      if (!st.img) { mark(canvas, 'failed', '媒体无法解码'); return; }
       if (!st.w || !st.h) return;
       const k = st.zoom || viewport().zoom || 1;
       let cw = Math.max(1, Math.round(st.w * k)), ch = Math.max(1, Math.round(st.h * k));
@@ -95,7 +82,7 @@ export function CanvasImg({src}: {src: string}) {
       let sw = img.naturalWidth, sh = img.naturalHeight, sx = 0, sy = 0;
       if (ir > cr) { sw = sh * cr; sx = (img.naturalWidth - sw) / 2; } else { sh = sw / cr; sy = (img.naturalHeight - sh) / 2; }
       canvas.getContext('2d')!.drawImage(img, sx, sy, sw, sh, 0, 0, cw, ch);
-      finish();
+      mark(canvas, 'ready');
     };
     // 格子在页面上的尺寸（设备像素，不含画布的缩放）；排版完才回调，不逼浏览器当场排版
     const sizes = new ResizeObserver(([entry]) => {
@@ -106,14 +93,19 @@ export function CanvasImg({src}: {src: string}) {
     });
     try { sizes.observe(canvas, {box: 'device-pixel-content-box'}); } catch { sizes.observe(canvas); }
     // 离画面近了才下载、解码（和 <img loading="lazy"> 一样）；截图时马上下
-    const start = () => loadImage(src).then((img) => { st.img = img; schedule(st.draw); });
+    const start = () => {
+      mark(canvas, 'pending');
+      return paintQueue.track(loadImage(src).then((img) => {
+        if (alive) { st.img = img; schedule(st.draw); }
+      }, (error) => { if (alive) mark(canvas, 'failed', error); }), owner);
+    };
     let near: IntersectionObserver | undefined;
     if (CAPTURE) start();
     else {
       near = new IntersectionObserver((entries) => { if (entries.some((e) => e.isIntersecting)) { near!.disconnect(); start(); } }, {rootMargin: '600px'});
       near.observe(canvas);
     }
-    return () => { alive = false; queue.delete(st.draw); sizes.disconnect(); near?.disconnect(); finish(); };
+    return () => { alive = false; paintQueue.cancel(owner); paintQueue.cancel(st.draw); sizes.disconnect(); near?.disconnect(); legacy.delete(canvas); };
   }, [src]);
   useEffect(() => { schedule(state.current.draw); }, [zoom]);   // 镜头停下来换了缩放：按新的清晰度重画
   return <canvas ref={ref} />;
@@ -129,14 +121,10 @@ export function PluginCanvas({name, painter, o, layer, unit}: {name: string; pai
   useEffect(() => {
     const canvas = ref.current;
     if (!canvas) return;
+    mark(canvas, 'idle');
     const st = state.current;
     st.drawn = '';
-    let alive = true, started = false, finish = () => {};
-    if (CAPTURE) {
-      const done = new Promise<void>((resolve) => { finish = resolve; setTimeout(resolve, 8000); });
-      drawing.add(done);
-      done.then(() => drawing.delete(done));
-    }
+    let alive = true, started = false, owner: object | null = null;
     st.draw = () => {
       if (!alive || !started || !st.w || !st.h) return;
       const k = st.zoom || viewport().zoom || 1;
@@ -146,13 +134,29 @@ export function PluginCanvas({name, painter, o, layer, unit}: {name: string; pai
       const key = `${cw}x${ch}`;
       if (key === st.drawn) return;
       st.drawn = key;
-      canvas.width = cw;
-      canvas.height = ch;
+      if (owner) paintQueue.cancel(owner);
+      const generation = {}; owner = generation;
+      const current = () => alive && owner === generation;
+      mark(canvas, 'pending');
+      const failed = (error: unknown) => { if (current()) { mark(canvas, 'failed', error); pluginFailed(name, error); } };
       try {
-        const result = painter.draw(canvas.getContext('2d')!, o, {width: cw, height: ch, unit, layer});
-        if (result && typeof result.then === 'function') result.then(finish, (error) => { pluginFailed(name, error); finish(); });
-        else finish();
-      } catch (error) { pluginFailed(name, error); finish(); }
+        // 即使走逐格兼容路径，也不把当前显示画布交给可能迟到的异步插件。
+        const prepared = document.createElement('canvas'); prepared.width = cw; prepared.height = ch;
+        const result = painter.draw(prepared.getContext('2d')!, o, {width: cw, height: ch, unit, layer});
+        const commit = () => {
+          if (!current()) return;
+          paintQueue.schedule(generation, () => {
+            if (!current()) return;
+            try {
+              canvas.width = cw; canvas.height = ch;
+              canvas.getContext('2d')!.drawImage(prepared, 0, 0);
+              mark(canvas, 'ready');
+            } catch (error) { failed(error); }
+          });
+        };
+        if (result && typeof result.then === 'function') paintQueue.track(result.then(commit, failed), generation);
+        else commit();
+      } catch (error) { failed(error); }
     };
     const sizes = new ResizeObserver(([entry]) => {
       const box = entry.devicePixelContentBoxSize?.[0];
@@ -168,7 +172,7 @@ export function PluginCanvas({name, painter, o, layer, unit}: {name: string; pai
       near = new IntersectionObserver((entries) => { if (entries.some((e) => e.isIntersecting)) { near!.disconnect(); start(); } }, {rootMargin: '600px'});
       near.observe(canvas);
     }
-    return () => { alive = false; queue.delete(st.draw); sizes.disconnect(); near?.disconnect(); finish(); };
+    return () => { alive = false; if (owner) paintQueue.cancel(owner); paintQueue.cancel(st.draw); sizes.disconnect(); near?.disconnect(); legacy.delete(canvas); };
   }, [name, painter, o, layer, unit]);
   useEffect(() => { schedule(state.current.draw); }, [zoom]);
   return <canvas ref={ref} className="plugin-paint" />;
@@ -176,9 +180,9 @@ export function PluginCanvas({name, painter, o, layer, unit}: {name: string; pai
 
 // 画布上的格子用：图片格子的缩略图、视频格子的画面（有 ffmpeg 时）都画进 canvas；没有 ffmpeg 的视频照旧交给浏览器解码
 export function BlockThumb({project, o, width, frames}: {project: number; o: Obj; width: number; frames: boolean}) {
-  return <CanvasImg src={frames ? thumbUrl(project, o.id, width) : o.media!.url!} />;
+  return <CanvasImg src={mediaUrl(frames ? thumbUrl(project, o.id, width) : o.media!.url!, o.media?.source)} />;
 }
 export function BlockFrame({project, o, at, frames}: {project: number; o: Obj; at: number | 'end'; frames: boolean}) {
-  if (frames) return <CanvasImg src={frameUrl(project, o.id, at)} />;
+  if (frames) return <CanvasImg src={mediaUrl(frameUrl(project, o.id, at), o.media?.source)} />;
   return <Frame project={project} o={o} at={at} frames={false} />;
 }

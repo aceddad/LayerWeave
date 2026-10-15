@@ -4,6 +4,7 @@ import {useShallow} from 'zustand/react/shallow';
 import {selectObject} from '../actions';
 import {Frame, Thumb} from '../canvas/Media';
 import {Waveform} from '../canvas/Waveform';
+import {mediaUrl} from '../canvas/mediaUrl';
 import {markReady} from '../capture';
 import {KIND_LABEL, kindOf} from '../model/kinds';
 import {fmt} from '../model/units';
@@ -33,7 +34,7 @@ export function AssetsView() {
                 {missing ? '文件不存在'
                   : k === 'image' ? <Thumb project={project} o={o} width={320} frames={frames} />
                   : k === 'video' ? <Frame project={project} o={o} at={0.1} frames={frames} />
-                  : k === 'audio' ? <Waveform url={o.media!.url!} className="tile-wave" />
+                  : k === 'audio' ? <Waveform url={mediaUrl(o.media!.url!, o.media?.source)} className="tile-wave" />
                   : k === 'text' ? <div className="txt">{o.text}</div> : null}
                 <span className="badge" style={{background: COLOR[k] ?? 'var(--other)'}}>{KIND_LABEL[k] ?? k}</span>
               </div>

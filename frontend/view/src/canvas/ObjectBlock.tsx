@@ -2,7 +2,7 @@
 // 缩得很小时只画色块：格子在屏幕上只有十几像素高时，几百张缩略图每一帧都要重画，平移画布只剩每秒 11 帧（藏掉图片是 33 帧，2026-10-14 量的）。
 // 截图时照旧全画，AI 截全图也看得到缩略图。插件可以接手某一类对象的格子里画什么（ViewPlugin.block）
 import {Handle, Position} from '@xyflow/react';
-import {memo} from 'react';
+import {memo, useMemo, useRef} from 'react';
 import {CAPTURE} from '../params';
 import {painterFor} from '../plugin/plan';
 import {handleKeysOf, hotOf, useStore} from '../store';
@@ -14,6 +14,10 @@ import type {Thread} from '../model/notes';
 import {fmt, isSec} from '../model/units';
 import {BlockFrame, BlockThumb, PluginCanvas} from './Media';
 import {Waveform} from './Waveform';
+import {SHARED_MEDIA, useSharedMedia} from './TrackMedia';
+import type {MediaSpec} from './TrackMedia';
+import {detailAt} from './mediaQueue';
+import {mediaUrl} from './mediaUrl';
 
 interface Props {
   item: Item; a: number; pps: number; unit: string; project: number; frames: boolean;
@@ -30,28 +34,34 @@ export const ObjectBlock = memo(function ObjectBlock({item, a, pps, unit, projec
   const left = (item.begin - a) * pps, w = Math.max(instant ? 8 : 3, (o.end - o.begin) * pps);
   const missing = !!o.media && !o.media.available;
   // 画得多细：按镜头停下来时格子在屏幕上的高度分三档（缩放过程中不换，停下来才一起换）。0 只画色块，1 用 160 宽的缩略图，2 用 320 宽的
-  const detail = useStore((s) => {
-    if (CAPTURE) return 2;
-    const h = (LANE - 4) * s.settledZoom;
-    return h < 16 || w * s.settledZoom < 6 ? 0 : h < 60 ? 1 : 2;
-  });
   // 有插件认这一类对象（ViewPlugin.block）：格子里由插件画，换掉默认的缩略图、画面、波形。表按插件列表缓存，这里只查一下
   const painter = useStore((s) => painterFor(s.plugins, o));
+  const ref = useRef<HTMLDivElement>(null);
+  // 缺失资源仍可能有插件；保留该特例原有的渐变背景和逐格画布。
+  const shared = SHARED_MEDIA && !missing && !!(painter || (o.media?.url && (k === 'image' || k === 'audio' || (k === 'video' && frames))));
+  const detail = useLegacyDetail(w, !shared);
+  const media = useMemo<MediaSpec | null>(() => shared ? {
+    o, layer: item.layer, kind: k, project, frames, unit, painter,
+    rect: {x: left, y: PAD + item.lane * LANE, w, h: LANE - 4}, last: lastAt(o, isSec(unit)),
+  } : null, [shared, o, item.layer, item.lane, k, project, frames, unit, painter, left, w]);
+  useSharedMedia(media, ref);
   let inner = null;
-  if (painter) {
+  if (shared) {
+    // 媒体交给轨道表面；对象本身和所有交互仍在这里。
+  } else if (painter) {
     if (detail > 0) inner = <PluginCanvas key={painter.name} name={painter.name} painter={painter.painter} o={o} layer={item.layer} unit={unit} />;
   } else if (!missing && o.media?.url && (detail > 0 || k === 'audio')) {
     if (k === 'image') inner = <BlockThumb project={project} o={o} width={detail === 1 ? 160 : 320} frames={frames} />;
     else if (k === 'video') inner = frames && w >= 150
       ? <span className="ends"><BlockFrame project={project} o={o} at={0.05} frames /><BlockFrame project={project} o={o} at={lastAt(o, isSec(unit))} frames /></span>
       : <BlockFrame project={project} o={o} at={0.1} frames={frames} />;
-    else if (k === 'audio') inner = <Waveform url={o.media.url} />;
+    else if (k === 'audio') inner = <Waveform url={mediaUrl(o.media.url, o.media.source)} />;
   }
   const board = item.offset ? `（画板上 ${fmt(item.begin, unit)} – ${fmt(item.end, unit)}）` : '';
   const title = `#${o.id} ${o.name || ''}（${o.type}）\n${fmt(o.begin, unit)} – ${fmt(o.end, unit)}${board}${missing ? '\n文件不存在：' + o.media!.source : ''}`;
   const classes = ['obj', k, instant && 'instant', missing && 'missing', selected && 'sel', hot && 'hot', mark && `chg chg-${mark.action}`].filter(Boolean).join(' ');
   return (
-    <div className={classes} data-id={o.id} title={title}
+    <div ref={ref} className={classes} data-id={o.id} title={title}
          style={{left, width: w, top: PAD + item.lane * LANE, height: LANE - 4}}>
       {inner}
       <span className="lab">{o.text ?? o.name ?? o.type}</span>
@@ -63,3 +73,8 @@ export const ObjectBlock = memo(function ObjectBlock({item, a, pps, unit, projec
     </div>
   );
 });
+
+function useLegacyDetail(width: number, needed: boolean) {
+  // 共享模式的选择结果固定，不因缩放触发 React 重渲染；原生视频仍沿用原来的档位。
+  return useStore((s) => needed ? detailAt(s.settledZoom, width, LANE - 4, CAPTURE) : 2);
+}

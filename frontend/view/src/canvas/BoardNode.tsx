@@ -13,10 +13,11 @@ import type {BoardLayout, FoldInfo, FoldMark, SectionLayout} from '../model/mode
 import {RECORD, VIEWER} from '../params';
 import {LANE, NAMES, PAD, keyOf, rootsOf} from '../model/model';
 import {fmt, ticks} from '../model/units';
-import {activeBoard, handleKeysOf, hotOf, setState, useMarks, useModel, useNotes, useStore} from '../store';
+import {activeBoard, getState, handleKeysOf, hotOf, setState, useMarks, useModel, useNotes, useStore} from '../store';
 import {report} from '../sync';
 import type {Board} from '../types';
 import {ObjectBlock} from './ObjectBlock';
+import {MediaTrack} from './TrackMedia';
 
 export type BoardNodeType = Node<{key: number}, 'board'>;
 
@@ -112,7 +113,7 @@ function OtherChip({mark, layers}: {mark: FoldMark; layers: number[]}) {
 // 一行（一段或左右接续的几段）的轨道和对象。memo：拖画板时画板每一帧都重画（标题要跟着吸附），这一行的数据没变就不跟着重画，
 // 否则 5000 个对象时每移一下都要把几千个格子重新比一遍，拖画板只剩每秒 1 帧（2026-10-14 量的）
 // 选中的对象不在这里订阅：格子自己订阅（ObjectBlock），点一下对象这一行不用重画
-const Section = memo(function Section({board, layout, sec}: {board: Board; layout: BoardLayout; sec: SectionLayout}) {
+const Section = memo(function Section({boardKey, layout, sec}: {boardKey: number; layout: BoardLayout; sec: SectionLayout}) {
   const model = useModel()!;
   const {targetLayer, frames, project, noteFocus} = useStore(useShallow((s) => ({
     targetLayer: s.targetLayer, frames: s.frames, project: s.project!, noteFocus: s.noteFocus,
@@ -136,7 +137,9 @@ const Section = memo(function Section({board, layout, sec}: {board: Board; layou
     }
     return tops.size;
   };
-  const key = keyOf(board), many = rootsOf(board).length > 1, {a, pps, unit} = layout;
+  const board = getState().boards.find((b) => keyOf(b) === boardKey);
+  if (!board) return null;
+  const key = boardKey, many = rootsOf(board).length > 1, {a, pps, unit} = layout;
   const decimals = decimalsOf(model.precisionOf(sec.row[0]));
 
   const onTracksClick = (e: React.MouseEvent) => {
@@ -145,7 +148,8 @@ const Section = memo(function Section({board, layout, sec}: {board: Board; layou
     const band = target.closest<HTMLElement>('.noteband');
     if (band) { setState({side: 'notes', noteFocus: Number(band.dataset.note)}); return; }
     const obj = target.closest<HTMLElement>('.obj');
-    clickBoard(key, xToTime(board, toFlow(e.clientX, e.clientY).x), obj ? Number(obj.dataset.id) : null, false);
+    const current = getState().boards.find((b) => keyOf(b) === key);
+    if (current) clickBoard(key, xToTime(current, toFlow(e.clientX, e.clientY).x), obj ? Number(obj.dataset.id) : null, false);
   };
 
   return (
@@ -190,7 +194,7 @@ const Section = memo(function Section({board, layout, sec}: {board: Board; layou
           ? <div key={track.key} className="track folded" style={{height}}>
               <FoldBar fold={fold} notes={notesIn(fold)} layers={track.parts.map((p) => p.layer.id)} />
             </div>
-          : <div key={track.key} className={`track${other ? ' otherfold' : ''}`} style={{height}}>
+          : <MediaTrack key={track.key} className={`track${other ? ' otherfold' : ''}`} height={height} width={layout.tracksWidth}>
             {other && <span className="otherfold-label">{other.by} 折叠了{other.tips ? '：' + other.tips : ''}</span>}
             <Gaps gaps={gaps} a={a} pps={pps} decimals={decimals} unit={unit} />
             {items.map((it) => <ObjectBlock key={it.o.id} item={it} a={a} pps={pps} unit={unit} project={project} frames={frames}
@@ -206,7 +210,7 @@ const Section = memo(function Section({board, layout, sec}: {board: Board; layou
                    style={{left: (top.span!.begin + seg.offset - a) * pps, width: Math.max(4, (top.span!.end - top.span!.begin) * pps)}}>
                 <span>💬 {top.text}</span>
               </div>)))}
-          </div>
+          </MediaTrack>
         ))}
         {sec.segments.slice(1).map((s) => <div key={s.root} className="seam" style={{left: (s.offset - a) * pps}} />)}
       </div>
@@ -263,7 +267,7 @@ export const BoardNode = memo(function BoardNode({id, data, positionAbsoluteX}: 
         </div>
       </div>
       <div className="rrow"><div className="corner stick">{unit}</div><Ruler board={board} layout={layout} /></div>
-      {layout.sections.map((sec) => <Section key={sec.index} board={board} layout={layout} sec={sec} />)}
+      {layout.sections.map((sec) => <Section key={sec.index} boardKey={key} layout={layout} sec={sec} />)}
       {isActive && playhead != null && <div className="playhead" style={{left: NAMES + (playhead - a) * pps}} />}
       {sel && <div className="selband" style={{left: NAMES + (sel.begin - a) * pps, width: Math.max(2, (sel.end - sel.begin) * pps)}} />}
       {dropHere && !dropHere.ok && <div className="dropnote">{dropHere.reason}</div>}

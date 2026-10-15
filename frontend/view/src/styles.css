@@ -125,6 +125,10 @@ select { background: var(--panel); padding: 3px 6px; }
 .obj.sel { outline: 2px solid var(--sel); outline-offset: -1px; z-index: 2; }
 .obj img, .obj video, .obj canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .85; }
 .obj canvas.plugin-paint { opacity: 1; }
+.obj canvas { pointer-events: none; }
+.media-atlas { position: absolute; inset: 0; pointer-events: none; }
+.media-atlas .media-tile { position: absolute; pointer-events: none; }
+.obj[data-atlas="ready"] { background: transparent; }
 .obj .ends { position: absolute; inset: 0; display: flex; justify-content: space-between; pointer-events: none; }
 .obj .ends img, .obj .ends canvas { position: static; width: 64px; height: 100%; object-fit: cover; opacity: .9; }
 .obj .lab { position: absolute; left: 4px; right: 4px; bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 2px rgba(0, 0, 0, .8); }

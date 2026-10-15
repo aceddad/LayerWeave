@@ -56,7 +56,16 @@ export class Model {
   readonly other = new Map<number, FoldMark>();           // 对方折叠的层
   private trackCache = new Map<string, Track[]>();
 
-  constructor(readonly data: ProjectData, readonly opts: ViewOptions) {
+  constructor(readonly data: ProjectData, readonly opts: ViewOptions, previous?: Model) {
+    const sameOptions = previous && previous.project === data.project.id && previous.opts.viewer === opts.viewer &&
+      previous.opts.only === opts.only && previous.opts.showHidden === opts.showHidden && previous.opts.canvasWidth === opts.canvasWidth;
+    // Model.data 仍是当前完整快照（插件可以读取已读信息）；只换壳时复用整个几何索引。
+    if (sameOptions && previous.data.layers === data.layers && previous.data.roots === data.roots && previous.data.folds === data.folds) {
+      this.roots = previous.roots; this.layers = previous.layers; this.objects = previous.objects;
+      this.own = previous.own; this.other = previous.other;
+      this.trackCache = previous.trackCache; this.layoutCache = previous.layoutCache;
+      return;
+    }
     const me = opts.viewer ?? 'user', them = me === 'user' ? 'ai' : 'user';
     for (const f of data.folds ?? []) {
       if (f[me]) this.own.set(f.layer, {by: f[me], tips: f[`${me}_tips`]});
@@ -65,7 +74,20 @@ export class Model {
     for (const r of data.roots) this.roots.set(r.id, r);
     for (const l of data.layers) {
       this.layers.set(l.id, l);
-      for (const o of l.objects) this.objects.set(o.id, {...o, layer: l});
+      for (const o of l.objects) this.objects.set(o.id, previous?.layers.get(l.id) === l ? previous.objects.get(o.id)! : {...o, layer: l});
+    }
+    if (sameOptions) {
+      const dirty = new Set<number>();
+      const mark = (root: number | null | undefined) => { if (root != null) dirty.add(root); };
+      for (const l of [...previous.layers.values(), ...this.layers.values()]) if (previous.layers.get(l.id) !== this.layers.get(l.id)) mark(l.root);
+      for (const r of [...previous.roots.values(), ...this.roots.values()]) if (previous.roots.get(r.id) !== this.roots.get(r.id)) dirty.add(r.id);
+      const oldFolds = new Map((previous.data.folds ?? []).map((f) => [f.layer, f]));
+      const newFolds = new Map((data.folds ?? []).map((f) => [f.layer, f]));
+      for (const id of new Set([...oldFolds.keys(), ...newFolds.keys()])) if (oldFolds.get(id) !== newFolds.get(id)) mark(this.layers.get(id)?.root);
+      // 行可以左右接续多个根；其中任一根范围变化都会影响后续段的 offset。
+      const clean = (key: string) => key.split('@')[0].split(/[|,]/).every((r) => !dirty.has(Number(r)));
+      for (const [key, value] of previous.trackCache) if (clean(key)) this.trackCache.set(key, value);
+      for (const [key, value] of previous.layoutCache) if (clean(key)) this.layoutCache.set(key, value);
     }
   }
 

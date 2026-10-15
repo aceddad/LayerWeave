@@ -33,6 +33,7 @@ def check(wheel):
         resources.append(package / "support/numbering/README.md")
         resources += list((package / "tool/builtin/usage/exchange/templates").glob("*.json"))
         resources += list((package / "tool/builtin/usage/exchange").glob("*.md"))
+        resources += [package / "tool/builtin/view/PERFORMANCE.md", package / "tool/builtin/view/INCREMENTAL.md"]
         for path in resources:
             member = "layerweave/" + path.relative_to(package).as_posix()
             assert member in names, f"Missing package resource: {member}"

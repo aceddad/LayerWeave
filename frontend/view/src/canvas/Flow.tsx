@@ -1,5 +1,5 @@
 // 画布：React Flow 负责平移、缩放、拖动节点、画连线、小地图；每块画板是一个节点，每条关联是一条连线
-import {Background, BackgroundVariant, MarkerType, MiniMap, Panel, ReactFlow, applyNodeChanges, useNodesInitialized} from '@xyflow/react';
+import {Background, BackgroundVariant, MiniMap, Panel, ReactFlow, applyNodeChanges, useNodesInitialized} from '@xyflow/react';
 import type {Edge, NodeChange, ReactFlowInstance} from '@xyflow/react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useShallow} from 'zustand/react/shallow';
@@ -16,7 +16,9 @@ import {BoardNode} from './BoardNode';
 import type {BoardNodeType} from './BoardNode';
 import {dropTarget} from './drop';
 import {RelationEdge} from './RelationEdge';
-import type {RelationEdgeType} from './RelationEdge';
+import {createRelationReader} from './relations';
+import {dragPosition, moveBoard, sameDrop, setLivePosition} from './dragState';
+import type {Point} from './dragState';
 
 const nodeTypes = {board: BoardNode};
 const edgeTypes = {relation: RelationEdge};
@@ -27,36 +29,16 @@ function shownBoards(model: Model, boards: Board[]): Board[] {
   return boards.filter((b) => b.x != null && b.y != null && model.boardLayout(b) && (!solo || b === solo));
 }
 
-// 关联的两头都在画面上时才画；平时只画选中对象的，勾上"关系线"画全部
-function relationEdges(model: Model | null, boards: Board[], links: boolean, selected: number | null): RelationEdgeType[] {
-  if (!model) return [];
-  const ends = new Map<string, {node: string; source: string; target: string}>();
-  for (const b of shownBoards(model, boards)) {
-    const node = nodeId(b);
-    for (const sec of model.boardLayout(b)!.sections) for (const t of sec.tracks) {
-      for (const p of t.track.parts) ends.set(`layer:${p.layer.id}`, {node, source: `ls${p.layer.id}`, target: `lt${p.layer.id}`});
-      for (const it of t.items) ends.set(`object:${it.o.id}`, {node, source: `o${it.o.id}`, target: `t${it.o.id}`});
-    }
-  }
-  const mine = (r: {kind: string; project: number; id: number}) => r.kind === 'object' && r.project === model.project && r.id === selected;
-  return model.data.binds.flatMap((b) => {
-    const hot = selected != null && (mine(b.source) || mine(b.target));
-    if (!links && !hot) return [];
-    if (b.source.project !== model.project || b.target.project !== model.project) return [];
-    const s = ends.get(`${b.source.kind}:${b.source.id}`), t = ends.get(`${b.target.kind}:${b.target.id}`);
-    if (!s || !t) return [];
-    return [{id: `r${b.id}`, type: 'relation' as const, source: s.node, sourceHandle: s.source, target: t.node, targetHandle: t.target, zIndex: 1000,
-             markerEnd: {type: MarkerType.ArrowClosed, width: 14, height: 14, color: hot ? '#4fb3ff' : '#6fa8d8'},
-             data: {hot, tips: b.tips, title: ''}}];
-  });
-}
-
 export function Flow() {
   const model = useModel();
   const {boards, links, selected} = useStore(useShallow((s) => ({boards: s.boards, links: s.links, selected: s.selected})));
   const paneRef = useRef<HTMLDivElement>(null);
   const [nodes, setNodes] = useState<BoardNodeType[]>([]);
   const [instance, setInstance] = useState<ReactFlowInstance | null>(null);
+  const readRelations = useRef(createRelationReader()).current;
+  const drag = useRef<{project: number; key: number; id: string; position: Point | null;
+    gap: {x: number; y: number; w: number; h: number}; origin: {left: number; top: number}} | null>(null);
+  const suppressed = useRef(false);
 
   const built = useMemo<BoardNodeType[]>(() => (model ? shownBoards(model, boards).map((b) => {
     const {w, h} = sizeOf(model, b);
@@ -69,38 +51,86 @@ export function Flow() {
     return built.map((n) => (old.has(n.id) ? {...old.get(n.id)!, ...n, measured: old.get(n.id)!.measured} : n));
   }), [built]);
 
-  const edges = useMemo<Edge[]>(() => relationEdges(model, boards, links, selected), [model, boards, links, selected]);
+  const edges = useMemo<Edge[]>(() => readRelations(model, model ? shownBoards(model, boards) : [], links, selected), [model, boards, links, selected]);
 
-  // 拖画板：位置吸附到别的画板边缘，并写回排版
+  // 高频位置只交给 React Flow；保持内容和布局引用，避免广播几千个对象的订阅。
   const onNodesChange = useCallback((changes: NodeChange<BoardNodeType>[]) => {
-    const s = getState(), m = modelOf(s);
-    const keyById = new Map(s.boards.map((b) => [nodeId(b), keyOf(b)]));
-    const fixed = changes.map((c) => (c.type === 'position' && c.position && c.dragging && m
-      ? {...c, position: snap(c.position, keyById.get(c.id)!, s.boards, m, viewport().zoom)} : c));
-    setNodes((nds) => applyNodeChanges(fixed, nds));
-    const moves = new Map(fixed.flatMap((c) => (c.type === 'position' && c.position ? [[c.id, c.position] as const] : [])));
-    if (moves.size) setState({boards: s.boards.map((b) => (moves.has(nodeId(b)) ? {...b, x: moves.get(nodeId(b))!.x, y: moves.get(nodeId(b))!.y} : b))});
+    const s = getState(), m = modelOf(s), current = drag.current;
+    const fixed = changes.flatMap((change): NodeChange<BoardNodeType>[] => {
+      if (change.type !== 'position' || !change.position) return [change];
+      if (suppressed.current) return [];
+      if (!current || change.id !== current.id || !m) return [change];
+      const position = dragPosition(change.position, current.position, change.dragging === false,
+        (p) => snap(p, current.key, s.boards, m, viewport().zoom));
+      current.position = position;
+      setLivePosition(current.key, position);
+      return [{...change, position}];
+    });
+    if (fixed.length) setNodes((nds) => applyNodeChanges(fixed, nds));
   }, []);
 
-  const dragStart = useRef<{key: number; gap: {x: number; y: number; w: number; h: number}; origin: {left: number; top: number}} | null>(null);
-  const onNodeDragStart = useCallback((_: unknown, node: BoardNodeType) => {
-    const s = getState(), b = s.boards.find((x) => nodeId(x) === node.id)!, {w, h} = sizeOf(modelOf(s)!, b);
-    const r = paneRef.current!.getBoundingClientRect();   // 画布在页面上的位置：拖动中不变，只量这一次
-    dragStart.current = {key: keyOf(b), gap: {x: b.x!, y: b.y!, w, h}, origin: {left: r.left, top: r.top}};
-    setState({dragging: true});
-  }, []);
-  const onNodeDrag = useCallback((event: MouseEvent | TouchEvent, node: BoardNodeType) => {
-    const s = getState(), b = s.boards.find((x) => nodeId(x) === node.id), origin = dragStart.current?.origin;
-    const point = 'touches' in event ? event.touches[0] : event;
-    if (b && point && origin) setState({drop: dropTarget(point.clientX, point.clientY, origin, b, s.boards, modelOf(s)!)});
-  }, []);
-  const onNodeDragStop = useCallback(() => {
-    const s = getState(), drop = s.drop, start = dragStart.current;
-    setState({dragging: false, drop: null});
-    if (drop?.ok && start) setState({boards: merge(s.boards, start.key, drop.targetKey, drop.root, drop.side, start.gap, modelOf(s)!)});
+  const finishDrag = useCallback((commit: boolean) => {
+    const current = drag.current;
+    if (!current) return;
+    drag.current = null;
+    setLivePosition(current.key, null);
+    const s = getState(), m = modelOf(s);
+    if (!commit || s.project !== current.project || !m) {
+      suppressed.current = true;
+      setState({dragging: false, drop: null});
+      setNodes((nds) => nds.map((n) => n.id === current.id
+        ? {...n, dragging: false, position: {x: current.gap.x, y: current.gap.y}} : n));
+      return;
+    }
+    let next = current.position ? moveBoard(s.boards, current.key, current.position) : s.boards;
+    if (s.drop?.ok) next = merge(next, current.key, s.drop.targetKey, s.drop.root, s.drop.side, current.gap, m);
+    setState({boards: next, dragging: false, drop: null});
     saveLayout();
     report();
   }, []);
+
+  const onNodeDragStart = useCallback((_: unknown, node: BoardNodeType) => {
+    const s = getState(), b = s.boards.find((x) => nodeId(x) === node.id), m = modelOf(s);
+    if (!b || !m || s.project == null) return;
+    const {w, h} = sizeOf(m, b), r = paneRef.current!.getBoundingClientRect();
+    suppressed.current = false;
+    drag.current = {project: s.project, key: keyOf(b), id: node.id, position: null,
+      gap: {x: b.x!, y: b.y!, w, h}, origin: {left: r.left, top: r.top}};
+    setState({dragging: true});
+  }, []);
+  const onNodeDrag = useCallback((event: MouseEvent | TouchEvent, node: BoardNodeType) => {
+    const current = drag.current, s = getState(), m = modelOf(s);
+    if (!current || current.project !== s.project || !m) return;
+    const b = s.boards.find((x) => nodeId(x) === node.id);
+    const point = 'touches' in event ? event.touches[0] : event;
+    if (b && point) {
+      const drop = dropTarget(point.clientX, point.clientY, current.origin, b, s.boards, m);
+      if (!sameDrop(s.drop, drop)) setState({drop});
+    }
+  }, []);
+  const onNodeDragStop = useCallback((event: MouseEvent | TouchEvent) => {
+    finishDrag(!event.type.endsWith('cancel'));
+    suppressed.current = false;
+  }, [finishDrag]);
+
+  // 丢失指针/窗口焦点时取消；后续拖动事件不能重新把取消的位置写回。
+  useEffect(() => {
+    const cancel = () => finishDrag(false);
+    const key = (event: KeyboardEvent) => { if (event.key === 'Escape' && drag.current) cancel(); };
+    window.addEventListener('blur', cancel);
+    window.addEventListener('pointercancel', cancel);
+    window.addEventListener('touchcancel', cancel);
+    window.addEventListener('keydown', key);
+    return () => {
+      window.removeEventListener('blur', cancel);
+      window.removeEventListener('pointercancel', cancel);
+      window.removeEventListener('touchcancel', cancel);
+      window.removeEventListener('keydown', key);
+      const current = drag.current;
+      if (current) { drag.current = null; setLivePosition(current.key, null); setState({dragging: false, drop: null}); }
+    };
+  }, [finishDrag]);
+  useEffect(() => { if (drag.current && drag.current.project !== model?.project) finishDrag(false); }, [model?.project, finishDrag]);
 
   // 画板都量好尺寸以后，按地址参数对准一次；截图页面等图都加载完再举手
   const initialized = useNodesInitialized();

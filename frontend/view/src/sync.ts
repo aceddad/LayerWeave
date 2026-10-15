@@ -5,6 +5,9 @@ import {afterResize, placeAuto, separate, sizeOf} from './model/layoutOps';
 import {adoptOrphans, keyOf, rootsOf} from './model/model';
 import type {Note} from './model/notes';
 import {withFolds, withNoteStatus, withRead} from './model/optimistic';
+import {applyChanges} from './model/incremental';
+import {SyncGate} from './model/syncGate';
+import type {SyncToken} from './model/syncGate';
 import type {Model} from './model/model';
 import {CAPTURE, RECORD, VIEWER, numParam} from './params';
 import {refreshPlugins} from './plugin/registry';
@@ -27,21 +30,67 @@ export async function loadProjects() {
 }
 
 export async function loadProject(id: number) {
-  const prev = getState(), same = prev.project === id, oldModel = same ? modelOf(prev) : null;
-  const before = same ? notesOf(prev)?.list : undefined, foldsBefore = same ? prev.data?.folds ?? [] : undefined;
-  // 记下重读之前每块画板的高度：折叠、加层以后画板变高变矮，下面的画板跟着挪
-  const heights = oldModel ? new Map(prev.boards.map((b) => [keyOf(b), sizeOf(oldModel, b).h])) : null;
-  const [data, layout] = await Promise.all([api.project(id), api.layout(id)]);
-  setState({project: id, data: adoptOrphans(data), reads: data.noteReads ?? {}});
-  if (!announceNotes(before)) announceFolds(foldsBefore);
-  applyLayout(layout, heights);
-  await Promise.all([loadChanges(), loadWalk()]);
-  const s = getState(), model = modelOf(s)!;
-  let active = s.active;
-  if (s.selected != null && active == null) active = model.object(s.selected)?.layer.root ?? null;
-  if (active == null || !model.boardOf(s.boards, active)) active = s.boards[0] ? keyOf(s.boards[0]) : null;
-  setState({active});
-  report();
+  const same = getState().project === id;
+  gate.select(id);
+  setState({project: id, cursor: null, ...(same ? {} : {data: null, reads: {}, boards: [], changeOps: [], walkResult: null})});
+  await refreshProject(true);
+}
+
+const gate = new SyncGate();
+let syncTail: Promise<void> = Promise.resolve();
+const reloadAfterWrite = new Set<number>();
+
+// 全量/增量共用单条请求队列；过期响应既不写数据，也不前移游标。
+function refreshProject(force = false): Promise<void> {
+  const token = gate.token();
+  if (!token) return Promise.resolve();
+  const task = syncTail.catch(() => {}).then(() => syncProject(token, force));
+  syncTail = task;
+  return task;
+}
+
+async function syncProject(token: SyncToken, force: boolean) {
+  if (!gate.valid(token) || getState().dragging) return;
+  force ||= reloadAfterWrite.has(token.project);
+  let more = true, cursor = getState().cursor, data = getState().data, snapshot = false;
+  // 多页先在本地合成再一次发布，避免追旧日志时短暂覆盖刚确认的乐观状态。
+  while (more) {
+    if (!gate.valid(token) || getState().dragging) return;
+    const page = force || cursor == null ? await api.snapshot(token.project) : await api.delta(token.project, cursor);
+    force = false;
+    if (!gate.valid(token) || getState().dragging) return;
+    if (page.mode === 'snapshot') { data = page.data ? adoptOrphans(page.data) : null; snapshot = true; }
+    else if (data) data = applyChanges(data, page.changes);
+    cursor = page.next_cursor;
+    more = page.has_more;
+  }
+  const layout = snapshot && data ? await api.layout(token.project) : null;
+  if (!gate.valid(token) || getState().dragging) return;
+  const prev = getState(), oldModel = modelOf(prev), changed = data !== prev.data;
+  const before = notesOf(prev)?.list, foldsBefore = prev.data?.folds ?? [];
+  const visual = changed && (data?.layers !== prev.data?.layers || data?.roots !== prev.data?.roots || data?.folds !== prev.data?.folds);
+  const heights = visual && oldModel ? new Map(prev.boards.map((b) => [keyOf(b), sizeOf(oldModel, b).h])) : null;
+  if (changed) {
+    setState({data, reads: data?.noteReads ?? {}});
+    if (!data) setState({boards: [], active: null, selected: null, walkResult: null, changeOps: []});
+    else {
+      if (!announceNotes(before)) announceFolds(foldsBefore);
+      if (layout) applyLayout(layout, heights);
+      else if (visual) {
+        const flowed = reflow(getState().boards, heights, modelOf(getState())!);
+        if (flowed.changed) { setState({boards: flowed.boards}); saveLayout(); }
+      }
+      const now = getState(), model = modelOf(now)!;
+      let active = now.active;
+      if (now.selected != null && active == null) active = model.object(now.selected)?.layer.root ?? null;
+      if (active == null || !model.boardOf(now.boards, active)) active = now.boards[0] ? keyOf(now.boards[0]) : null;
+      setState({active});
+    }
+  }
+  // 全部完整操作已应用；请求失败时数据和游标都未前移，下次从原位重试。
+  setState({cursor});
+  if (snapshot) reloadAfterWrite.delete(token.project);
+  if (changed && gate.valid(token) && data) { await Promise.all([loadChanges(), loadWalk()]); report(); }
 }
 
 // 别人（比如 AI 用 view_note）写了新批注或回复：提示一下。自己写的不提示
@@ -102,32 +151,46 @@ function reflow(boards: Board[], heights: Map<number, number> | null, model: Mod
 export async function reloadLayout() {
   const s = getState();
   if (s.project == null) return;
-  applyLayout(await api.layout(s.project));
+  const token = gate.token();
+  if (!token) return;
+  const layout = await api.layout(s.project);
+  if (!gate.valid(token) || getState().dragging || !getState().data) return;
+  applyLayout(layout);
   const now = getState(), model = modelOf(now)!;
   if (!model.boardOf(now.boards, now.active)) setState({active: now.boards[0] ? keyOf(now.boards[0]) : null});
 }
 
 // 沿着读：侧栏开着「沿着读」时按起点问服务端；项目重读后也重问一次（关联可能变了）
-let walking: Promise<void> | null = null;
+let walking: Promise<void> | null = null, walkSequence = 0, changesSequence = 0;
 export const pendingWalk = () => walking;
 export function loadWalk(): Promise<void> {
   const s = getState();
   if (s.side !== 'walk' || !s.walk || s.project == null) return Promise.resolve();
   const {from, direction, depth} = s.walk, project = s.project;
+  const sequence = ++walkSequence, token = gate.token();
   walking = api.walk(project, from, direction, depth).then((walkResult) => {
     const now = getState();
-    if (now.project === project && now.walk?.from === from && now.walk.direction === direction && now.walk.depth === depth) setState({walkResult});
-  }).catch((error) => { setState({walkResult: null}); toast('读不到关联：' + (error as Error).message); });
+    if (sequence === walkSequence && token && gate.valid(token) && now.side === 'walk' && now.project === project && now.walk?.from === from && now.walk.direction === direction && now.walk.depth === depth) setState({walkResult});
+  }).catch((error) => { if (sequence === walkSequence && token && gate.valid(token)) { setState({walkResult: null}); toast('读不到关联：' + (error as Error).message); } });
   return walking;
 }
 
 export async function loadChanges() {
   const s = getState();
+  const sequence = ++changesSequence, token = gate.token();
   if (s.side !== 'changes' || s.project == null) return setState({changeOps: []});
-  try { setState({changeOps: await api.changes(s.project, s.changeLimit)}); } catch { toast('读不到改动记录'); }
+  try {
+    const changeOps = await api.changes(s.project, s.changeLimit);
+    if (sequence === changesSequence && token && gate.valid(token) && getState().side === 'changes') setState({changeOps});
+  } catch { if (sequence === changesSequence && token && gate.valid(token)) toast('读不到改动记录'); }
 }
 
-export async function poll() {
+let polling: Promise<void> | null = null;
+export function poll(): Promise<void> {
+  if (!polling) polling = pollOnce().finally(() => { polling = null; });
+  return polling;
+}
+async function pollOnce() {
   try {
     const v = await api.version();
     const s = getState();
@@ -137,10 +200,14 @@ export async function poll() {
       setState({pluginSerial: v.plugins});
       if (s.pluginSerial != null) refreshPlugins();
     }
-    if (s.dragging || s.project == null) return;
-    if (s.version != null && v.version !== s.version) { setState({version: v.version}); await loadProject(s.project); return; }
-    setState({version: v.version});
-    if (s.serial != null && v.layout !== s.serial) await reloadLayout();
+    if (s.dragging || s.project == null || gate.blocked()) return;
+    const token = gate.token();
+    // 总是从已应用游标继续，版本只是提示，避免首读与第一次轮询之间漏掉提交。
+    await refreshProject();
+    if (token && gate.valid(token)) {
+      setState({version: v.version});
+      if (getState().serial != null && v.layout !== getState().serial) await reloadLayout();
+    }
   } catch { setState({live: false}); }
 }
 
@@ -157,9 +224,10 @@ export async function saveLayoutNow() {
   if (!RECORD || project == null) return;
   clearTimeout(saveTimer);
   const boards = getState().boards.filter((b) => rootsOf(b).every((r) => r > 0)).map(({rows, x, y, pps}) => ({rows, x, y, pps: pps ?? null}));
+  const selection = gate.selection();
   try {
     const res = await api.saveLayout(project, boards);
-    if (res.serial != null && project === getState().project) setState({serial: res.serial});
+    if (res.serial != null && gate.sameSelection(selection)) setState({serial: res.serial});
   } catch { /* 服务停了：下次轮询会显示断开 */ }
 }
 
@@ -207,23 +275,40 @@ export async function foldAction(layers: number[], action: 'fold' | 'unfold' | '
   if (s.project == null || !layers.length) return false;
   if (VIEWER === 'ai') { toast('这是 AI 那边的样子，只看不改折叠'); return false; }
   // 先在本地折好、把下面的画板挪好，再写数据库
-  const project = s.project, oldModel = modelOf(s);
+  const project = s.project, oldModel = modelOf(s), selection = gate.selection(), endWrite = gate.beginWrite(project);
+  let saved = false;
   if (oldModel && s.data) {
     const heights = new Map(s.boards.map((b) => [keyOf(b), sizeOf(oldModel, b).h]));
     setState({data: {...s.data, folds: withFolds(s.data.folds ?? [], layers, side, action, s.me, tips)}});
     const flowed = reflow(getState().boards, heights, modelOf(getState())!);
     if (flowed.changed) setState({boards: flowed.boards});
   }
-  const failed = async (why: string) => { toast('折叠没有存下来：' + why); await loadProject(project); return false; };
+  const failed = (why: string) => { if (getState().project === project) toast('折叠没有存下来：' + why); return false; };
   try {
     const res = await api.fold(project, {action, side, layers, by: s.me.trim(), tips});
-    if (res.error || res.recorded === false) return await failed(res.error ?? '这个页面只读');
-    await saveLayoutNow();
-    quietFolds = true;
-    try { await loadProject(project); } finally { quietFolds = false; }
-    setState({version: (await api.version()).version});
+    if (res.error || res.recorded === false) return failed(res.error ?? '这个页面只读');
+    saved = true;
+    if (gate.sameSelection(selection)) await saveLayoutNow();
     return true;
-  } catch (error) { return await failed((error as Error).message); }
+  } catch (error) { return failed((error as Error).message); }
+  finally {
+    quietFolds = true;
+    try { await finishWrite(project, endWrite, !saved); } finally { quietFolds = false; }
+  }
+}
+
+async function finishWrite(project: number, endWrite: () => void, reset: boolean) {
+  if (reset) reloadAfterWrite.add(project);
+  endWrite();
+  if (getState().project !== project || gate.blocked(project)) return;
+  const force = reloadAfterWrite.has(project);
+  try {
+    await refreshProject(force);
+  } catch {
+    // 写入可能已经提交；保留游标和待重读标记，轮询重试，不把网络刷新失败说成写入失败。
+    reloadAfterWrite.add(project);
+    setState({live: false});
+  }
 }
 
 // 视图的写入之一：批注。写完重读项目；自己写的不用再被轮询重读一遍。
@@ -232,7 +317,7 @@ const sending = new Set<string>();
 export async function noteAction(body: Record<string, unknown>): Promise<boolean> {
   const s = getState();
   if (s.project == null) return false;
-  const key = JSON.stringify(body);
+  const key = JSON.stringify([s.project, body]);
   if (sending.has(key)) return false;
   sending.add(key);
   try {
@@ -260,20 +345,19 @@ function guess(body: Record<string, unknown>): boolean {
 }
 
 async function sendNote(project: number, body: Record<string, unknown>): Promise<boolean> {
-  const guessed = guess(body);
+  const endWrite = gate.beginWrite(project);
+  guess(body);
+  let saved = false;
   try {
     const res = await api.note(project, body);
     if (res.error || res.recorded === false) {
-      toast('批注没有写进去：' + (res.error ?? '这个页面只读'));
-      if (guessed) await loadProject(project);
+      if (getState().project === project) toast('批注没有写进去：' + (res.error ?? '这个页面只读'));
       return false;
     }
-    await loadProject(project);
-    setState({version: (await api.version()).version});
+    saved = true;
     return true;
   } catch (error) {
-    toast('批注没有写进去：' + (error as Error).message);
-    if (guessed) await loadProject(project).catch(() => {});
+    if (getState().project === project) toast('批注没有写进去：' + (error as Error).message);
     return false;
-  }
+  } finally { await finishWrite(project, endWrite, !saved); }
 }

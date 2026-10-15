@@ -62,6 +62,8 @@ OTHER_DATABASE 需要先初始化。add 为自动发号表生成新身份，原 
 
 默认包括本项目的 scoped 工具记录、通过声明引用关联到所选内容的工具记录，以及它们明确依赖的工具数据。与项目无归属关系的全局记录不自动全部带入；omitted_tool_records 列出未选数量，--include-global 明确带上所有全局工具记录。--no-tools 则只导出层、对象及标准关联。
 
+附着状态可用 logical_references 声明目标，复制时随目标换号而不增加硬外键；临时状态可用 exchange.on_copy=skip 跳过旧记录复制。导出保留状态，导入逐条说明跳过原因，普通 update 不受影响。字段写法、旧库补登记与复制判定见 [FORMAT](FORMAT.md#工具表)。
+
 导出带有工具表声明，导入默认先准备这些表，然后执行业务事务。schema.prepared_kinds 明确说明结构准备；表结构不属于操作日志与内容撤销。源发号配置以 source_numbering 作为说明保存，实际创建沿用目标库的发号平台注册；不会从 JSON 加载 Python 规则、封装或技能。
 
 ## Python 调用

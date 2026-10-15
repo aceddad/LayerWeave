@@ -1,5 +1,5 @@
 name = "layerweave.exchange"
 kind = "tool"
-version = "0.1.0"
+version = "0.2.0"
 description = "分层 JSON 导入导出、工具表数据交换与可复用操作模板"
-changes = "首次提供按 op 执行、编号映射、归属不符跳过、原状态核对及随包模板。"
+changes = "交换按逻辑引用收集并重映射工具记录，支持 on_copy=skip；旧文件不清除目标元信息。"

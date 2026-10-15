@@ -5,7 +5,8 @@ from layerweave.support.api import Loader, register_tables, run_operation, table
 from layerweave.support.configuration.loader import DEFAULT_ROOT
 from layerweave.support.providers import DEFAULT_CHECKER, optional_checker
 from layerweave.support.transaction import require_write_session, reject_nested_operation
-from .format import CORE, OPS, address, document_value, fail, fingerprint, identity, table_definition
+from layerweave.support.storage.tables import normalize_exchange_options
+from .format import CORE, OPS, address, document_value, fail, fingerprint, identity, relation_definitions, table_definition
 
 
 class Pending(Exception):
@@ -19,7 +20,7 @@ class Skip(Exception):
 
 
 def prepare_exchange(connection, document):
-    """独立准备表声明，不进入业务撤销；已有新增列保留，不改身份、引用或已有列。"""
+    """独立准备表声明；保留已有列与硬引用，补充逻辑引用/复制策略，不进入业务撤销。"""
     reject_nested_operation(connection)
     document = document_value(document)
     specs, proposed = table_specs(connection), {}
@@ -30,7 +31,19 @@ def prepare_exchange(connection, document):
         if kind in specs:
             old = table_definition(specs[kind])
             # 归属引用、默认类型等交给 register_tables 规范化后比较，避免把等价声明当作变更。
+            logical = deepcopy(old["logical_references"])
+            incoming = raw.get("logical_references", [])
+            if not isinstance(incoming, (list, tuple)):
+                fail("logical_references 需要列表", "/tables/" + kind + "/logical_references")
+            for ref in incoming:
+                if ref not in logical:
+                    logical.append(ref)
+            policy = normalize_exchange_options(raw.get("exchange", {}))
+            if old["exchange"]["on_copy"] == "skip":
+                policy["on_copy"] = "skip"
             raw = {**old, **raw, "fields": {**old["fields"], **raw.get("fields", {})}}
+            # 文件只能补充关系/跳过策略，不解除目标库已有的声明；修改/清除请显式 register_tables。
+            raw.update(logical_references=logical, exchange=policy)
         proposed[kind] = raw
     if proposed:
         register_tables(connection, proposed)
@@ -162,7 +175,7 @@ class Importer:
                             (side+"_project_id",side+"_id")) for side in ("source","target")]
         else:
             descriptors = []
-            for ref in spec["references"]:
+            for ref in relation_definitions(spec):
                 fields = tuple(ref["fields"])
                 values = [row.get(field) for field in fields]
                 key = identity(ref["kind"], values[0] if self.specs[ref["kind"]]["scoped"] else None, values[-1], self.specs)
@@ -205,6 +218,9 @@ class Importer:
     def _execute(self, node):
         kind, op, raw = node["kind"], node["op"], node["raw"]
         spec = self.specs[kind]
+        if (op == "add" and type(raw.get("id")) is int and raw["id"] > 0
+                and spec.get("exchange", {}).get("on_copy", "include") == "skip"):
+            raise Skip("copy_policy", "此表声明 exchange.on_copy=skip，来源记录不随复制")
         scope = {"project_id": self.target} if spec["scoped"] else {}
         parent_id, has_parent = self._parent(node)
         current = None

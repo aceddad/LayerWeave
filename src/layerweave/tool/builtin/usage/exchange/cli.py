@@ -127,7 +127,8 @@ COMMANDS = [
      "returns":"交换文档：project、items、records、tables、counts、scope；CLI 写文件并只输出概要。",
      "examples":[{"cli":"python -m layerweave.tool.builtin.usage.exchange.cli export DATABASE 1 --output project.json"},
                  {"cli":"python -m layerweave.tool.builtin.usage.exchange.cli export DATABASE 1 --layer-ids 4 --op add --output subtree.json"}],
-     "notes":["CLI 必须由 AI 指定 --output，不默认打印全部内容。source_numbering 只说明来源发号配置，不自动安装规则。"],
+     "notes":["CLI 必须由 AI 指定 --output，不默认打印全部内容。source_numbering 只说明来源发号配置，不自动安装规则。",
+              "工具数据通过 references/logical_references 收集；复制策略随表声明导出，在导入时执行。"],
      "aliases":["export"]},
     {"name":"import_project", "summary":"执行 JSON 操作或模板；归属不符跳过并警告，其他业务写入共用事务",
      "entrypoint":"layerweave.tool.builtin.usage.exchange:import_project",
@@ -149,6 +150,7 @@ COMMANDS = [
                   "files":{"patch.json":{"format_version":1,"items":[{"kind":"layer","id":4,"children":[
                       {"kind":"object","op":"add","data":{"config_ref":"objects/text.toml","information":{"text":"新增字幕"}}}]}]}}}],
      "notes":["没有 op 只选择上下文。add 自动表重发 ID；provided 表遵守自己的编号/引用声明。",
+              "logical_references 参与换号，不建立外键。on_copy=skip 跳过带旧 id 的 add；全新 provided 身份写在 data.id 或 refs。",
               "父层不匹配不执行，该分支和依赖项一起跳过；partial 表示确有跳过，不是全部执行成功。",
               "重复运行含 add 的文件会再次创建。需要完整映射用 --json 或 --result-file。"],
      "aliases":["import"]},

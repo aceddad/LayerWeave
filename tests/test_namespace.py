@@ -95,6 +95,26 @@ snapshot = export_project(c,made["data"]["project_id"],op="add")
 copied = import_project(c,snapshot)
 assert copied["ok"] and copied["data"]["counts"]["created"] == 4, copied
 assert undo_operation(c,copied["operation_id"])["ok"]
+register_tables(c, {
+    "layer_cache":{"id_source":"provided","fields":{"fold":"TEXT"},
+        "logical_references":[{"fields":["project_id","id"],"kind":"layer"}]},
+    "read_cache":{"id_source":"provided","fields":{"reads":"TEXT"},
+        "logical_references":[{"fields":["project_id","id"],"kind":"object"}],"exchange":{"on_copy":"skip"}},
+})
+source = made["data"]["project_id"]
+source_layer = read_record(c,"layer",project_id=source)[0]["id"]
+source_object = read_record(c,"object",project_id=source)[0]["id"]
+with transaction(c) as write:
+    write.create("layer_cache",{"id":source_layer,"fold":"closed"},project_id=source)
+    write.create("read_cache",{"id":source_object,"reads":"{}"},project_id=source)
+copied = import_project(c,export_project(c,source,op="add"),project_id=p)
+assert copied["ok"] and copied["data"]["counts"]["skipped"] == 1, copied
+assert copied["data"]["issues"][0]["code"] == "copy_policy"
+mapped = next(m["target"]["id"] for m in copied["data"]["id_map"]
+              if m["source"]["kind"] == "layer" and m["source"]["id"] == source_layer)
+assert mapped != source_layer and read_record(c,"layer_cache",project_id=p)[0]["id"] == mapped
+assert read_record(c,"read_cache",project_id=p) == []
+assert undo_operation(c,copied["operation_id"])["ok"]
 assert read_support("combined", "text")["status"] == "completed"
 commands = command_help()
 assert len(commands["items"]) == 44 and commands["status"] == "completed", commands

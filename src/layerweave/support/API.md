@@ -50,9 +50,11 @@ change_cursor(connection) 返回当前快照最后一个 changes.id，空日志�
 
 ## 工具表接入
 
-register_tables(connection, definitions) 创建工具声明的表，或在保留已有定义的情况下新增列；内部使用独立写会话，调用时连接没有待提交事务。table_specs(connection) 返回本数据库内置表与工具表的声明副本，普通读取不创建元数据表。
+register_tables(connection, definitions) 创建工具声明的表、追加列，或更新 logical_references/exchange 元信息；内部使用独立写会话，调用时连接没有待提交事务。已有列、身份和硬引用不变。table_specs(connection) 返回本数据库内置表与工具表的声明副本，普通读取不创建元数据表。
 
 声明持久化后，write 原语、read_record、dispatch、历史和撤销都能识别新 kind，无需依赖工具代码。工具表默认自动发号，也可声明 id_source="provided"，创建时在 data.id 提供正整数。项目范围与簇成员分开管理；日志仍由真实写入生成。字段、引用、结构升级和业务边界统一见[工具表开发指导](../../../docs/build-with-layerweave/03-managed-tables.md)。
+
+logical_references 只描述目标身份，不建立外键或阻止删除/撤销；exchange.on_copy 为 include/skip，由交换工具处理已有记录的复制。新元信息可给旧表补登记；省略时保留已登记值。声明用法和旧库接入步骤见[逻辑引用与复制策略](../../../docs/build-with-layerweave/03-managed-tables.md#逻辑引用与复制策略)。
 
 ## 发号与自定义身份
 

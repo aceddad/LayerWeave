@@ -9,6 +9,7 @@
 | 多个工具一次提交、失败回滚与领号反馈 | [composition.py](../examples/composition.py) |
 | 稳定键同步、增量刷新和关联阅读 | [sync_and_refresh.py](../examples/sync_and_refresh.py) |
 | JSON 模板、导出编辑、复制与撤销 | [exchange.py](../examples/exchange.py) |
+| 逻辑引用、状态随复制换号与已读进度跳过 | [logical_references.py](../examples/logical_references.py) |
 | 基础 CRUD 与事务日志 | [crud.py](../examples/crud.py) |
 | 工具表与核心记录共用历史、撤销和恢复 | [tool_tables.py](../examples/tool_tables.py) |
 | 自动登记基础部分、全部内部工具与版本工具自身 | [versions.py](../examples/versions.py) |

@@ -6,7 +6,7 @@
 // 它用到了两个栏位（ViewPlugin 的字段，接口见 ../src/plugin/host.ts）：
 //   side          侧栏多一个「字数」标签：每个文字层一共多少字、最快的一段每秒几个字，点一行选中那一段
 //   objectDetail  选中文字对象时，详情里多一行：几个字、每秒几个字
-// 顶栏页面（page）和键盘跳转点（jumpPoints）的写法见接缝插件 ../plugins/cuts/index.tsx。
+// 顶栏页面（page）和键盘跳转点（jumpPoints）的写法见独立仓库 layerweave-plugins 的 plugins/layerweave.cuts/src/index.tsx。
 //
 // 只用宿主给的东西：React 是宿主那一份（host.React），不要自己 import react。下面的注释类型给编辑器和类型检查用，删掉也能跑。
 

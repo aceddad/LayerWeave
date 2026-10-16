@@ -170,7 +170,7 @@ export async function copyLink() {
   if (s.project == null) return;
   const query = linkQuery({project: s.project, view: s.view, side: s.side, board: act ? keyOf(act) : null,
                            range: s.view === 'canvas' && act ? visibleRange(act) : null, playhead: s.playhead, select: s.selected,
-                           layers: s.only, note: s.noteFocus, changes: s.changeLimit, walk: s.walk});
+                           layers: s.only, note: s.noteFocus, changes: s.changeLimit, walk: s.walk, pluginParams: new URLSearchParams(location.search)});
   const url = `${location.origin}${location.pathname}?${query}`;
   if (await writeClipboard(url)) return toast('已复制链接。贴给 AI，它用 view_screenshot --link 就能拍到这个画面');
   setState({message: '浏览器不让复制，请手动复制：' + url});

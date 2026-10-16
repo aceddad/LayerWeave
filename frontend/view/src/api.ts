@@ -1,5 +1,5 @@
 // 和本机视图服务说话；接口说明见 view/README.md
-import type {Board, ChangeOp, Layout, PluginList, ProjectData, ProjectPage, ProjectSummary, WalkDirection, WalkResult} from './types';
+import type {Board, ChangeOp, Layout, PluginList, PluginResult, ProjectData, ProjectPage, ProjectSummary, WalkDirection, WalkResult} from './types';
 
 async function get<T>(path: string): Promise<T> {
   const response = await fetch(path);
@@ -18,8 +18,8 @@ export const api = {
   capabilities: () => get<{frames: boolean}>('/api/capabilities'),
   plugins: () => get<PluginList>('/api/plugins'),
   // 插件清单：加链接（target 是路径或默认文件夹里的名字）、去掉、开、关；和 view_plugin 命令改同一份
-  plugin: (body: {action: 'add' | 'remove' | 'on' | 'off'; target: string; name?: string}) =>
-    post<PluginList & {recorded?: boolean}>('/api/plugins', body),
+  plugin: (body: {action: string; target?: string; name?: string; catalog?: string; version?: string; file?: string; files?: boolean}) =>
+    post<PluginResult>('/api/plugins', body),
   projects: () => get<ProjectSummary[]>('/api/projects'),
   project: (id: number) => get<ProjectData>(`/api/project/${id}`),
   snapshot: (id: number) => get<ProjectPage>(`/api/project/${id}/snapshot`),

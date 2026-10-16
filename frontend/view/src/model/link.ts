@@ -7,12 +7,19 @@ export interface LinkState {
   board?: number | null; range?: [number, number] | null; playhead?: number | null; select?: number | null;
   layers?: Set<number> | null; note?: number | null; changes?: number | null;
   walk?: {from: string; direction: string; depth: number} | null;
+  pluginParams?: URLSearchParams;
 }
+
+const OWN_KEYS = new Set(['view', 'board', 'begin', 'end', 'playhead', 'select', 'focus', 'note', 'changes', 'layers', 'side', 'links',
+  'walk', 'walkdir', 'walkdepth', 'project', 'record', 'capture', 'full', 'tree', 'as', 'media']);
 
 const num = (v: number) => String(+v.toFixed(3));
 
 export function linkQuery(s: LinkState): string {
   const q = new URLSearchParams({project: String(s.project)});
+  if (s.view !== 'canvas' || !SIDES.includes(s.side)) s.pluginParams?.forEach((value, key) => {
+    if (!OWN_KEYS.has(key) && /^[a-z][a-z0-9_]{0,31}$/.test(key)) q.set(key, value);
+  });
   if (s.view !== 'canvas') q.set('view', s.view);
   if (s.board != null) q.set('board', String(s.board));
   if (s.view === 'canvas' && s.range) { q.set('begin', num(s.range[0])); q.set('end', num(s.range[1])); }

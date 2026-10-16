@@ -99,6 +99,8 @@ test_namespace.py 验证宿主同名模块不会干扰公开导入、保存和�
 
 涉及打包与资源时，还需普通安装验收（不是向 PyPI 发布）：
 
+使用干净的构建目录。已经打包过的工作区需先清理或移走 `build/` 生成物，避免 setuptools 把已移除的插件或旧哈希网页资源混入新 wheel；下方检查会核对视图资源集合与源码完全一致。
+
 ```sh
 python -m pip wheel --no-deps --wheel-dir scratch/namespace-dist .
 python tests/check_wheel.py scratch/namespace-dist/layerweave-0.6.0-py3-none-any.whl

@@ -38,39 +38,14 @@
 
 ## 给自己的层配一个视图页面：视图插件
 
-登记了新类型以后，如果想在视图里给它一个专用页面（像接缝页那样），写一个视图插件。插件开着就出现，不用重新编译视图；关掉就消失，视图照常工作。接缝就是视图的第一个插件：源码在仓库 `frontend/view/plugins/cuts/`，编译结果在 `view/plugins/cuts/plugin.js`。
+工具登记的层或对象可以由独立视图插件提供专用页面、侧栏、对象详情和跳转点。插件使用宿主传入的 `host`，不带 Python 写入口、不直接操作数据库；要开发完整 Python 工具仍按前面的工具包约定。
 
-插件由视图管：视图有一份本机清单（`~/.layerweave/view/plugins.json`），清单里有的、开着的才载入。工具包不用在 `component.toml` 里写任何东西，视图也不扫描目录。不管工具包多大，在视图这里都只是一行：名字和一个编译好的 js。
+插件默认导出 `(host) => ViewPlugin`，共享 `host.React`。当前接口 `host.api = 3`；已收回的 `block` 栏位不可用。发布插件用 `plugin.json` 声明稳定身份、兼容条件、用途和参数，运行时按本机清单加载。完整字段和流程统一维护在[视图插件协议](../view/PLUGINS.md)。
 
-| 步骤 | 做法 | 接缝的写法 |
-|---|---|---|
-| 1. 写插件 | 一个 ES 模块，默认导出 `(host) => ViewPlugin`。`host` 给 React（和视图共用一份，插件不要自己打包）、读项目的 `useView()`（项目、画板、播放头、选中的对象、左边目录里勾选的层 `picked`）、`selectObject` / `startWalk` / `toast` / `markReady` 这些动作、`Img` / `Thumb` / `Frame` / `Waveform` 小部件、分页 `Pager`（和 `util.pageSlice` 一起用：一页一屏，地址参数 `page=`、`per=` 给初始页码和张数，截图用 `--param page=3`）和 `kindOf`、`fmt`、`lanes`、`mediaUrl` 等工具函数。接口定义在 `frontend/view/src/plugin/host.ts`，版本号是 `host.api` | `plugins/cuts/index.tsx` |
-| 2. 返回什么 | `label`（标签上的字）、`handles`（管哪些种类的对象；项目里一个都没有就不显示它的页面和侧栏），再加上要用的栏位（见下表）。名字不用写，由清单定（也是地址里的 `view=`、`side=`） | 接缝：`label: '接缝'`、`handles: ['image', 'video']`、`page`、`jumpPoints`；样板「字数」：`side`、`objectDetail`、`block` |
-| 3. 编译 | 不打包 React：JSX 编译成 `h(...)`，`h` 在插件被加载时从 `host.React.createElement` 拿。样式写成字符串，用 `host.addStyle` 加进页面 | `vite.plugins.config.ts`：`npm run build` 会编译 `plugins/` 下每个插件 |
-| 4. 放好、加进清单 | 编译好的 js 放在自己的目录里，最好一个插件一个文件夹（入口叫 `plugin.js`，同一个文件夹里的拆出去的代码、图片、样式也能访问）。不要放进 LayerWeave 的安装目录，软件更新时会被换掉。然后 `view_plugin add 路径`（或网页顶栏「插件」里加）；小插件可以放在默认文件夹 `~/.layerweave/view/plugins/<名字>/`，加的时候只写名字。工具包的说明里写上这一步 | 接缝、一览、预览是内置的：写在 `view/plugins.py` 的 `BUILTIN` 里（各有默认开关 `default`），随视图包分发（pyproject 的 package-data 有 `plugins/*/*.js`） |
-| 5. 截图 | 截图页面上画完要调 `host.markReady()`，`view_screenshot --view <name>` 就能拍 | 接缝页在页面出来以后调 |
-| 6. 测试 | 计算写成纯函数，工具函数从参数传进来，测试里传视图真正的那些 | `plugins/cuts/cuts.test.ts` |
-
-插件能放东西的位置（栏位）：
-
-| 栏位 | 字段 | 给什么 | 例子 |
-|---|---|---|---|
-| 顶栏页面 | `page` | 一个组件，顶栏多一个标签，点开是它 | 接缝页 |
-| 侧栏 | `side` | 一个组件，侧栏多一个标签（和「此刻」「批注」并排） | 样板的「字数」：每个文字层多少字 |
-| 对象详情 | `objectDetail` | 一个组件，收到 `{object, model}`；选中对象的详情里多一段。设了 `handles` 时只给这些种类的对象；没话说就返回 `null` | 样板：几个字、每秒几个字 |
-| 键盘 `[ ]` | `jumpPoints(model, board)` | 一串时刻（画板时间），`[ ]` 在它们之间跳 | 接缝的时刻 |
-
-样板插件：仓库里的 `frontend/view/example-plugin/plugin.js`（「字数」）。一个文件，不用构建，用到侧栏、对象详情两个栏位；复制这个文件夹，放到 LayerWeave 安装目录以外的地方改成自己的。它的类型注释在 `npm run build` 时一起检查，接口改了它会先报错。
-
-要点：
-
-- 每个栏位都包在出错保护里：插件的组件出错，只在它自己那块写一句"出错了"，记进「插件」小窗，视图和别的插件照常。
-- 插件只在页面里运行，读视图服务已有的数据；写入仍然只有视图自己的两种（批注、折叠）。插件不带 Python 写入口，不碰数据库。
-- 清单改了不用重启视图服务，页面自己跟上。有问题的（名字不合规矩、文件不在、重名、在安装目录里）不载入，在 `view_plugin` 和网页小窗里标出原因。
-- 一个插件载入失败，页面只提示一句、在小窗里标出原因，不影响别的插件和视图本身。
-- 开发时：把自己的插件链接进来，改完重新构建，再点开网页上的「插件」小窗（或刷新页面）就换成新的。
-- `host` 的接口只加不改；改了要在这里写明，并改 `host.api` 的版本号。现在是 3：1 只有页面和跳转点，2 加了侧栏、对象详情、画布格子，3 在封装前去掉了画布格子（视图 0.23.0），之后 `useView()` 多了 `picked`（0.24.0，只加不改，不升版本）。
-- 画布格子里画什么，现在只由视图自己决定（缩略图、视频帧、波形、文字）。曾经开放过 `block` 栏位，一类对象只能有一种画法、也还没有真正用它的插件，0.23.0 收回，作为未完成的东西另存，以后再看。
+- 快速试写：主仓库 `frontend/view/example-plugin/plugin.js` 是一个无需构建的字数示例；复制到自己的目录后用 `view_plugin add 路径` 链接。
+- 独立开发：固定引用视图包 `sdk/host-api-3` 的生成类型快照，只导入类型，不依赖宿主源码；示例见[官方插件仓库](https://gitee.com/emotion1354414/layerweave-plugins)。
+- 发布与更新：插件仓库独立构建、测试和生成 ZIP/目录。主程序不再随包携带官方插件；本地开发链接仍可不写 manifest。
+- 截图：页面实际完成后调用 `host.markReady()`。缺插件、加载或渲染失败时截图明确失败，不替换成画布。
 
 ## 相关说明
 

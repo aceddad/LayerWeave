@@ -1,271 +1,271 @@
-"""视图插件：视图管一份本机清单，清单里有的、开着的才载入。不扫描任何目录。
-
-清单在本机用户目录 ~/.layerweave/view/plugins.json，和排版、"正在看哪儿"放在一起，不在软件的安装目录里，更新不会冲掉：
-
-    {"plugins": [
-      {"name": "timeline", "path": "D:/tools/abcd/web/timeline.js", "on": true},
-      {"name": "my-page", "path": "my-page/plugin.js", "on": false},   # 相对路径：相对默认文件夹 ~/.layerweave/view/plugins/
-      {"name": "cuts", "on": true}                                    # 内置的只记开没开（和默认不一样时才记）
-    ]}
-
-内置插件写在下面的 BUILTIN 里，跟着软件更新；各有默认开关（一览默认开，接缝、预览默认关：用的人自己打开，免得装到不想要的）。不管多大的工具包，在视图这里都只是一行：名字和一个编译好的 js。
-插件是 ES 模块，默认导出 (host) => ViewPlugin（接口见 frontend/view/src/plugin/host.ts，做法见 developer/TOOL_TYPES.md）；
-它所在的文件夹里的网页文件（拆出去的代码、图片、样式）也能访问。这里只读写清单、检查文件，不运行插件。
-
-python -m layerweave.tool.builtin.view.plugins [list | add 路径 [--name 名字] | remove 名字 | on 名字 | off 名字]
-"""
+"""视图插件管理：静态目录、ZIP 选装和本地开发链接。见 PLUGINS.md。"""
 import argparse
+import hashlib
 import json
-import os
 from pathlib import Path
 import re
 import sys
 
 from layerweave.support.paths import PACKAGE_ROOT
+from . import plugin_store as store
+from .plugin_manifest import PART, compatibility, inside, read_manifest, valid_id
 
-HERE = Path(__file__).resolve().parent
-NAME = re.compile(r"[a-z][a-z0-9_-]{0,39}")
-RESERVED = {"canvas", "now", "changes", "notes", "walk"}   # 视图自己的页面和侧栏：插件的名字也用在 view=、side= 里（一览 assets 是自带插件）
-# 视图自带的插件：编译好的 js 在视图包里（frontend/view/plugins 构建出来），清单里只记它开没开
-BUILTIN = {
-    "cuts": {"path": HERE / "plugins" / "cuts" / "plugin.js", "about": "接缝：同一条轨道里前后相接的画面并排；键盘 [ ] 在接缝之间跳", "default": False},
-    "assets": {"path": HERE / "plugins" / "assets" / "plugin.js", "about": "一览：按种类分页列出项目里所有的图片、视频、音频、文字，点一下回到画布上", "default": True},
-    "preview": {"path": HERE / "plugins" / "preview" / "plugin.js", "about": "预览：把视频、会动的 SVG、GIF 的帧罗列出来，默认逐帧，可以改开始时刻和间隔；一页一屏", "default": False},
-}
-# 插件文件夹里能给网页的文件
+home, list_path = store.home, store.list_path
 ASSETS = {".js", ".mjs", ".css", ".json", ".map", ".wasm", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".woff", ".woff2"}
 
 
-def home(root=None):
-    return Path(root or Path.home() / ".layerweave" / "view")
-
-
-def list_path(root=None):
-    return home(root) / "plugins.json"
-
-
 def list_serial(root=None):
-    """清单文件的修改时间，网页靠它发现清单被命令改过（和排版的 layout_serial 一样）。"""
     path = list_path(root)
     return path.stat().st_mtime_ns if path.is_file() else 0
 
 
-def _read(root):
-    """清单里的行；文件不在就是空的。坏了抛 ValueError（写的时候不覆盖坏文件，读的时候报成问题）。"""
-    path = list_path(root)
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except FileNotFoundError:
-        return []
-    except (OSError, UnicodeError, ValueError) as error:
-        raise ValueError(f"插件清单读不了（{path}）：{error}") from error
-    rows = data.get("plugins") if isinstance(data, dict) else None
-    if not isinstance(rows, list) or not all(isinstance(r, dict) and isinstance(r.get("name"), str) for r in rows):
-        raise ValueError(f"插件清单的格式不对（{path}）：要写成 {{\"plugins\": [{{\"name\": …, \"path\": …, \"on\": true}}]}}")
-    return rows
-
-
-def _write(rows, root):
-    path = list_path(root)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temp = path.with_name(path.name + ".tmp")
-    temp.write_text(json.dumps({"plugins": rows}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    os.replace(temp, path)
-
-
-def _resolve(path, root):
-    path = Path(path).expanduser()
-    return (path if path.is_absolute() else home(root) / "plugins" / path).resolve()
-
-
-def _problem(path):
+def _entry(row):
+    if not valid_id(row.get("id")):
+        raise ValueError(f"插件 ID 不合规：{row.get('id')!r}，需要 publisher.name")
+    if row.get("mode") not in ("link", "managed"):
+        raise ValueError("插件 mode 需要 link 或 managed")
+    folder = Path(row["root"]).expanduser().resolve()
+    path = inside(folder, row["entry"])
     if not path.is_file():
-        return f"找不到文件：{path}"
+        raise ValueError(f"找不到文件：{path}")
     if path.suffix not in (".js", ".mjs"):
-        return f"不是 js 文件：{path}"
+        raise ValueError(f"不是 js 文件：{path}")
     if path.is_relative_to(PACKAGE_ROOT.resolve()):
-        return "在 LayerWeave 的安装目录里，软件更新时会被换掉；请放到别处再加"
-    return None
+        raise ValueError("插件在 LayerWeave 安装目录里；请把插件放到独立位置")
+    return folder, path
 
 
 def list_plugins(root=None):
-    """全部插件：内置的在前，然后按清单的顺序。每行 name、source（builtin / link）、path、on、problem（有问题时不载入）、about。"""
     try:
-        rows, broken = _read(root), None
+        data, broken = store.read(root), None
     except ValueError as error:
-        rows, broken = [], str(error)
-    chosen = {r["name"]: r.get("on") is not False for r in rows if r.get("name") in BUILTIN and "path" not in r}
-    items = [{"name": name, "source": "builtin", "path": str(spec["path"]), "on": chosen.get(name, spec["default"]), "default": spec["default"],
-              "problem": None if spec["path"].is_file() else "内置插件的文件不在：视图的网页还没构建（npm run build）", "about": spec["about"]}
-             for name, spec in BUILTIN.items()]
-    seen = set(BUILTIN)
-    for row in rows:
-        name = row["name"]
-        if name in BUILTIN and "path" not in row:
-            continue   # 内置插件的开关
-        path = _resolve(str(row.get("path", "")), root)
-        if not NAME.fullmatch(name) or name in RESERVED:
-            problem = f"名字 {name!r} 不合规矩：小写字母开头，字母、数字、- 和 _，不能和视图自己的页面、侧栏重名（{'、'.join(sorted(RESERVED))}）"
-        elif name in seen:
-            problem = f"和{'内置的' if name in BUILTIN else '前面的'} {name} 重名"
-        else:
-            problem = _problem(path)
-        seen.add(name)
-        items.append({"name": name, "source": "link", "path": str(path), "on": row.get("on", True) is not False,
-                      "problem": problem, "about": ""})
-    return {"plugins": items, "file": str(list_path(root)), "folder": str(home(root) / "plugins"), "problem": broken}
+        data, broken = store.empty(), str(error)
+    items, seen = [], set()
+    for row in data["plugins"]:
+        identity = row.get("id", "?")
+        item = {**row, "name": identity, "source": row.get("mode", "link"), "path": "", "on": row.get("on") is not False,
+                "label": identity, "about": "", "problem": None, "compatibility": "undeclared"}
+        try:
+            if identity in seen:
+                raise ValueError(f"与前面的 {identity} 重名")
+            seen.add(identity)
+            folder, path = _entry(row)
+            item["path"] = str(path)
+            if row["mode"] == "managed" or (folder / "plugin.json").is_file():
+                meta = read_manifest(folder)
+                if meta["id"] != identity or meta["entry"] != row["entry"]:
+                    raise ValueError("manifest 身份或入口已改变，请先解除登记再重新添加")
+                if row["mode"] == "managed" and meta["version"] != row.get("version"):
+                    raise ValueError("安装记录与 manifest 版本不一致")
+                item.update(label=meta["label"], about=meta["description"], version=meta["version"], requires=meta["requires"],
+                            slots=meta.get("slots"), compatibility="compatible")
+                if problem := compatibility(meta["requires"]):
+                    item["compatibility"] = "incompatible"
+                    raise ValueError(problem)
+            revision = row.get("origin", {}).get("sha256") if row["mode"] == "managed" else None
+            item["revision"] = revision or hashlib.sha256(f"{path}:{path.stat().st_mtime_ns}".encode()).hexdigest()[:24]
+        except (KeyError, TypeError, OSError, ValueError) as error:
+            item["problem"] = str(error)
+        items.append(item)
+    return {"plugins": items, "file": str(list_path(root)), "folder": str(home(root) / "plugins"), "problem": broken,
+            "catalog": data.get("catalog") or store.DEFAULT_CATALOG, "recommended": store.RECOMMENDED,
+            "migration_pending": data.get("migration_pending", False), "migration_issues": data.get("unresolved_legacy", []),
+            "aliases": {**data.get("aliases", {}), **{k: "layerweave." + k for k in store.LEGACY}}}
 
 
 def loadable(root=None):
-    """开着、没问题的插件，页面按这个顺序载入。"""
     return [p for p in list_plugins(root)["plugins"] if p["on"] and not p["problem"]]
 
 
-def plugin_file(name, relative, root=None):
-    """插件文件夹里的一个网页文件（入口和它旁边的东西）；不在文件夹里、不是网页文件、插件没开都返回 None。"""
-    found = next((p for p in loadable(root) if p["name"] == name), None)
-    if not found:
+def plugin_file(name, relative, root=None, *, revision=None):
+    found = next((p for p in loadable(root) if p["id"] == name), None)
+    if not found or (revision is not None and revision != found["revision"]):
         return None
-    folder = Path(found["path"]).parent
-    path = (folder / relative).resolve()
-    if not path.is_relative_to(folder) or path.suffix.lower() not in ASSETS or not path.is_file():
+    try:
+        path = inside(found["root"], relative)
+        return path if path.is_file() and path.suffix.lower() in ASSETS else None
+    except ValueError:
         return None
-    return path
-
-
-def _name_from(path):
-    stem = path.parent.name if path.stem in ("plugin", "index", "main") else path.stem
-    return stem.lower()
 
 
 def add_plugin(target, *, name=None, root=None):
-    """加一个链接。target 可以是 js 文件、放着 plugin.js 的文件夹，或者只写名字（默认文件夹下面的 <名字>/plugin.js）。
-    名字省略时用文件夹名或文件名。检查不过就不写清单。"""
-    target = str(target).strip()
+    target = str(target or "").strip()
     if not target:
         raise ValueError("要给插件的路径")
-    bare = not re.search(r"[\\/:]", target) and not target.endswith((".js", ".mjs"))
-    stored = f"{target}/plugin.js" if bare else None
-    path = _resolve(stored, root) if bare else Path(target).expanduser().resolve()
-    if path.is_dir():
-        path = path / "plugin.js"
-    name = (name or _name_from(path)).strip()
-    if not NAME.fullmatch(name) or name in RESERVED:
-        raise ValueError(f"名字 {name!r} 不合规矩：小写字母开头，字母、数字、- 和 _，最多 40 个字，不能和视图自己的页面、侧栏重名（{'、'.join(sorted(RESERVED))}）；用 --name 起一个")
-    if problem := _problem(path):
-        raise ValueError(problem + ("（只写名字时，找的是默认文件夹 " + str(home(root) / "plugins") + " 下面的 <名字>/plugin.js）" if bare else ""))
-    rows = _read(root)
-    if name in BUILTIN:
-        raise ValueError(f"{name} 是内置插件的名字，用 --name 换一个")
-    for row in rows:
-        if row["name"] == name:
-            raise ValueError(f"已经有叫 {name} 的插件了（{row.get('path')}）；用 --name 换一个，或者先 remove {name}")
-        if "path" in row and _resolve(str(row["path"]), root) == path:
-            raise ValueError(f"这个文件已经加过了，名字是 {row['name']}")
-    plugins_folder = (home(root) / "plugins").resolve()
-    stored = path.relative_to(plugins_folder).as_posix() if path.is_relative_to(plugins_folder) else path.as_posix()
-    rows.append({"name": name, "path": stored, "on": True})
-    _write(rows, root)
-    return {"added": name, "path": str(path), **list_plugins(root)}
-
-
-def remove_plugin(name, *, root=None):
-    """去掉一个链接：只删清单里的这一行，不删文件。内置的不能去掉，只能关。"""
-    if name in BUILTIN:
-        raise ValueError(f"{name} 是内置插件，去不掉；不想用就关掉：view_plugin off {name}")
-    rows = _read(root)
-    if not any(r["name"] == name for r in rows):
-        raise ValueError(f"清单里没有 {name}")
-    _write([r for r in rows if r["name"] != name], root)
-    return {"removed": name, **list_plugins(root)}
+    bare = not re.search(r"[\\/:]", target) and not target.endswith((".js", ".mjs")) and not Path(target).is_dir()
+    path = (home(root) / "plugins" / target) if bare else Path(target).expanduser().resolve()
+    folder = path if path.is_dir() or bare else path.parent
+    meta = read_manifest(folder) if (folder / "plugin.json").is_file() else None
+    if meta:
+        if name:
+            raise ValueError("有 manifest 的插件使用 publisher.name，--name 只用于无声明的开发链接")
+        identity, entry = meta["id"], meta["entry"]
+    else:
+        entry = "plugin.js" if path.is_dir() or bare else path.name
+        stem = folder.name if Path(entry).stem in ("plugin", "index", "main") else Path(entry).stem
+        short = (name or stem.lower()).strip()
+        if not PART.fullmatch(short):
+            raise ValueError("名字不合规：小写字母开头，字母、数字、- 和 _，最多 40 字符；用 --name 指定")
+        identity = "local." + short
+    row = {"id": identity, "kind": "view-plugin", "mode": "link", "root": str(folder.resolve()), "entry": entry,
+           "on": True, "version": meta["version"] if meta else None}
+    try:
+        _, file = _entry(row)
+    except ValueError as error:
+        raise ValueError(str(error) + (f"（只写名字时找默认文件夹 {home(root) / 'plugins'}）" if bare else "")) from error
+    with store.locked(root):
+        data = store.writable(root)
+        for previous in data["plugins"]:
+            if previous.get("id") == identity:
+                raise ValueError(f"已经有叫 {identity} 的插件；先 remove 或给开发链接换名")
+            if previous.get("root") and previous.get("entry") and inside(previous["root"], previous["entry"]) == file:
+                raise ValueError(f"这个文件已经加过了：{previous['id']}")
+        data["plugins"].append(row)
+        store.write(data, root)
+    return {"added": identity, "status": "linked", "path": str(file)}
 
 
 def switch_plugin(name, on, *, root=None):
-    """开、关。内置的和默认不一样时记一行 {"name", "on"}，和默认一样就删掉这一行。"""
-    rows = _read(root)
-    if name in BUILTIN:
-        rows = [r for r in rows if not (r["name"] == name and "path" not in r)]
-        if on != BUILTIN[name]["default"]:
-            rows.append({"name": name, "on": on})
-    elif any(r["name"] == name for r in rows):
-        rows = [{**r, "on": on} if r["name"] == name else r for r in rows]
-    else:
-        raise ValueError(f"没有叫 {name} 的插件")
-    _write(rows, root)
-    return {"switched": name, "on": on, **list_plugins(root)}
+    with store.locked(root):
+        data = store.writable(root)
+        row = next((r for r in data["plugins"] if r.get("id") == name), None)
+        if row is None:
+            raise ValueError(f"没有安装 {name}；on/off 不负责下载安装")
+        row["on"] = bool(on)
+        store.write(data, root)
+    return {"switched": name, "on": bool(on), "status": "switched"}
+
+
+def remove_plugin(name, *, files=False, root=None):
+    from .plugin_market import remove
+    return remove(name, files=files, root=root)
+
+
+def require_plugin(identity, *, slot=None, root=None):
+    identity = store.canonical(identity, root)
+    found = next((r for r in list_plugins(root)["plugins"] if r["id"] == identity), None)
+    if found is None:
+        raise ValueError(f"插件 {identity} 未安装；用 view_plugin market/info 查看，再明确 install 或 add")
+    if not found["on"]:
+        raise ValueError(f"插件 {identity} 已关闭；用 view_plugin on {identity} 开启")
+    if found["problem"]:
+        raise ValueError(f"插件 {identity} 不可加载：{found['problem']}")
+    if slot and found.get("slots") is not None and slot not in found["slots"]:
+        raise ValueError(f"插件 {identity} 没有声明 {slot} 栏位")
+    return found
 
 
 def describe(result):
     lines = []
-    width = max([len(p["name"]) for p in result["plugins"]] + [8]) + 2
-    for p in result["plugins"]:
-        state = "有问题" if p["problem"] else ("开" if p["on"] else "关")
-        where = (f"内置（默认{'开' if p['default'] else '关'}）") if p["source"] == "builtin" else p["path"]
-        pad = " " * (width + 4)
-        lines.append(f"{p['name']:<{width}}{state:<4}{where}" + (f"\n{pad}{p['problem']}" if p["problem"] else "")
-                     + (f"\n{pad}{p['about']}" if p["about"] else ""))
+    for key in ("message", "backup", "recycled"):
+        if result.get(key):
+            lines.append(f"{key}: {result[key]}")
+    if "manifest" in result:
+        meta = result["manifest"]
+        if meta:
+            lines.extend([f"{meta['id']} {meta['version']} · {meta['label']}", meta["description"], f"需要：{meta['requires']}", "参数："])
+            for name, spec in meta["params"].items():
+                optional = "必填" if spec.get("required") else "选填"
+                default = f"；默认 {json.dumps(spec['default'], ensure_ascii=False)}" if "default" in spec else ""
+                lines.append(f"  {name}: {spec['type']}（{optional}{default}） {spec['description']}")
+        lines.extend(["", result.get("usage", "")])
+        return "\n".join(lines)
+    if "items" in result:
+        for item in result["items"]:
+            lines.append(f"{item['id']} {item.get('version', '?')} · {item.get('label', '')} · {'可安装' if item['compatible'] else item.get('problem')} · 已装 {item.get('installed_version') or '无'}")
+            lines.append("  " + (item.get("description") or ""))
+            for version in item.get("versions", []):
+                lines.append(f"  {version.get('version', '?')}：{version.get('problem') or '兼容'}；{version.get('requires', {})}")
+        lines.append(f"目录：{result['catalog']}")
+    elif "results" in result:
+        lines.extend(f"{r['id']} [{r['status']}] {r.get('message', '')}" for r in result["results"])
+    else:
+        for row in result["plugins"]:
+            state = row["problem"] or ("开" if row["on"] else "关")
+            lines.append(f"{row['id']} {row.get('version') or '开发链接'} [{state}] {row['label']} · {row['source']}")
+        if not result["plugins"]:
+            lines.append("未安装插件；画布可直接使用。view_plugin market 查看可选插件。")
+        lines.append(f"清单：{result['file']}")
+    for issue in result.get("issues", result.get("migration_issues", [])):
+        lines.append(f"[{issue.get('severity', 'warn')}] {issue.get('message', issue.get('problem', issue))}")
     if result.get("problem"):
-        lines.append("清单有问题：" + result["problem"])
-    lines.append(f"清单：{result['file']}；只写名字的插件放在 {Path(result['folder']) / '<名字>' / 'plugin.js'}")
-    lines.append("改了以后视图页面自己会跟上，不用重启视图服务。")
+        lines.append("清单问题：" + result["problem"])
+    if result.get("migration_pending"):
+        lines.append("旧清单仅作只读预览。确认迁移请执行 view_plugin migrate；保留备份，不自动下载。")
     return "\n".join(lines)
 
 
-def plugin(action="list", target=None, *, name=None, root=None):
-    """list：全部插件；add：加一个链接（target 是路径或名字）；remove / on / off：按名字（target）。"""
+def plugin(action="list", target=None, *, name=None, root=None, catalog=None, version=None, file=None, files=False):
+    from . import plugin_market as market
+    if action in ("remove", "on", "off", "info", "update") and target:
+        target = store.canonical(target, root)
     if action == "list":
-        result = list_plugins(root)
+        result = {}
     elif action == "add":
-        result = add_plugin(target or "", name=name, root=root)
+        result = add_plugin(target, name=name, root=root)
+    elif action == "migrate":
+        result = store.migrate(root)
+    elif action == "market":
+        result = market.market(target, catalog=catalog, root=root)
+    elif action == "info":
+        if not target:
+            raise ValueError("info 需要完整插件 ID")
+        result = market.info(target, catalog=catalog, version=version, root=root)
+    elif action == "install":
+        result = market.install(identity=target, version=version, catalog=catalog, file=file, root=root)
+    elif action == "update":
+        result = market.update(target, root=root)
     elif action in ("remove", "on", "off"):
         if not target:
-            raise ValueError(f"{action} 要给插件的名字")
-        result = remove_plugin(target, root=root) if action == "remove" else switch_plugin(target, action == "on", root=root)
+            raise ValueError(f"{action} 需要完整插件 ID")
+        result = remove_plugin(target, files=files, root=root) if action == "remove" else switch_plugin(target, action == "on", root=root)
     else:
-        raise ValueError(f"不认识的动作：{action}（list、add、remove、on、off）")
+        raise ValueError("未知动作；可选 list、market、info、install、update、add、remove、on、off、migrate")
+    result = {**list_plugins(root), **result}
     return {**result, "text": describe(result)}
 
 
 COMMANDS = [{
-    "name": "view_plugin",
-    "summary": "视图插件的清单：列出、加链接、去掉、开、关。清单在本机用户目录，软件更新不会冲掉；视图页面顶栏的「插件」改的是同一份",
-    "entrypoint": "layerweave.tool.builtin.view.plugins:plugin",
-    "cli": "python -m layerweave.tool.builtin.view.plugins",
-    "read_only": False,
-    "context": [],
+    "name": "view_plugin", "summary": "视图插件：查询市场/说明、安装版本 ZIP、更新、开发链接、开关和卸载；零插件也可使用画布",
+    "entrypoint": "layerweave.tool.builtin.view.plugins:plugin", "cli": "python -m layerweave.tool.builtin.view.plugins",
+    "read_only": False, "context": [],
     "parameters": {
-        "action": {"type": "string", "default": "list", "choices": ["list", "add", "remove", "on", "off"],
-                   "description": "list 列出全部；add 加一个链接；remove 去掉链接（不删文件）；on、off 开关"},
-        "target": {"type": "string", "description": "add 时是 js 文件、放着 plugin.js 的文件夹，或者只写名字（默认文件夹下面的 <名字>/plugin.js）；其他动作是插件的名字"},
-        "name": {"type": "string", "description": "add 时给插件起的名字（小写字母开头）；省略时用文件夹名或文件名。截图 --view、链接里的 view= 用这个名字"},
+        "action": {"type": "string", "default": "list", "choices": ["list", "market", "info", "install", "update", "add", "remove", "on", "off", "migrate"],
+                   "description": "list 本机；market 目录；info 参数/说明；install 安装；update 更新；add 开发链接；remove 解除登记；on/off 开关；migrate 显式迁移旧清单"},
+        "target": {"type": "string", "description": "完整 ID，例如 layerweave.preview；add 时是 JS 文件或插件目录路径"},
+        "name": {"type": "string", "description": "仅为无 manifest 的开发链接指定短名，最终 ID 为 local.短名"},
+        "catalog": {"type": "string", "description": "本次目录 URL/本机 index.json，不改变已有插件的更新来源"},
+        "version": {"type": "string", "description": "info/install 指定版本；install 可用它明确切回旧版本"},
+        "file": {"type": "string", "description": "install 的本地 ZIP，不能同时给 ID、catalog 或 version"},
+        "files": {"type": "boolean", "default": False, "description": "remove 时将安装器拥有的文件移至可恢复目录；不删除开发链接源码"},
+        "root": {"type": "string", "description": "可选本机状态目录；测试使用临时目录，CLI 对应 --state-root"},
     },
-    "returns": "plugins（name、source：builtin 内置 / link 链接、path、on、problem、about）、file（清单在哪）、folder（默认文件夹）、text。",
-    "examples": [{"cli": "python -m layerweave.tool.builtin.view.plugins"},
-                 {"cli": "python -m layerweave.tool.builtin.view.plugins add D:/tools/abcd/web/timeline.js"},
-                 {"cli": "python -m layerweave.tool.builtin.view.plugins off cuts"}],
-    "notes": ["插件是在视图页面里运行的代码：能读项目，能写批注和折叠。只加信得过的。",
-              "放在 LayerWeave 安装目录里的文件加不进来：软件更新时会被换掉。",
-              "去掉只删清单里的一行，不删文件；内置插件不能去掉，只能关。",
-              "写插件的做法见 developer/TOOL_TYPES.md 的「视图插件」一节。"],
+    "returns": "text；本机 plugins（完整 id/name、version、source、on、problem）；market 的 items；info 的 manifest/usage；安装状态与页面加载状态分开。",
+    "examples": [{"cli": "python -m layerweave.tool.builtin.view.plugins market"},
+                 {"cli": "python -m layerweave.tool.builtin.view.plugins info layerweave.preview"},
+                 {"cli": "python -m layerweave.tool.builtin.view.plugins install layerweave.preview"},
+                 {"cli": "python -m layerweave.tool.builtin.view.plugins install --file preview-1.0.0.zip"},
+                 {"cli": "python -m layerweave.tool.builtin.view.plugins add D:/tools/my-plugin"}],
+    "notes": ["显式安装/更新才下载并登记，不因打开项目自动安装。", "插件是页面内执行的代码；哈希验证包内容，不是作者认证。", "接口和声明见 view/PLUGINS.md；Python 组件本版只预留种类。"],
 }]
 
 
 def main():
     from layerweave.support.commands import help_examples
-    p = argparse.ArgumentParser(description="视图插件的清单", formatter_class=argparse.RawDescriptionHelpFormatter,
-                                epilog=help_examples(COMMANDS))
-    p.add_argument("action", nargs="?", default="list", choices=("list", "add", "remove", "on", "off"))
-    p.add_argument("target", nargs="?", help="add：路径或名字；其他：插件的名字")
-    p.add_argument("--name", help="add 时给插件起的名字")
-    p.add_argument("--json", action="store_true", help="输出 JSON")
-    a = p.parse_args()
+    parser = argparse.ArgumentParser(description="视图插件管理", formatter_class=argparse.RawDescriptionHelpFormatter, epilog=help_examples(COMMANDS))
+    parser.add_argument("action", nargs="?", default="list", choices=COMMANDS[0]["parameters"]["action"]["choices"])
+    parser.add_argument("target", nargs="?", help="完整插件 ID；add 时为路径")
+    parser.add_argument("--name"); parser.add_argument("--catalog"); parser.add_argument("--version"); parser.add_argument("--file", type=Path)
+    parser.add_argument("--files", action="store_true"); parser.add_argument("--state-root", type=Path)
+    parser.add_argument("--json", action="store_true")
+    args = parser.parse_args()
     try:
-        result = plugin(a.action, a.target, name=a.name)
+        result = plugin(args.action, args.target, name=args.name, root=args.state_root, catalog=args.catalog, version=args.version, file=args.file, files=args.files)
     except (ValueError, OSError) as error:
         print(f"没有做成：{error}", file=sys.stderr)
         return 1
-    print(json.dumps(result, ensure_ascii=False, indent=2) if a.json else result["text"])
-    return 0
+    print(json.dumps(result, ensure_ascii=False, indent=2) if args.json else result["text"])
+    return 1 if result.get("status") == "failed" or result.get("problem") else 0
 
 
 if __name__ == "__main__":

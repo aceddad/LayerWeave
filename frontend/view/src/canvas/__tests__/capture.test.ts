@@ -1,6 +1,7 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 const mocks = vi.hoisted(() => ({idle: vi.fn(async () => {})}));
 vi.mock('../../params', () => ({CAPTURE: true}));
+vi.mock('../../plugin/registry', () => ({loadPlugins: () => Promise.resolve()}));
 vi.mock('../../sync', () => ({pendingWalk: () => Promise.resolve()}));
 vi.mock('../../camera', () => ({pendingZoom: () => Promise.resolve()}));
 vi.mock('../mediaQueue', () => ({paintQueue: {idle: mocks.idle}}));

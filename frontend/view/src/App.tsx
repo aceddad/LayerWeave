@@ -16,17 +16,17 @@ import {loadPlugins} from './plugin/registry';
 import {PluginBoundary} from './plugin/slots';
 
 export function App() {
-  const {view, page, message, notice, name, hasData, waiting, tree} = useStore(useShallow((s) => ({
+  const {view, page, message, notice, name, hasData, waiting, tree, pluginTargetError} = useStore(useShallow((s) => ({
     page: s.plugins.find((p) => p.name === s.view)?.page,
     view: s.view, message: s.message, notice: s.notice, name: s.data?.project.name, hasData: !!s.data,
-    waiting: waitingOf(s).length, tree: s.tree,
+    waiting: waitingOf(s).length, tree: s.tree, pluginTargetError: s.pluginTargetError,
   })));
 
   useEffect(() => {
     if (CAPTURE) document.body.classList.add('capture');
     if (FULL) document.body.classList.add('full');
     loadPlugins();
-    loadProjects().then(poll).catch((error) => { setState({message: '读取失败：' + error.message}); markReady(); });
+    loadProjects().then(poll).catch((error) => { setState({message: '读取失败：' + error.message}); if (CAPTURE) window.__layerweaveError = error.message; });
     if (CAPTURE) return;
     const timer = setInterval(poll, 2000);
     return () => clearInterval(timer);
@@ -59,6 +59,7 @@ export function App() {
         </div>}
         {view !== 'canvas' && page && <PluginBoundary key={view} name={view}>{createElement(page)}</PluginBoundary>}
       </div>
+      {pluginTargetError && <p className="message plugin-target-error">{pluginTargetError} {!CAPTURE && <button onClick={() => setState({view: 'canvas', side: 'now', pluginTargetError: null})}>返回画布</button>}</p>}
       {message && <p className="message">{message}</p>}
       {notice && <p className="notice" title="点一下过去" onClick={() => {
         setState({notice: null});

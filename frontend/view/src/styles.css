@@ -58,6 +58,9 @@ select { background: var(--panel); padding: 3px 6px; }
 .plugins-add { display: flex; gap: 6px; }
 .plugins-add input { flex: 1; min-width: 0; padding: 3px 8px; }
 .plugins-add input.as { flex: none; width: 8em; }
+.plugins-box h4 { margin: 16px 0 8px; }
+.plugins-box .what button { margin: 5px 4px 0 0; }
+.plugin-info { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 40vh; overflow: auto; font-size: 12px; }
 .plugins-error { color: #ff8fa8; margin: 6px 0 0; white-space: pre-wrap; }
 .plugins-note { font-size: 12px; margin: 8px 0 0; }
 .plugin-crash { color: #ff8fa8; font-size: 12px; margin: 8px 0; }

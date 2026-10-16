@@ -6,11 +6,11 @@ import {kindOf} from '../model/kinds';
 import type {Model} from '../model/model';
 import {getState, setState} from '../store';
 import {toast} from '../sync';
-import {SIDES} from '../types';
 import type {Board, PluginList} from '../types';
 import {makeHost} from './host';
 import type {LoadedPlugin, PluginFactory, ViewPlugin} from './host';
-import {plan} from './plan';
+import {plan, targetProblem} from './plan';
+import {CAPTURE} from '../params';
 
 interface Loaded { url: string; plugin: LoadedPlugin; dispose: () => void }
 const loaded = new Map<string, Loaded>();
@@ -31,7 +31,10 @@ export function refreshPlugins(): Promise<void> {
 
 async function sync() {
   let list: PluginList;
-  try { list = await api.plugins(); } catch { return; }   // 服务停了：下次再对
+  try { list = await api.plugins(); } catch (error) {
+    if (CAPTURE) window.__layerweaveError = '插件清单读取失败：' + String(error);
+    return;
+  }
   const {wanted, drop, load} = plan(list.plugins, loaded);
   for (const name of drop) { loaded.get(name)!.dispose(); loaded.delete(name); }
   const errors: Record<string, string> = {};
@@ -52,11 +55,10 @@ async function sync() {
   }
   for (const row of wanted) if (!loaded.has(row.name) && !errors[row.name] && before[row.name]) errors[row.name] = before[row.name];
   const plugins = wanted.map((r) => loaded.get(r.name)?.plugin).filter((p): p is LoadedPlugin => !!p);
-  // 正在看的页面、侧栏属于一个没载入（或刚关掉）的插件：回到画布、「此刻」
-  const s = getState(), known = ['canvas', ...plugins.filter((p) => p.page).map((p) => p.name)];
-  const sides = [...SIDES, ...plugins.filter((p) => p.side).map((p) => p.name)];
-  setState({plugins, pluginList: list, pluginErrors: errors, view: known.includes(s.view) ? s.view : 'canvas',
-            side: sides.includes(s.side) ? s.side : 'now'});
+  const s = getState(), view = list.aliases[s.view] ?? s.view, side = list.aliases[s.side] ?? s.side;
+  const problem = targetProblem(view, 'page', list.plugins, plugins, errors) ?? targetProblem(side, 'side', list.plugins, plugins, errors);
+  if (CAPTURE && problem) { window.__layerweaveError = problem; window.__layerweaveReady = false; }
+  setState({plugins, pluginList: list, pluginErrors: errors, view, side, pluginTargetError: problem});
 }
 
 // 项目里有没有这个插件管的对象：没有就不显示它的标签

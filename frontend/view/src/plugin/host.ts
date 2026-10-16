@@ -48,7 +48,7 @@ export interface PluginHost {
 
 // 插件能放东西的位置（栏位）。每个位置都包在出错保护里：插件出错只在它自己那块写一句，不影响别的
 export interface ViewPlugin {
-  name?: string;                         // 不用写：名字由清单定（view_plugin add --name），也是地址里的 view=、side=
+  name?: string;                         // 通常不用写：运行身份由清单的完整 publisher.name 决定，也是 view=、side= 的值
   label: string;                         // 顶栏标签、侧栏标签上的字
   title?: string;                        // 标签的说明
   handles?: string[];                    // 管哪些种类的对象（kindOf）：项目里一个都没有时不显示它的页面和侧栏；对象详情只给这些种类的对象

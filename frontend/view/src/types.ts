@@ -132,14 +132,17 @@ export interface ChangeOp {
 
 export type View = string;   // canvas，或某个插件的页面名（比如接缝 cuts、一览 assets）
 
-// 本机插件清单（/api/plugins，view/plugins.py）：内置的在前，然后是链接来的
+// 本机插件清单（/api/plugins）：name 在运行时也使用完整 publisher.name。
 export interface PluginRow {
-  name: string;                    // 清单里的名字，也是页面的 view=
-  source: 'builtin' | 'link';
+  name: string;
+  id: string;
+  label: string;
+  version?: string | null;
+  source: 'managed' | 'link';
   path: string;                    // js 文件在哪
   on: boolean;
   problem: string | null;          // 有问题就不载入：文件不在、重名、在安装目录里……
-  about: string;                   // 内置插件的一句说明
+  about: string;
   url?: string;                    // 开着、没问题的才有：页面 import() 它
 }
 export interface PluginList {
@@ -147,6 +150,19 @@ export interface PluginList {
   file: string;                    // 清单文件在哪
   folder: string;                  // 只写名字的插件放在这个文件夹下面
   problem: string | null;          // 清单本身坏了
+  catalog: string;
+  recommended: {id: string; label: string; description: string}[];
+  aliases: Record<string, string>;
+  migration_pending: boolean;
+  migration_issues: {problem: string}[];
+}
+export interface MarketItem {
+  id: string; label: string; description: string; version: string; compatible: boolean;
+  supported: boolean; installed_version?: string | null; problem?: string | null;
+}
+export interface PluginResult extends PluginList {
+  recorded?: boolean; text: string; status?: string; items?: MarketItem[];
+  issues?: {message: string}[]; version?: string; id?: string;
 }
 export const SIDES = ['now', 'changes', 'notes', 'walk'];   // 视图自己的侧栏
 export type Side = string;   // 视图自己的侧栏，或某个插件的侧栏（插件的名字）

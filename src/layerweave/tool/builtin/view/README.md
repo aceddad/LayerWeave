@@ -38,10 +38,10 @@ python -m layerweave.tool.builtin.view.server DATABASE [--project 1] [--port 876
 - **沿读**（右侧第四个标签）：从一个对象或一楼批注出发，顺着关联一步步往外读——它指着谁、谁指着它、再往外一步……批注指着对象、回复指着批注也都是关联，所以楼也能顺着读。入口是对象详情（「此刻」里选中的对象）和楼主卡片上的「沿读」。按步数分组列出每一步的名字、所在层、位置、文字或文件，以及是从哪一个、顺着哪条关联（带说明）到的；可以只看一个方向（它指着谁 / 谁指着它），步数 1～5。点「去看」：对象就选中并飞过去，层就对准它，批注就对准它那一楼；「从这里读」换成从这一步出发。和 AI 用的 `view_walk` 是同一份结果。
 - **批注提醒**：按本机的署名（批注面板里填，默认「用户」）算"等我回复"的楼——还没处理、最后一句不是你说的，和 `view_note --waiting` 是同一条规则。批注标签上的红色数字、浏览器标签页标题前的 (2)、楼上的「等你回复」都是它。别人（比如 AI 用 `view_note`）写了新批注或回复时，右下角弹一条提示，点一下打开那一楼。
 - **关系线**：数据里的关联（bind）画成带箭头的线，跨画板也画；连到层的线接在层名上。平时只画选中对象的关系，顶栏勾上「关系线」画出全部。选中对象的详情里列出它的关系，点一条跳过去；另一头在别的项目时，色块角上标 ↗。
-- **接缝**（顶栏标签，接缝插件提供；项目里没有图片和视频时不显示）：同一条轨道里前后相接的图片和视频，把上一段的最后一帧和下一段的第一帧并排，写出两边的时间、是紧接还是中间空着；接续的两段之间也算。用来查衔接——比如上一段球落在地上，下一段却从桌上开始。点一个接缝回到画布上的那个位置。
+- **接缝**（选装 layerweave.cuts 后出现的顶栏标签；项目里没有图片和视频时不显示）：同一条轨道里前后相接的图片和视频，把上一段的最后一帧和下一段的第一帧并排，写出两边的时间、是紧接还是中间空着；接续的两段之间也算。用来查衔接——比如上一段球落在地上，下一段却从桌上开始。点一个接缝回到画布上的那个位置。
 - **找对象**：顶栏的搜索框按名字、文字、文件名或 `#编号` 找，回车跳到下一个，Shift+回车上一个。
-- **预览**（自带插件，默认关）：把一个文件里的帧罗列出来——视频、会动的 SVG（SMIL 或 CSS 动画；脚本驱动的不行）、GIF / 动态 WebP / APNG。默认逐帧缩略图；可以改开始的秒、间隔（逐帧、每几帧、每几秒）和帧率（视频按播几帧量出来的，量不到用 24）。一页一屏（默认 48 张，可换 24、96）。左边列出候选：视频在前；目录里勾了层时只列那几层的。只看一个文件里的帧，不把几层叠起来合成。AI 自查一段：`view_screenshot … --view preview --param object=812 --param from=12 --param step=1f`（step 也可以写 `3f`、`0.5s`；另有 `fps=`、`per=`、`page=`）。
-- **一览**（顶栏最后一个标签，以前叫"素材"；地址里还是 `view=assets`）：按种类列出项目里所有的对象，像资源管理器一样用网格显示图片、视频封面、音频波形和文字；可以按类型筛选，点一下回到画布上的对应位置。分页：一页 60 张（可以换 30、120），对象再多也只排一页的；截图拍第几页用 `--param page=3`。一览是视图自带的插件（0.25.0 起），不用的可以在「插件」里关掉。
+- **预览**（选装 layerweave.preview）：把一个文件里的帧罗列出来——视频、会动的 SVG（SMIL 或 CSS 动画；脚本驱动的不行）、GIF / 动态 WebP / APNG。默认逐帧缩略图；可以改开始的秒、间隔（逐帧、每几帧、每几秒）和帧率（视频按播几帧量出来的，量不到用 24）。一页一屏（默认 48 张，可换 24、96）。左边列出候选：视频在前；目录里勾了层时只列那几层的。只看一个文件里的帧，不把几层叠起来合成。AI 自查一段：`view_screenshot … --view preview --param object=812 --param from=12 --param step=1f`（step 也可以写 `3f`、`0.5s`；另有 `fps=`、`per=`、`page=`）。
+- **一览**（顶栏最后一个标签，以前叫"素材"；地址里还是 `view=assets`）：按种类列出项目里所有的对象，像资源管理器一样用网格显示图片、视频封面、音频波形和文字；可以按类型筛选，点一下回到画布上的对应位置。分页：一页 60 张（可以换 30、120），对象再多也只排一页的；截图拍第几页用 `--param page=3`。一览由选装插件 layerweave.assets 提供。
 - 每两秒轮询业务变化和排版变化；正在写入或拖动时延后应用，结束后从原游标继续。
 
 画板的拼接、拆分、位置和时间缩放存在本机用户目录 `~/.layerweave/view/<数据库路径的散列>.layout.json`，不写进业务库。
@@ -84,18 +84,17 @@ python -m layerweave.tool.builtin.view.server DATABASE [--project 1] [--port 876
 
 ## 插件
 
-某一类层或对象的专用页面做成插件：开着就出现在顶栏，不用重新编译视图；关掉就消失，视图照常工作。接缝就是一个插件。
+接缝、一览、预览现在是[独立仓库](https://gitee.com/emotion1354414/layerweave-plugins)中的官方选装插件，主程序不携带它们的执行资源。顶栏「插件」直接列出推荐及可用版本，选择后才安装；零插件也能使用画布。
 
-- **视图管一份本机清单**：`~/.layerweave/view/plugins.json`，每行一个插件：名字、编译好的 js 在哪、开没开。清单里有的、开着的才载入，不扫描任何目录。不管多大的工具包，在这里都只是一行。
-- **内置的**（接缝、一览、预览）写在 `plugins.py` 的 `BUILTIN` 里，跟着软件更新，去不掉，只能关。各有默认开关：一览默认开，接缝、预览默认关（用的人在「插件」小窗或 `view_plugin on cuts` 打开），免得大家装到不想要的；清单只在和默认不一样时记一行。
-- **链接来的**：`view_plugin add 路径`，路径可以是 js 文件、放着 `plugin.js` 的文件夹，或者只写名字（默认文件夹 `~/.layerweave/view/plugins/<名字>/plugin.js`）。去掉只删清单里的一行，不删文件。
-- **更新以后不消失**：清单和默认文件夹都在本机用户目录，链接的文件在作者自己放的地方，软件更新都碰不到。放在 LayerWeave 安装目录里的文件加不进来（更新时会被换掉）。文件找不到时那一行留着，标"找不到"。
-- **网页上**：顶栏「插件」小窗，和命令改同一份清单：看哪些载入了、开关、去掉、加链接（人做二次开发时把自己正在写的插件链接进来）。有问题的插件按钮上标 `!`。
-- **改了马上跟上**：视图服务每次都重读清单；页面轮询时发现清单变了，新开的载入、关掉的拿下来，样式跟着拿掉，不用重启也不用刷新。插件文件改过以后，再点开「插件」小窗（或刷新）就换成新的。
-- **插件能放东西的位置**：顶栏页面、侧栏的一个标签、选中对象详情里的一段、键盘 `[ ]` 的跳转点。插件出错只在它自己那块写一句，不影响别的。
-- **样板**：仓库里的 `frontend/view/example-plugin/plugin.js`（「字数」：文字对象几个字、每秒几个字），一个文件，不用构建；`view_plugin add <仓库>/frontend/view/example-plugin` 就能试。
-- 插件只在页面里运行，数据从视图已有的接口拿（就是从 core 读出来的那份）；写入仍然只有批注和折叠两种。
-- 怎么写一个插件、插件能用哪些接口，见[工具包登记类型 · 视图插件](../developer/TOOL_TYPES.md#给自己的层配一个视图页面视图插件)。
+```sh
+python -m layerweave.tool.builtin.view.plugins market
+python -m layerweave.tool.builtin.view.plugins info layerweave.preview
+python -m layerweave.tool.builtin.view.plugins install layerweave.preview
+```
+
+本机清单仍在 `~/.layerweave/view/plugins.json`，使用 `publisher.name` 完整身份；开发可继续 `add 路径`，无 manifest 时默认 `local.<短名>`。安装成功和页面加载结果分开报告。旧清单先只读预览，明确执行 `migrate` 才备份并迁移，不自动下载。
+
+操作、发布格式、参数、版本兼容与独立类型快照统一见[插件协议和开发说明](PLUGINS.md)。想为工具登记的层配页面，另见[工具包登记类型](../developer/TOOL_TYPES.md#给自己的层配一个视图页面视图插件)。
 
 ## 给 AI 用
 
@@ -103,12 +102,12 @@ python -m layerweave.tool.builtin.view.server DATABASE [--project 1] [--port 876
 |---|---|
 | `view_state` | 用户正在看哪儿：项目、当前画板、可见范围、播放头、选中的对象、圈出的一段、屏幕上的画板和层。用户说"这里""这段"时先读它 |
 | `view_note` | 读写批注：`list`（按楼；可只看 open / done 的楼，`--waiting 名字` 只看在等这个人回复的楼）、`add`（`--to object:16`、`--to layer:1 --span 6 8`，可以多个）、`reply 编号 正文`、`done` / `reopen`、`edit`（`edit 编号 --to object:18` 改指向，只有楼主能改）、`remove`。自动建批注层、填字段、建关联 |
-| `view_screenshot` | 把视图截成 PNG：整张画布、某一块画板（`--board`，可加 `--begin --end` 放大一段；`--layers` 只画某些层，写编号、层名或 `上级/名字`）、一览网格（`--view assets`）或插件的页面（比如接缝 `--view cuts`）；`--focus` 对准某个对象，`--note` 对准某条批注（框住它指的地方，右侧标出这一楼），`--link` 按用户「复制链接」得到的地址拍，`--changes N` 标出最近 N 次操作的改动，`--notes` 打开批注列表（`--side` 打开别的侧栏，插件的侧栏写插件的名字），`--links` 画出全部关系线，`--tree` 打开左边的目录，`--param 名字=值` 给插件页面传地址参数（比如一览的 `page=3`），`--full-page` 把接缝页、一览页截成一整张长图。等页面把图片、封面、波形加载完才拍 |
+| `view_screenshot` | 把视图截成 PNG：整张画布、某一块画板（`--board`，可加 `--begin --end` 放大一段；`--layers` 只画某些层，写编号、层名或 `上级/名字`）、一览网格（`--view layerweave.assets`）或插件的页面（比如接缝 `--view layerweave.cuts`）；`--focus` 对准某个对象，`--note` 对准某条批注（框住它指的地方，右侧标出这一楼），`--link` 按用户「复制链接」得到的地址拍，`--changes N` 标出最近 N 次操作的改动，`--notes` 打开批注列表（`--side` 打开别的侧栏，插件的侧栏写插件的名字），`--links` 画出全部关系线，`--tree` 打开左边的目录，`--param 名字=值` 给插件页面传地址参数（比如一览的 `page=3`），`--full-page` 把接缝页、一览页截成一整张长图。等页面把图片、封面、波形加载完才拍 |
 | `view_fold` | 两边的折叠：不带动作时列出；`fold 层编号… --by 名字 --why 原因` 折叠 AI 这边的；`unfold` 展开；`unfold --side user --why 理由` 把用户折叠的展开给用户看（写了理由就留一条批注）。截图的返回里也列出两边的折叠 |
 | `view_layout` | 查看或调整画板：同单位的根上下拼（`merge --side above/below`）、左右接（`merge --side left/right`）或拆开（`split`）、移动（`move`）、恢复自动排版（`reset`）。和网页改的是同一份排版 |
 | `view_at` | 按时刻读：某个根的某一刻（`--root 1 --at 12.5`）或一段（`--range 10 15`）上，每层是什么（没有就写是哪种空）、这些东西之间的关联、指着它们的待处理批注。不给参数就读用户此刻在视图里看的地方：圈出了一段读那一段，否则读播放头。用户说"这里""这一刻"时先读它 |
 | `view_walk` | 沿着关联读：`object:16`（或 `layer:5`）出发，按步数列出每一步是什么——名字、所在层、位置、文字或文件、批注的署名和状态——以及是从哪一个、顺着哪条关联到的。`--direction both/out/in`、`--depth`（默认 3）、`--max`（默认 60）；到了上限会写明还有几条关联没走、几个没列出。读一楼批注的来龙去脉、一个对象牵连到什么，用它 |
-| `view_plugin` | 视图插件的清单：不带动作时列出（内置还是链接、开没开、有什么问题）；`add 路径 [--name 名字]` 加链接、`remove 名字` 去掉（不删文件）、`on` / `off 名字` 开关。和网页顶栏「插件」改同一份，页面自己会跟上 |
+| `view_plugin` | 查看本机与市场、说明、安装 ZIP、更新、开关、解除登记和开发链接；网页与命令共用。完整用法见[插件说明](PLUGINS.md) |
 | `view_tables` | 视图自己的表（折叠、已读）在库里登记的声明是不是现在这份；`--upgrade` 把旧库显式升级（只改声明）。旧库要用 JSON 交换复制项目之前跑一次 |
 | `view_bench` | 改了视图以后量性能：打开、点选、拖画板、放大后平移（也量有插件画格子时），和门槛比，超过的标红、退出码 1；`--baseline` 和改之前的构建交替量。见下面「网页源码」的性能门槛 |
 | `view_frame` | 取视频对象在某一刻的画面（JPEG），按时间轴全局时间或视频自身时间，`--last` 取最后一帧；需要 ffmpeg |
@@ -135,7 +134,7 @@ python -m layerweave.tool.builtin.view.layout DATABASE 1 merge 31 --to 1 --side 
 python -m layerweave.tool.builtin.view.screenshot DATABASE 1 输出.png --changes 5
 python -m layerweave.tool.builtin.view.screenshot DATABASE 1 输出.png --note 42
 python -m layerweave.tool.builtin.view.screenshot DATABASE 1 输出.png --link "http://127.0.0.1:8765/?project=1&board=1&begin=8&end=14&select=16"
-python -m layerweave.tool.builtin.view.screenshot DATABASE 1 接缝.png --view cuts --full-page
+python -m layerweave.tool.builtin.view.screenshot DATABASE 1 接缝.png --view layerweave.cuts --full-page
 python -m layerweave.tool.builtin.view.frame DATABASE 1 16 输出.jpg --at 3.75
 ```
 
@@ -151,7 +150,7 @@ python -m layerweave.tool.builtin.view.frame DATABASE 1 16 输出.jpg --at 3.75
 - 用户圈出一段后，`view_state` 的 `selection` 给出那一段在哪个根上、那个根自己的起止；要给这一段写批注，用 `view_note add --to layer:根编号 --span 起点 终点`。
 - 要改用户圈出的那一段，和 JSON 交换（`usage/exchange`）配着用：`view_state` 读出根和起止 → `exchange.cli export DATABASE 项目 --layer-ids 根编号 --begin 起点 --end 终点 --include-baseline --output 文件` → 改 JSON → `apply`。编号不变，挂在上面的批注不断；视图每两秒轮询，正在写入或拖动时延后应用变化，改完用 `view_screenshot` 或 `view_at` 看一眼。
 - 改动的文字清单也可以用使用工具里的 `read_history`；视图的用处是把改动放回画面里看。
-- 截图自动查找 Chrome、Edge 或 Chromium，也可以用 `--browser` 或环境变量 `LAYERWEAVE_BROWSER` 指定。浏览器使用临时的独立配置，不会碰到用户正在用的浏览器；截图页面不记录状态、不改排版、不写批注和折叠。返回里的 `ready` 为 False 时，表示等待时间内没加载完，图里可能缺缩略图。
+- 截图自动查找 Chrome、Edge 或 Chromium，也可以用 `--browser` 或环境变量 `LAYERWEAVE_BROWSER` 指定。浏览器使用临时的独立配置，不会碰到用户正在用的浏览器；截图页面不记录状态、不改排版、不写批注和折叠。仅页面实际画完才输出成功；未就绪、目标插件不可用或加载失败时返回错误，不生成替代画布截图。
 - "正在看哪儿"记在本机用户目录 `~/.layerweave/view/` 下，每个数据库一份，不写进业务库。
 
 ## 网页源码
@@ -162,7 +161,7 @@ python -m layerweave.tool.builtin.view.frame DATABASE 1 16 输出.jpg --at 3.75
 cd frontend/view
 npm install          # 第一次
 npm test             # 纯计算部分的单元测试（vitest）
-npm run build        # 类型检查 + 单元测试 + 编译，输出到 src/layerweave/tool/builtin/view/web/（提交这些文件）
+npm run build        # 类型检查 + 单元测试 + 接口类型快照 + 网页编译，输出到 src/layerweave/tool/builtin/view/web/（提交这些文件）
 npm run dev          # 开发：接口转给已经在跑的视图服务（默认 127.0.0.1:8765，环境变量 LAYERWEAVE_VIEW 可改）
 ```
 
@@ -175,7 +174,7 @@ npm run dev          # 开发：接口转给已经在跑的视图服务（默认
 | `src/tree/` | 左边的目录树（`model/tree.ts` 是它的纯计算） |
 | `src/plugin/` | 插件接口（`host.ts`：插件能用的东西和栏位）、载入（`registry.ts`：按清单载入、拿下来；`plan.ts`：和清单对一遍）、出错保护（`slots.tsx`）；顶栏的「插件」小窗是 `src/PluginManager.tsx`，格子的共享媒体由 `canvas/TrackMedia.tsx` 管理；`Media.tsx` 保留旧逐格路径和特殊格子的绘制 |
 | `example-plugin/` | 样板插件「字数」：不用构建的一个 js，类型注释随 `npm run build` 检查；不随软件分发 |
-| `plugins/<名字>/` | 内置插件的源码，编译到 `view/plugins/<名字>/plugin.js`（`vite.plugins.config.ts`），再在 `plugins.py` 的 `BUILTIN` 里写上；接缝在 `plugins/cuts/`，一览在 `plugins/assets/`；分页部件是 `src/plugin/Pager.tsx` |
+| `tools/export-plugin-sdk.mjs` | 构建时从真实 host.ts 生成可独立引用的类型快照，输出到 Python 视图包的 sdk/；官方插件源码在独立仓库 |
 | `src/store.ts`、`sync.ts`、`camera.ts`、`actions.ts` | 状态；和服务同步（轮询、保存排版、报告"正在看哪儿"、写批注）；镜头；用户操作 |
 | `src/capture.ts`、`params.ts` | 截图约定：地址参数，以及加载完以后设 `window.__layerweaveReady` |
 
@@ -191,5 +190,5 @@ python -m layerweave.tool.builtin.view.bench --objects 800 --rounds 3 --baseline
 改网页时保持后端接口和截图约定不变（地址参数、`record=0`、`__layerweaveReady`），`view_screenshot` 和测试就照常可用。画板尺寸由数据算出（`Model.boardLayout`），排版不依赖量页面。新的计算放进 `src/model/` 并补单元测试；页面上的部分（拖动、镜头）在浏览器里试。
 
 ## 以后
-- 动画层的片子：逐帧条、对着时间轴播放、截停会动的 SVG，做成插件。
+- Python 组件的标准安装、发现与环境接入；当前仅预留 kind 分流。
 - 性能：继续改善超大项目的偶发长帧和批注面板首次绘制。已有共享媒体、分批准备和增量刷新，策略与有效测量方法见[性能说明](PERFORMANCE.md)和[增量说明](INCREMENTAL.md)。

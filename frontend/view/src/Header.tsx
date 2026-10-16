@@ -12,9 +12,8 @@ import {PluginManager} from './PluginManager';
 import {loadProject} from './sync';
 import type {View} from './types';
 
-// 画布、插件的页面（比如接缝；项目里没有它管的对象时不显示）；一览也是插件，排在最后
+// 画布和按本机清单顺序载入的插件页面；没有对应内容时可隐藏插件标签。
 const CANVAS = {view: 'canvas' as View, label: '画布', title: undefined as string | undefined};
-const LAST = ['assets'];
 
 export function Header() {
   const switching = useRef(0);
@@ -60,7 +59,7 @@ export function Header() {
         {projects.map((p) => <option key={p.id} value={p.id}>{p.id} · {p.name || '未命名'}</option>)}
       </select>
       <nav className="tabs">
-        {[CANVAS, ...plugins.filter((p) => p.page && pluginApplies(p, model)).sort((p, q) => Number(LAST.includes(p.name)) - Number(LAST.includes(q.name))).map((p) => ({view: p.name, label: p.label, title: p.title}))].map((v) => <button key={v.view} className={view === v.view ? 'on' : ''} title={v.title} onClick={() => setView(v.view)}>{v.label}</button>)}
+        {[CANVAS, ...plugins.filter((p) => p.page && pluginApplies(p, model)).map((p) => ({view: p.name, label: p.label, title: p.title}))].map((v) => <button key={v.view} className={view === v.view ? 'on' : ''} title={v.title} onClick={() => setView(v.view)}>{v.label}</button>)}
       </nav>
       <input className="find" type="search" placeholder="找对象：名字、文字、文件名、#编号" title="回车找下一个，Shift+回车找上一个"
              value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') search(e.shiftKey); }} />
@@ -68,7 +67,7 @@ export function Header() {
       <div className="spacer" />
       <span className="clock" title="播放头位置（当前画板的单位）">{playhead != null ? fmt(playhead, unit) : '—'}</span>
       <button title="复制现在看的位置（画板、范围、播放头、选中的对象、对准的批注）。贴给 AI，它能拍到同样的画面" onClick={copyLink}>复制链接</button>
-      {!CAPTURE && <button className={`plugin-toggle${pluginsOpen ? ' on' : ''}`} title={trouble ? `插件：有 ${trouble} 个有问题，点开看` : '插件：看、开关、加链接'}
+      {!CAPTURE && <button className={`plugin-toggle${pluginsOpen ? ' on' : ''}`} title={trouble ? `插件：有 ${trouble} 个有问题，点开看` : '插件：查询、选装、更新、开关和开发链接'}
                            onClick={() => setPluginsOpen(!pluginsOpen)}>插件{trouble ? <b className="trouble">!</b> : null}</button>}
       {pluginsOpen && <PluginManager onClose={() => setPluginsOpen(false)} />}
       {view === 'canvas' && <>

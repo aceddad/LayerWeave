@@ -1,14 +1,15 @@
 {
   "name": "layerweave-view",
   "private": true,
-  "version": "0.27.3",
+  "version": "0.28.0",
   "description": "LayerWeave 视图网页的源码；npm run build 输出到 src/layerweave/tool/builtin/view/web/",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vitest run && vite build && vite build -c vite.plugins.config.ts",
+    "build": "tsc --noEmit && vitest run && node tools/export-plugin-sdk.mjs && vite build",
     "check": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "sdk": "node tools/export-plugin-sdk.mjs"
   },
   "dependencies": {
     "@xyflow/react": "^12.12.0",

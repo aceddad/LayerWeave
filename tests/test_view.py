@@ -368,106 +368,42 @@ class ViewTests(unittest.TestCase):
             self.assertEqual(project_view(c, self.database, self.project)["noteReads"][str(top)]["用户"], later)
 
     def test_plugin_list_add_switch_remove_and_serve(self):
-        from layerweave.tool.builtin.view.plugins import PACKAGE_ROOT, list_plugins, loadable, plugin
+        from layerweave.tool.builtin.view.plugins import list_plugins, plugin
         root = self.state_root
-        # 什么都没登记：只有内置的，按各自的默认——一览开着，接缝、预览关着
-        found = list_plugins(root)
-        self.assertEqual([(p["name"], p["source"], p["on"], p["problem"]) for p in found["plugins"]],
-                         [("cuts", "builtin", False, None), ("assets", "builtin", True, None), ("preview", "builtin", False, None)])
-        # 打开接缝：和默认不一样才记一行
-        plugin("on", "cuts", root=root)
-        self.assertEqual(json.loads((root / "plugins.json").read_text(encoding="utf-8"))["plugins"], [{"name": "cuts", "on": True}])
-        listed = self.json("/api/plugins")
-        self.assertRegex(listed["plugins"][0]["url"], r"^/plugins/cuts/plugin\.js\?v=\d+$")
-        status, headers, body = self.get("/plugins/cuts/plugin.js")
-        self.assertEqual((status, headers["Content-Type"].split(";")[0]), (200, "text/javascript"))
-        self.assertIn(b"export", body)
-        for bad in ("/plugins/nope/plugin.js", "/plugins/cuts/../../server.py", "/plugins/cuts/%2e%2e/%2e%2e/server.py"):
-            with self.assertRaises(HTTPError, msg=bad):
+        self.assertEqual(self.json("/api/plugins")["plugins"], [])
+        fixture = Path(__file__).parent / "fixtures/view-plugin"
+        self.assertEqual(plugin("add", str(fixture), root=root)["added"], "local.view-plugin")
+        listed = self.json("/api/plugins")["plugins"][0]
+        self.assertRegex(listed["url"], r"^/plugins/local\.view-plugin/[a-f0-9]+/plugin\.js$")
+        prefix = listed["url"].rsplit("/", 1)[0]
+        self.assertEqual(self.get(listed["url"])[0], 200)
+        self.assertEqual(self.get(prefix + "/parts/label.js")[0], 200)
+        for bad in (prefix + "/../../plugins.py", prefix + "/%2e%2e/plugin.json", prefix + "/README.md"):
+            with self.assertRaises(HTTPError):
                 self.get(bad)
-        # 链接：js 文件、放着 plugin.js 的文件夹、默认文件夹里只写名字；名字默认用文件夹名或文件名
-        tools = Path(self.temp.name) / "tools"
-        (tools / "abcd" / "web").mkdir(parents=True)
-        (tools / "abcd" / "web" / "Timeline.js").write_text("export default () => ({label: '时间线'});", encoding="utf-8")
-        (tools / "abcd" / "web" / "icon.svg").write_text("<svg/>", encoding="utf-8")
-        (tools / "abcd" / "web" / "secret.txt").write_text("不是网页文件", encoding="utf-8")
-        (tools / "board").mkdir()
-        (tools / "board" / "plugin.js").write_text("export default () => ({label: '分镜'});", encoding="utf-8")
-        (root / "plugins" / "mine").mkdir(parents=True)
-        (root / "plugins" / "mine" / "plugin.js").write_text("export default () => ({label: '我的'});", encoding="utf-8")
-        self.assertEqual(plugin("add", str(tools / "abcd" / "web" / "Timeline.js"), root=root)["added"], "timeline")
-        self.assertEqual(plugin("add", str(tools / "board"), root=root)["added"], "board")
-        self.assertEqual(plugin("add", "mine", root=root)["added"], "mine")
-        saved = json.loads((root / "plugins.json").read_text(encoding="utf-8"))["plugins"]
-        self.assertEqual(saved[3], {"name": "mine", "path": "mine/plugin.js", "on": True})     # 默认文件夹里的记相对路径
-        # 加不进来的：不写清单
-        before = (root / "plugins.json").read_text(encoding="utf-8")
-        inside = PACKAGE_ROOT / "tool" / "builtin" / "view" / "plugins" / "cuts" / "plugin.js"
-        for target, kw, message in [(str(tools / "abcd" / "web" / "Timeline.js"), {"name": "again"}, "已经加过了"),
-                                    (str(tools / "board"), {}, "已经有叫 board"),
-                                    (str(tools / "none.js"), {}, "找不到文件"),
-                                    (str(tools / "abcd" / "web" / "secret.txt"), {"name": "txt"}, "不是 js"),
-                                    (str(tools / "board" / "plugin.js"), {"name": "canvas"}, "不合规矩"),
-                                    (str(tools / "board" / "plugin.js"), {"name": "cuts"}, "内置插件的名字"),
-                                    ("nobody", {}, "默认文件夹"),
-                                    (str(inside), {"name": "inside"}, "安装目录")]:
-            with self.assertRaisesRegex(ValueError, message, msg=target):
-                plugin("add", target, root=root, **kw)
-        self.assertEqual((root / "plugins.json").read_text(encoding="utf-8"), before)
-        # 服务每次都重读清单：不用重启；插件文件夹里的网页文件给，别的不给
-        listed = {p["name"]: p for p in self.json("/api/plugins")["plugins"]}
-        self.assertEqual(list(listed), ["cuts", "assets", "preview", "timeline", "board", "mine"])
-        self.assertRegex(listed["timeline"]["url"], r"^/plugins/timeline/Timeline\.js\?v=\d+$")
-        self.assertEqual(self.get("/plugins/timeline/icon.svg")[0], 200)
-        with self.assertRaises(HTTPError):
-            self.get("/plugins/timeline/secret.txt")
-        # 开关：内置的回到默认就删掉那一行，和默认不一样才记；关着的不给文件、不算截图能用的页面
         serial = self.json("/api/version")["plugins"]
-        plugin("off", "cuts", root=root)
-        plugin("off", "board", root=root)
-        self.assertFalse(any(r["name"] == "cuts" for r in json.loads((root / "plugins.json").read_text(encoding="utf-8"))["plugins"]))
-        self.assertNotEqual(self.json("/api/version")["plugins"], serial)                        # 网页轮询靠它发现清单改了
-        self.assertEqual([p["name"] for p in loadable(root)], ["assets", "timeline", "mine"])
-        self.assertNotIn("url", {p["name"]: p for p in self.json("/api/plugins")["plugins"]}["cuts"])
-        with self.assertRaises(HTTPError):
-            self.get("/plugins/cuts/plugin.js")
-        with self.assertRaisesRegex(ValueError, "没有叫 cuts 的页面"):
-            capture(self.database, self.project, Path(self.temp.name) / "x.png", view="cuts", state_root=root)
-        plugin("on", "cuts", root=root)
-        self.assertIn({"name": "cuts", "on": True}, json.loads((root / "plugins.json").read_text(encoding="utf-8"))["plugins"])
-        # 去掉：只删清单里的一行，不删文件；内置的去不掉
-        with self.assertRaisesRegex(ValueError, "去不掉"):
-            plugin("remove", "cuts", root=root)
-        plugin("remove", "board", root=root)
-        self.assertTrue((tools / "board" / "plugin.js").is_file())
-        # 文件不见了：那一行留着，标"找不到"，不载入
-        (tools / "abcd" / "web" / "Timeline.js").rename(tools / "abcd" / "web" / "moved.js")
-        rows = {p["name"]: p for p in list_plugins(root)["plugins"]}
-        self.assertIn("找不到文件", rows["timeline"]["problem"])
-        self.assertEqual([p["name"] for p in loadable(root)], ["cuts", "assets", "mine"])
-        # 网页也能改（和命令同一份）；截图用的服务不写
-        body = json.dumps({"action": "off", "target": "mine"}).encode()
+        body = json.dumps({"action": "off", "target": "local.view-plugin"}).encode()
         with urlopen(Request(self.url + "api/plugins", data=body), timeout=10) as response:
-            self.assertFalse({p["name"]: p for p in json.loads(response.read())["plugins"]}["mine"]["on"])
-        with self.assertRaises(HTTPError) as caught:
-            urlopen(Request(self.url + "api/plugins", data=json.dumps({"action": "add", "target": "nobody"}).encode()), timeout=10)
-        self.assertIn("默认文件夹", json.loads(caught.exception.read())["error"])
+            self.assertFalse(json.loads(response.read())["plugins"][0]["on"])
+        self.assertNotEqual(self.json("/api/version")["plugins"], serial)
+        with self.assertRaises(HTTPError):
+            self.get(listed["url"])
+        with self.assertRaisesRegex(ValueError, "已关闭"):
+            capture(self.database, self.project, Path(self.temp.name) / "x.png", view="local.view-plugin", state_root=root)
         quiet, url = make_server(self.database, state_root=root, record_state=False)
         threading.Thread(target=quiet.serve_forever, daemon=True).start()
         try:
-            with urlopen(Request(url + "api/plugins", data=json.dumps({"action": "on", "target": "mine"}).encode()), timeout=10) as response:
+            with urlopen(Request(url + "api/plugins", data=json.dumps({"action": "on", "target": "local.view-plugin"}).encode()), timeout=10) as response:
                 self.assertEqual(json.loads(response.read()), {"recorded": False})
         finally:
             quiet.shutdown()
             quiet.server_close()
-        self.assertFalse({p["name"]: p for p in list_plugins(root)["plugins"]}["mine"]["on"])
-        # 清单坏了：内置的照常，问题报出来；写的时候不覆盖坏文件
+        plugin("remove", "local.view-plugin", files=True, root=root)
+        self.assertTrue((fixture / "plugin.js").is_file())
         (root / "plugins.json").write_text("{坏了", encoding="utf-8")
-        broken = list_plugins(root)
-        self.assertEqual([p["name"] for p in broken["plugins"]], ["cuts", "assets", "preview"])
-        self.assertIn("读不了", broken["problem"])
+        self.assertIn("读不了", list_plugins(root)["problem"])
         with self.assertRaisesRegex(ValueError, "读不了"):
-            plugin("off", "cuts", root=root)
+            plugin("add", str(fixture), root=root)
         self.assertEqual((root / "plugins.json").read_text(encoding="utf-8"), "{坏了")
 
     def test_screenshot_layers_by_name_or_path(self):
@@ -734,22 +670,22 @@ class ViewTests(unittest.TestCase):
         self.assertIsNone(read_state(self.database, self.state_root))
         self.assertFalse(layout_path(self.database, self.state_root).exists())     # 截图页面不改排版
         from layerweave.tool.builtin.view.plugins import plugin
-        plugin("on", "cuts", root=self.state_root)                                 # 接缝默认关着
-        cuts = capture(self.database, self.project, Path(self.temp.name) / "shots" / "cuts.png", view="cuts", full_page=True,
+        plugin("add", str(Path(__file__).parent / "fixtures/view-plugin"), root=self.state_root)                                 # 合成插件，不依赖官方插件
+        cuts = capture(self.database, self.project, Path(self.temp.name) / "shots" / "cuts.png", view="local.view-plugin", full_page=True,
                        links=True, width=900, height=400, wait_ms=15000, state_root=self.state_root)
         self.assertTrue(cuts["ready"])
-        self.assertIn("view=cuts", cuts["page"])
+        self.assertIn("view=local.view-plugin", cuts["page"])
         self.assertIn("full=1", cuts["page"])
         said = add_note(self.database, self.project, "这张图换一下", targets=[("object", self.project, self.image.id)], author="用户")["note"]
         aimed = capture(self.database, self.project, Path(self.temp.name) / "shots" / "note.png", note=said,
                         width=1000, height=600, wait_ms=15000, state_root=self.state_root)
         self.assertTrue(aimed["ready"])
         self.assertIn(f"note={said}", aimed["page"])
-        link = f"http://127.0.0.1:8765/?project={self.project}&view=cuts&board={self.board}&select={self.image.id}&record=1"
+        link = f"http://127.0.0.1:8765/?project={self.project}&view=local.view-plugin&board={self.board}&select={self.image.id}&record=1"
         linked = capture(self.database, self.project, Path(self.temp.name) / "shots" / "link.png", link=link,
                          width=1000, height=600, wait_ms=15000, state_root=self.state_root)
         self.assertTrue(linked["ready"])
-        for part in ("view=cuts", f"board={self.board}", f"select={self.image.id}", "record=0"):   # 链接里的 record=1 不算数
+        for part in ("view=local.view-plugin", f"board={self.board}", f"select={self.image.id}", "record=0"):   # 链接里的 record=1 不算数
             self.assertIn(part, linked["page"])
 
     @unittest.skipIf(find_browser() is None, "本机没有 Chrome、Edge 或 Chromium")
@@ -757,15 +693,15 @@ class ViewTests(unittest.TestCase):
         # 仓库里的样板插件「字数」：链接进来，侧栏、对象详情由它画；截图等它画完
         from layerweave.tool.builtin.view.plugins import plugin
         example = Path(__file__).resolve().parents[1] / "frontend" / "view" / "example-plugin"
-        self.assertEqual(plugin("add", str(example), root=self.state_root)["added"], "example-plugin")
-        with self.assertRaisesRegex(ValueError, "没有叫 nope 的侧栏"):
+        self.assertEqual(plugin("add", str(example), root=self.state_root)["added"], "local.example-plugin")
+        with self.assertRaisesRegex(ValueError, "未安装"):
             capture(self.database, self.project, Path(self.temp.name) / "x.png", side="nope", state_root=self.state_root)
-        with self.assertRaisesRegex(ValueError, "不合规矩"):
-            plugin("add", str(example), name="notes", root=self.state_root)                 # 视图自己侧栏的名字
+        with self.assertRaisesRegex(ValueError, "不合规"):
+            plugin("add", str(example), name="Bad.Name", root=self.state_root)                 # 视图自己侧栏的名字
         shot = capture(self.database, self.project, Path(self.temp.name) / "shots" / "words.png", board=self.main_layer,
-                       select=self.text_at_0, side="example-plugin", width=1000, height=600, wait_ms=15000, state_root=self.state_root)
+                       select=self.text_at_0, side="local.example-plugin", width=1000, height=600, wait_ms=15000, state_root=self.state_root)
         self.assertTrue(shot["ready"])
-        self.assertIn("side=example-plugin", shot["page"])
+        self.assertIn("side=local.example-plugin", shot["page"])
 
     def test_bench_synthetic_project_and_verdicts(self):
         # view_bench 的合成项目：构成照手书，两块画板，图片、音频是生成的文件；判定按门槛、超过的写明

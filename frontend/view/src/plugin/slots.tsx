@@ -3,11 +3,16 @@ import {Component} from 'react';
 import type {ReactNode} from 'react';
 import {getState, setState} from '../store';
 import {toast} from '../sync';
+import {CAPTURE} from '../params';
 
 // 插件出错：记进「插件」小窗（同一个插件只记一次、只提示一次），不影响视图和别的插件
 const reported = new Set<string>();
 export function pluginFailed(name: string, error: unknown) {
   const text = '出错了：' + ((error as Error)?.message || String(error));
+  if (CAPTURE && [getState().view, getState().side].includes(name)) {
+    window.__layerweaveError = `插件 ${name} ${text}`;
+    window.__layerweaveReady = false;
+  }
   console.warn(`插件「${name}」`, error);
   if (reported.has(name + text)) return;
   reported.add(name + text);

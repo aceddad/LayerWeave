@@ -13,7 +13,7 @@ import mimetypes
 from pathlib import Path
 import re
 import threading
-from urllib.parse import parse_qs, unquote, urlparse
+from urllib.parse import parse_qs, quote, unquote, urlparse
 
 from .data import extract_frame, find_ffmpeg, list_projects, media_path, open_readonly, project_roots, project_view, recent_changes, thumbnail, waveform
 from .layout import layout_serial, load_layout, reconcile, save_layout
@@ -109,17 +109,15 @@ class ViewHandler(SimpleHTTPRequestHandler):
             if url.path == "/api/state":
                 return self.send_json(read_state(self.database, self.state_root))
             if url.path == "/api/plugins":
-                # 视图插件（plugins.py）：本机清单里的全部。开着、没问题的带 url，页面按顺序 import()；
-                # 每次都重读清单，改了不用重启。v 是文件的修改时间：插件改过以后，页面不会用到老的那份
+                # 修订号进入路径，相对导入的子模块也随版本换 URL。
                 result = list_plugins(self.state_root)
                 for p in result["plugins"]:
                     if p["on"] and not p["problem"]:
-                        entry = Path(p["path"])
-                        p["url"] = f"/plugins/{p['name']}/{entry.name}?v={entry.stat().st_mtime_ns}"
+                        p["url"] = f"/plugins/{p['id']}/{p['revision']}/{quote(p['entry'])}"
                 return self.send_json(result)
-            if match := re.fullmatch(r"/plugins/([a-z][a-z0-9_-]*)/(.+)", url.path):
+            if match := re.fullmatch(r"/plugins/([a-z][a-z0-9_-]*\.[a-z][a-z0-9_-]*)/([a-f0-9]+)/(.+)", url.path):
                 # 插件的入口和它旁边的文件（拆出去的代码、图片、样式），只限这个文件夹里的网页文件
-                path = plugin_file(match[1], unquote(match[2]), self.state_root)
+                path = plugin_file(match[1], unquote(match[3]), self.state_root, revision=match[2])
                 return self.send_file(path) if path else self.send_json({"error": "没有这个插件文件"}, HTTPStatus.NOT_FOUND)
             if url.path == "/api/capabilities":
                 return self.send_json({"frames": find_ffmpeg() is not None})
@@ -199,7 +197,9 @@ class ViewHandler(SimpleHTTPRequestHandler):
             # 网页顶栏的「插件」：和 view_plugin 命令改同一份本机清单（加链接、去掉、开、关）
             try:
                 return self.send_json(plugin_action(payload.get("action"), payload.get("target"), name=payload.get("name") or None,
-                                                    root=self.state_root))
+                                                    root=self.state_root, catalog=payload.get("catalog") or None,
+                                                    version=payload.get("version") or None, file=payload.get("file") or None,
+                                                    files=payload.get("files") is True))
             except (ValueError, OSError) as error:
                 return self.send_json({"error": str(error)}, HTTPStatus.BAD_REQUEST)
         if folds:

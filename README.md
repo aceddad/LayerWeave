@@ -14,6 +14,8 @@ LayerWeave 是一个用层、对象、关联和轴位置组织内容的 Python �
 - **两种调用方式**：Python API 和 CLI；命令 help 与配置 help 可以查询支持能力和调用示例。
 - **JSON 交换**：按项目、子树或对象导出，修改后批量写回；提供字幕、分镜和手书起始模板，见[导入导出](src/layerweave/tool/builtin/usage/exchange/README.md)。
 
+- **可选视图插件**：本分支的画布支持独立选装一览、接缝和预览；零插件也可运行，见[视图插件](src/layerweave/tool/builtin/view/PLUGINS.md)。
+
 ## 开始使用
 
 当前通过源码的本地可编辑安装使用。需要 Python 3.11+、SQLite 3.35+；核心与内部工具运行时只使用标准库，外置技能的媒体依赖按需安装。建议先启用自己的 Python 虚拟环境，具体准备见[开发指南](docs/developer-conventions.md#准备环境)。

@@ -4,6 +4,16 @@ import {changeMarks} from '../changes';
 import {decimalsOf, fmtLength, gapAt, trackGaps} from '../gaps';
 import {refLabel, relationsOf} from '../labels';
 import {linkQuery} from '../link';
+
+it('插件参数随复制链接保留，不能覆盖宿主项目或运行控制', () => {
+  const query = new URLSearchParams(linkQuery({project: 1, view: 'alice.demo', side: 'now',
+    pluginParams: new URLSearchParams('ids=%5B2%2C3%5D&step=1f&project=9&record=1&capture=1')}));
+  expect(query.get('ids')).toBe('[2,3]');
+  expect(query.get('step')).toBe('1f');
+  expect(query.get('project')).toBe('1');
+  expect(query.has('record')).toBe(false);
+  expect(query.has('capture')).toBe(false);
+});
 import {editPoints, stepObject, stepTime, stepTrack} from '../navigate';
 import {noteIndex, noteList, noteThreads, readBy, waitingFor} from '../notes';
 import {withFolds, withNoteStatus, withRead} from '../optimistic';
@@ -144,7 +154,7 @@ describe('键盘跳转', () => {
     expect(stepTrack(m, b, 3, 0, -1)).toBeNull();
   });
 
-  it('没选中对象时在剪辑点之间跳（[ ] 的接缝跳转点由接缝插件给，测试在 plugins/cuts）', () => {
+  it('没选中对象时在剪辑点之间跳（[ ] 的接缝跳转点由接缝插件给，测试在独立插件仓库）', () => {
     const points = editPoints(m, b);
     expect(points).toEqual([0, 1, 3, 4, 8, 9, 10, 12, 15]);
     expect([stepTime(points, 4, 1), stepTime(points, 4, -1), stepTime(points, 15, 1), stepTime(points, 0, -1)]).toEqual([8, 3, null, null]);
@@ -161,7 +171,7 @@ describe('复制链接', () => {
   it('批注面板对准某条批注时写 note；接缝页不写范围', () => {
     expect(linkQuery({project: 2, view: 'canvas', side: 'notes', note: 42})).toBe('project=2&note=42');
     expect(linkQuery({project: 2, view: 'canvas', side: 'notes'})).toBe('project=2&side=notes');
-    expect(linkQuery({project: 1, view: 'cuts', side: 'now', board: 1, range: [0, 5]})).toBe('project=1&view=cuts&board=1');
+    expect(linkQuery({project: 1, view: 'layerweave.cuts', side: 'now', board: 1, range: [0, 5]})).toBe('project=1&view=layerweave.cuts&board=1');
   });
 
   it('沿读写起点；方向、步数不是默认的才写', () => {

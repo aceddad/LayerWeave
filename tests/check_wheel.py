@@ -24,6 +24,12 @@ def check(wheel):
         key_template = json.loads(archive.read("layerweave/tool/builtin/developer/keys/example.json"))
         assert all(record["key"] == "" for record in key_template.values())
         assert not any(name.endswith(("/keys.local.json", "/keys.json")) for name in names)
+        assert not any(name.startswith("layerweave/tool/builtin/view/plugins/") for name in names), "官方插件不能随宿主分发"
+        for subtree in ("web", "sdk"):
+            prefix = f"layerweave/tool/builtin/view/{subtree}/"
+            expected = {"layerweave/" + p.relative_to(package).as_posix() for p in (package / "tool/builtin/view" / subtree).rglob("*") if p.is_file()}
+            actual = {name for name in names if name.startswith(prefix) and not name.endswith("/")}
+            assert actual == expected, f"{subtree} 资源与源码不一致；请清理旧 build 生成物后重建：{actual ^ expected}"
         resources = [package / "support/storage/schema.sql", package / "tool/README.md", package / "tool/builtin/developer/keys/example.json",
                      package / "tool/builtin/developer/keys/README.md"]
         resources += [p for folder in ("configs", "tool/skills") for p in (package / folder).rglob("*")
@@ -33,7 +39,9 @@ def check(wheel):
         resources.append(package / "support/numbering/README.md")
         resources += list((package / "tool/builtin/usage/exchange/templates").glob("*.json"))
         resources += list((package / "tool/builtin/usage/exchange").glob("*.md"))
-        resources += [package / "tool/builtin/view/PERFORMANCE.md", package / "tool/builtin/view/INCREMENTAL.md"]
+        resources += [package / "tool/builtin/view/PERFORMANCE.md", package / "tool/builtin/view/INCREMENTAL.md", package / "tool/builtin/view/PLUGINS.md"]
+        resources += [p for p in (package / "tool/builtin/view/sdk").rglob("*") if p.is_file()]
+        resources += [p for p in (package / "tool/builtin/view/web").rglob("*") if p.is_file()]
         for path in resources:
             member = "layerweave/" + path.relative_to(package).as_posix()
             assert member in names, f"Missing package resource: {member}"
@@ -78,6 +86,18 @@ assert {str(ROOT)!r} not in sys.path
         data = json.loads(run.stdout)
         assert data["status"] == "completed" and len(data["items"]) == 45, data
         print("ordinary install CLI: 45 commands discovered, no editable source fallback")
+        zero = bootstrap + '''
+import tempfile
+from layerweave.tool.builtin.view.plugins import list_plugins
+with tempfile.TemporaryDirectory() as folder:
+    result = list_plugins(folder)
+    assert result['plugins'] == [] and not result['problem'], result
+print('ordinary install: zero plugins; host available without official payloads')
+'''
+        run = subprocess.run([sys.executable, "-X", "utf8", "-B", "-S", "-c", zero], cwd=host, env=env,
+                             capture_output=True, text=True, encoding="utf-8", timeout=30)
+        assert run.returncode == 0, run.stdout + run.stderr
+        print(run.stdout.strip())
 
 
 if __name__ == "__main__":

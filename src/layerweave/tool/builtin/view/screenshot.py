@@ -4,7 +4,7 @@ AI 看到的就是用户在视图里看到的：画板的排版用用户那份�
 页面把图片、视频封面、波形都加载完才举手，截图工具通过浏览器调试接口等到它再拍，不会拍到还没出图的空色块。
 
 python -m layerweave.tool.builtin.view.screenshot DATABASE PROJECT_ID 输出.png
-       [--view canvas|assets|插件页面，如 cuts] [--board 根层编号] [--begin 起点 --end 终点] [--layers 1 字幕 画面/原画] [--playhead 位置] [--select 对象编号]
+       [--view canvas|完整插件ID，如 layerweave.cuts] [--board 根层编号] [--begin 起点 --end 终点] [--layers 1 字幕 画面/原画] [--playhead 位置] [--select 对象编号]
        [--focus 对象编号] [--note 批注编号] [--link 用户复制的链接] [--changes 最近几次操作] [--notes | --side 侧栏] [--links] [--full-page]
        [--width 1600 --height 900] [--browser 浏览器路径] [--wait-ms 20000]
 """
@@ -30,7 +30,8 @@ from layerweave.support.api import read_record
 
 from .data import open_readonly, order_layers
 from .fold import read_folds
-from .plugins import loadable
+from .plugins import require_plugin
+from .plugin_manifest import LINK_KEYS, OWN_KEYS, PARAM, check_params, read_manifest
 from .server import make_server
 
 CANDIDATES = [
@@ -191,14 +192,6 @@ def resolve_layers(database, project_id, items):
     return out
 
 
-# 页面认识的地址参数（截图约定见 README）；--link 只取这些
-LINK_KEYS = ("view", "board", "begin", "end", "playhead", "select", "focus", "note", "changes", "layers", "side", "links",
-             "walk", "walkdir", "walkdepth")
-# 视图自己用的地址参数：--param 不能盖掉它们
-OWN_KEYS = {*LINK_KEYS, "project", "record", "capture", "full", "tree", "as", "media"}
-PARAM = re.compile(r"[a-z][a-z0-9_]{0,31}")
-
-
 def page_params(pairs):
     """--param 名字=值：原样放进页面地址，给插件页面用（比如一览、预览的 page=3）。名字只能是小写字母、数字、下划线"""
     out = {}
@@ -213,11 +206,12 @@ def page_params(pairs):
 
 
 def link_query(link, project_id):
-    """用户在视图里点「复制链接」得到的地址 → 页面参数。只取视图认识的参数；链接里的项目要和 project_id 一致。"""
-    query = {key: values[-1] for key, values in parse_qs(urlparse(str(link)).query).items() if values}
+    """保留宿主位置和插件参数，剔除链接中的运行/截图控制字段。"""
+    query = {key: values[-1] for key, values in parse_qs(urlparse(str(link)).query, keep_blank_values=True).items() if values}
     if "project" in query and str(query["project"]) != str(project_id):
         raise ValueError(f"链接是项目 {query['project']} 的，参数给的是项目 {project_id}")
-    return {key: query[key] for key in LINK_KEYS if key in query}
+    plugin_target = query.get("view", "canvas") != "canvas" or query.get("side", "now") not in ("now", "changes", "notes", "walk")
+    return {key: value for key, value in query.items() if key in LINK_KEYS or (plugin_target and key not in OWN_KEYS and PARAM.fullmatch(key))}
 
 
 def capture(database, project_id, output, *, view=None, board=None, begin=None, end=None, layers=None, playhead=None,
@@ -227,12 +221,16 @@ def capture(database, project_id, output, *, view=None, board=None, begin=None, 
     extra = page_params(params)
     layer_ids = resolve_layers(database, project_id, layers) if layers else None
     view = view or query.get("view") or "canvas"
-    pages = [p["name"] for p in loadable(state_root)]   # 本机插件清单里开着的（view_plugin）
-    if view not in ("canvas", *pages):
-        raise ValueError(f"没有叫 {view} 的页面：canvas，或者开着的插件的页面（一览 assets、接缝 cuts 也是插件）（{'、'.join(pages) or '现在没有开着的插件'}；view_plugin 看全部）")
-    side = side or ("notes" if notes else None)
-    if side and side not in ("now", "changes", "notes", "walk", *pages):
-        raise ValueError(f"没有叫 {side} 的侧栏：now、changes、notes、walk，或者开着的插件的侧栏（{'、'.join(pages) or '现在没有开着的插件'}）")
+    warnings = []
+    if view != "canvas":
+        row = require_plugin(view, slot="page", root=state_root)
+        view = row["id"]
+        if (Path(row["root"]) / "plugin.json").is_file():
+            values = {k: v for k, v in query.items() if k not in OWN_KEYS}
+            warnings = check_params(read_manifest(row["root"])["params"], {**values, **extra})
+    side = side or ("notes" if notes else None) or query.get("side")
+    if side and side not in ("now", "changes", "notes", "walk"):
+        side = require_plugin(side, slot="side", root=state_root)["id"]
     browser = find_browser(browser)
     if browser is None:
         raise FileNotFoundError("找不到 Chrome、Edge 或 Chromium：用 --browser 或环境变量 LAYERWEAVE_BROWSER 指定浏览器路径")
@@ -241,8 +239,7 @@ def capture(database, project_id, output, *, view=None, board=None, begin=None, 
     query.update({"project": project_id, "view": view, "record": 0, "capture": 1})
     if links:
         query["links"] = 1
-    if tree:
-        query["tree"] = 1
+    query["tree"] = int(tree)
     if side:
         query["side"] = side
     if full_page and view != "canvas":
@@ -278,7 +275,7 @@ def capture(database, project_id, output, *, view=None, board=None, begin=None, 
         server.server_close()
     with closing(open_readonly(database)) as connection:   # 截图是 AI 这边：AI 折叠的收成细条，用户折叠的照常展开并标出
         folded = read_folds(connection, project_id)
-    return {"output": str(output), "page": page, "browser": browser, "size": [width, height], "ready": ready, "folded": folded}
+    return {"output": str(output), "page": page, "browser": browser, "size": [width, height], "ready": ready, "folded": folded, "issues": warnings}
 
 
 def _shoot(profile, page, output, width, height, wait_ms, full_page=False):
@@ -294,13 +291,21 @@ def _shoot(profile, page, output, width, height, wait_ms, full_page=False):
             ready, deadline = False, time.time() + wait_ms / 1000
             while not ready and time.time() < deadline:
                 time.sleep(0.25)
-                result = tab.call("Runtime.evaluate", expression="window.__layerweaveReady === true", returnByValue=True)
-                ready = result.get("result", {}).get("value") is True
+                result = tab.call("Runtime.evaluate", expression="({ready:window.__layerweaveReady===true,error:window.__layerweaveError})", returnByValue=True)
+                state = result.get("result", {}).get("value") or {}
+                if state.get("error"):
+                    raise RuntimeError(state["error"])
+                ready = state.get("ready") is True
+            if not ready:
+                raise RuntimeError(f"页面在 {wait_ms} 毫秒内尚未画完，没有生成截图")
             if full_page:   # 整页：把窗口拉到内容的高度再拍（最多 16000 像素）
                 result = tab.call("Runtime.evaluate", expression="document.documentElement.scrollHeight", returnByValue=True)
                 tall = min(16000, max(height, int(result.get("result", {}).get("value") or height)))
                 tab.call("Emulation.setDeviceMetricsOverride", width=width, height=tall, deviceScaleFactor=1, mobile=False)
                 time.sleep(0.5)
+            result = tab.call("Runtime.evaluate", expression="window.__layerweaveError || null", returnByValue=True)
+            if result.get("result", {}).get("value"):
+                raise RuntimeError(result["result"]["value"])
             output.write_bytes(base64.b64decode(tab.call("Page.captureScreenshot", format="png")["data"]))
         finally:
             tab.close()
@@ -322,7 +327,7 @@ COMMANDS = [{
     "context": ["database", "project_id"],
     "parameters": {
         "output": {"type": "string", "required": True, "description": "由 AI 指定的 PNG 输出路径"},
-        "view": {"type": "string", "description": "canvas（画布）、assets（一览：按种类列出所有对象），或插件的页面，比如 cuts（接缝插件：前后相接的画面并排）；省略时是画布，给了 link 时按链接"},
+        "view": {"type": "string", "description": "canvas（画布）、layerweave.assets（选装一览：按种类列出所有对象），或插件的页面，比如 layerweave.cuts（选装接缝插件：前后相接的画面并排）；省略时是画布，给了 link 时按链接"},
         "board": {"type": "integer", "description": "只拍这个根层所在的画板；省略时拍整张画布"},
         "begin": {"type": "number", "description": "画板显示的起点，用这块画板的单位；和 end 一起用"},
         "end": {"type": "number", "description": "画板显示的终点"},
@@ -343,13 +348,13 @@ COMMANDS = [{
         "browser": {"type": "string", "description": "浏览器路径；省略时自动查找 Chrome、Edge、Chromium"},
         "wait_ms": {"type": "integer", "description": "最多等页面把图片、视频封面、波形加载完多久", "default": 20000},
     },
-    "returns": "output、page（截图用的页面地址）、browser、size、ready（页面是否在等待时间内加载完；False 时图里可能缺缩略图）、folded（两边的折叠 [{layer, user, user_tips, ai, ai_tips}]：AI 折叠的在图里只是一条细条；用户折叠的照常画出，标着「用户折叠了」）。",
+    "returns": "output、page（截图用的页面地址）、browser、size、ready（成功时为 True；未就绪、目标插件不可用或运行失败时报错，不生成替代截图）、issues（插件参数提醒）、folded（两边的折叠 [{layer, user, user_tips, ai, ai_tips}]：AI 折叠的在图里只是一条细条；用户折叠的照常画出，标着「用户折叠了」）。",
     "examples": [{"cli": "python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/all.png"},
                  {"cli": "python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/t10.png --board 1 --begin 8 --end 14 --playhead 10"},
                  {"cli": "python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/note42.png --note 42"},
                  {"cli": "python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/user.png --link \"http://127.0.0.1:8765/?project=1&board=1&begin=8&end=14&select=16\""},
                  {"cli": "python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/changes.png --changes 5"},
-                 {"cli": "python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/cuts.png --view cuts --full-page"}],
+                 {"cli": "python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/cuts.png --view layerweave.cuts --full-page"}],
     "notes": ["截图页面不记录状态、不改排版；用户正在看哪儿请用 view_state，画板怎么排请用 view_layout。",
               "用户贴来视图链接时用 --link；读到一条批注想看它指哪儿时用 --note。",
               "只读：起一个只监听本机的临时服务和一个独立配置的无界面浏览器，截完都关掉。",
@@ -363,7 +368,7 @@ def main():
     p = argparse.ArgumentParser(description="视图截图（给 AI 看）", formatter_class=argparse.RawDescriptionHelpFormatter,
                                 epilog=help_examples(COMMANDS))
     p.add_argument("database", type=Path); p.add_argument("project_id", type=int); p.add_argument("output", type=Path)
-    p.add_argument("--view", help="canvas（画布）、assets（一览）或插件的页面（比如 cuts 接缝）；省略时是画布，给了 --link 时按链接")
+    p.add_argument("--view", help="canvas（画布）、layerweave.assets（选装一览）或插件的页面（比如 layerweave.cuts 接缝）；省略时是画布，给了 --link 时按链接")
     p.add_argument("--board", type=int, help="只拍这个根层所在的画板")
     p.add_argument("--begin", type=float); p.add_argument("--end", type=float)
     p.add_argument("--layers", nargs="+", help="编号、层名或 上级/名字"); p.add_argument("--playhead", type=float); p.add_argument("--select", type=int)
@@ -374,7 +379,7 @@ def main():
     p.add_argument("--side", help="右侧打开哪一栏：now、changes、notes、walk，或者插件的侧栏（插件的名字）")
     p.add_argument("--links", action="store_true", help="画出全部关系线"); p.add_argument("--full-page", action="store_true", help="接缝、一览页截整页")
     p.add_argument("--tree", action="store_true", help="画布左边打开目录树")
-    p.add_argument("--param", action="append", metavar="名字=值", help="给插件页面的地址参数（可以写多次），比如 --view assets --param page=3")
+    p.add_argument("--param", action="append", metavar="名字=值", help="给插件页面的地址参数（可以写多次），比如 --view layerweave.assets --param page=3")
     p.add_argument("--width", type=int, default=1600); p.add_argument("--height", type=int, default=900)
     p.add_argument("--browser"); p.add_argument("--wait-ms", type=int, default=20000)
     a = p.parse_args()

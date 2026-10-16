@@ -4,10 +4,12 @@ import {CAPTURE} from './params';
 import {pendingZoom} from './camera';
 import {paintQueue} from './canvas/mediaQueue';
 import {mediaPaintState} from './canvas/TrackMedia';
+import {loadPlugins} from './plugin/registry';
 
 declare global {
   interface Window {
     __layerweaveReady?: boolean;
+    __layerweaveError?: string;
     __layerweavePaintIdle?: () => Promise<void>;
     __layerweavePaintState?: typeof mediaPaintState;
   }
@@ -34,6 +36,7 @@ window.__layerweavePaintState = mediaPaintState;
 export async function markReady() {
   if (!CAPTURE || started) return;
   started = true;
+  await loadPlugins();
   await frames();
   await frames();
   await pendingWalk();                  // 沿读的结果可能挂载新的媒体，先让对应 DOM/effects 提交。
@@ -44,5 +47,5 @@ export async function markReady() {
   await window.__layerweavePaintIdle!();
   await Promise.all([...document.querySelectorAll('img')].map((i) => i.decode().catch(() => undefined)));
   await frames();
-  window.__layerweaveReady = true;
+  if (!window.__layerweaveError) window.__layerweaveReady = true;
 }

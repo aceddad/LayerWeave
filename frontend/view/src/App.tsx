@@ -5,7 +5,6 @@ import {createElement, useEffect} from 'react';
 import {useShallow} from 'zustand/react/shallow';
 import {goToTarget, keyStep, locateNote, setTree} from './actions';
 import {Flow} from './canvas/Flow';
-import {markReady} from './capture';
 import {Header} from './Header';
 import {CAPTURE, FULL} from './params';
 import {SidePanel} from './side/SidePanel';
@@ -14,12 +13,15 @@ import {getState, setState, useStore, waitingOf} from './store';
 import {loadProjects, poll, report} from './sync';
 import {loadPlugins} from './plugin/registry';
 import {PluginBoundary} from './plugin/slots';
+import {targetProblem} from './plugin/plan';
 
 export function App() {
   const {view, page, message, notice, name, hasData, waiting, tree, pluginTargetError} = useStore(useShallow((s) => ({
     page: s.plugins.find((p) => p.name === s.view)?.page,
     view: s.view, message: s.message, notice: s.notice, name: s.data?.project.name, hasData: !!s.data,
-    waiting: waitingOf(s).length, tree: s.tree, pluginTargetError: s.pluginTargetError,
+    waiting: waitingOf(s).length, tree: s.tree,
+    pluginTargetError: s.pluginList ? targetProblem(s.view, 'page', s.pluginList.plugins, s.plugins, s.pluginErrors)
+      ?? targetProblem(s.side, 'side', s.pluginList.plugins, s.plugins, s.pluginErrors) : null,
   })));
 
   useEffect(() => {
@@ -59,7 +61,7 @@ export function App() {
         </div>}
         {view !== 'canvas' && page && <PluginBoundary key={view} name={view}>{createElement(page)}</PluginBoundary>}
       </div>
-      {pluginTargetError && <p className="message plugin-target-error">{pluginTargetError} {!CAPTURE && <button onClick={() => setState({view: 'canvas', side: 'now', pluginTargetError: null})}>返回画布</button>}</p>}
+      {pluginTargetError && <p className="message plugin-target-error">{pluginTargetError} {!CAPTURE && <button onClick={() => setState({view: 'canvas', side: 'now'})}>返回画布</button>}</p>}
       {message && <p className="message">{message}</p>}
       {notice && <p className="notice" title="点一下过去" onClick={() => {
         setState({notice: null});

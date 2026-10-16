@@ -53,7 +53,6 @@ export interface State {
   plugins: LoadedPlugin[];  // 载入了的插件，按清单的顺序（plugin/registry.ts）
   pluginList: PluginList | null;           // 本机插件清单（顶栏「插件」小窗列出来）
   pluginErrors: Record<string, string>;    // 开着但没载入上的插件：名字 → 原因
-  pluginTargetError: string | null;
   pluginSerial: number | null;             // 清单文件的修改时间：命令改了清单，轮询时发现，页面跟着重新对一遍
   settledZoom: number;   // 镜头停下来时的缩放：格子按它决定画多细（缩放过程中不换，免得每跨一档几百个格子一起重画）
   set: (patch: Partial<State> | ((s: State) => Partial<State>)) => void;
@@ -84,7 +83,7 @@ export const useStore = create<State>((set) => ({
   noteFilter: 'open', noteFocus: numParam('note'), me: localStorage.getItem('lw-author') || '用户', reads: {},
   canvasW: Math.max(600, window.innerWidth - sideWidth() - (treeOpen ? treeWidth() : 0)),   // 先按样式估准，画布量到的一样就不用再排一遍
   canvasH: Math.max(400, window.innerHeight - 50),
-  dragging: false, drop: null, autoFit: true, settledZoom: 0, plugins: [], pluginList: null, pluginErrors: {}, pluginSerial: null, pluginTargetError: null,
+  dragging: false, drop: null, autoFit: true, settledZoom: 0, plugins: [], pluginList: null, pluginErrors: {}, pluginSerial: null,
   set: (patch) => set(patch as any),
 }));
 

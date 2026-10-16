@@ -372,6 +372,11 @@ class ViewTests(unittest.TestCase):
         root = self.state_root
         self.assertEqual(self.json("/api/plugins")["plugins"], [])
         fixture = Path(__file__).parent / "fixtures/view-plugin"
+        body = json.dumps({"action": "add", "target": str(fixture)}).encode()
+        with self.assertRaises(HTTPError) as blocked:
+            urlopen(Request(self.url + "api/plugins", data=body, headers={"Origin": "https://outside.example"}), timeout=10)
+        self.assertEqual(blocked.exception.code, 403)
+        self.assertEqual(list_plugins(root)["plugins"], [])
         self.assertEqual(plugin("add", str(fixture), root=root)["added"], "local.view-plugin")
         listed = self.json("/api/plugins")["plugins"][0]
         self.assertRegex(listed["url"], r"^/plugins/local\.view-plugin/[a-f0-9]+/plugin\.js$")

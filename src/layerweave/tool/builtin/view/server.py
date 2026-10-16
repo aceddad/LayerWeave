@@ -180,6 +180,12 @@ class ViewHandler(SimpleHTTPRequestHandler):
         notes = re.fullmatch(r"/api/notes/(\d+)", path)
         folds = re.fullmatch(r"/api/folds/(\d+)", path)
         plugins = path == "/api/plugins"
+        # 安装只能由本机界面明确发起，外部网页不能借 localhost 的 POST 悄悄安装。
+        # CLI/本机程序通常不带 Origin，继续使用同一接口；允许本地 Vite 代理开发。
+        if plugins and (origin := self.headers.get("Origin")):
+            parsed = urlparse(origin)
+            if parsed.scheme not in ("http", "https") or parsed.hostname not in ("127.0.0.1", "localhost", "::1"):
+                return self.send_json({"error": "插件管理请求必须来自本机视图页面"}, HTTPStatus.FORBIDDEN)
         if path != "/api/state" and not layout and not notes and not folds and not plugins:
             return self.send_json({"error": "只支持 /api/state、/api/layout/<项目>、/api/notes/<项目>、/api/folds/<项目>、/api/plugins"}, HTTPStatus.NOT_FOUND)
         length = int(self.headers.get("Content-Length", 0))

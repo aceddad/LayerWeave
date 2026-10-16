@@ -58,7 +58,7 @@ async function sync() {
   const s = getState(), view = list.aliases[s.view] ?? s.view, side = list.aliases[s.side] ?? s.side;
   const problem = targetProblem(view, 'page', list.plugins, plugins, errors) ?? targetProblem(side, 'side', list.plugins, plugins, errors);
   if (CAPTURE && problem) { window.__layerweaveError = problem; window.__layerweaveReady = false; }
-  setState({plugins, pluginList: list, pluginErrors: errors, view, side, pluginTargetError: problem});
+  setState({plugins, pluginList: list, pluginErrors: errors, view, side});
 }
 
 // 项目里有没有这个插件管的对象：没有就不显示它的标签

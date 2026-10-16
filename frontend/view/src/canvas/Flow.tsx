@@ -163,7 +163,7 @@ export function Flow() {
         onInit={(rf) => { attachCamera(rf as unknown as ReactFlowInstance, paneRef.current!); setInstance(rf as unknown as ReactFlowInstance); }}
         onMoveStart={(event) => { if (event) setState({autoFit: false}); }}
         onMoveEnd={() => { report(); settleZoom(); }}
-        colorMode="dark" minZoom={0.05} maxZoom={4} defaultViewport={{x: 24, y: 24, zoom: 1}}
+        colorMode="dark" proOptions={{hideAttribution: true}} minZoom={0.05} maxZoom={4} defaultViewport={{x: 24, y: 24, zoom: 1}}
         nodesConnectable={false} elementsSelectable={false} nodesFocusable={false} edgesFocusable={false}
         nodesDraggable={!CAPTURE} zoomOnDoubleClick={false}>
         <Background variant={BackgroundVariant.Dots} gap={24} size={1.2} color="#2b3140" />

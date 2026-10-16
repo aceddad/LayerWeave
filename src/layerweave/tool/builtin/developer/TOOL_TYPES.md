@@ -47,7 +47,7 @@
 | 1. 写插件 | 一个 ES 模块，默认导出 `(host) => ViewPlugin`。`host` 给 React（和视图共用一份，插件不要自己打包）、读项目的 `useView()`（项目、画板、播放头、选中的对象、左边目录里勾选的层 `picked`）、`selectObject` / `startWalk` / `toast` / `markReady` 这些动作、`Img` / `Thumb` / `Frame` / `Waveform` 小部件、分页 `Pager`（和 `util.pageSlice` 一起用：一页一屏，地址参数 `page=`、`per=` 给初始页码和张数，截图用 `--param page=3`）和 `kindOf`、`fmt`、`lanes`、`mediaUrl` 等工具函数。接口定义在 `frontend/view/src/plugin/host.ts`，版本号是 `host.api` | `plugins/cuts/index.tsx` |
 | 2. 返回什么 | `label`（标签上的字）、`handles`（管哪些种类的对象；项目里一个都没有就不显示它的页面和侧栏），再加上要用的栏位（见下表）。名字不用写，由清单定（也是地址里的 `view=`、`side=`） | 接缝：`label: '接缝'`、`handles: ['image', 'video']`、`page`、`jumpPoints`；样板「字数」：`side`、`objectDetail`、`block` |
 | 3. 编译 | 不打包 React：JSX 编译成 `h(...)`，`h` 在插件被加载时从 `host.React.createElement` 拿。样式写成字符串，用 `host.addStyle` 加进页面 | `vite.plugins.config.ts`：`npm run build` 会编译 `plugins/` 下每个插件 |
-| 4. 放好、加进清单 | 编译好的 js 放在自己的目录里，最好一个插件一个文件夹（入口叫 `plugin.js`，同一个文件夹里的拆出去的代码、图片、样式也能访问）。不要放进 LayerWeave 的安装目录，软件更新时会被换掉。然后 `view_plugin add 路径`（或网页顶栏「插件」里加）；小插件可以放在默认文件夹 `~/.layerweave/view/plugins/<名字>/`，加的时候只写名字。工具包的说明里写上这一步 | 接缝、一览是内置的：写在 `view/plugins.py` 的 `BUILTIN` 里，随视图包分发（pyproject 的 package-data 有 `plugins/*/*.js`） |
+| 4. 放好、加进清单 | 编译好的 js 放在自己的目录里，最好一个插件一个文件夹（入口叫 `plugin.js`，同一个文件夹里的拆出去的代码、图片、样式也能访问）。不要放进 LayerWeave 的安装目录，软件更新时会被换掉。然后 `view_plugin add 路径`（或网页顶栏「插件」里加）；小插件可以放在默认文件夹 `~/.layerweave/view/plugins/<名字>/`，加的时候只写名字。工具包的说明里写上这一步 | 接缝、一览、预览是内置的：写在 `view/plugins.py` 的 `BUILTIN` 里（各有默认开关 `default`），随视图包分发（pyproject 的 package-data 有 `plugins/*/*.js`） |
 | 5. 截图 | 截图页面上画完要调 `host.markReady()`，`view_screenshot --view <name>` 就能拍 | 接缝页在页面出来以后调 |
 | 6. 测试 | 计算写成纯函数，工具函数从参数传进来，测试里传视图真正的那些 | `plugins/cuts/cuts.test.ts` |
 

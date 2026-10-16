@@ -5,10 +5,10 @@
     {"plugins": [
       {"name": "timeline", "path": "D:/tools/abcd/web/timeline.js", "on": true},
       {"name": "my-page", "path": "my-page/plugin.js", "on": false},   # 相对路径：相对默认文件夹 ~/.layerweave/view/plugins/
-      {"name": "cuts", "on": false}                                   # 内置的只记开没开
+      {"name": "cuts", "on": true}                                    # 内置的只记开没开（和默认不一样时才记）
     ]}
 
-内置插件写在下面的 BUILTIN 里，跟着软件更新。不管多大的工具包，在视图这里都只是一行：名字和一个编译好的 js。
+内置插件写在下面的 BUILTIN 里，跟着软件更新；各有默认开关（一览默认开，接缝、预览默认关：用的人自己打开，免得装到不想要的）。不管多大的工具包，在视图这里都只是一行：名字和一个编译好的 js。
 插件是 ES 模块，默认导出 (host) => ViewPlugin（接口见 frontend/view/src/plugin/host.ts，做法见 developer/TOOL_TYPES.md）；
 它所在的文件夹里的网页文件（拆出去的代码、图片、样式）也能访问。这里只读写清单、检查文件，不运行插件。
 
@@ -28,8 +28,9 @@ NAME = re.compile(r"[a-z][a-z0-9_-]{0,39}")
 RESERVED = {"canvas", "now", "changes", "notes", "walk"}   # 视图自己的页面和侧栏：插件的名字也用在 view=、side= 里（一览 assets 是自带插件）
 # 视图自带的插件：编译好的 js 在视图包里（frontend/view/plugins 构建出来），清单里只记它开没开
 BUILTIN = {
-    "cuts": {"path": HERE / "plugins" / "cuts" / "plugin.js", "about": "接缝：同一条轨道里前后相接的画面并排；键盘 [ ] 在接缝之间跳"},
-    "assets": {"path": HERE / "plugins" / "assets" / "plugin.js", "about": "一览：按种类分页列出项目里所有的图片、视频、音频、文字，点一下回到画布上"},
+    "cuts": {"path": HERE / "plugins" / "cuts" / "plugin.js", "about": "接缝：同一条轨道里前后相接的画面并排；键盘 [ ] 在接缝之间跳", "default": False},
+    "assets": {"path": HERE / "plugins" / "assets" / "plugin.js", "about": "一览：按种类分页列出项目里所有的图片、视频、音频、文字，点一下回到画布上", "default": True},
+    "preview": {"path": HERE / "plugins" / "preview" / "plugin.js", "about": "预览：把视频、会动的 SVG、GIF 的帧罗列出来，默认逐帧，可以改开始时刻和间隔；一页一屏", "default": False},
 }
 # 插件文件夹里能给网页的文件
 ASSETS = {".js", ".mjs", ".css", ".json", ".map", ".wasm", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".woff", ".woff2"}
@@ -93,8 +94,8 @@ def list_plugins(root=None):
         rows, broken = _read(root), None
     except ValueError as error:
         rows, broken = [], str(error)
-    off = {r["name"] for r in rows if r.get("on") is False}
-    items = [{"name": name, "source": "builtin", "path": str(spec["path"]), "on": name not in off,
+    chosen = {r["name"]: r.get("on") is not False for r in rows if r.get("name") in BUILTIN and "path" not in r}
+    items = [{"name": name, "source": "builtin", "path": str(spec["path"]), "on": chosen.get(name, spec["default"]), "default": spec["default"],
               "problem": None if spec["path"].is_file() else "内置插件的文件不在：视图的网页还没构建（npm run build）", "about": spec["about"]}
              for name, spec in BUILTIN.items()]
     seen = set(BUILTIN)
@@ -180,12 +181,12 @@ def remove_plugin(name, *, root=None):
 
 
 def switch_plugin(name, on, *, root=None):
-    """开、关。内置的关掉时记一行 {"name", "on": false}，开回来就删掉这一行。"""
+    """开、关。内置的和默认不一样时记一行 {"name", "on"}，和默认一样就删掉这一行。"""
     rows = _read(root)
     if name in BUILTIN:
         rows = [r for r in rows if not (r["name"] == name and "path" not in r)]
-        if not on:
-            rows.append({"name": name, "on": False})
+        if on != BUILTIN[name]["default"]:
+            rows.append({"name": name, "on": on})
     elif any(r["name"] == name for r in rows):
         rows = [{**r, "on": on} if r["name"] == name else r for r in rows]
     else:
@@ -199,7 +200,7 @@ def describe(result):
     width = max([len(p["name"]) for p in result["plugins"]] + [8]) + 2
     for p in result["plugins"]:
         state = "有问题" if p["problem"] else ("开" if p["on"] else "关")
-        where = "内置" if p["source"] == "builtin" else p["path"]
+        where = (f"内置（默认{'开' if p['default'] else '关'}）") if p["source"] == "builtin" else p["path"]
         pad = " " * (width + 4)
         lines.append(f"{p['name']:<{width}}{state:<4}{where}" + (f"\n{pad}{p['problem']}" if p["problem"] else "")
                      + (f"\n{pad}{p['about']}" if p["about"] else ""))

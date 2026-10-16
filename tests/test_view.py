@@ -370,9 +370,13 @@ class ViewTests(unittest.TestCase):
     def test_plugin_list_add_switch_remove_and_serve(self):
         from layerweave.tool.builtin.view.plugins import PACKAGE_ROOT, list_plugins, loadable, plugin
         root = self.state_root
-        # 什么都没登记：只有内置的接缝、一览，开着
+        # 什么都没登记：只有内置的，按各自的默认——一览开着，接缝、预览关着
         found = list_plugins(root)
-        self.assertEqual([(p["name"], p["source"], p["on"], p["problem"]) for p in found["plugins"]], [("cuts", "builtin", True, None), ("assets", "builtin", True, None)])
+        self.assertEqual([(p["name"], p["source"], p["on"], p["problem"]) for p in found["plugins"]],
+                         [("cuts", "builtin", False, None), ("assets", "builtin", True, None), ("preview", "builtin", False, None)])
+        # 打开接缝：和默认不一样才记一行
+        plugin("on", "cuts", root=root)
+        self.assertEqual(json.loads((root / "plugins.json").read_text(encoding="utf-8"))["plugins"], [{"name": "cuts", "on": True}])
         listed = self.json("/api/plugins")
         self.assertRegex(listed["plugins"][0]["url"], r"^/plugins/cuts/plugin\.js\?v=\d+$")
         status, headers, body = self.get("/plugins/cuts/plugin.js")
@@ -395,7 +399,7 @@ class ViewTests(unittest.TestCase):
         self.assertEqual(plugin("add", str(tools / "board"), root=root)["added"], "board")
         self.assertEqual(plugin("add", "mine", root=root)["added"], "mine")
         saved = json.loads((root / "plugins.json").read_text(encoding="utf-8"))["plugins"]
-        self.assertEqual(saved[2], {"name": "mine", "path": "mine/plugin.js", "on": True})     # 默认文件夹里的记相对路径
+        self.assertEqual(saved[3], {"name": "mine", "path": "mine/plugin.js", "on": True})     # 默认文件夹里的记相对路径
         # 加不进来的：不写清单
         before = (root / "plugins.json").read_text(encoding="utf-8")
         inside = PACKAGE_ROOT / "tool" / "builtin" / "view" / "plugins" / "cuts" / "plugin.js"
@@ -412,16 +416,16 @@ class ViewTests(unittest.TestCase):
         self.assertEqual((root / "plugins.json").read_text(encoding="utf-8"), before)
         # 服务每次都重读清单：不用重启；插件文件夹里的网页文件给，别的不给
         listed = {p["name"]: p for p in self.json("/api/plugins")["plugins"]}
-        self.assertEqual(list(listed), ["cuts", "assets", "timeline", "board", "mine"])
+        self.assertEqual(list(listed), ["cuts", "assets", "preview", "timeline", "board", "mine"])
         self.assertRegex(listed["timeline"]["url"], r"^/plugins/timeline/Timeline\.js\?v=\d+$")
         self.assertEqual(self.get("/plugins/timeline/icon.svg")[0], 200)
         with self.assertRaises(HTTPError):
             self.get("/plugins/timeline/secret.txt")
-        # 开关：内置的关掉只记一行，开回来就删掉这一行；关着的不给文件、不算截图能用的页面
+        # 开关：内置的回到默认就删掉那一行，和默认不一样才记；关着的不给文件、不算截图能用的页面
         serial = self.json("/api/version")["plugins"]
         plugin("off", "cuts", root=root)
         plugin("off", "board", root=root)
-        self.assertIn({"name": "cuts", "on": False}, json.loads((root / "plugins.json").read_text(encoding="utf-8"))["plugins"])
+        self.assertFalse(any(r["name"] == "cuts" for r in json.loads((root / "plugins.json").read_text(encoding="utf-8"))["plugins"]))
         self.assertNotEqual(self.json("/api/version")["plugins"], serial)                        # 网页轮询靠它发现清单改了
         self.assertEqual([p["name"] for p in loadable(root)], ["assets", "timeline", "mine"])
         self.assertNotIn("url", {p["name"]: p for p in self.json("/api/plugins")["plugins"]}["cuts"])
@@ -430,7 +434,7 @@ class ViewTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "没有叫 cuts 的页面"):
             capture(self.database, self.project, Path(self.temp.name) / "x.png", view="cuts", state_root=root)
         plugin("on", "cuts", root=root)
-        self.assertFalse(any(r["name"] == "cuts" for r in json.loads((root / "plugins.json").read_text(encoding="utf-8"))["plugins"]))
+        self.assertIn({"name": "cuts", "on": True}, json.loads((root / "plugins.json").read_text(encoding="utf-8"))["plugins"])
         # 去掉：只删清单里的一行，不删文件；内置的去不掉
         with self.assertRaisesRegex(ValueError, "去不掉"):
             plugin("remove", "cuts", root=root)
@@ -460,7 +464,7 @@ class ViewTests(unittest.TestCase):
         # 清单坏了：内置的照常，问题报出来；写的时候不覆盖坏文件
         (root / "plugins.json").write_text("{坏了", encoding="utf-8")
         broken = list_plugins(root)
-        self.assertEqual([p["name"] for p in broken["plugins"]], ["cuts", "assets"])
+        self.assertEqual([p["name"] for p in broken["plugins"]], ["cuts", "assets", "preview"])
         self.assertIn("读不了", broken["problem"])
         with self.assertRaisesRegex(ValueError, "读不了"):
             plugin("off", "cuts", root=root)
@@ -729,6 +733,8 @@ class ViewTests(unittest.TestCase):
         self.assertTrue(result["ready"])                                           # 页面加载完才拍
         self.assertIsNone(read_state(self.database, self.state_root))
         self.assertFalse(layout_path(self.database, self.state_root).exists())     # 截图页面不改排版
+        from layerweave.tool.builtin.view.plugins import plugin
+        plugin("on", "cuts", root=self.state_root)                                 # 接缝默认关着
         cuts = capture(self.database, self.project, Path(self.temp.name) / "shots" / "cuts.png", view="cuts", full_page=True,
                        links=True, width=900, height=400, wait_ms=15000, state_root=self.state_root)
         self.assertTrue(cuts["ready"])

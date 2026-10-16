@@ -29,7 +29,16 @@ function shownBoards(model: Model, boards: Board[]): Board[] {
   return boards.filter((b) => b.x != null && b.y != null && model.boardLayout(b) && (!solo || b === solo));
 }
 
+// 小地图、底下的操作说明可以收起来；记在本机
+type Extra = 'minimap' | 'help';
+const remembered = (key: Extra) => localStorage.getItem(`lw-${key}`) !== '0';
+
 export function Flow() {
+  const [shown, setShown] = useState(() => ({minimap: remembered('minimap'), help: remembered('help')}));
+  const toggle = (key: Extra) => setShown((s) => {
+    localStorage.setItem(`lw-${key}`, s[key] ? '0' : '1');
+    return {...s, [key]: !s[key]};
+  });
   const model = useModel();
   const {boards, links, selected} = useStore(useShallow((s) => ({boards: s.boards, links: s.links, selected: s.selected})));
   const paneRef = useRef<HTMLDivElement>(null);
@@ -167,10 +176,16 @@ export function Flow() {
         nodesConnectable={false} elementsSelectable={false} nodesFocusable={false} edgesFocusable={false}
         nodesDraggable={!CAPTURE} zoomOnDoubleClick={false}>
         <Background variant={BackgroundVariant.Dots} gap={24} size={1.2} color="#2b3140" />
-        {!CAPTURE && <MiniMap position="top-right" pannable zoomable nodeColor="#2a3346" nodeStrokeColor="#44536e" maskColor="rgba(10, 12, 16, .6)" />}
-        {!CAPTURE && <Panel position="bottom-left" className="help">
-          拖空白处平移（按住空格可在画板上拖）· 滚轮缩放 · Alt+滚轮：这块画板的时间 · 拖画板标题移动；拖到同单位画板的一行中间上下拼，拖到一段开头或结尾左右接 · 在尺子上拖：圈一段 · ←/→ 前后对象（没选中时跳剪辑点）· ↑/↓ 上下轨道 · [ ] 接缝
+        {!CAPTURE && shown.minimap && <MiniMap position="top-right" pannable zoomable nodeColor="#2a3346" nodeStrokeColor="#44536e" maskColor="rgba(10, 12, 16, .6)" />}
+        {!CAPTURE && <Panel position="top-right" className={`fold-chip${shown.minimap ? ' over' : ''}`}>
+          <button title={shown.minimap ? '收起小地图' : '打开小地图'} onClick={() => toggle('minimap')}>{shown.minimap ? '×' : '小地图'}</button>
         </Panel>}
+        {!CAPTURE && (shown.help
+          ? <Panel position="bottom-left" className="help">
+              拖空白处平移（按住空格可在画板上拖）· 滚轮缩放 · Alt+滚轮：这块画板的时间 · 拖画板标题移动；拖到同单位画板的一行中间上下拼，拖到一段开头或结尾左右接 · 在尺子上拖：圈一段 · ←/→ 前后对象（没选中时跳剪辑点）· ↑/↓ 上下轨道 · [ ] 接缝
+              <button className="help-close" title="收起操作说明" onClick={() => toggle('help')}>×</button>
+            </Panel>
+          : <Panel position="bottom-left" className="fold-chip"><button title="打开操作说明" onClick={() => toggle('help')}>? 操作说明</button></Panel>)}
       </ReactFlow>
     </div>
   );

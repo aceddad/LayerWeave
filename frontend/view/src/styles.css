@@ -75,6 +75,11 @@ select { background: var(--panel); padding: 3px 6px; }
 .react-flow__pane { cursor: grab; }
 .react-flow__pane.dragging { cursor: grabbing; }
 .react-flow__panel.help { color: var(--dim); font-size: 11px; background: rgba(21, 23, 28, .85); padding: 3px 8px; border-radius: 4px; margin: 6px; max-width: 70%; }
+.react-flow__panel.help .help-close { margin-left: 8px; padding: 0 6px; font-size: 11px; line-height: 16px; }
+/* 收起小地图、打开说明的小按钮；小地图开着时叠在它右上角 */
+.react-flow__panel.fold-chip { margin: 6px; }
+.react-flow__panel.fold-chip.over { margin: 12px 14px; z-index: 6; }
+.react-flow__panel.fold-chip button { padding: 0 8px; font-size: 11px; line-height: 18px; color: var(--dim); background: rgba(21, 23, 28, .85); }
 .react-flow__minimap { border: 1px solid var(--line); border-radius: 4px; }
 .rel-handle.react-flow__handle { opacity: 0; width: 1px; height: 1px; min-width: 0; min-height: 0; border: 0; pointer-events: none; }
 .react-flow__edge-path.link { stroke: rgba(111, 168, 216, .7); stroke-width: 2; }

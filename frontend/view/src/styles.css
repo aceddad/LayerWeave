@@ -20,7 +20,7 @@ select { background: var(--panel); padding: 3px 6px; }
 .hint { color: var(--dim); }
 
 /* 顶栏 */
-.bar { display: flex; align-items: center; gap: 10px; padding: 6px 12px; border-bottom: 1px solid var(--line); background: var(--panel); flex: none; }
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 6px 12px; border-bottom: 1px solid var(--line); background: var(--panel); flex: none; }   /* 窗口窄时折成两行，不挤出画面 */
 .brand { letter-spacing: .5px; }
 .spacer { flex: 1; }
 .tabs, .zoom, .filters { display: flex; gap: 4px; }
@@ -28,7 +28,7 @@ select { background: var(--panel); padding: 3px 6px; }
 .bar .tabs { gap: 2px; padding: 2px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; }
 .bar .tabs button { border-color: transparent; background: transparent; padding: 2px 12px; }
 .bar .tabs button.on { background: var(--accent); color: #0b1020; }
-.find { padding: 3px 8px; width: 15em; }
+.find { padding: 3px 8px; flex: 0 1 15em; min-width: 8em; }
 .find-count { color: var(--dim); font-size: 12px; min-width: 3em; }
 .clock { font-variant-numeric: tabular-nums; color: var(--dim); min-width: 90px; text-align: right; }
 .live { color: #3a3f4b; font-size: 16px; }

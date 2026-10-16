@@ -83,12 +83,29 @@ export function focusRange(key: number, begin: number, end: number) {
 }
 
 // 页面刚打开：按地址参数对准（截图工具就是这样指定拍哪里的）。明确给了范围的按范围，其次对准批注，再其次某块画板
+// 打开网页时：全部画板一起放得下、还看得清（缩放不小于 0.6）就全放；放不下时（画板上下排得很高），
+// 先让当前画板横向铺满、顶端对齐，往下滚就是别的画板。顶栏「全部」照旧显示全部。截图不受影响，照旧拍全部
+const READABLE = 0.6;
+function fitReadable(): boolean {
+  const s = getState(), model = modelOf(s), b = activeBoard(s);
+  if (!model || !flow || !b || b.x == null || b.y == null) return false;
+  const placed = s.boards.filter((x) => x.x != null && x.y != null && sizeOf(model, x).h);
+  const rect = paneRect(), pad = 24;
+  if (rect.height < 50 || !placed.length) return false;
+  const x0 = Math.min(...placed.map((x) => x.x!)), y0 = Math.min(...placed.map((x) => x.y!));
+  const x1 = Math.max(...placed.map((x) => x.x! + sizeOf(model, x).w)), y1 = Math.max(...placed.map((x) => x.y! + sizeOf(model, x).h));
+  const all = Math.min(1, (rect.width - 2 * pad) / (x1 - x0), (rect.height - 2 * pad - 20) / (y1 - y0));
+  if (all >= READABLE) return false;
+  const z = Math.max(0.05, Math.min(1, (rect.width - 2 * pad) / sizeOf(model, b).w));
+  setView(pad - b.x * z, pad - b.y * z, z);
+  return true;
+}
 export function focusInitial() {
   const s = getState(), b = activeBoard(s);
   if (b && params.has('begin') && params.has('end')) focusRange(keyOf(b), Number(params.get('begin')), Number(params.get('end')));
   else if (params.has('note')) focusNote(Number(params.get('note')));
   else if (b && params.has('board')) fitBoards([keyOf(b)]);
-  else fitBoards();
+  else if (CAPTURE || !fitReadable()) fitBoards();
   if (params.has('focus')) requestAnimationFrame(() => focusObject(Number(params.get('focus'))));
 }
 

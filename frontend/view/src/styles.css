@@ -164,6 +164,39 @@ select { background: var(--panel); padding: 3px 6px; }
 .noteband span { position: absolute; left: 4px; bottom: 2px; font-size: 10px; color: #ffe48a; white-space: nowrap; text-shadow: 0 1px 2px #000; pointer-events: auto; cursor: pointer; }
 
 /* 右侧面板 */
+/* 左边的目录树 */
+.tree { width: clamp(220px, 20vw, 300px); flex: none; border-right: 1px solid var(--line); background: var(--panel); display: flex; flex-direction: column; min-height: 0; }
+.tree-head { display: flex; align-items: center; gap: 8px; padding: 8px 8px 4px 10px; }
+.tree-head .spacer, .tree-row .spacer { flex: 1; }
+.tree-head button { padding: 0 8px; }
+.tree-tools { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 8px 6px; border-bottom: 1px solid var(--line); }
+.tree-tools button { padding: 1px 8px; font-size: 12px; }
+.tree button:disabled { opacity: .45; cursor: default; }
+.tree-rows { flex: 1; overflow: auto; padding: 4px 0 12px; }
+.tree-row { display: flex; align-items: center; gap: 4px; padding: 1px 6px 1px 4px; white-space: nowrap; }
+.tree-row:hover { background: #232733; }
+.tree-row.target { background: #2a3550; }
+.tree-row.checked .tn { color: var(--sel); }
+.tree-row.hidden .tn, .tree-row.note-layer .tn { color: var(--dim); }
+.tree-row .caret { width: 12px; flex: none; color: var(--dim); cursor: pointer; text-align: center; }
+.tree-row .caret.none { cursor: default; }
+.tree-row input { margin: 0; flex: none; }
+.tree-row .tn { cursor: pointer; overflow: hidden; text-overflow: ellipsis; min-width: 2em; }
+.tree-row .tn:hover { text-decoration: underline; }
+.tree-row .tt { color: var(--dim); font-size: 11px; }
+.tree-row i { font-style: normal; font-size: 11px; flex: none; }
+.tree-row .tf { padding: 0 4px; border-radius: 3px; background: #33394a; color: #c9d2e6; }
+.tree-row .tf.theirs { background: #3a2f4a; }
+.tree-row button { padding: 0 6px; font-size: 11px; line-height: 16px; flex: none; }
+.tree-row .tfold { visibility: hidden; }
+.tree-row:hover .tfold { visibility: visible; }
+.tree-row .tcount.on { background: var(--accent); border-color: var(--accent); color: #0b1020; }
+.tree-objs { padding-bottom: 4px; }
+.tree-obj { padding: 1px 6px; color: #c3c8d4; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.tree-obj:hover { background: #232733; }
+.tree-obj.sel { color: var(--sel); }
+.tree-open { flex: none; writing-mode: vertical-rl; padding: 10px 2px; border-radius: 0; border-width: 0 1px 0 0; font-size: 12px; color: var(--dim); }
+
 .side { width: clamp(240px, 28vw, 340px); flex: none; border-left: 1px solid var(--line); background: var(--panel); overflow: auto; padding: 0 12px 16px; }
 .side h2 { font-size: 14px; margin: 12px 0; }
 .side h2 small, .side h2 span { color: var(--dim); font-weight: normal; font-size: 12px; }
@@ -246,25 +279,17 @@ select { background: var(--panel); padding: 3px 6px; }
 /* 接缝页 */
 
 /* 素材页 */
-.assets-view { flex: 1; display: flex; flex-direction: column; min-height: 0; }
-.assets-view .filters { padding: 10px 12px; border-bottom: 1px solid var(--line); }
-.grid { flex: 1; overflow: auto; padding: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; align-content: start; }
-.tile { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; cursor: pointer; }
-.tile:hover { border-color: var(--accent); }
-.tile .thumb { height: 120px; background: #0d0f13; display: flex; align-items: center; justify-content: center; color: var(--dim); position: relative; }
-.tile .thumb img, .tile .thumb video, .tile .thumb canvas { width: 100%; height: 100%; object-fit: contain; }
-.tile .thumb .badge { position: absolute; top: 6px; left: 6px; font-size: 10px; padding: 0 5px; border-radius: 3px; color: #fff; }
-.tile .info { padding: 6px 8px; }
-.tile .info .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tile .info .meta { color: var(--dim); font-size: 11px; }
-.tile .thumb .txt { padding: 10px; font-size: 12px; color: var(--text); overflow: hidden; max-height: 100%; }
+/* 分页（host.components.Pager）：一览、预览和插件共用 */
+.pager { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.pager button { padding: 1px 8px; }
+.pager button:disabled { opacity: .45; cursor: default; }
+.pager select { font-size: 12px; padding: 1px 4px; }
 
 .message { position: fixed; left: 50%; top: 40%; transform: translateX(-50%); background: var(--panel); border: 1px solid var(--line); padding: 16px 24px; border-radius: 6px; z-index: 50; margin: 0; }
 
 /* 截图：不要提示文字；截整页时接缝、素材页按内容高度排 */
 body.capture .side .hint { display: none; }
 body.full, body.full #root, body.full .app, body.full .body { height: auto; overflow: visible; }
-body.full .grid, body.full .assets-view { overflow: visible; flex: none; }
 
 /* v8：批注提醒、对准的批注、空当说明 */
 .side-tabs .badge { font-style: normal; display: inline-block; min-width: 16px; margin-left: 4px; padding: 0 4px; border-radius: 8px; background: #ff6b6b; color: #fff; font-size: 11px; line-height: 16px; text-align: center; }

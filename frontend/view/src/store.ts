@@ -7,7 +7,7 @@ import {noteIndex, noteList, noteThreads, waitingFor} from './model/notes';
 import type {Note, NoteReads, Thread} from './model/notes';
 import type {Drop} from './model/dropRule';
 import type {LoadedPlugin} from './plugin/host';
-import {VIEWER, numParam, params} from './params';
+import {CAPTURE, VIEWER, numParam, params} from './params';
 import type {Board, ChangeOp, PluginList, ProjectData, ProjectSummary, Side, View, WalkDirection, WalkResult} from './types';
 
 export type {Drop};
@@ -31,12 +31,13 @@ export interface State {
   selected: number | null;
   only: Set<number> | null;
   showHidden: boolean;
-  assetKind: string;
   changeLimit: number;
   changeOps: ChangeOp[];
   links: boolean;
   sel: {key: number; begin: number; end: number} | null;  // 在尺子上圈出的一段（画板时间）
   targetLayer: number | null;                             // 点层名选中的层：写批注时指向它
+  picked: number[];                                       // 左边目录树里勾选的层（只是"选了一组"，不藏别的层；插件读得到）
+  tree: boolean;                                          // 左边目录树开着吗（记在本机；截图默认关，tree=1 才开）
   wholeProject: boolean;
   noteFilter: 'open' | 'done' | 'waiting';               // 已处理的楼只在"已处理"里出现，默认看待处理的
   noteFocus: number | null;                               // 镜头对准的那条批注（地址参数 note、批注上的"定位"）：它的楼和目标高亮
@@ -58,6 +59,12 @@ export interface State {
 }
 
 const viewParam = params.get('view');
+// 和 styles.css 里 .side、.tree 的 clamp 一致（加 1 像素边框）
+const clamp = (min: number, v: number, max: number) => Math.min(max, Math.max(min, v));
+const sideWidth = () => clamp(240, window.innerWidth * .28, 340) + 1;
+const treeWidth = () => clamp(220, window.innerWidth * .2, 300) + 1;
+// 地址里有 tree=0/1 就按它（截图 --tree、测试），否则截图默认关、网页按本机记的（默认开）
+const treeOpen = params.has('tree') ? params.get('tree') === '1' : CAPTURE ? false : localStorage.getItem('lw-tree') !== '0';
 export const useStore = create<State>((set) => ({
   projects: [], project: null, data: null, boards: [], serial: null, version: null, cursor: null,
   frames: false, live: false, message: '', notice: null,
@@ -68,12 +75,14 @@ export const useStore = create<State>((set) => ({
   walkResult: null,
   active: numParam('board'), playhead: numParam('playhead'), selected: numParam('select'),
   only: params.has('layers') ? new Set(params.get('layers')!.split(',').map(Number)) : null,
-  showHidden: false, assetKind: 'all',
+  showHidden: false,
   changeLimit: numParam('changes') || 10, changeOps: [],
   links: params.get('links') === '1',
-  sel: null, targetLayer: null, wholeProject: false,
+  sel: null, targetLayer: null, wholeProject: false, picked: [],
+  tree: treeOpen,
   noteFilter: 'open', noteFocus: numParam('note'), me: localStorage.getItem('lw-author') || '用户', reads: {},
-  canvasW: Math.max(600, window.innerWidth - 340), canvasH: Math.max(400, window.innerHeight - 50),
+  canvasW: Math.max(600, window.innerWidth - sideWidth() - (treeOpen ? treeWidth() : 0)),   // 先按样式估准，画布量到的一样就不用再排一遍
+  canvasH: Math.max(400, window.innerHeight - 50),
   dragging: false, drop: null, autoFit: true, settledZoom: 0, plugins: [], pluginList: null, pluginErrors: {}, pluginSerial: null,
   set: (patch) => set(patch as any),
 }));

@@ -197,6 +197,20 @@ export function focusNote(id: number): boolean {
 }
 
 // 键盘跳转用：已经在画面里就不动镜头，出去了才平移（不改缩放）；左边留出贴住视口的名字列
+// 镜头对准一层（左边目录树点层名）：这一行放在画面上三分之一处，画板左边（层名列）贴着画面左边；
+// 缩放沿用现在的，只在这一行矮得看不清时放大到 22 像素高。层在折叠的层下面、或者被"只看"滤掉了，画布上没有这一行，返回 false
+export function focusLayer(id: number): boolean {
+  const s = getState(), model = modelOf(s), layer = model?.layer(id);
+  const b = layer && model!.boardOf(s.boards, layer.root);
+  const row = pane && [...pane.querySelectorAll<HTMLElement>('.lname')].find((el) => el.dataset.layers?.split(' ').includes(String(id)));
+  if (!b || !row) return false;
+  const r = row.getBoundingClientRect(), a = toFlow(r.left, r.top), c = toFlow(r.right, r.bottom);
+  const z = Math.min(1, Math.max(viewport().zoom, 22 / Math.max(1, c.y - a.y)));
+  setState({autoFit: false});
+  setView(24 - a.x * z, paneRect().height / 3 - ((a.y + c.y) / 2) * z, z);
+  return true;
+}
+
 function revealScreen(left: number, top: number, right: number, bottom: number) {
   const p = paneRect(), {x, y, zoom} = viewport(), m = 40, leftEdge = p.left + NAMES * zoom + m;
   let dx = 0, dy = 0;

@@ -14,6 +14,7 @@ from contextlib import closing
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import socket
 import struct
@@ -193,6 +194,22 @@ def resolve_layers(database, project_id, items):
 # 页面认识的地址参数（截图约定见 README）；--link 只取这些
 LINK_KEYS = ("view", "board", "begin", "end", "playhead", "select", "focus", "note", "changes", "layers", "side", "links",
              "walk", "walkdir", "walkdepth")
+# 视图自己用的地址参数：--param 不能盖掉它们
+OWN_KEYS = {*LINK_KEYS, "project", "record", "capture", "full", "tree", "as", "media"}
+PARAM = re.compile(r"[a-z][a-z0-9_]{0,31}")
+
+
+def page_params(pairs):
+    """--param 名字=值：原样放进页面地址，给插件页面用（比如一览、预览的 page=3）。名字只能是小写字母、数字、下划线"""
+    out = {}
+    for pair in pairs or ():
+        key, sep, value = str(pair).partition("=")
+        if not sep or not PARAM.fullmatch(key):
+            raise ValueError(f"--param 要写成 名字=值，名字用小写字母、数字、下划线：{pair}")
+        if key in OWN_KEYS:
+            raise ValueError(f"--param 不能用视图自己的参数名 {key}：用对应的选项（比如 --{key}）")
+        out[key] = value
+    return out
 
 
 def link_query(link, project_id):
@@ -205,13 +222,14 @@ def link_query(link, project_id):
 
 def capture(database, project_id, output, *, view=None, board=None, begin=None, end=None, layers=None, playhead=None,
             select=None, focus=None, note=None, link=None, changes=None, notes=False, side=None, links=False, full_page=False,
-            width=1600, height=900, browser=None, wait_ms=20000, state_root=None):
+            tree=False, params=None, width=1600, height=900, browser=None, wait_ms=20000, state_root=None):
     query = link_query(link, project_id) if link else {}   # 先检查参数，再找浏览器、起服务
+    extra = page_params(params)
     layer_ids = resolve_layers(database, project_id, layers) if layers else None
     view = view or query.get("view") or "canvas"
     pages = [p["name"] for p in loadable(state_root)]   # 本机插件清单里开着的（view_plugin）
-    if view not in ("canvas", "assets", *pages):
-        raise ValueError(f"没有叫 {view} 的页面：canvas、assets，或者开着的插件的页面（{'、'.join(pages) or '现在没有开着的插件'}；view_plugin 看全部）")
+    if view not in ("canvas", *pages):
+        raise ValueError(f"没有叫 {view} 的页面：canvas，或者开着的插件的页面（一览 assets、接缝 cuts 也是插件）（{'、'.join(pages) or '现在没有开着的插件'}；view_plugin 看全部）")
     side = side or ("notes" if notes else None)
     if side and side not in ("now", "changes", "notes", "walk", *pages):
         raise ValueError(f"没有叫 {side} 的侧栏：now、changes、notes、walk，或者开着的插件的侧栏（{'、'.join(pages) or '现在没有开着的插件'}）")
@@ -223,6 +241,8 @@ def capture(database, project_id, output, *, view=None, board=None, begin=None, 
     query.update({"project": project_id, "view": view, "record": 0, "capture": 1})
     if links:
         query["links"] = 1
+    if tree:
+        query["tree"] = 1
     if side:
         query["side"] = side
     if full_page and view != "canvas":
@@ -231,6 +251,7 @@ def capture(database, project_id, output, *, view=None, board=None, begin=None, 
                        ("focus", focus), ("note", note), ("changes", changes)):
         if value is not None:
             query[key] = value
+    query.update(extra)
     if layer_ids:
         query["layers"] = ",".join(str(i) for i in layer_ids)
     server, url = make_server(database, state_root=state_root, record_state=False)
@@ -316,6 +337,8 @@ COMMANDS = [{
         "side": {"type": "string", "description": "右侧打开哪一栏：now（此刻）、changes、notes、walk，或者插件的侧栏（插件在清单里的名字，view_plugin 列出来的那个）；notes 同 --notes"},
         "links": {"type": "boolean", "description": "画出全部关系线（bind）；不画时只画选中对象的", "default": False},
         "full_page": {"type": "boolean", "description": "接缝页、一览页按内容高度截整页（最多 16000 像素）", "default": False},
+        "tree": {"type": "boolean", "description": "画布左边打开目录树（项目的层：对象数、谁折叠的、几楼批注没处理）", "default": False},
+        "params": {"type": "array", "description": "给插件页面的地址参数，每项写 名字=值，比如一览的 page=3、per=120；不能用视图自己的参数名"},
         "width": {"type": "integer", "default": 1600}, "height": {"type": "integer", "default": 900},
         "browser": {"type": "string", "description": "浏览器路径；省略时自动查找 Chrome、Edge、Chromium"},
         "wait_ms": {"type": "integer", "description": "最多等页面把图片、视频封面、波形加载完多久", "default": 20000},
@@ -350,13 +373,15 @@ def main():
     p.add_argument("--notes", action="store_true", help="右侧打开批注列表")
     p.add_argument("--side", help="右侧打开哪一栏：now、changes、notes、walk，或者插件的侧栏（插件的名字）")
     p.add_argument("--links", action="store_true", help="画出全部关系线"); p.add_argument("--full-page", action="store_true", help="接缝、一览页截整页")
+    p.add_argument("--tree", action="store_true", help="画布左边打开目录树")
+    p.add_argument("--param", action="append", metavar="名字=值", help="给插件页面的地址参数（可以写多次），比如 --view assets --param page=3")
     p.add_argument("--width", type=int, default=1600); p.add_argument("--height", type=int, default=900)
     p.add_argument("--browser"); p.add_argument("--wait-ms", type=int, default=20000)
     a = p.parse_args()
     try:
         result = capture(a.database, a.project_id, a.output, view=a.view, board=a.board, begin=a.begin, end=a.end, layers=a.layers,
                          playhead=a.playhead, select=a.select, focus=a.focus, note=a.note, link=a.link, changes=a.changes, notes=a.notes, side=a.side, links=a.links,
-                         full_page=a.full_page, width=a.width, height=a.height,
+                         full_page=a.full_page, tree=a.tree, params=a.param, width=a.width, height=a.height,
                          browser=a.browser, wait_ms=a.wait_ms)
     except (OSError, RuntimeError, ValueError, subprocess.TimeoutExpired) as error:
         print(f"截图失败：{error}", file=sys.stderr)

@@ -6,6 +6,9 @@ import * as React from 'react';
 import {useShallow} from 'zustand/react/shallow';
 import {selectObject, startWalk} from '../actions';
 import {Frame, Img, Thumb} from '../canvas/Media';
+import {Waveform} from '../canvas/Waveform';
+import {mediaUrl} from '../canvas/mediaUrl';
+import {Pager, pageSlice} from './Pager';
 import {markReady} from '../capture';
 import {kindOf, lastAt} from '../model/kinds';
 import type {Model, ObjWithLayer} from '../model/model';
@@ -22,6 +25,7 @@ export const PLUGIN_API = 3;
 export interface ViewSnapshot {
   model: Model | null; boards: Board[]; project: number | null; frames: boolean;
   playhead: number | null; selected: number | null;
+  picked: number[];        // 左边目录树里勾选的层（api 3 起有）：插件可以拿它当"用户选了哪几层"
 }
 
 export interface PluginHost {
@@ -36,9 +40,10 @@ export interface PluginHost {
   markReady(): void;
   addStyle(css: string): void;             // 插件自己的样式；插件关掉、去掉时跟着拿掉
   numParam(name: string): number | null;   // 地址参数（截图、复制链接用的那些）
-  components: {Img: typeof Img; Thumb: typeof Thumb; Frame: typeof Frame};
+  // Waveform、Pager（分页）和 util 里的 mediaUrl、pageSlice 是 0.25.0 加的（只加不改）
+  components: {Img: typeof Img; Thumb: typeof Thumb; Frame: typeof Frame; Waveform: typeof Waveform; Pager: typeof Pager};
   util: {kindOf: typeof kindOf; lastAt: typeof lastAt; isSec: typeof isSec; fmt: typeof fmt; fmtSpan: typeof fmtSpan;
-         lanes: typeof lanes; keyOf: typeof keyOf; rootsOf: typeof rootsOf};
+         lanes: typeof lanes; keyOf: typeof keyOf; rootsOf: typeof rootsOf; mediaUrl: typeof mediaUrl; pageSlice: typeof pageSlice};
 }
 
 // 插件能放东西的位置（栏位）。每个位置都包在出错保护里：插件出错只在它自己那块写一句，不影响别的
@@ -62,13 +67,13 @@ export function makeHost(styles: HTMLStyleElement[] = []): PluginHost {
     api: PLUGIN_API, React, capture: CAPTURE, full: FULL,
     useView: () => {
       const model = useModel();
-      const s = useStore(useShallow((st) => ({boards: st.boards, project: st.project, frames: st.frames, playhead: st.playhead, selected: st.selected})));
+      const s = useStore(useShallow((st) => ({boards: st.boards, project: st.project, frames: st.frames, playhead: st.playhead, selected: st.selected, picked: st.picked})));
       return {model, ...s};
     },
     selectObject: (id) => selectObject(id), startWalk, toast: (text) => toast(text), markReady,
     addStyle: (css) => { const el = document.createElement('style'); el.textContent = css; document.head.appendChild(el); styles.push(el); },
     numParam,
-    components: {Img, Thumb, Frame},
-    util: {kindOf, lastAt, isSec, fmt, fmtSpan, lanes, keyOf, rootsOf},
+    components: {Img, Thumb, Frame, Waveform, Pager},
+    util: {kindOf, lastAt, isSec, fmt, fmtSpan, lanes, keyOf, rootsOf, mediaUrl, pageSlice},
   };
 }

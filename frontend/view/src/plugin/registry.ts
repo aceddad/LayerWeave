@@ -53,7 +53,7 @@ async function sync() {
   for (const row of wanted) if (!loaded.has(row.name) && !errors[row.name] && before[row.name]) errors[row.name] = before[row.name];
   const plugins = wanted.map((r) => loaded.get(r.name)?.plugin).filter((p): p is LoadedPlugin => !!p);
   // 正在看的页面、侧栏属于一个没载入（或刚关掉）的插件：回到画布、「此刻」
-  const s = getState(), known = ['canvas', 'assets', ...plugins.filter((p) => p.page).map((p) => p.name)];
+  const s = getState(), known = ['canvas', ...plugins.filter((p) => p.page).map((p) => p.name)];
   const sides = [...SIDES, ...plugins.filter((p) => p.side).map((p) => p.name)];
   setState({plugins, pluginList: list, pluginErrors: errors, view: known.includes(s.view) ? s.view : 'canvas',
             side: sides.includes(s.side) ? s.side : 'now'});

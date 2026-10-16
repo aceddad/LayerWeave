@@ -1,8 +1,9 @@
 // 用户在画面上做的事：点选、放播放头、折叠（存进数据库）、拆出、点层名、跳到批注指的地方、切换面板、键盘跳转、复制链接
-import {focusNote, focusObject, focusTime, revealObject, revealTime, visibleRange} from './camera';
+import {focusLayer, focusNote, focusObject, focusTime, revealObject, revealTime, visibleRange} from './camera';
 import {sizeOf, split} from './model/layoutOps';
 import {linkQuery} from './model/link';
 import {keyOf} from './model/model';
+import {CAPTURE} from './params';
 import {editPoints, stepObject, stepTime, stepTrack} from './model/navigate';
 import {jumpPoints} from './plugin/registry';
 import {activeBoard, getState, modelOf, setState} from './store';
@@ -42,6 +43,23 @@ export function splitRoot(rootId: number) {
 export function pickLayer(layerId: number) {
   const s = getState(), picked = s.targetLayer === layerId ? null : layerId;
   setState({targetLayer: picked, sel: picked != null ? null : s.sel, wholeProject: false});
+}
+
+// ---------- 左边的目录树 ----------
+export function setTree(open: boolean) {
+  setState({tree: open});
+  if (!CAPTURE) localStorage.setItem('lw-tree', open ? '1' : '0');
+}
+// 点树上的层名：选中这一层（和点画板上的层名一样，写批注时指向它），镜头对过去
+export function flyToLayer(id: number) {
+  setState({view: 'canvas', targetLayer: id, sel: null, wholeProject: false});
+  requestAnimationFrame(() => { if (!focusLayer(id)) toast('这一层现在不在画布上：在折叠的层下面，或者被"只看勾选的"滤掉了'); });
+}
+// 只看勾选的：把勾选的层交给画布的层过滤（和截图的 --layers、链接里的 layers= 是同一个）；再点一次取消
+export function showOnlyPicked(on: boolean) {
+  const s = getState();
+  setState({only: on && s.picked.length ? new Set(s.picked) : null});
+  report();
 }
 
 export function selectObject(id: number, fly = true) {

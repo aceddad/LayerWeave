@@ -12,9 +12,9 @@ import {PluginManager} from './PluginManager';
 import {loadProject} from './sync';
 import type {View} from './types';
 
-// 画布、插件的页面（比如接缝；项目里没有它管的对象时不显示）、一览
+// 画布、插件的页面（比如接缝；项目里没有它管的对象时不显示）；一览也是插件，排在最后
 const CANVAS = {view: 'canvas' as View, label: '画布', title: undefined as string | undefined};
-const ASSETS = {view: 'assets' as View, label: '一览', title: '按种类列出项目里所有的对象：图片、视频、音频、文字……点一下回到画布上的位置'};
+const LAST = ['assets'];
 
 export function Header() {
   const switching = useRef(0);
@@ -60,7 +60,7 @@ export function Header() {
         {projects.map((p) => <option key={p.id} value={p.id}>{p.id} · {p.name || '未命名'}</option>)}
       </select>
       <nav className="tabs">
-        {[CANVAS, ...plugins.filter((p) => p.page && pluginApplies(p, model)).map((p) => ({view: p.name, label: p.label, title: p.title})), ASSETS].map((v) => <button key={v.view} className={view === v.view ? 'on' : ''} title={v.title} onClick={() => setView(v.view)}>{v.label}</button>)}
+        {[CANVAS, ...plugins.filter((p) => p.page && pluginApplies(p, model)).sort((p, q) => Number(LAST.includes(p.name)) - Number(LAST.includes(q.name))).map((p) => ({view: p.name, label: p.label, title: p.title}))].map((v) => <button key={v.view} className={view === v.view ? 'on' : ''} title={v.title} onClick={() => setView(v.view)}>{v.label}</button>)}
       </nav>
       <input className="find" type="search" placeholder="找对象：名字、文字、文件名、#编号" title="回车找下一个，Shift+回车找上一个"
              value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') search(e.shiftKey); }} />

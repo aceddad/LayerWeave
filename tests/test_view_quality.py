@@ -115,7 +115,7 @@ def quality_page(*, long_images=False):
                 tab = DevTools(page["webSocketDebuggerUrl"], timeout=45)
                 tab.call("Page.enable")
                 tab.call("Emulation.setDeviceMetricsOverride", width=1536, height=760, deviceScaleFactor=1.25, mobile=False)
-                tab.call("Page.navigate", url=url + f"?project={project}&record=0&board={board}&begin=0&end=10")
+                tab.call("Page.navigate", url=url + f"?project={project}&record=0&tree=0&board={board}&begin=0&end=10")
                 yield {"tab": tab, "database": database, "project": project, "objects": objects,
                        "replacement": blue, "requests": requests}
             finally:

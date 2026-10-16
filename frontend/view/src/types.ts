@@ -130,7 +130,7 @@ export interface ChangeOp {
   items: ChangeItem[];
 }
 
-export type View = string;   // canvas、assets，或某个插件的页面名（比如接缝插件的 cuts）
+export type View = string;   // canvas，或某个插件的页面名（比如接缝 cuts、一览 assets）
 
 // 本机插件清单（/api/plugins，view/plugins.py）：内置的在前，然后是链接来的
 export interface PluginRow {

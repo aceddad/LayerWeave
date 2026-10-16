@@ -3,23 +3,23 @@
 import {ReactFlowProvider} from '@xyflow/react';
 import {createElement, useEffect} from 'react';
 import {useShallow} from 'zustand/react/shallow';
-import {goToTarget, keyStep, locateNote} from './actions';
+import {goToTarget, keyStep, locateNote, setTree} from './actions';
 import {Flow} from './canvas/Flow';
 import {markReady} from './capture';
 import {Header} from './Header';
 import {CAPTURE, FULL} from './params';
 import {SidePanel} from './side/SidePanel';
+import {LayerTree} from './tree/LayerTree';
 import {getState, setState, useStore, waitingOf} from './store';
 import {loadProjects, poll, report} from './sync';
-import {AssetsView} from './views/AssetsView';
 import {loadPlugins} from './plugin/registry';
 import {PluginBoundary} from './plugin/slots';
 
 export function App() {
-  const {view, page, message, notice, name, hasData, waiting} = useStore(useShallow((s) => ({
+  const {view, page, message, notice, name, hasData, waiting, tree} = useStore(useShallow((s) => ({
     page: s.plugins.find((p) => p.name === s.view)?.page,
     view: s.view, message: s.message, notice: s.notice, name: s.data?.project.name, hasData: !!s.data,
-    waiting: waitingOf(s).length,
+    waiting: waitingOf(s).length, tree: s.tree,
   })));
 
   useEffect(() => {
@@ -53,9 +53,11 @@ export function App() {
     <div className="app">
       <Header />
       <div className="body">
-        {view === 'canvas' && <div className="canvas-view"><ReactFlowProvider><Flow /></ReactFlowProvider><SidePanel /></div>}
-        {view !== 'canvas' && view !== 'assets' && page && <PluginBoundary key={view} name={view}>{createElement(page)}</PluginBoundary>}
-        {view === 'assets' && <AssetsView />}
+        {view === 'canvas' && <div className="canvas-view">
+          {tree ? <LayerTree /> : !CAPTURE && <button className="tree-open" title="打开左边的目录：项目的层，一眼看全" onClick={() => setTree(true)}>目录 ›</button>}
+          <ReactFlowProvider><Flow /></ReactFlowProvider><SidePanel />
+        </div>}
+        {view !== 'canvas' && page && <PluginBoundary key={view} name={view}>{createElement(page)}</PluginBoundary>}
       </div>
       {message && <p className="message">{message}</p>}
       {notice && <p className="notice" title="点一下过去" onClick={() => {

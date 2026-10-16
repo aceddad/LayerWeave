@@ -54,7 +54,7 @@ class ViewInteractionTests(unittest.TestCase):
                 tab = DevTools(page["webSocketDebuggerUrl"], timeout=45)
                 tab.call("Emulation.setDeviceMetricsOverride", width=1280, height=900, deviceScaleFactor=1, mobile=False)
                 tab.call("Page.enable")
-                tab.call("Page.navigate", url=url + f"?project={project}&record=0")
+                tab.call("Page.navigate", url=url + f"?project={project}&record=0&tree=0")
                 self.wait(tab, "document.querySelectorAll('.board').length===2 && document.querySelectorAll('.obj').length===2")
                 _ev(tab, "(async()=>{await window.__layerweavePaintIdle?.();return true})()")
 

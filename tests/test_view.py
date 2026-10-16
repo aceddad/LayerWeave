@@ -370,9 +370,9 @@ class ViewTests(unittest.TestCase):
     def test_plugin_list_add_switch_remove_and_serve(self):
         from layerweave.tool.builtin.view.plugins import PACKAGE_ROOT, list_plugins, loadable, plugin
         root = self.state_root
-        # 什么都没登记：只有内置的接缝，开着
+        # 什么都没登记：只有内置的接缝、一览，开着
         found = list_plugins(root)
-        self.assertEqual([(p["name"], p["source"], p["on"], p["problem"]) for p in found["plugins"]], [("cuts", "builtin", True, None)])
+        self.assertEqual([(p["name"], p["source"], p["on"], p["problem"]) for p in found["plugins"]], [("cuts", "builtin", True, None), ("assets", "builtin", True, None)])
         listed = self.json("/api/plugins")
         self.assertRegex(listed["plugins"][0]["url"], r"^/plugins/cuts/plugin\.js\?v=\d+$")
         status, headers, body = self.get("/plugins/cuts/plugin.js")
@@ -412,7 +412,7 @@ class ViewTests(unittest.TestCase):
         self.assertEqual((root / "plugins.json").read_text(encoding="utf-8"), before)
         # 服务每次都重读清单：不用重启；插件文件夹里的网页文件给，别的不给
         listed = {p["name"]: p for p in self.json("/api/plugins")["plugins"]}
-        self.assertEqual(list(listed), ["cuts", "timeline", "board", "mine"])
+        self.assertEqual(list(listed), ["cuts", "assets", "timeline", "board", "mine"])
         self.assertRegex(listed["timeline"]["url"], r"^/plugins/timeline/Timeline\.js\?v=\d+$")
         self.assertEqual(self.get("/plugins/timeline/icon.svg")[0], 200)
         with self.assertRaises(HTTPError):
@@ -423,7 +423,7 @@ class ViewTests(unittest.TestCase):
         plugin("off", "board", root=root)
         self.assertIn({"name": "cuts", "on": False}, json.loads((root / "plugins.json").read_text(encoding="utf-8"))["plugins"])
         self.assertNotEqual(self.json("/api/version")["plugins"], serial)                        # 网页轮询靠它发现清单改了
-        self.assertEqual([p["name"] for p in loadable(root)], ["timeline", "mine"])
+        self.assertEqual([p["name"] for p in loadable(root)], ["assets", "timeline", "mine"])
         self.assertNotIn("url", {p["name"]: p for p in self.json("/api/plugins")["plugins"]}["cuts"])
         with self.assertRaises(HTTPError):
             self.get("/plugins/cuts/plugin.js")
@@ -440,7 +440,7 @@ class ViewTests(unittest.TestCase):
         (tools / "abcd" / "web" / "Timeline.js").rename(tools / "abcd" / "web" / "moved.js")
         rows = {p["name"]: p for p in list_plugins(root)["plugins"]}
         self.assertIn("找不到文件", rows["timeline"]["problem"])
-        self.assertEqual([p["name"] for p in loadable(root)], ["cuts", "mine"])
+        self.assertEqual([p["name"] for p in loadable(root)], ["cuts", "assets", "mine"])
         # 网页也能改（和命令同一份）；截图用的服务不写
         body = json.dumps({"action": "off", "target": "mine"}).encode()
         with urlopen(Request(self.url + "api/plugins", data=body), timeout=10) as response:
@@ -460,7 +460,7 @@ class ViewTests(unittest.TestCase):
         # 清单坏了：内置的照常，问题报出来；写的时候不覆盖坏文件
         (root / "plugins.json").write_text("{坏了", encoding="utf-8")
         broken = list_plugins(root)
-        self.assertEqual([p["name"] for p in broken["plugins"]], ["cuts"])
+        self.assertEqual([p["name"] for p in broken["plugins"]], ["cuts", "assets"])
         self.assertIn("读不了", broken["problem"])
         with self.assertRaisesRegex(ValueError, "读不了"):
             plugin("off", "cuts", root=root)

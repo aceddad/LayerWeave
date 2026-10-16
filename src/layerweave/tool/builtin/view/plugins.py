@@ -25,10 +25,11 @@ from layerweave.support.paths import PACKAGE_ROOT
 
 HERE = Path(__file__).resolve().parent
 NAME = re.compile(r"[a-z][a-z0-9_-]{0,39}")
-RESERVED = {"canvas", "assets", "now", "changes", "notes", "walk"}   # 视图自己的页面和侧栏：插件的名字也用在 view=、side= 里
+RESERVED = {"canvas", "now", "changes", "notes", "walk"}   # 视图自己的页面和侧栏：插件的名字也用在 view=、side= 里（一览 assets 是自带插件）
 # 视图自带的插件：编译好的 js 在视图包里（frontend/view/plugins 构建出来），清单里只记它开没开
 BUILTIN = {
     "cuts": {"path": HERE / "plugins" / "cuts" / "plugin.js", "about": "接缝：同一条轨道里前后相接的画面并排；键盘 [ ] 在接缝之间跳"},
+    "assets": {"path": HERE / "plugins" / "assets" / "plugin.js", "about": "一览：按种类分页列出项目里所有的图片、视频、音频、文字，点一下回到画布上"},
 }
 # 插件文件夹里能给网页的文件
 ASSETS = {".js", ".mjs", ".css", ".json", ".map", ".wasm", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".woff", ".woff2"}

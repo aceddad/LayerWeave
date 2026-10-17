@@ -216,8 +216,11 @@ def link_query(link, project_id):
 
 def capture(database, project_id, output, *, view=None, board=None, begin=None, end=None, layers=None, playhead=None,
             select=None, focus=None, note=None, link=None, changes=None, notes=False, side=None, links=False, full_page=False,
-            tree=False, params=None, width=1600, height=900, browser=None, wait_ms=20000, state_root=None):
+            tree=False, params=None, lang=None, width=1600, height=900, browser=None, wait_ms=20000, state_root=None):
     query = link_query(link, project_id) if link else {}   # 先检查参数，再找浏览器、起服务
+    if lang is not None and lang not in ("zh", "en"):
+        raise ValueError("lang 需要 zh 或 en")
+    query["lang"] = lang or (query.get("lang") if query.get("lang") in ("zh", "en") else "zh")
     extra = page_params(params)
     layer_ids = resolve_layers(database, project_id, layers) if layers else None
     view = view or query.get("view") or "canvas"
@@ -327,6 +330,7 @@ COMMANDS = [{
     "context": ["database", "project_id"],
     "parameters": {
         "output": {"type": "string", "required": True, "description": "由 AI 指定的 PNG 输出路径"},
+        "lang": {"type": "string", "choices": ["zh", "en"], "description": "截图语言；显式值优先于链接，默认 zh"},
         "view": {"type": "string", "description": "canvas（画布）、layerweave.assets（选装一览：按种类列出所有对象），或插件的页面，比如 layerweave.cuts（选装接缝插件：前后相接的画面并排）；省略时是画布，给了 link 时按链接"},
         "board": {"type": "integer", "description": "只拍这个根层所在的画板；省略时拍整张画布"},
         "begin": {"type": "number", "description": "画板显示的起点，用这块画板的单位；和 end 一起用"},
@@ -368,6 +372,7 @@ def main():
     p = argparse.ArgumentParser(description="视图截图（给 AI 看）", formatter_class=argparse.RawDescriptionHelpFormatter,
                                 epilog=help_examples(COMMANDS))
     p.add_argument("database", type=Path); p.add_argument("project_id", type=int); p.add_argument("output", type=Path)
+    p.add_argument("--lang", choices=("zh", "en"), help="截图语言；覆盖链接中的 lang，默认中文")
     p.add_argument("--view", help="canvas（画布）、layerweave.assets（选装一览）或插件的页面（比如 layerweave.cuts 接缝）；省略时是画布，给了 --link 时按链接")
     p.add_argument("--board", type=int, help="只拍这个根层所在的画板")
     p.add_argument("--begin", type=float); p.add_argument("--end", type=float)
@@ -385,7 +390,7 @@ def main():
     a = p.parse_args()
     try:
         result = capture(a.database, a.project_id, a.output, view=a.view, board=a.board, begin=a.begin, end=a.end, layers=a.layers,
-                         playhead=a.playhead, select=a.select, focus=a.focus, note=a.note, link=a.link, changes=a.changes, notes=a.notes, side=a.side, links=a.links,
+                         lang=a.lang, playhead=a.playhead, select=a.select, focus=a.focus, note=a.note, link=a.link, changes=a.changes, notes=a.notes, side=a.side, links=a.links,
                          full_page=a.full_page, tree=a.tree, params=a.param, width=a.width, height=a.height,
                          browser=a.browser, wait_ms=a.wait_ms)
     except (OSError, RuntimeError, ValueError, subprocess.TimeoutExpired) as error:

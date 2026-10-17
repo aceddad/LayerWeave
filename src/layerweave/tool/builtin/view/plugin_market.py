@@ -1,4 +1,6 @@
 """静态目录与完整 ZIP 安装；准备成功后才提交本机登记。"""
+from .i18n import ViewError
+
 import hashlib
 import json
 import os
@@ -12,6 +14,7 @@ from urllib.request import urlopen
 import zipfile
 
 from . import plugin_store as store
+from .i18n import read_localizations
 from .plugin_manifest import compatibility, inside, manifest, read_manifest, relative_path, valid_id, version_tuple
 
 
@@ -30,7 +33,7 @@ def fetch(reference):
     try:
         return urlopen(reference, timeout=30)
     except OSError as error:
-        raise ValueError(f"无法读取 {reference}：{error}") from error
+        raise ViewError("pluginError.fetch", {"value1": reference, "value2": error}) from error
 
 
 def catalog_reference(root=None, catalog=None):
@@ -43,7 +46,7 @@ def read_catalog(reference):
         with fetch(reference) as stream:
             data = json.load(stream)
     except (UnicodeError, ValueError, OSError) as error:
-        raise ValueError(f"目录读不了：{reference}：{error}") from error
+        raise ViewError("pluginError.catalogRead", {"value1": reference, "value2": error}) from error
     if not isinstance(data, dict) or data.get("format") != 1 or not isinstance(data.get("plugins"), list):
         raise ValueError("目录格式不受支持：需要 format=1 和 plugins 数组")
     releases, issues, seen = [], [], {}
@@ -146,7 +149,7 @@ def unpack(path, folder):
                     with archive.open(entry) as source, target.open("wb") as output:
                         shutil.copyfileobj(source, output)
     except (zipfile.BadZipFile, RuntimeError) as error:
-        raise ValueError(f"ZIP 读不了：{error}") from error
+        raise ViewError("pluginError.zipRead", {"value1": error}) from error
     return read_manifest(folder)
 
 
@@ -269,7 +272,7 @@ def market(identity=None, *, catalog=None, root=None):
     for key, rows in groups.items():
         usable = [r for r in rows if r["supported"] and not r["problem"]]
         chosen = max(usable, key=lambda r: version_tuple(r["version"])) if usable else rows[0]
-        item = {k: chosen.get(k) for k in ("id", "kind", "label", "description", "version", "supported", "problem")}
+        item = {k: chosen.get(k) for k in ("id", "kind", "label", "description", "version", "supported", "problem", "localizations")}
         item["installed_version"] = installed.get(key, {}).get("version")
         item["compatible"] = bool(usable)
         if identity:
@@ -285,7 +288,9 @@ def info(identity, *, version=None, catalog=None, root=None):
         if not (folder / "plugin.json").is_file():
             return {"id": identity, "record": current, "manifest": None, "usage": "本地开发链接没有 plugin.json；未声明参数和兼容范围。"}
         meta = read_manifest(folder)
-        return {"id": identity, "record": current, "manifest": meta, "usage": inside(folder, meta["usage"]).read_text(encoding="utf-8")}
+        localizations, warnings = read_localizations(folder, meta, include_usage=True)
+        return {"id": identity, "record": current, "manifest": meta, "usage": inside(folder, meta["usage"]).read_text(encoding="utf-8"),
+                "localizations": localizations, "language_warnings": warnings}
     data = read_catalog(catalog_reference(root, catalog or (current or {}).get("origin", {}).get("catalog")))
     if version:
         choices = [r for r in data["releases"] if r["id"] == identity and r.get("version") == version and r["supported"]]
@@ -301,7 +306,8 @@ def info(identity, *, version=None, catalog=None, root=None):
             if meta[key] != release[key]:
                 raise ValueError(f"包内 {key} 与目录不一致")
         usage = inside(temporary, meta["usage"]).read_text(encoding="utf-8")
-    return {"id": identity, "manifest": meta, "usage": usage, "catalog": data["catalog"], "problem": compatibility(meta["requires"])}
+        localizations, warnings = read_localizations(temporary, meta, include_usage=True)
+    return {"id": identity, "manifest": meta, "usage": usage, "catalog": data["catalog"], "problem": compatibility(meta["requires"]), "localizations": localizations, "language_warnings": warnings}
 
 
 def remove(identity, *, files=False, root=None):

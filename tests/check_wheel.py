@@ -25,7 +25,7 @@ def check(wheel):
         assert all(record["key"] == "" for record in key_template.values())
         assert not any(name.endswith(("/keys.local.json", "/keys.json")) for name in names)
         assert not any(name.startswith("layerweave/tool/builtin/view/plugins/") for name in names), "官方插件不能随宿主分发"
-        for subtree in ("web", "sdk"):
+        for subtree in ("web", "sdk", "locales"):
             prefix = f"layerweave/tool/builtin/view/{subtree}/"
             expected = {"layerweave/" + p.relative_to(package).as_posix() for p in (package / "tool/builtin/view" / subtree).rglob("*") if p.is_file()}
             actual = {name for name in names if name.startswith(prefix) and not name.endswith("/")}
@@ -41,6 +41,7 @@ def check(wheel):
         resources += list((package / "tool/builtin/usage/exchange").glob("*.md"))
         resources += [package / "tool/builtin/view/PERFORMANCE.md", package / "tool/builtin/view/INCREMENTAL.md", package / "tool/builtin/view/PLUGINS.md"]
         resources += [p for p in (package / "tool/builtin/view/sdk").rglob("*") if p.is_file()]
+        resources += list((package / "tool/builtin/view/locales").glob("*.json"))
         resources += [p for p in (package / "tool/builtin/view/web").rglob("*") if p.is_file()]
         for path in resources:
             member = "layerweave/" + path.relative_to(package).as_posix()

@@ -1,3 +1,5 @@
+import {readPreference, writePreference} from '../preferences';
+import {tr, useI18n} from '../i18n';
 // 画布：React Flow 负责平移、缩放、拖动节点、画连线、小地图；每块画板是一个节点，每条关联是一条连线
 import {Background, BackgroundVariant, MiniMap, Panel, ReactFlow, applyNodeChanges, useNodesInitialized} from '@xyflow/react';
 import type {Edge, NodeChange, ReactFlowInstance} from '@xyflow/react';
@@ -31,12 +33,13 @@ function shownBoards(model: Model, boards: Board[]): Board[] {
 
 // 小地图、底下的操作说明可以收起来；记在本机
 type Extra = 'minimap' | 'help';
-const remembered = (key: Extra) => localStorage.getItem(`lw-${key}`) !== '0';
+const remembered = (key: Extra) => readPreference(`lw-${key}`) !== '0';
 
 export function Flow() {
+  useI18n();
   const [shown, setShown] = useState(() => ({minimap: remembered('minimap'), help: remembered('help')}));
   const toggle = (key: Extra) => setShown((s) => {
-    localStorage.setItem(`lw-${key}`, s[key] ? '0' : '1');
+    writePreference(`lw-${key}`, s[key] ? '0' : '1');
     return {...s, [key]: !s[key]};
   });
   const model = useModel();
@@ -178,14 +181,15 @@ export function Flow() {
         <Background variant={BackgroundVariant.Dots} gap={24} size={1.2} color="#2b3140" />
         {!CAPTURE && shown.minimap && <MiniMap position="top-right" pannable zoomable nodeColor="#2a3346" nodeStrokeColor="#44536e" maskColor="rgba(10, 12, 16, .6)" />}
         {!CAPTURE && <Panel position="top-right" className={`fold-chip${shown.minimap ? ' over' : ''}`}>
-          <button title={shown.minimap ? '收起小地图' : '打开小地图'} onClick={() => toggle('minimap')}>{shown.minimap ? '×' : '小地图'}</button>
+          <button title={shown.minimap ? tr("canvas.hideMinimap") : tr("canvas.showMinimap")} onClick={() => toggle('minimap')}>{shown.minimap ? '×' : tr("canvas.minimap")}</button>
         </Panel>}
         {!CAPTURE && (shown.help
           ? <Panel position="bottom-left" className="help">
-              拖空白处平移（按住空格可在画板上拖）· 滚轮缩放 · Alt+滚轮：这块画板的时间 · 拖画板标题移动；拖到同单位画板的一行中间上下拼，拖到一段开头或结尾左右接 · 在尺子上拖：圈一段 · ←/→ 前后对象（没选中时跳剪辑点）· ↑/↓ 上下轨道 · [ ] 接缝
-              <button className="help-close" title="收起操作说明" onClick={() => toggle('help')}>×</button>
+
+              {tr("canvas.instructions")}
+              <button className="help-close" title={tr("canvas.hideInstructions")} onClick={() => toggle('help')}>×</button>
             </Panel>
-          : <Panel position="bottom-left" className="fold-chip"><button title="打开操作说明" onClick={() => toggle('help')}>? 操作说明</button></Panel>)}
+          : <Panel position="bottom-left" className="fold-chip"><button title={tr("canvas.showInstructions")} onClick={() => toggle('help')}>{tr("canvas.controls")}</button></Panel>)}
       </ReactFlow>
     </div>
   );

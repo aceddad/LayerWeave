@@ -3,20 +3,21 @@ import {SIDES} from '../types';
 import type {Side, View} from '../types';
 
 export interface LinkState {
-  project: number; view: View; side: Side;
+  project: number; view: View; side: Side; lang?: 'zh' | 'en';
   board?: number | null; range?: [number, number] | null; playhead?: number | null; select?: number | null;
   layers?: Set<number> | null; note?: number | null; changes?: number | null;
   walk?: {from: string; direction: string; depth: number} | null;
   pluginParams?: URLSearchParams;
 }
 
-const OWN_KEYS = new Set(['view', 'board', 'begin', 'end', 'playhead', 'select', 'focus', 'note', 'changes', 'layers', 'side', 'links',
+const OWN_KEYS = new Set(['lang', 'view', 'board', 'begin', 'end', 'playhead', 'select', 'focus', 'note', 'changes', 'layers', 'side', 'links',
   'walk', 'walkdir', 'walkdepth', 'project', 'record', 'capture', 'full', 'tree', 'as', 'media']);
 
 const num = (v: number) => String(+v.toFixed(3));
 
 export function linkQuery(s: LinkState): string {
   const q = new URLSearchParams({project: String(s.project)});
+  if (s.lang) q.set('lang', s.lang);
   if (s.view !== 'canvas' || !SIDES.includes(s.side)) s.pluginParams?.forEach((value, key) => {
     if (!OWN_KEYS.has(key) && /^[a-z][a-z0-9_]{0,31}$/.test(key)) q.set(key, value);
   });

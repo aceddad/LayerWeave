@@ -145,6 +145,9 @@ export interface ChangeOp {
 }
 export type View = string;
 export interface PluginRow {
+    localizations?: import('./i18n/types').Localizations;
+    language_warnings?: string[];
+    problem_ui?: import('./i18n/types').UiMessage;
     name: string;
     id: string;
     label: string;
@@ -174,6 +177,7 @@ export interface PluginList {
     }[];
 }
 export interface MarketItem {
+    localizations?: import('./i18n/types').Localizations;
     id: string;
     label: string;
     description: string;
@@ -184,6 +188,22 @@ export interface MarketItem {
     problem?: string | null;
 }
 export interface PluginResult extends PluginList {
+    manifest?: {
+        id: string;
+        version: string;
+        label: string;
+        description: string;
+        requires: unknown;
+        params: Record<string, {
+            type: string;
+            description: string;
+            default?: unknown;
+            required?: boolean;
+        }>;
+    } | null;
+    localizations?: import('./i18n/types').Localizations;
+    usage?: string;
+    language_warnings?: string[];
     recorded?: boolean;
     text: string;
     status?: string;

@@ -11,6 +11,8 @@ python -m layerweave.tool.builtin.view.note DATABASE PROJECT_ID done 40         
 python -m layerweave.tool.builtin.view.note DATABASE PROJECT_ID edit 40 "新正文"
 python -m layerweave.tool.builtin.view.note DATABASE PROJECT_ID remove 40             删除这条批注和它发出的关联
 """
+from .i18n import ViewError
+
 import argparse
 from contextlib import closing
 import json
@@ -128,20 +130,20 @@ def _span(span, targets):
         return None
     begin, end = span
     if not any(kind == "layer" for kind, _, _ in targets):
-        raise ValueError("span 表示某个层时间轴上的一段，要和指向那个层的关联（--to layer:编号）一起用")
+        raise ViewError("noteError.span")
     return {"begin": float(begin), "end": float(end)} if end >= begin else {"begin": float(end), "end": float(begin)}
 
 
 def _check_targets(write, project_id, targets):
     for kind, target_project, target_id in targets:
         if target_project == project_id and write.read(kind, project_id=project_id, id=target_id) is None:
-            raise ValueError(f"项目 {project_id} 里没有{'层' if kind == 'layer' else '对象'} #{target_id}")
+            raise ViewError("noteError.targetLayerMissing" if kind == "layer" else "noteError.targetObjectMissing", {"project": project_id, "id": target_id})
 
 
 def add_note(database, project_id, text, *, targets=(), span=None, author=None):
     """写一条批注，接在最后。targets 是 (kind, project, id) 列表；span 只和指向层的关联一起用。"""
     if not isinstance(text, str) or not text.strip():
-        raise ValueError("批注正文不能为空")
+        raise ViewError("noteError.empty")
     span = _span(span, targets)
 
     def work(write):
@@ -167,16 +169,16 @@ def _own_note(write, project_id, note_id):
     row = write.read("object", project_id=project_id, id=note_id)
     layer = row and write.read("layer", project_id=project_id, id=row["layer"])
     if not row or not layer or not is_note_layer(layer):
-        raise ValueError(f"#{note_id} 不是这个项目批注层里的批注")
+        raise ViewError("noteError.notNote", {"value1": note_id})
     return row
 
 
 def update_note(database, project_id, note_id, *, text=None, status=None):
     """改正文或状态（open / done）；information 里的其他内容保留。"""
     if status is not None and status not in STATUS:
-        raise ValueError("status 只能是 open 或 done")
+        raise ViewError("noteError.status")
     if text is not None and not text.strip():
-        raise ValueError("批注正文不能为空")
+        raise ViewError("noteError.empty")
 
     def work(write):
         row = _own_note(write, project_id, note_id)
@@ -205,7 +207,7 @@ def retarget_note(database, project_id, note_id, targets, span=None):
                 and write.read("object", project_id=project_id, id=bind["target_id"])
             layer = target and write.read("layer", project_id=project_id, id=target["layer"])
             if layer and is_note_layer(layer):
-                raise ValueError(f"#{note_id} 是回复（指着 #{bind['target_id']}），不能改指向；要改，改楼主的")
+                raise ViewError("noteError.replyTarget", {"value1": note_id, "value2": bind['target_id']})
         for bind in old:
             write.delete("bind", bind["id"])
         for kind, target_project, target_id in targets:
@@ -235,12 +237,12 @@ def set_read(database, project_id, note_id, reader, read=True):
     """reader 把 note_id 所在的这一楼标成已读（记下现在最后一条的编号），read=False 取消。写视图自己的表 view_note。"""
     reader = (reader or "").strip()
     if not reader:
-        raise ValueError("标已读要写明是谁（--author 名字）")
+        raise ViewError("noteError.author")
     with closing(open_database(database)) as connection:
         notes = list_notes(connection, project_id)
         note = next((n for n in notes if n["id"] == note_id), None)
         if note is None:
-            raise ValueError(f"#{note_id} 不是这个项目批注层里的批注")
+            raise ViewError("noteError.notNote", {"value1": note_id})
         thread = note["thread"]
         last = max(n["id"] for n in notes if n["thread"] == thread)
         register_tables(connection, READ_TABLE)   # 相同声明重复登记什么也不做
@@ -304,7 +306,7 @@ def note(database, project_id, action="list", *, text=None, to=None, span=None, 
             raise ValueError("reply 需要被回复的批注编号")
         with closing(open_readonly(database)) as connection:
             if note_id not in {n["id"] for n in list_notes(connection, project_id)}:
-                raise ValueError(f"#{note_id} 不是这个项目批注层里的批注")
+                raise ViewError("noteError.notNote", {"value1": note_id})
         return add_note(database, project_id, text, targets=[("object", project_id, note_id)], author=author)
     if action == "add":
         targets = [parse_target(item, project_id) for item in (to or [])]

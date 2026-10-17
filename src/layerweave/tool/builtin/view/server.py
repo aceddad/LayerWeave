@@ -15,6 +15,7 @@ import re
 import threading
 from urllib.parse import parse_qs, quote, unquote, urlparse
 
+from .i18n import ViewError, error_payload
 from .data import extract_frame, find_ffmpeg, list_projects, media_path, open_readonly, project_roots, project_view, recent_changes, thumbnail, waveform
 from .layout import layout_serial, load_layout, reconcile, save_layout
 from .fold import set_folds
@@ -70,7 +71,7 @@ class ViewHandler(SimpleHTTPRequestHandler):
             if match := re.fullmatch(r"/api/project/(\d+)", url.path):
                 with closing(open_readonly(self.database)) as connection:
                     data = project_view(connection, self.database, int(match[1]))
-                return self.send_json(data) if data else self.send_json({"error": "项目不存在"}, HTTPStatus.NOT_FOUND)
+                return self.send_json(data) if data else self.send_json(error_payload(ViewError("error.projectMissing")), HTTPStatus.NOT_FOUND)
             if match := re.fullmatch(r"/api/project/(\d+)/(snapshot|delta)", url.path):
                 q = parse_qs(url.query)
                 with closing(open_readonly(self.database)) as connection:
@@ -91,9 +92,9 @@ class ViewHandler(SimpleHTTPRequestHandler):
                 # 按时刻读（at.py）：span=根:起点:终点，可以给几个；"此刻"面板的"复制文字版"用
                 spans = [tuple(float(x) if i else int(x) for i, x in enumerate(item.split(":"))) for item in parse_qs(url.query).get("span", [])]
                 if not spans or any(len(s) != 3 for s in spans):
-                    return self.send_json({"error": "span 写成 根:起点:终点"}, HTTPStatus.BAD_REQUEST)
+                    return self.send_json(error_payload(ViewError("error.span")), HTTPStatus.BAD_REQUEST)
                 with closing(open_readonly(self.database)) as connection:
-                    return self.send_json(read_spans(connection, int(match[1]), spans))
+                    return self.send_json(read_spans(connection, int(match[1]), spans, lang=parse_qs(url.query).get("lang", ["zh"])[0]))
             if match := re.fullmatch(r"/api/walk/(\d+)", url.path):
                 # 沿读（walk.py）：侧栏「沿读」按步列出
                 q = parse_qs(url.query)
@@ -110,7 +111,7 @@ class ViewHandler(SimpleHTTPRequestHandler):
                 return self.send_json(read_state(self.database, self.state_root))
             if url.path == "/api/plugins":
                 # 修订号进入路径，相对导入的子模块也随版本换 URL。
-                result = list_plugins(self.state_root)
+                result = list_plugins(self.state_root, languages=True)
                 for p in result["plugins"]:
                     if p["on"] and not p["problem"]:
                         p["url"] = f"/plugins/{p['id']}/{p['revision']}/{quote(p['entry'])}"
@@ -118,14 +119,14 @@ class ViewHandler(SimpleHTTPRequestHandler):
             if match := re.fullmatch(r"/plugins/([a-z][a-z0-9_-]*\.[a-z][a-z0-9_-]*)/([a-f0-9]+)/(.+)", url.path):
                 # 插件的入口和它旁边的文件（拆出去的代码、图片、样式），只限这个文件夹里的网页文件
                 path = plugin_file(match[1], unquote(match[3]), self.state_root, revision=match[2])
-                return self.send_file(path) if path else self.send_json({"error": "没有这个插件文件"}, HTTPStatus.NOT_FOUND)
+                return self.send_file(path) if path else self.send_json(error_payload(ViewError("error.pluginFile")), HTTPStatus.NOT_FOUND)
             if url.path == "/api/capabilities":
                 return self.send_json({"frames": find_ffmpeg() is not None})
             if match := re.fullmatch(r"/frame/(\d+)/(\d+)", url.path):
                 with closing(open_readonly(self.database)) as connection:
                     path = media_path(connection, self.database, int(match[1]), int(match[2]))
                 if not path:
-                    return self.send_json({"error": "没有这个文件"}, HTTPStatus.NOT_FOUND)
+                    return self.send_json(error_payload(ViewError("error.file")), HTTPStatus.NOT_FOUND)
                 at = parse_qs(url.query).get("t", ["0"])[0]
                 seconds = "end" if at == "end" else round(float(at), 2)   # end：最后一帧
                 key = (str(path), path.stat().st_mtime_ns, seconds)
@@ -145,14 +146,14 @@ class ViewHandler(SimpleHTTPRequestHandler):
                     path = media_path(connection, self.database, int(match[1]), int(match[2]))
                 values = waveform(path, self.state_root) if path else None
                 if values is None:
-                    return self.send_json({"error": "算不了这个波形"}, HTTPStatus.NOT_FOUND)
+                    return self.send_json(error_payload(ViewError("error.waveform")), HTTPStatus.NOT_FOUND)
                 return self.send_json({"rms": values})
             if match := re.fullmatch(r"/thumb/(\d+)/(\d+)", url.path):
                 # 图片缩略图：画布、一览页、接缝页用它；缩不了（没有 ffmpeg、svg、gif、解不开）就送原图
                 with closing(open_readonly(self.database)) as connection:
                     path = media_path(connection, self.database, int(match[1]), int(match[2]))
                 if not path:
-                    return self.send_json({"error": "没有这个文件"}, HTTPStatus.NOT_FOUND)
+                    return self.send_json(error_payload(ViewError("error.file")), HTTPStatus.NOT_FOUND)
                 made = thumbnail(path, int(parse_qs(url.query).get("w", ["320"])[0]), self.state_root)
                 if made is None:
                     return self.send_file(path)
@@ -165,11 +166,11 @@ class ViewHandler(SimpleHTTPRequestHandler):
             if match := re.fullmatch(r"/media/(\d+)/(\d+)", url.path):
                 with closing(open_readonly(self.database)) as connection:
                     path = media_path(connection, self.database, int(match[1]), int(match[2]))
-                return self.send_file(path) if path else self.send_json({"error": "没有这个文件"}, HTTPStatus.NOT_FOUND)
+                return self.send_file(path) if path else self.send_json(error_payload(ViewError("error.file")), HTTPStatus.NOT_FOUND)
         except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
             return
         except (ValueError, OSError, RuntimeError) as error:
-            return self.send_json({"error": str(error)}, HTTPStatus.BAD_REQUEST)
+            return self.send_json(error_payload(error), HTTPStatus.BAD_REQUEST)
         if url.path == "/":
             self.path = "/index.html" + (("?" + url.query) if url.query else "")
         return super().do_GET()
@@ -185,16 +186,16 @@ class ViewHandler(SimpleHTTPRequestHandler):
         if plugins and (origin := self.headers.get("Origin")):
             parsed = urlparse(origin)
             if parsed.scheme not in ("http", "https") or parsed.hostname not in ("127.0.0.1", "localhost", "::1"):
-                return self.send_json({"error": "插件管理请求必须来自本机视图页面"}, HTTPStatus.FORBIDDEN)
+                return self.send_json(error_payload(ViewError("error.origin")), HTTPStatus.FORBIDDEN)
         if path != "/api/state" and not layout and not notes and not folds and not plugins:
-            return self.send_json({"error": "只支持 /api/state、/api/layout/<项目>、/api/notes/<项目>、/api/folds/<项目>、/api/plugins"}, HTTPStatus.NOT_FOUND)
+            return self.send_json(error_payload(ViewError("error.route")), HTTPStatus.NOT_FOUND)
         length = int(self.headers.get("Content-Length", 0))
         if length > 65536:
-            return self.send_json({"error": "内容过大"}, HTTPStatus.REQUEST_ENTITY_TOO_LARGE)
+            return self.send_json(error_payload(ViewError("error.tooLarge")), HTTPStatus.REQUEST_ENTITY_TOO_LARGE)
         try:
             payload = json.loads(self.rfile.read(length) or b"{}")
         except ValueError:
-            return self.send_json({"error": "不是 JSON"}, HTTPStatus.BAD_REQUEST)
+            return self.send_json(error_payload(ViewError("error.json")), HTTPStatus.BAD_REQUEST)
         if not self.record_state:
             return self.send_json({"recorded": False})
         if notes:
@@ -207,19 +208,19 @@ class ViewHandler(SimpleHTTPRequestHandler):
                                                     version=payload.get("version") or None, file=payload.get("file") or None,
                                                     files=payload.get("files") is True))
             except (ValueError, OSError) as error:
-                return self.send_json({"error": str(error)}, HTTPStatus.BAD_REQUEST)
+                return self.send_json(error_payload(error), HTTPStatus.BAD_REQUEST)
         if folds:
             # 视图的另一种写入：折叠，只写视图自己的表 view_layer（fold.py）。网页是人这边：
             # 自己这边能折叠、展开、写备注；AI 那边只能展开（让 AI 看回来）
             action, side = payload.get("action"), payload.get("side", "user")
             if side == "ai" and action != "unfold":
-                return self.send_json({"error": "网页不替 AI 折叠，只能展开 AI 折叠的层"}, HTTPStatus.BAD_REQUEST)
+                return self.send_json(error_payload(ViewError("error.aiFold")), HTTPStatus.BAD_REQUEST)
             try:
                 layers = [int(layer) for layer in payload.get("layers", [])]
                 return self.send_json(set_folds(self.database, int(folds[1]), layers, side, action,
                                                 by=payload.get("by") or "", tips=payload.get("tips")))
             except (ValueError, TypeError) as error:
-                return self.send_json({"error": str(error)}, HTTPStatus.BAD_REQUEST)
+                return self.send_json(error_payload(error), HTTPStatus.BAD_REQUEST)
         if layout:
             # 网页传来整套画板；按数据库里现有的根校正后再存（单位不同的拼接会被拆开）
             project_id = int(layout[1])
@@ -257,9 +258,9 @@ class ViewHandler(SimpleHTTPRequestHandler):
                 # 已读按网页上的署名记（人这边），写视图自己的表 view_note
                 result = set_read(self.database, project_id, int(payload["note"]), payload.get("reader") or "", read=action == "read")
             else:
-                return self.send_json({"error": f"不认识的动作：{action}"}, HTTPStatus.BAD_REQUEST)
+                return self.send_json(error_payload(ViewError("error.action", {"action": action})), HTTPStatus.BAD_REQUEST)
         except (ValueError, KeyError, TypeError) as error:
-            return self.send_json({"error": str(error)}, HTTPStatus.BAD_REQUEST)
+            return self.send_json(error_payload(error), HTTPStatus.BAD_REQUEST)
         return self.send_json(result)
 
     def send_file(self, path):

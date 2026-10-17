@@ -1,3 +1,4 @@
+import {tr, useI18n} from '../i18n';
 // 对象卡片：此刻面板、选中对象的详情都用它；选中对象的详情里有插件给的段落（objectDetail）
 import {createElement} from 'react';
 import {frameUrl} from '../api';
@@ -15,6 +16,7 @@ import {PluginBoundary} from '../plugin/slots';
 import {activeBoard, setState, useModel, useNotes, useStore} from '../store';
 
 export function Card({o, full = false, local = null}: {o: ObjWithLayer; full?: boolean; local?: number | null}) {
+  useI18n();
   const model = useModel()!;
   const notes = useNotes();
   const {project, frames, selected, playhead, onActive, offset, plugins} = useStore(useShallow((s) => {
@@ -28,9 +30,9 @@ export function Card({o, full = false, local = null}: {o: ObjWithLayer; full?: b
   const k = kindOf(o), missing = !!o.media && !o.media.available;
   const source = o.media?.url ? mediaUrl(o.media.url, o.media.source) : '';
   let body = null;
-  if (missing) body = <p className="hint">文件不存在：{o.media!.source}</p>;
+  if (missing) body = <p className="hint">{tr("media.missing")}{o.media!.source}</p>;
   // 卡片里用 640 宽的缩略图（侧栏才 340 宽）：原来放原图，点一下画板，此刻面板要解码好几张几百万像素的图。点图看原图
-  else if (k === 'image') body = <a href={source} target="_blank" rel="noreferrer" title="点开看原图"><Thumb project={project} o={o} width={640} frames={frames} /></a>;
+  else if (k === 'image') body = <a href={source} target="_blank" rel="noreferrer" title={tr("media.openOriginal")}><Thumb project={project} o={o} width={640} frames={frames} /></a>;
   else if (k === 'video') body = frames
     ? <>
         <Img src={mediaUrl(frameUrl(project, o.id, at), o.media?.source)} />
@@ -48,20 +50,20 @@ export function Card({o, full = false, local = null}: {o: ObjWithLayer; full?: b
   return (
     <div className={`card${o.id === selected ? ' sel' : ''}`}>
       <div className="meta">{`#${o.id} ${o.name} · ${o.type} · ${fmt(o.begin, unit)} – ${fmt(o.end, unit)}`}
-        {full && <button className="walk-btn" title="从这个对象出发，顺着关联往外读：挂在上面的批注、连着的对象、再往外一步……（侧栏「沿读」）"
-                         onClick={() => startWalk(`object:${o.id}`)}>沿读</button>}</div>
+        {full && <button className="walk-btn" title={tr("relations.objectHint")}
+                         onClick={() => startWalk(`object:${o.id}`)}>{tr("relations.follow")}</button>}</div>
       {body}
       {o.text != null && <div className="txt">{o.text}</div>}
-      {said.length > 0 && <div className="rels"><div className="rels-head">批注</div>
+      {said.length > 0 && <div className="rels"><div className="rels-head">{tr("notes.title")}</div>
         {said.map(({top, replies}) => <div key={top.id} className="rel goto" onClick={() => setState({side: 'notes'})}>
-          💬 {top.text}<small>{top.status === 'done' ? '已处理' : '待处理'}{top.author ? ' · ' + top.author : ''}{replies.length ? ` · ${replies.length} 条回复` : ''}</small>
+          💬 {top.text}<small>{top.status === 'done' ? tr("notes.resolved") : tr("notes.open")}{top.author ? ' · ' + top.author : ''}{replies.length ? tr("notes.replyCount", {value1: replies.length}) : ''}</small>
         </div>)}
       </div>}
-      {relations.length > 0 && <div className="rels"><div className="rels-head">关系</div>
+      {relations.length > 0 && <div className="rels"><div className="rels-head">{tr("relations.title")}</div>
         {relations.map(({dir, ref, tips}, i) => {
           const can = ref.project === project && (ref.kind === 'layer' ? !!model.layer(ref.id) : !!model.object(ref.id));
           return <div key={i} className={`rel${can ? ' goto' : ''}`} onClick={() => can && (ref.kind === 'object' ? selectObject(ref.id) : goToTarget(ref, null))}>
-            <b>{dir}</b> {refLabel(model, ref)}{tips && <small>{tips}</small>}
+            <b>{dir}</b> {refLabel(model, ref, tr)}{tips && <small>{tips}</small>}
           </div>;
         })}
       </div>}
@@ -70,7 +72,7 @@ export function Card({o, full = false, local = null}: {o: ObjWithLayer; full?: b
           <PluginBoundary name={p.name}>{createElement(p.objectDetail!, {object: o, model})}</PluginBoundary>
         </div>)}
       {full && <pre>{JSON.stringify(o.information, null, 1)}</pre>}
-      {full && o.tips && <pre>备注：{o.tips}</pre>}
+      {full && o.tips && <pre>{tr("common.tips")}{o.tips}</pre>}
     </div>
   );
 }

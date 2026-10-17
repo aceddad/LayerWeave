@@ -134,6 +134,9 @@ export type View = string;   // canvas，或某个插件的页面名（比如接
 
 // 本机插件清单（/api/plugins）：name 在运行时也使用完整 publisher.name。
 export interface PluginRow {
+  localizations?: import('./i18n/types').Localizations;
+  language_warnings?: string[];
+  problem_ui?: import('./i18n/types').UiMessage;
   name: string;
   id: string;
   label: string;
@@ -157,10 +160,15 @@ export interface PluginList {
   migration_issues: {problem: string}[];
 }
 export interface MarketItem {
+  localizations?: import('./i18n/types').Localizations;
   id: string; label: string; description: string; version: string; compatible: boolean;
   supported: boolean; installed_version?: string | null; problem?: string | null;
 }
 export interface PluginResult extends PluginList {
+  manifest?: {id: string; version: string; label: string; description: string; requires: unknown; params: Record<string, {type: string; description: string; default?: unknown; required?: boolean}>} | null;
+  localizations?: import('./i18n/types').Localizations;
+  usage?: string;
+  language_warnings?: string[];
   recorded?: boolean; text: string; status?: string; items?: MarketItem[];
   issues?: {message: string}[]; version?: string; id?: string;
 }

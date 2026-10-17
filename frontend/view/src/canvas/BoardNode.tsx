@@ -1,3 +1,4 @@
+import {tr, useI18n} from '../i18n';
 // 画板：React Flow 的一个自定义节点。里面是这块画板的时间轴：标题、尺子、一行行轨道，播放头、圈出的一段、拼接提示。
 // 拖动只能抓标题（dragHandle = .bhead）；尺子上拖是圈一段；Alt+滚轮缩放这块画板的时间。
 import {Handle, Position, useStore as useFlowStore, useUpdateNodeInternals} from '@xyflow/react';
@@ -36,6 +37,7 @@ function Sticky({target, x, width, layout}: {target: RefObject<HTMLDivElement | 
 }
 
 function Ruler({board, layout}: {board: Board; layout: BoardLayout}) {
+  useI18n();
   const bucket = useFlowStore((s) => Math.round(Math.log(s.transform[2]) * 5));   // 缩放变化够大才重排刻度
   const marks = useMemo(() => ticks(layout.a, layout.e, layout.pps, Math.exp(bucket / 5), layout.unit), [layout, bucket]);
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -67,32 +69,35 @@ function Ruler({board, layout}: {board: Board; layout: BoardLayout}) {
 
 // 轨道里的空当：|— 3.000 —|，位数按轴的精度。屏幕上放得下数字才写数字，太窄只画两头的竖线，再窄就不画
 function Gaps({gaps, a, pps, decimals, unit}: {gaps: {from: number; to: number}[]; a: number; pps: number; decimals: number | null; unit: string}) {
+  useI18n();
   const zoom = useFlowStore((s) => Math.exp(Math.round(Math.log(s.transform[2]) * 10) / 10));
   return <>{gaps.map(({from, to}) => {
     const w = (to - from) * pps, label = fmtLength(to - from, decimals), screen = w * zoom;
     if (screen < 6) return null;
     return <div key={from} className="gap" style={{left: (from - a) * pps, width: w}}
-                title={`空着 ${label}${unit ? ' ' + unit : ''}（${fmt(from, unit)} – ${fmt(to, unit)}）`}>
+                title={tr("board.gap", {value1: label, value2: unit ? ' ' + unit : '', value3: fmt(from, unit), value4: fmt(to, unit)})}>
       {screen >= label.length * 6.5 + 18 && <span>{label}</span>}
     </div>;
   })}</>;
 }
 
-const THEM = VIEWER === 'user' ? 'AI' : '用户';           // 对方
+const otherRole = () => VIEWER === 'user' ? 'AI' : tr('common.user');           // 对方
 const MINE = VIEWER === 'user';                           // 网页（人这边）才能改折叠
 
 // 自己这边折叠的轨道：一条带边框的细条，写明收了什么、谁收的、为什么；网页上可以写备注、点一下展开
 function FoldBar({fold, notes, layers}: {fold: FoldInfo; notes: number; layers: number[]}) {
+  useI18n();
   const [draft, setDraft] = useState<string | null>(null);
   const save = async () => { if (draft != null && await setFoldTips(layers, draft)) setDraft(null); };
   return (
-    <div className="foldbar" title={MINE ? '点一下展开' : `${fold.by} 折叠的`}
+    <div className="foldbar" title={MINE ? tr("board.expandHint") : tr("board.foldedBy", {value1: fold.by})}
          onClick={(e) => { e.stopPropagation(); if (MINE && draft == null) toggleFold(layers, false); }}>
-      ▸ 已折叠{fold.below ? ` · 下面 ${fold.below} 层` : ''} · {fold.objects} 个对象{notes > 0 && ` · 💬 ${notes} 楼待处理`}
-      <small>（{fold.by} 折叠的{fold.tips && draft == null ? '：' + fold.tips : ''}）</small>
+
+      {tr("board.foldedLabel")}{fold.below ? tr("board.descendants", {value1: fold.below}) : ''} · {fold.objects}  {tr("board.objectsSuffix")}{notes > 0 && tr("board.openNotes", {value1: notes})}
+      <small>（{fold.by}  {tr("board.foldedSuffix")}{fold.tips && draft == null ? '：' + fold.tips : ''}）</small>
       {MINE && RECORD && (draft == null
-        ? <a className="foldtips" onClick={(e) => { e.stopPropagation(); setDraft(fold.tips); }}>{fold.tips ? '改备注' : '写备注'}</a>
-        : <input className="foldtips-box nodrag" autoFocus value={draft} placeholder="为什么收起来（回车保存，Esc 取消）"
+        ? <a className="foldtips" onClick={(e) => { e.stopPropagation(); setDraft(fold.tips); }}>{fold.tips ? tr("board.editNote") : tr("board.writeNote")}</a>
+        : <input className="foldtips-box nodrag" autoFocus value={draft} placeholder={tr("board.foldReason")}
                  onClick={(e) => e.stopPropagation()} onChange={(e) => setDraft(e.target.value)}
                  onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Enter') save(); if (e.key === 'Escape') setDraft(null); }} />)}
     </div>
@@ -101,11 +106,12 @@ function FoldBar({fold, notes, layers}: {fold: FoldInfo; notes: number; layers: 
 
 // 对方折叠的轨道：照常画，名字旁贴标签；网页上点 × 让 AI 也展开
 function OtherChip({mark, layers}: {mark: FoldMark; layers: number[]}) {
+  useI18n();
   const why = mark.tips ? '：' + mark.tips : '';
-  const hint = MINE ? '点 × 让 AI 也展开' : '用户现在不关注这里；内容照常要检查';
+  const hint = MINE ? tr("board.expandAIHint") : tr("board.userNotFocused");
   return (
-    <i className="otherfold-chip" title={`${mark.by} 折叠了这一层和下面的层${why}\n${hint}`}>
-      {THEM}折叠{MINE && RECORD && <b onClick={(e) => { e.stopPropagation(); unfoldForAI(layers); }}>×</b>}
+    <i className="otherfold-chip" title={tr("board.foldedTree", {value1: mark.by, value2: why, value3: hint})}>
+      {otherRole()}{tr("common.collapsed")}{MINE && RECORD && <b onClick={(e) => { e.stopPropagation(); unfoldForAI(layers); }}>×</b>}
     </i>
   );
 }
@@ -114,6 +120,7 @@ function OtherChip({mark, layers}: {mark: FoldMark; layers: number[]}) {
 // 否则 5000 个对象时每移一下都要把几千个格子重新比一遍，拖画板只剩每秒 1 帧（2026-10-14 量的）
 // 选中的对象不在这里订阅：格子自己订阅（ObjectBlock），点一下对象这一行不用重画
 const Section = memo(function Section({boardKey, layout, sec}: {boardKey: number; layout: BoardLayout; sec: SectionLayout}) {
+  useI18n();
   const model = useModel()!;
   const {targetLayer, frames, project, noteFocus} = useStore(useShallow((s) => ({
     targetLayer: s.targetLayer, frames: s.frames, project: s.project!, noteFocus: s.noteFocus,
@@ -127,7 +134,8 @@ const Section = memo(function Section({boardKey, layout, sec}: {boardKey: number
     if (focusTop?.span && !tops.includes(focusTop) && hot.has(`layer:${layerId}`)) tops.push(focusTop);
     return tops;
   };
-  const external = useMemo(() => externalLabels(model), [model]);
+  const {locale} = useI18n();
+  const external = useMemo(() => externalLabels(model, tr), [model, locale]);
   // 折叠的轨道里收着几楼待处理的批注（指向收起的层或对象）：写在细条上，免得 AI 漏看
   const notesIn = (fold: FoldInfo) => {
     const tops = new Set<number>();
@@ -155,10 +163,10 @@ const Section = memo(function Section({boardKey, layout, sec}: {boardKey: number
   return (
     <div className="sec" data-row={sec.index}>
       <div className="names stick">
-        {sec.strip && <div className="lname strip" style={{height: 24}}><span className="nm">左右接续 {sec.segments.length} 段</span></div>}
+        {sec.strip && <div className="lname strip" style={{height: 24}}><span className="nm">{tr("board.sequentialCount", {count: sec.segments.length})}</span></div>}
         {sec.tracks.map(({track, height, fold, other}) => {
           const ids = track.parts.map((p) => p.layer.id), isRoot = track.key === '';
-          const label = isRoot ? sec.row.map((r) => model.nameOf(r)).join(' → ') : (track.name || track.type);
+          const label = isRoot ? sec.row.map((r) => model.nameOf(r, tr)).join(' → ') : (track.name || track.type);
           const said = ids.flatMap((id) => notes?.index.get(`layer:${id}`) ?? []);
           const changed = ids.map((id) => marks.changedLayers.get(id)).filter(Boolean);
           return (
@@ -167,14 +175,14 @@ const Section = memo(function Section({boardKey, layout, sec}: {boardKey: number
                  style={{height, paddingLeft: 8 + 14 * track.depth}}
                  onClick={(e) => { if (!(e.target as HTMLElement).closest('.tog, button')) pickLayer(ids[0]); }}>
               <span className={`tog${MINE ? '' : ' off'}`}
-                    title={MINE ? (fold ? '展开' : '折叠：收起这一层和下面所有的层（存进数据库，AI 看得见，不影响 AI 那边）') : '这是 AI 那边的样子，只看不改'}
+                    title={MINE ? (fold ? tr("common.expand") : tr("board.collapseHint")) : tr("board.aiReadOnly")}
                     onClick={() => MINE && toggleFold(ids, !fold)}>{fold ? '▸' : '▾'}</span>
               <span className="lt">{track.type}</span>
               <span className="nm">{label}</span>
               {said.length > 0 && <i className="note-dot" title={said.map(({top}) => `#${top.id} ${top.text}`).join('\n')}>💬{said.length}</i>}
-              {changed.length > 0 && <i className="chg-dot" title="这个层最近被改过">{Math.min(...changed.map((m) => m!.n))}</i>}
+              {changed.length > 0 && <i className="chg-dot" title={tr("board.layerChanged")}>{Math.min(...changed.map((m) => m!.n))}</i>}
               {other && <OtherChip mark={other} layers={ids} />}
-              {isRoot && many && !sec.strip && <button className="split nodrag" title="把这个根拆出去，单独成一块画板" onClick={() => splitRoot(sec.row[0])}>拆出</button>}
+              {isRoot && many && !sec.strip && <button className="split nodrag" title={tr("board.detachRootHint")} onClick={() => splitRoot(sec.row[0])}>{tr("board.detach")}</button>}
               {ids.map((id) => <span key={id}>
                 <Handle type="source" position={Position.Left} id={`ls${id}`} className="rel-handle" isConnectable={false} />
                 <Handle type="target" position={Position.Left} id={`lt${id}`} className="rel-handle" isConnectable={false} />
@@ -186,8 +194,8 @@ const Section = memo(function Section({boardKey, layout, sec}: {boardKey: number
       <div className="tracks" style={{width: layout.tracksWidth}} onClick={onTracksClick}>
         {sec.strip && <div className="segstrip" style={{height: 24}}>
           {sec.segments.map((s) => <span key={s.root} className="seg-chip" style={{left: (s.offset - a) * pps}}>
-            ▶ {model.nameOf(s.root)}<small>{fmt(s.offset, unit)} 起</small>
-            {many && <button className="split nodrag" title="把这一段拆出去，单独成一块画板" onClick={() => splitRoot(s.root)}>拆出</button>}
+            ▶ {model.nameOf(s.root, tr)}<small>{tr("board.startAt", {position: fmt(s.offset, unit)})}</small>
+            {many && <button className="split nodrag" title={tr("board.detachSegmentHint")} onClick={() => splitRoot(s.root)}>{tr("board.detach")}</button>}
           </span>)}
         </div>}
         {sec.tracks.map(({track, height, items, gaps, fold, other}) => (fold
@@ -195,18 +203,18 @@ const Section = memo(function Section({boardKey, layout, sec}: {boardKey: number
               <FoldBar fold={fold} notes={notesIn(fold)} layers={track.parts.map((p) => p.layer.id)} />
             </div>
           : <MediaTrack key={track.key} className={`track${other ? ' otherfold' : ''}`} height={height} width={layout.tracksWidth}>
-            {other && <span className="otherfold-label">{other.by} 折叠了{other.tips ? '：' + other.tips : ''}</span>}
+            {other && <span className="otherfold-label">{tr('board.otherCollapsed', {author: other.by, reason: other.tips ? ': ' + other.tips : ''})}</span>}
             <Gaps gaps={gaps} a={a} pps={pps} decimals={decimals} unit={unit} />
             {items.map((it) => <ObjectBlock key={it.o.id} item={it} a={a} pps={pps} unit={unit} project={project} frames={frames}
               mark={marks.changed.get(it.o.id)} notes={notes?.index.get(`object:${it.o.id}`)} external={external.get(it.o.id)} />)}
             {track.parts.flatMap(({layer, seg}) => (marks.ghosts.get(layer.id) ?? []).map((g) => (
               <div key={`g${g.id}`} className={`ghost ${g.action}`} data-ghost={g.id}
                    style={{left: (g.begin + seg.offset - a) * pps, width: Math.max(6, (g.end - g.begin) * pps), top: PAD, height: LANE - 4}}
-                   title={`#${g.id} ${g.label}：${g.action === 'delete' ? '删除前' : '移动前'}在这里（${fmt(g.begin, unit)} – ${fmt(g.end, unit)}）`}>
-                <span>{g.action === 'delete' ? '删除前' : '移动前'} #{g.id} {g.label}</span>
+                   title={tr("board.ghost", {value1: g.id, value2: g.label, value3: g.action === 'delete' ? tr("changes.beforeDelete") : tr("changes.beforeMove"), value4: fmt(g.begin, unit), value5: fmt(g.end, unit)})}>
+                <span>{g.action === 'delete' ? tr("changes.beforeDelete") : tr("changes.beforeMove")} #{g.id} {g.label}</span>
               </div>)))}
             {track.parts.flatMap(({layer, seg}) => bandsOf(layer.id).map((top) => (
-              <div key={`n${top.id}`} className={`noteband${top.id === noteFocus ? ' hot' : ''}`} data-note={top.id} title={`批注 #${top.id}：${top.text}`}
+              <div key={`n${top.id}`} className={`noteband${top.id === noteFocus ? ' hot' : ''}`} data-note={top.id} title={tr("board.note", {value1: top.id, value2: top.text})}
                    style={{left: (top.span!.begin + seg.offset - a) * pps, width: Math.max(4, (top.span!.end - top.span!.begin) * pps)}}>
                 <span>💬 {top.text}</span>
               </div>)))}
@@ -219,6 +227,7 @@ const Section = memo(function Section({boardKey, layout, sec}: {boardKey: number
 });
 
 export const BoardNode = memo(function BoardNode({id, data, positionAbsoluteX}: NodeProps<BoardNodeType>) {
+  useI18n();
   const key = data.key;
   const model = useModel();
   const board = useStore((s) => s.boards.find((b) => keyOf(b) === key));
@@ -250,7 +259,7 @@ export const BoardNode = memo(function BoardNode({id, data, positionAbsoluteX}: 
   if (!layout || !board || !model) return null;
   const {a, pps, unit} = layout;
   const folded = layout.sections.reduce((n, sec) => n + sec.tracks.filter((t) => t.fold).length, 0);
-  const title = board.rows.map((row) => row.map((r) => model.nameOf(r)).join(' → ')).join(' ＋ ');
+  const title = board.rows.map((row) => row.map((r) => model.nameOf(r, tr)).join(' → ')).join(' ＋ ');
   const dropHere = drop;
   const dropSec = dropHere ? layout.sections.find((s) => s.index === dropHere.rowIndex) : undefined;
   return (
@@ -259,11 +268,11 @@ export const BoardNode = memo(function BoardNode({id, data, positionAbsoluteX}: 
       <Sticky target={rootRef} x={positionAbsoluteX} width={layout.width} layout={layout} />
       <div className="bhead">
         <div className="stick">
-          <span className="grip">⠿</span><b>{title}</b><span className="unit">{unit || '没有单位'}</span>
-          {folded > 0 && <span className="foldchip" title="折叠的轨道画成一条细条，点 ▸ 展开">折叠了 {folded} 条</span>}
-          <button className="nodrag" title="时间缩小" onClick={() => timeZoom(key, 1 / 1.6)}>−</button>
-          <button className="nodrag" title="时间恢复成铺满画布" onClick={() => timeZoom(key, null)}>适应</button>
-          <button className="nodrag" title="时间放大" onClick={() => timeZoom(key, 1.6)}>＋</button>
+          <span className="grip">⠿</span><b>{title}</b><span className="unit">{unit || tr("common.noUnit")}</span>
+          {folded > 0 && <span className="foldchip" title={tr("board.foldedTracksHint")}>{tr("board.collapsedTracks", {count: folded})}</span>}
+          <button className="nodrag" title={tr("board.timeZoomOut")} onClick={() => timeZoom(key, 1 / 1.6)}>−</button>
+          <button className="nodrag" title={tr("board.fitTimeHint")} onClick={() => timeZoom(key, null)}>{tr("board.fitTime")}</button>
+          <button className="nodrag" title={tr("board.timeZoomIn")} onClick={() => timeZoom(key, 1.6)}>＋</button>
         </div>
       </div>
       <div className="rrow"><div className="corner stick">{unit}</div><Ruler board={board} layout={layout} /></div>
@@ -272,7 +281,7 @@ export const BoardNode = memo(function BoardNode({id, data, positionAbsoluteX}: 
       {sel && <div className="selband" style={{left: NAMES + (sel.begin - a) * pps, width: Math.max(2, (sel.end - sel.begin) * pps)}} />}
       {dropHere && !dropHere.ok && <div className="dropnote">{dropHere.reason}</div>}
       {dropHere && dropHere.ok && dropSec && (dropHere.side === 'left' || dropHere.side === 'right'
-        ? <div className="dropmark v" style={{left: NAMES + (dropHere.at! - a) * pps, top: dropSec.top, height: dropSec.height}}>{dropHere.side === 'left' ? '接在这一段前面' : '接在这一段后面'}</div>
+        ? <div className="dropmark v" style={{left: NAMES + (dropHere.at! - a) * pps, top: dropSec.top, height: dropSec.height}}>{dropHere.side === 'left' ? tr("board.joinBefore") : tr("board.joinAfter")}</div>
         : <div className="dropmark" style={{top: dropSec.top + (dropHere.side === 'below' ? dropSec.height : 0)}} />)}
     </div>
   );

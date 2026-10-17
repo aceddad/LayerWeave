@@ -17,6 +17,7 @@ import sys
 
 from layerweave.support.api import read_bindings, read_record, read_snapshot
 
+from .i18n import translate
 from .data import open_readonly, order_layers
 from .notes import LAYER_REF as NOTE_LAYER_REF, OBJECT_REF as NOTE_OBJECT_REF
 
@@ -156,39 +157,43 @@ def walk_from(connection, project_id, start, *, direction="both", depth=3, max_n
     return result
 
 
-def label(step):
-    """一步的名字：#16「镜头 3」、批注 #1306、层 #5「画面」。"""
+def label(step, *, lang="zh"):
+    def tr(key, **values):
+        return translate(key, values, lang=lang)
     number = f"#{step['id']}"
+    kind = tr("common.layer" if step["kind"] == "layer" else "common.object")
     if step["status"] == "other_project":
-        return f"项目 {step['project']} 的{'层' if step['kind'] == 'layer' else '对象'} #{step['id']}（别的项目，没有接着走）"
+        return tr("walk.otherProject", project=step["project"], kind=kind, id=step["id"])
     if step["status"] == "missing":
-        return f"{'层' if step['kind'] == 'layer' else '对象'} #{step['id']}（已删除）"
+        return tr("walk.missing", kind=kind, id=step["id"])
     if step["kind"] == "layer":
-        return f"层 {number}「{step['name']}」"
+        return tr("walk.layer", id=number, name=step["name"])
     if step["note"]:
-        return f"批注 {number}"
+        return tr("walk.note", id=number)
     name = step["name"] or (Path(step["source"]).name if step["source"] else "")
     return f"{number}「{name}」" if name else number
 
 
-def facts(step):
+def facts(step, *, include_layer=True, lang="zh"):
+    def tr(key, **values):
+        return translate(key, values, lang=lang)
     if step["status"] != "found":
         return []
     if step["kind"] == "layer":
-        return [step["type"]] + ([f"单位 {step['unit']}"] if step["unit"] else [])
+        return [step["type"]] + ([tr("walk.unit", unit=step["unit"])] if step["unit"] else [])
     facts = []
     if step["note"]:
         note = step["note"]
-        facts += [note["author"] or "没署名", "回复" if note["reply"] else "已处理" if note["status"] == "done" else "待处理"]
+        facts += [note["author"] or tr("notes.anonymous"), tr("notes.reply" if note["reply"] else "notes.resolved" if note["status"] == "done" else "notes.open")]
         if note.get("span"):
-            facts.append(f"圈的是 {num(note['span'].get('begin'))}–{num(note['span'].get('end'))}")
+            facts.append(tr("walk.span", begin=num(note["span"].get("begin")), end=num(note["span"].get("end"))))
     else:
         facts.append(step["type"])
-        if step["layer"]:
-            facts.append(f"层「{step['layer']['name']}」")
+        if include_layer and step["layer"]:
+            facts.append(tr("walk.parent", name=step["layer"]["name"]))
         facts.append(f"{num(step['begin'])}–{num(step['end'])}{' ' + step['unit'] if step['unit'] else ''}")
         if step["source"]:
-            facts.append(f"文件 {step['source']}")
+            facts.append(tr("walk.file", source=step["source"]))
     return facts
 
 

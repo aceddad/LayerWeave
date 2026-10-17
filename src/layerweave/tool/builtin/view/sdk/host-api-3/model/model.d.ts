@@ -1,3 +1,4 @@
+import type { Translate } from '../i18n/types';
 import type { Board, Layer, Obj, ProjectData, Root } from '../types';
 export declare const NAMES = 200, HEAD = 34, RULER = 26, ROW = 46, LANE = 40, PAD = 3, GAP = 48, STRIP = 24, FOLD = 26;
 export interface Segment {
@@ -100,7 +101,7 @@ export declare class Model {
     object(id: number): ObjWithLayer | undefined;
     unitOfRoot(id: number | null | undefined): string;
     precisionOf(id: number | null | undefined): number | null;
-    nameOf(id: number): string;
+    nameOf(id: number, tr?: Translate): string;
     allObjects(): ObjWithLayer[];
     segments(row: number[]): Segment[];
     segmentAt(row: number[], t: number): Segment | null;

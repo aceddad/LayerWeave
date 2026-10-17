@@ -1,12 +1,12 @@
 {
   "name": "layerweave-view",
   "private": true,
-  "version": "0.28.1",
+  "version": "0.29.0",
   "description": "LayerWeave 视图网页的源码；npm run build 输出到 src/layerweave/tool/builtin/view/web/",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vitest run && node tools/export-plugin-sdk.mjs && vite build",
+    "build": "tsc --noEmit && vitest run && node tools/export-plugin-sdk.mjs && node tools/copy-locales.mjs && vite build",
     "check": "tsc --noEmit",
     "test": "vitest run",
     "sdk": "node tools/export-plugin-sdk.mjs"

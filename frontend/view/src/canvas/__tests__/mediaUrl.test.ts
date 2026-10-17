@@ -1,3 +1,4 @@
+vi.mock('../../i18n', async () => ({...await import('../../i18n/core'), useI18n: () => ({locale: 'zh'})}));
 import {afterEach, describe, expect, it, vi} from 'vitest';
 vi.mock('../../params', () => ({CAPTURE: false, DECODE: 'async', LAZY: 'lazy'}));
 vi.mock('../../camera', () => ({viewport: () => ({zoom: 1})}));

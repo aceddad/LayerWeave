@@ -17,6 +17,7 @@ import sys
 
 from layerweave.support.api import read_bindings, read_record, read_snapshot
 
+from .i18n import translate
 from .data import open_readonly, order_layers
 from .note import list_notes
 from .notes import LAYER_REF as NOTE_LAYER_REF, OBJECT_REF as NOTE_OBJECT_REF
@@ -24,7 +25,7 @@ from .state import read_state
 from .walk import LINE_LIMIT, Layers, facts, label, num, object_step
 
 
-def _gap(objects, a, b, unit):
+def _gap(objects, a, b, unit, *, lang="zh"):
     """这一刻（或这一段）没有对象时，是哪种空。"""
     u = f" {unit}" if unit else ""
     timed = sorted(objects, key=lambda o: (o["begin"], o["end"]))
@@ -32,15 +33,15 @@ def _gap(objects, a, b, unit):
     after = [o for o in timed if o["begin"] >= b]
     if before and after:
         start, stop = max(o["end"] for o in before), min(o["begin"] for o in after)
-        return {"kind": "between", "from": start, "to": stop, "text": f"空着：{num(start)}–{num(stop)}{u}（{num(stop - start)}{u}）"}
+        return {"kind": "between", "from": start, "to": stop, "text": translate("at.gap", {"begin": num(start), "end": num(stop)+u, "length": num(stop-start)+u}, lang=lang)}
     if after:
         first = min(o["begin"] for o in after)
-        return {"kind": "before", "next": first, "text": f"还没开始：{num(first)}{u} 才有"}
+        return {"kind": "before", "next": first, "text": translate("at.before", {"position": num(first)+u}, lang=lang)}
     last = max(o["end"] for o in before)
-    return {"kind": "after", "last": last, "text": f"已经结束：最后一个在 {num(last)}{u} 结束"}
+    return {"kind": "after", "last": last, "text": translate("at.after", {"position": num(last)+u}, lang=lang)}
 
 
-def moment(connection, project_id, root, a, b, layers=None):
+def moment(connection, project_id, root, a, b, layers=None, *, lang="zh"):
     """根 root 上 [a, b] 这一段（a == b 是一刻）：每层的对象或空当、它们之间的关联、指着它们的待处理批注。"""
     layers = layers or Layers(connection, project_id)
     top = layers.rows.get(root)
@@ -67,7 +68,7 @@ def moment(connection, project_id, root, a, b, layers=None):
         for step in steps:
             hits[step["id"]] = step
         rows.append({"layer": {"id": layer["id"], "name": layer["name"], "type": layer["type"], "depth": layer["depth"]},
-                     "objects": steps, "gap": None if steps or not timed else _gap(timed, a, b, unit)})
+                     "objects": steps, "gap": None if steps or not timed else _gap(timed, a, b, unit, lang=lang)})
     # 这些东西之间的关联；连到这一刻以外的，只数个数（用 view_walk 接着读）
     relations, outside = [], {}
     for number in hits:
@@ -135,21 +136,23 @@ def read_at(database, project_id, *, root=None, at=None, range=None, state_root=
     return {"moments": moments, "from_view": root is None, "text": "\n\n".join(describe(m) for m in moments)}
 
 
-def read_spans(connection, project_id, spans):
+def read_spans(connection, project_id, spans, *, lang="zh"):
     """网页"复制文字版"用：spans 是 [(根, 起点, 终点)]，和 read_at 一样的结果。"""
     with read_snapshot(connection):
         layers = Layers(connection, project_id)
-        moments = [moment(connection, project_id, r, a, b, layers) for r, a, b in spans]
-    return {"moments": moments, "from_view": False, "text": "\n\n".join(describe(m) for m in moments)}
+        moments = [moment(connection, project_id, r, a, b, layers, lang=lang) for r, a, b in spans]
+    return {"moments": moments, "from_view": False, "text": "\n\n".join(describe(m, lang=lang) for m in moments)}
 
 
-def describe(m):
+def describe(m, *, lang="zh"):
+    def tr(key, **values):
+        return translate(key, values, lang=lang)
     u = f" {m['unit']}" if m["unit"] else ""
-    when = f"在 {num(m['begin'])}{u} 这一刻" if m["begin"] == m["end"] else f"在 {num(m['begin'])}–{num(m['end'])}{u} 这一段"
-    lines = [f"根层 #{m['root']}「{m['name']}」{when}："]
+    when = tr("at.point", position=num(m["begin"])+u) if m["begin"] == m["end"] else tr("at.range", begin=num(m["begin"]), end=num(m["end"])+u)
+    lines = [tr("at.root", id=m["root"], name=m["name"], when=when)]
     for row in m["layers"]:
         layer, pad = row["layer"], "  " * (1 + (row["layer"]["depth"] or 0))
-        head = f"{pad}{layer['name'] or '层'}（{layer['type']}，#{layer['id']}）"
+        head = pad + tr("at.layer", name=layer["name"] or tr("common.layer"), type=layer["type"], id=layer["id"])
         if not row["objects"]:
             if row["gap"]:
                 lines.append(f"{head}  {row['gap']['text']}")
@@ -158,22 +161,22 @@ def describe(m):
         for step in row["objects"]:
             more = []
             if step["noted"]:
-                more.append("有待处理的批注")
+                more.append(tr("at.noted"))
             if step["outside"]:
-                more.append(f"还连着 {step['outside']} 个这里没有的东西（view_walk object:{step['id']}）")
-            shown = [f for f in facts(step) if not f.startswith("层「")]                      # 层名已经在上一行
-            lines.append(f"{pad}  " + " · ".join([label(step)] + shown + more))
+                more.append(tr("at.outside", count=step["outside"], id=step["id"]))
+            shown = facts(step, include_layer=False, lang=lang)
+            lines.append(f"{pad}  " + " · ".join([label(step, lang=lang)] + shown + more))
             if step["text"]:
                 text = " ".join(step["text"].split())
-                lines.append(f"{pad}    " + (text if len(text) <= LINE_LIMIT else text[:LINE_LIMIT] + f"…（共 {len(text)} 字）"))
+                lines.append(f"{pad}    " + (text if len(text) <= LINE_LIMIT else text[:LINE_LIMIT] + tr("at.truncated", count=len(text))))
     if m["relations"]:
-        lines.append("这些东西之间的关联：")
+        lines.append(tr("at.relations"))
         lines += [f"  #{r['source']} → #{r['target']}" + (f"（{r['tips']}）" if r["tips"] else "") for r in m["relations"]]
     if m["notes"]:
-        lines.append("指着这里的待处理批注：")
+        lines.append(tr("at.notes"))
         for n in m["notes"]:
             text = " ".join(n["text"].split())
-            lines.append(f"  批注 #{n['id']}（{n['author'] or '没署名'}，指着 {'、'.join(n['targets'])}）：{text[:LINE_LIMIT]}")
+            lines.append("  " + tr("at.note", id=n["id"], author=n["author"] or tr("notes.anonymous"), targets="、".join(n["targets"]), text=text[:LINE_LIMIT]))
     return "\n".join(lines)
 
 

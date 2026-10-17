@@ -1,4 +1,6 @@
 """视图插件管理：静态目录、ZIP 选装和本地开发链接。见 PLUGINS.md。"""
+from .i18n import ViewError
+
 import argparse
 import hashlib
 import json
@@ -27,15 +29,15 @@ def _entry(row):
     folder = Path(row["root"]).expanduser().resolve()
     path = inside(folder, row["entry"])
     if not path.is_file():
-        raise ValueError(f"找不到文件：{path}")
+        raise ViewError("pluginError.fileMissing", {"value1": path})
     if path.suffix not in (".js", ".mjs"):
-        raise ValueError(f"不是 js 文件：{path}")
+        raise ViewError("pluginError.notJs", {"value1": path})
     if path.is_relative_to(PACKAGE_ROOT.resolve()):
-        raise ValueError("插件在 LayerWeave 安装目录里；请把插件放到独立位置")
+        raise ViewError("pluginError.insideHost")
     return folder, path
 
 
-def list_plugins(root=None):
+def list_plugins(root=None, *, languages=False):
     try:
         data, broken = store.read(root), None
     except ValueError as error:
@@ -47,18 +49,21 @@ def list_plugins(root=None):
                 "label": identity, "about": "", "problem": None, "compatibility": "undeclared"}
         try:
             if identity in seen:
-                raise ValueError(f"与前面的 {identity} 重名")
+                raise ViewError("pluginError.duplicate", {"value1": identity})
             seen.add(identity)
             folder, path = _entry(row)
             item["path"] = str(path)
             if row["mode"] == "managed" or (folder / "plugin.json").is_file():
                 meta = read_manifest(folder)
                 if meta["id"] != identity or meta["entry"] != row["entry"]:
-                    raise ValueError("manifest 身份或入口已改变，请先解除登记再重新添加")
+                    raise ViewError("pluginError.identityChanged")
                 if row["mode"] == "managed" and meta["version"] != row.get("version"):
-                    raise ValueError("安装记录与 manifest 版本不一致")
+                    raise ViewError("pluginError.versionMismatch")
                 item.update(label=meta["label"], about=meta["description"], version=meta["version"], requires=meta["requires"],
                             slots=meta.get("slots"), compatibility="compatible")
+                if languages:
+                    from .i18n import read_localizations
+                    item["localizations"], item["language_warnings"] = read_localizations(folder, meta)
                 if problem := compatibility(meta["requires"]):
                     item["compatibility"] = "incompatible"
                     raise ValueError(problem)
@@ -66,6 +71,8 @@ def list_plugins(root=None):
             item["revision"] = revision or hashlib.sha256(f"{path}:{path.stat().st_mtime_ns}".encode()).hexdigest()[:24]
         except (KeyError, TypeError, OSError, ValueError) as error:
             item["problem"] = str(error)
+            if hasattr(error, "ui"):
+                item["problem_ui"] = error.ui
         items.append(item)
     return {"plugins": items, "file": str(list_path(root)), "folder": str(home(root) / "plugins"), "problem": broken,
             "catalog": data.get("catalog") or store.DEFAULT_CATALOG, "recommended": store.RECOMMENDED,
@@ -91,35 +98,37 @@ def plugin_file(name, relative, root=None, *, revision=None):
 def add_plugin(target, *, name=None, root=None):
     target = str(target or "").strip()
     if not target:
-        raise ValueError("要给插件的路径")
+        raise ViewError("pluginError.pathRequired")
     bare = not re.search(r"[\\/:]", target) and not target.endswith((".js", ".mjs")) and not Path(target).is_dir()
     path = (home(root) / "plugins" / target) if bare else Path(target).expanduser().resolve()
     folder = path if path.is_dir() or bare else path.parent
     meta = read_manifest(folder) if (folder / "plugin.json").is_file() else None
     if meta:
         if name:
-            raise ValueError("有 manifest 的插件使用 publisher.name，--name 只用于无声明的开发链接")
+            raise ViewError("pluginError.nameOverride")
         identity, entry = meta["id"], meta["entry"]
     else:
         entry = "plugin.js" if path.is_dir() or bare else path.name
         stem = folder.name if Path(entry).stem in ("plugin", "index", "main") else Path(entry).stem
         short = (name or stem.lower()).strip()
         if not PART.fullmatch(short):
-            raise ValueError("名字不合规：小写字母开头，字母、数字、- 和 _，最多 40 字符；用 --name 指定")
+            raise ViewError("pluginError.name")
         identity = "local." + short
     row = {"id": identity, "kind": "view-plugin", "mode": "link", "root": str(folder.resolve()), "entry": entry,
            "on": True, "version": meta["version"] if meta else None}
     try:
         _, file = _entry(row)
     except ValueError as error:
+        if not bare:
+            raise
         raise ValueError(str(error) + (f"（只写名字时找默认文件夹 {home(root) / 'plugins'}）" if bare else "")) from error
     with store.locked(root):
         data = store.writable(root)
         for previous in data["plugins"]:
             if previous.get("id") == identity:
-                raise ValueError(f"已经有叫 {identity} 的插件；先 remove 或给开发链接换名")
+                raise ViewError("pluginError.exists", {"value1": identity})
             if previous.get("root") and previous.get("entry") and inside(previous["root"], previous["entry"]) == file:
-                raise ValueError(f"这个文件已经加过了：{previous['id']}")
+                raise ViewError("pluginError.fileRegistered", {"value1": previous['id']})
         data["plugins"].append(row)
         store.write(data, root)
     return {"added": identity, "status": "linked", "path": str(file)}
@@ -130,7 +139,7 @@ def switch_plugin(name, on, *, root=None):
         data = store.writable(root)
         row = next((r for r in data["plugins"] if r.get("id") == name), None)
         if row is None:
-            raise ValueError(f"没有安装 {name}；on/off 不负责下载安装")
+            raise ViewError("pluginError.notInstalled", {"value1": name})
         row["on"] = bool(on)
         store.write(data, root)
     return {"switched": name, "on": bool(on), "status": "switched"}

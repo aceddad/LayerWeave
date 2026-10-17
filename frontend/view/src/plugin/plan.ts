@@ -1,3 +1,5 @@
+import {tr as defaultTranslate, translator} from '../i18n/core';
+import type {Translate, Locale} from '../i18n/types';
 // 插件的纯计算，单独放着好测试：清单和已经载入的插件对一遍（registry.ts）
 import type {PluginRow} from '../types';
 
@@ -10,14 +12,14 @@ export function plan(rows: PluginRow[], current: Map<string, {url: string}>) {
 }
 
 // 目标不可用时保留目标并解释原因，不把一次插件截图悄悄改成画布。
-export function targetProblem(name: string, slot: 'page' | 'side', rows: PluginRow[], loaded: {name: string; page?: unknown; side?: unknown}[], errors: Record<string, string>) {
+export function targetProblem(name: string, slot: 'page' | 'side', rows: PluginRow[], loaded: {name: string; page?: unknown; side?: unknown}[], errors: Record<string, string>, tr: Translate = defaultTranslate) {
   if (slot === 'page' && name === 'canvas' || slot === 'side' && ['now', 'changes', 'notes', 'walk'].includes(name)) return null;
   const row = rows.find((r) => r.name === name);
-  if (!row) return `插件 ${name} 未安装；打开「插件」选择安装或添加开发链接。`;
-  if (!row.on) return `插件 ${name} 已关闭。`;
-  if (row.problem) return `插件 ${name} 不可加载：${row.problem}`;
-  if (errors[name]) return `插件 ${name} 加载失败：${errors[name]}`;
+  if (!row) return tr("plugin.notInstalled", {value1: name});
+  if (!row.on) return tr("plugin.disabled", {value1: name});
+  if (row.problem) return tr("plugin.unavailable", {value1: name, value2: row.problem});
+  if (errors[name]) return tr("plugin.loadFailed", {value1: name, value2: errors[name]});
   const plugin = loaded.find((p) => p.name === name);
-  if (!plugin?.[slot]) return `插件 ${name} 未提供 ${slot} 栏位。`;
+  if (!plugin?.[slot]) return tr("plugin.missingSlot", {value1: name, value2: slot});
   return null;
 }

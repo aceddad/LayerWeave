@@ -2,5 +2,7 @@ import {createRoot} from 'react-dom/client';
 import '@xyflow/react/dist/base.css';
 import './styles.css';
 import {App} from './App';
+import {initializeLocale} from './i18n';
+initializeLocale();
 
 createRoot(document.getElementById('root')!).render(<App />);

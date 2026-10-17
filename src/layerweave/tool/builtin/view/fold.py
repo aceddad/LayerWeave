@@ -12,6 +12,8 @@ python -m layerweave.tool.builtin.view.fold DATABASE PROJECT_ID fold 5 7 --by Cl
 python -m layerweave.tool.builtin.view.fold DATABASE PROJECT_ID unfold 5                            展开 AI 这边的
 python -m layerweave.tool.builtin.view.fold DATABASE PROJECT_ID unfold 5 --side user --by Claude --why 这里要你看一下
 """
+from .i18n import ViewError
+
 import argparse
 from contextlib import closing
 import json
@@ -44,12 +46,12 @@ def read_folds(connection, project_id):
 def set_folds(database, project_id, layers, side, action, *, by="", tips=None):
     """side 这一边：fold 折叠（可带 tips）、unfold 展开、tips 只改说明。已经是这个状态的不重写，免得日志里多出空操作。"""
     if side not in SIDES:
-        raise ValueError(f"不认识的一边：{side}（user、ai）")
+        raise ViewError("foldError.side", {"value1": side})
     if action not in ("fold", "unfold", "tips"):
-        raise ValueError(f"不认识的动作：{action}（fold、unfold、tips）")
+        raise ViewError("foldError.action", {"value1": action})
     layers = sorted({int(layer) for layer in layers})
     if not layers:
-        raise ValueError("要给出层编号")
+        raise ViewError("foldError.layerRequired")
     by = (by or "").strip() or SIDE_NAME[side]
     with closing(open_database(database)) as connection:
         register_tables(connection, TABLE)   # 相同声明重复登记什么也不做
@@ -58,7 +60,7 @@ def set_folds(database, project_id, layers, side, action, *, by="", tips=None):
             changed = []
             for layer in layers:
                 if action == "fold" and write.read("layer", project_id=project_id, id=layer) is None:
-                    raise ValueError(f"项目 {project_id} 里没有层 #{layer}")
+                    raise ViewError("foldError.layerMissing", {"value1": project_id, "value2": layer})
                 row = write.read(KIND, project_id=project_id, id=layer)
                 now = {"fold": row[f"{side}_fold"], "tips": row[f"{side}_tips"]} if row else {"fold": "", "tips": ""}
                 if action == "fold":
@@ -67,7 +69,7 @@ def set_folds(database, project_id, layers, side, action, *, by="", tips=None):
                     want = {"fold": "", "tips": ""}
                 else:
                     if not now["fold"]:
-                        raise ValueError(f"层 #{layer} 在{SIDE_NAME[side]}这边没有折叠，写不了说明")
+                        raise ViewError("foldError.notFolded", {"value1": layer, "value2": SIDE_NAME[side]})
                     want = {"fold": now["fold"], "tips": (tips or "").strip()}
                 if want == now:
                     continue

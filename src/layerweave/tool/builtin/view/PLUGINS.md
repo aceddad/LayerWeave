@@ -153,3 +153,7 @@ python -m layerweave.tool.builtin.view.plugins list
 宿主 `frontend/view` 执行 `npm run build` 时生成 SDK 和网页，不再构建官方插件。官方仓库分别构建、测试和发布；宿主验收使用 `tests/fixtures/view-plugin`，不能重新依赖某个官方插件已安装。
 
 `kind="python-component"` 仅预留查询和分流位置，当前不能安装。未来采用正常 Python 包和组件声明，不要求重复 plugin.json；发行环境、发现和执行另定。现有 component.toml 不等于安装器，本轮没有改变核心或 Python 组件发现机制。
+
+## 插件语言包
+
+视图 0.29.0 在 host.api 3 上增加 `host.t` 和 `host.useI18n`，并读取 manifest 可选 `locales`。工厂和组件不会因切换语言而重新创建；声明格式、资源放置与示例见[中英语言包](LANGUAGES.md#插件提供自己的语言包)。依赖这些方法的插件声明 `requires.view >=0.29.0`。

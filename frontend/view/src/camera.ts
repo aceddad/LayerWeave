@@ -1,3 +1,4 @@
+import {ui, tr, useI18n} from './i18n';
 // 镜头：画布的平移、缩放由 React Flow 管；这里放"把镜头对准某处"的几种做法，面板和顶栏都从这里调
 import type {ReactFlowInstance} from '@xyflow/react';
 import {NAMES} from './model/model';
@@ -113,7 +114,7 @@ export function focusInitial() {
 export function focusObject(id: number, ghost = false): boolean {
   const find = () => pane?.querySelector<HTMLElement>(ghost ? `.ghost[data-ghost="${id}"]` : `.obj[data-id="${id}"]`) ?? null;
   const node = find();
-  if (!node) { setState({message: '这个对象现在不在画布上：可能在折叠的层里，或者被只显示部分层过滤掉了'}); setTimeout(() => setState({message: ''}), 2500); return false; }
+  if (!node) { setState({message: ui("navigation.objectHidden")}); setTimeout(() => setState({message: ''}), 2500); return false; }
   let {x, y, zoom} = viewport();
   if (zoom < 0.6) { const rect = paneRect(); const k = 0.8 / zoom; x = rect.width / 2 - (rect.width / 2 - x) * k; y = rect.height / 2 - (rect.height / 2 - y) * k; zoom = 0.8; }
   const r = node.getBoundingClientRect(), p = paneRect(), current = viewport(), k = zoom / current.zoom;
@@ -204,7 +205,7 @@ export function focusNote(id: number): boolean {
     } else add(ax, ay, Math.max(bx, (b.x ?? 0) + sizeOf(model, b).w), by);
   }
   if (!isFinite(x0)) {
-    setState({message: '这条批注指的地方现在不在画布上：可能已删除，或者在折叠、收起的层里'});
+    setState({message: ui("navigation.noteTargetHidden")});
     setTimeout(() => setState({message: ''}), 2500);
     fitBoards();
     return false;

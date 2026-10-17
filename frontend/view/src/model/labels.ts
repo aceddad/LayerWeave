@@ -1,12 +1,14 @@
+import {tr as defaultTranslate, translator} from '../i18n/core';
+import type {Translate, Locale} from '../i18n/types';
 // 给人看的指称：#16 小球落下（视频）、层 #5 字幕、项目 2 的对象 #7
 import type {Bind, Ref} from '../types';
 import type {Model} from './model';
 
-export function refLabel(model: Model, ref: Ref): string {
-  if (ref.project !== model.project) return `项目 ${ref.project} 的${ref.kind === 'layer' ? '层' : '对象'} #${ref.id}`;
-  if (ref.kind === 'layer') return `层 #${ref.id} ${model.layer(ref.id)?.name ?? ''}`.trim();
+export function refLabel(model: Model, ref: Ref, tr: Translate = defaultTranslate): string {
+  if (ref.project !== model.project) return tr("ref.otherProject", {value1: ref.project, value2: ref.kind === 'layer' ? tr("common.layer") : tr("common.object"), value3: ref.id});
+  if (ref.kind === 'layer') return tr("ref.layer", {value1: ref.id, value2: model.layer(ref.id)?.name ?? ''}).trim();
   const o = model.object(ref.id);
-  return o ? `#${o.id} ${o.name || o.text || ''}（${o.layer.name || '层 ' + o.layer.id}）` : `对象 #${ref.id}（已不存在）`;
+  return o ? tr("ref.object", {value1: o.id, value2: o.name || o.text || '', value3: o.layer.name || tr("common.layerPrefix") + o.layer.id}) : tr("ref.missingObject", {value1: ref.id});
 }
 
 export const refExists = (model: Model, ref: Ref) =>
@@ -23,12 +25,12 @@ export function relationsOf(model: Model, kind: Ref['kind'], id: number): Relati
 }
 
 // 另一头在别的项目的关系（色块角上标 ↗）
-export function externalLabels(model: Model): Map<number, string[]> {
+export function externalLabels(model: Model, tr: Translate = defaultTranslate): Map<number, string[]> {
   const out = new Map<number, string[]>();
   const add = (b: Bind, mine: Ref, other: Ref) => {
     if (mine.kind !== 'object' || mine.project !== model.project || other.project === model.project) return;
     if (!out.has(mine.id)) out.set(mine.id, []);
-    out.get(mine.id)!.push(refLabel(model, other) + (b.tips ? '：' + b.tips : ''));
+    out.get(mine.id)!.push(refLabel(model, other, tr) + (b.tips ? '：' + b.tips : ''));
   };
   for (const b of model.data.binds) { add(b, b.source, b.target); add(b, b.target, b.source); }
   return out;

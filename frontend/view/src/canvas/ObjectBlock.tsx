@@ -1,3 +1,4 @@
+import {tr, useI18n} from '../i18n';
 // 轨道上的一个对象：色块 + 缩略图 / 视频首尾帧 / 波形 / 文字，角上是改动、批注、跨项目关系的标记。
 // 缩得很小时只画色块：格子在屏幕上只有十几像素高时，几百张缩略图每一帧都要重画，平移画布只剩每秒 11 帧（藏掉图片是 33 帧，2026-10-14 量的）。
 // 截图时照旧全画，AI 截全图也看得到缩略图
@@ -26,6 +27,7 @@ interface Props {
 // 选中、高亮、挂不挂连接点：每个格子自己订阅自己那一位。原来由整行传下来，点一下对象，所有轨道连同几百个格子都要重新过一遍
 // （手书 800 个对象：点选一次 250–420 毫秒，2026-10-14 量的）
 export const ObjectBlock = memo(function ObjectBlock({item, a, pps, unit, project, frames, mark, notes, external}: Props) {
+  useI18n();
   const o = item.o, k = kindOf(o), instant = o.end <= o.begin;
   const selected = useStore((s) => s.selected === o.id);
   const hot = useStore((s) => hotOf(s).has(`object:${o.id}`));
@@ -51,16 +53,16 @@ export const ObjectBlock = memo(function ObjectBlock({item, a, pps, unit, projec
       : <BlockFrame project={project} o={o} at={0.1} frames={frames} />;
     else if (k === 'audio') inner = <Waveform url={mediaUrl(o.media.url, o.media.source)} />;
   }
-  const board = item.offset ? `（画板上 ${fmt(item.begin, unit)} – ${fmt(item.end, unit)}）` : '';
-  const title = `#${o.id} ${o.name || ''}（${o.type}）\n${fmt(o.begin, unit)} – ${fmt(o.end, unit)}${board}${missing ? '\n文件不存在：' + o.media!.source : ''}`;
+  const board = item.offset ? tr("object.boardSpan", {value1: fmt(item.begin, unit), value2: fmt(item.end, unit)}) : '';
+  const title = tr("object.summary", {value1: o.id, value2: o.name || '', value3: o.type, value4: fmt(o.begin, unit), value5: fmt(o.end, unit), value6: board, value7: missing ? tr("media.missingLine") + o.media!.source : ''});
   const classes = ['obj', k, instant && 'instant', missing && 'missing', selected && 'sel', hot && 'hot', mark && `chg chg-${mark.action}`].filter(Boolean).join(' ');
   return (
     <div ref={ref} className={classes} data-id={o.id} title={title}
          style={{left, width: w, top: PAD + item.lane * LANE, height: LANE - 4}}>
       {inner}
       <span className="lab">{o.text ?? o.name ?? o.type}</span>
-      {mark && <i className="chg-n" title={`${mark.n === 1 ? '最近一次' : `倒数第 ${mark.n} 次`}操作${mark.action === 'create' ? '新建' : '修改'}`}>{mark.n}</i>}
-      {notes && notes.length > 0 && <i className="note-n" title={notes.map(({top, replies}) => `#${top.id} ${top.text}${replies.length ? `（${replies.length} 条回复）` : ''}`).join('\n')}>💬{notes.length}</i>}
+      {mark && <i className="chg-n" title={tr("object.changed", {value1: mark.n === 1 ? tr("changes.latest") : tr("changes.nthLatest", {value1: mark.n}), value2: mark.action === 'create' ? tr("changes.created") : tr("changes.updated")})}>{mark.n}</i>}
+      {notes && notes.length > 0 && <i className="note-n" title={notes.map(({top, replies}) => tr("object.noteSummary", {value1: top.id, value2: top.text, value3: replies.length ? tr("notes.repliesParen", {value1: replies.length}) : ''})).join('\n')}>💬{notes.length}</i>}
       {external && external.length > 0 && <i className="ext" title={external.join('\n')}>↗ {external.length}</i>}
       {handles && <Handle type="source" position={Position.Right} id={`o${o.id}`} className="rel-handle" isConnectable={false} />}
       {handles && <Handle type="target" position={Position.Left} id={`t${o.id}`} className="rel-handle" isConnectable={false} />}

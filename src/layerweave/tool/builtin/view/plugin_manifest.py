@@ -1,4 +1,6 @@
 """视图插件 v1 声明与兼容判断；只读元数据，不导入插件。"""
+from .i18n import ViewError
+
 import json
 from pathlib import Path, PurePosixPath
 import re
@@ -10,7 +12,7 @@ VERSION = r"(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)"
 HOST_API = 3
 KINDS = {"string", "integer", "number", "boolean", "array", "object"}
 # URL 属于宿主的字段共用这一份；插件参数不能改变项目和截图控制。
-LINK_KEYS = ("view", "board", "begin", "end", "playhead", "select", "focus", "note", "changes", "layers", "side", "links", "walk", "walkdir", "walkdepth")
+LINK_KEYS = ("lang", "view", "board", "begin", "end", "playhead", "select", "focus", "note", "changes", "layers", "side", "links", "walk", "walkdir", "walkdepth")
 OWN_KEYS = {*LINK_KEYS, "project", "record", "capture", "full", "tree", "as", "media"}
 
 
@@ -26,10 +28,10 @@ def valid_id(value):
 
 def relative_path(value):
     if not isinstance(value, str) or not value or "\\" in value or ":" in value:
-        raise ValueError(f"包内路径必须是相对路径：{value!r}")
+        raise ViewError("pluginError.relativePath", {"value1": repr(value)})
     path = PurePosixPath(value)
     if path.is_absolute() or ".." in path.parts or not path.parts:
-        raise ValueError(f"包内路径不能越出插件目录：{value!r}")
+        raise ViewError("pluginError.pathEscape", {"value1": repr(value)})
     return path.as_posix()
 
 
@@ -37,7 +39,7 @@ def inside(folder, relative):
     folder = Path(folder).resolve()
     path = (folder / relative_path(relative)).resolve()
     if not path.is_relative_to(folder):
-        raise ValueError(f"文件越出插件目录：{relative}")
+        raise ViewError("pluginError.fileEscape", {"value1": relative})
     return path
 
 
@@ -75,16 +77,16 @@ def compatibility(requires, *, view_version=None, host_api=HOST_API):
 
 def manifest(data, *, files_root=None):
     if not isinstance(data, dict) or data.get("format") != 1:
-        raise ValueError("不能读取 plugin.json：仅支持 format=1")
+        raise ViewError("pluginError.format")
     if data.get("kind") != "view-plugin":
-        raise ValueError(f"此版本尚不支持安装 {data.get('kind')!r}，仅支持 view-plugin")
+        raise ViewError("pluginError.kind", {"value1": repr(data.get('kind'))})
     for key in ("publisher", "name"):
         if not isinstance(data.get(key), str) or not PART.fullmatch(data[key]):
             raise ValueError(f"{key} 要用小写字母开头的字母、数字、- 或 _，最多 40 字符")
     version_tuple(data.get("version"))
     for key in ("label", "description"):
         if not isinstance(data.get(key), str) or not data[key].strip():
-            raise ValueError(f"plugin.json 缺少 {key}")
+            raise ViewError("pluginError.manifestMissing", {"value1": key})
     requirements(data.get("requires"))
     result = {"entry": "plugin.js", "usage": "README.md", "params": {}, **data}
     result["id"] = data["publisher"] + "." + data["name"]
@@ -95,13 +97,18 @@ def manifest(data, *, files_root=None):
         if files_root is not None and not inside(files_root, result[key]).is_file():
             raise ValueError(f"{key} 指向的文件不存在：{result[key]}")
     if Path(result["entry"]).suffix not in (".js", ".mjs"):
-        raise ValueError("entry 必须是 .js 或 .mjs ES 模块")
+        raise ViewError("pluginError.entry")
+    locales = result.get("locales", {})
+    if not isinstance(locales, dict) or not all(isinstance(k, str) for k in locales):
+        raise ViewError("pluginError.locales")
+    for lang, path in locales.items():
+        relative_path(path)
     params = result["params"]
     if not isinstance(params, dict):
-        raise ValueError("params 必须是以参数名为键的对象")
+        raise ViewError("pluginError.params")
     for key, spec in params.items():
         if not PARAM.fullmatch(key) or key in OWN_KEYS:
-            raise ValueError(f"插件参数名不允许使用：{key}")
+            raise ViewError("pluginError.reservedParam", {"value1": key})
         if not isinstance(spec, dict) or spec.get("type") not in KINDS or not isinstance(spec.get("description"), str):
             raise ValueError(f"params.{key} 需要 type 和 description")
         if "required" in spec and type(spec["required"]) is not bool:
@@ -120,7 +127,7 @@ def read_manifest(folder):
     try:
         data = json.loads((Path(folder) / "plugin.json").read_text(encoding="utf-8"))
     except (OSError, UnicodeError, ValueError) as error:
-        raise ValueError(f"plugin.json 读不了：{error}") from error
+        raise ViewError("pluginError.manifestRead", {"value1": error}) from error
     return manifest(data, files_root=folder)
 
 

@@ -18,6 +18,9 @@ import {CAPTURE, FULL, numParam} from '../params';
 import {useModel, useStore} from '../store';
 import {toast} from '../sync';
 import type {Board} from '../types';
+import {currentLocale, useLocale} from '../i18n/store';
+import {translator} from '../i18n/core';
+import type {Locale, Localizations, Translate} from '../i18n/types';
 
 // 接口版本：插件可以按它判断宿主够不够新。1：页面、跳转点；2：加了侧栏、对象详情、画布格子；3：去掉画布格子（封装前收拾接口）
 export const PLUGIN_API = 3;
@@ -29,6 +32,8 @@ export interface ViewSnapshot {
 }
 
 export interface PluginHost {
+  t: Translate;
+  useI18n(): {locale: Locale; t: Translate};
   api: number;
   React: typeof React;
   capture: boolean;        // 截图页面：画完要调 markReady()
@@ -62,8 +67,15 @@ export type PluginFactory = (host: PluginHost) => ViewPlugin;
 export type LoadedPlugin = ViewPlugin & {name: string};   // 载入以后：名字是清单里的
 
 // styles：这个插件加的样式，插件拿下来时一起拿掉
-export function makeHost(styles: HTMLStyleElement[] = []): PluginHost {
+export function makeHost(styles: HTMLStyleElement[] = [], localizations: Localizations = {}): PluginHost {
+  const packs = {zh: localizations.zh?.messages ?? {}, en: localizations.en?.messages ?? {}};
+  const translations = {zh: translator('zh', packs), en: translator('en', packs)};
   return {
+    t: (key, values) => translations[currentLocale()](key, values),
+    useI18n: () => {
+      const locale = useLocale((s) => s.locale);
+      return {locale, t: translations[locale]};
+    },
     api: PLUGIN_API, React, capture: CAPTURE, full: FULL,
     useView: () => {
       const model = useModel();
@@ -74,6 +86,6 @@ export function makeHost(styles: HTMLStyleElement[] = []): PluginHost {
     addStyle: (css) => { const el = document.createElement('style'); el.textContent = css; document.head.appendChild(el); styles.push(el); },
     numParam,
     components: {Img, Thumb, Frame, Waveform, Pager},
-    util: {kindOf, lastAt, isSec, fmt, fmtSpan, lanes, keyOf, rootsOf, mediaUrl, pageSlice},
+    util: {kindOf, lastAt, isSec, fmt, fmtSpan: (d, unit) => fmtSpan(d, unit, translator(currentLocale())), lanes, keyOf, rootsOf, mediaUrl, pageSlice},
   };
 }

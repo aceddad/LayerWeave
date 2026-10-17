@@ -53,3 +53,5 @@
 - 配置继承、合并与类绑定：[配置说明](../../../support/configuration/README.md)
 - 读写接口：[公共 API](../../../support/API.md)
 - 命令声明（新工具的 COMMANDS）：[命令专题](../shared/help/COMMANDS.md)
+
+视图 0.29.0 为 host.api 3 增加 `t` / `useI18n`，仅增加翻译能力，不改变已有字段。插件词典与兼容声明见[视图语言包](../view/LANGUAGES.md)。

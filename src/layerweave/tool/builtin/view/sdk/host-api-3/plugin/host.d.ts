@@ -8,6 +8,7 @@ import type { Model, ObjWithLayer } from '../model/model';
 import { keyOf, lanes, rootsOf } from '../model/model';
 import { fmt, fmtSpan, isSec } from '../model/units';
 import type { Board } from '../types';
+import type { Locale, Localizations, Translate } from '../i18n/types';
 export declare const PLUGIN_API = 3;
 export interface ViewSnapshot {
     model: Model | null;
@@ -19,6 +20,11 @@ export interface ViewSnapshot {
     picked: number[];
 }
 export interface PluginHost {
+    t: Translate;
+    useI18n(): {
+        locale: Locale;
+        t: Translate;
+    };
     api: number;
     React: typeof React;
     capture: boolean;
@@ -67,4 +73,4 @@ export type PluginFactory = (host: PluginHost) => ViewPlugin;
 export type LoadedPlugin = ViewPlugin & {
     name: string;
 };
-export declare function makeHost(styles?: HTMLStyleElement[]): PluginHost;
+export declare function makeHost(styles?: HTMLStyleElement[], localizations?: Localizations): PluginHost;

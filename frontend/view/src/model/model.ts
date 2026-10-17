@@ -1,3 +1,5 @@
+import {tr as defaultTranslate, translator} from '../i18n/core';
+import type {Translate, Locale} from '../i18n/types';
 // 项目数据加上视图设置以后的"画面模型"：画板分几行几段、每行哪些轨道、对象排在哪个小行、画板多宽多高。
 // 全是纯计算，不碰页面；画板的尺寸由数据直接算出来，排版（拼接、拆出、吸附）不需要量页面。
 import type {Board, Layer, Obj, ProjectData, Root} from '../types';
@@ -100,7 +102,7 @@ export class Model {
     const p = id != null ? Number(this.roots.get(id)?.axis?.precision) : NaN;
     return isFinite(p) && p > 0 ? p : null;
   }
-  nameOf(id: number) { return this.roots.get(id)?.name || `层 ${id}`; }
+  nameOf(id: number, tr: Translate = defaultTranslate) { if (id === 0) return tr("common.orphanLayers"); return this.roots.get(id)?.name || tr("common.layerId", {value1: id}); }
   allObjects() { return [...this.objects.values()]; }
 
   // 左右接续：第一段不动，后一段的本地 0 接在前一段的结尾（和 Python 的 layout.chain_offsets 一致）
@@ -278,6 +280,6 @@ export function adoptOrphans(data: ProjectData): ProjectData {
   return {
     ...data,
     layers: data.layers.map((l) => (l.root == null ? {...l, root: 0} : l)),
-    roots: [...data.roots, {id: 0, name: '未归属的层', axis: {}, unit: '', key: null, extent: [a, e > a ? e : a + 10]}],
+    roots: [...data.roots, {id: 0, name: defaultTranslate("common.orphanLayers"), axis: {}, unit: '', key: null, extent: [a, e > a ? e : a + 10]}],
   };
 }

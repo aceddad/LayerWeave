@@ -1,6 +1,6 @@
 {
   "host_api": 3,
-  "view_version": "0.28.1",
+  "view_version": "0.29.0",
   "entry": "index.d.ts",
-  "files": 11
+  "files": 12
 }

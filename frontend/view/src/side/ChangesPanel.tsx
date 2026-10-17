@@ -1,3 +1,5 @@
+import {currentLocale} from '../i18n';
+import {tr, useI18n} from '../i18n';
 // 改动：最近几次操作改了什么；打开时画布上标出改过的对象，删除或移动前的位置画成虚线框
 import {selectObject} from '../actions';
 import {focusObject} from '../camera';
@@ -11,37 +13,38 @@ import type {ChangeItem, ChangeRecord} from '../types';
 function describe(model: Model, it: ChangeItem): string[] {
   const unitOf = (layer?: number) => model.unitOfRoot(layer != null ? model.layer(layer)?.root : null);
   const pos = (r: ChangeRecord) => `${fmt(r.begin, unitOf(r.layer))} – ${fmt(r.end, unitOf(r.layer))}`;
-  const layerName = (id?: number) => (id != null ? model.layer(id)?.name || `层 ${id}` : '');
+  const layerName = (id?: number) => (id != null ? model.layer(id)?.name || tr("common.layerId", {value1: id}) : '');
   const out: string[] = [];
   if (it.kind === 'object' && it.action === 'update' && it.before && it.after) {
     if (it.before.layer !== it.after.layer) out.push(`${layerName(it.before.layer)} → ${layerName(it.after.layer)}`);
     if (it.before.begin !== it.after.begin || it.before.end !== it.after.end) out.push(`${pos(it.before)} → ${pos(it.after)}`);
     for (const x of it.information ?? []) out.push(`${x.key}：${x.before ?? '—'} → ${x.after ?? '—'}`);
     const other = (it.fields ?? []).filter((f) => !['layer', 'begin', 'end', 'information'].includes(f));
-    if (other.length) out.push('改了 ' + other.join('、'));
+    if (other.length) out.push(tr("changes.changed") + ": " + other.join('、'));
   } else if (it.kind === 'object') {
     const rec = it.after ?? it.before ?? {};
     out.push(`${layerName(rec.layer)} · ${pos(rec)}`);
-  } else if (it.action === 'update' && it.fields?.length) out.push('改了 ' + it.fields.join('、'));
+  } else if (it.action === 'update' && it.fields?.length) out.push(tr("changes.changed") + ": " + it.fields.join('、'));
   return out;
 }
 
 export function ChangesPanel() {
+  useI18n();
   const model = useModel();
   const {ops, limit} = useStore(useShallow((s) => ({ops: s.changeOps, limit: s.changeLimit})));
   if (!model) return null;
-  const verb = {create: '新建', update: '修改', delete: '删除'};
-  const what = {object: '', layer: '层', bind: '关联', project: '项目'};
+  const verb = {create: tr("changes.created"), update: tr("changes.updated"), delete: tr("changes.deleted")};
+  const what = {object: '', layer: tr("common.layer"), bind: tr("common.relation"), project: tr("common.project")};
   return (
     <section>
-      <h2>最近 <select value={limit} onChange={async (e) => { setState({changeLimit: Number(e.target.value)}); await loadChanges(); }}>
+      <h2>{tr("changes.recent")} <select value={limit} onChange={async (e) => { setState({changeLimit: Number(e.target.value)}); await loadChanges(); }}>
         {[1, 5, 10, 30, 100].map((n) => <option key={n} value={n}>{n}</option>)}
-      </select> 次操作</h2>
-      <p className="hint legend"><i className="chg-n">1</i> 改过的对象（数字是倒数第几次操作）　<span className="ghost-key">虚线框</span> 删除或移动之前的位置</p>
-      {!ops.length && <p className="hint">这个项目还没有改动记录。</p>}
+      </select>  {tr("changes.operationsSuffix")}</h2>
+      <p className="hint legend"><i className="chg-n">1</i>  {tr("changes.changedHint")}　<span className="ghost-key">{tr("changes.dashed")}</span>  {tr("changes.previousPosition")}</p>
+      {!ops.length && <p className="hint">{tr("changes.empty")}</p>}
       {ops.map((op, i) => (
         <div key={op.operation_id} className="op">
-          <div className="op-head"><b>{i + 1}</b>{ago(op.at)}{op.undo_of ? ' · 撤销' : ''} · {op.items.length} 处</div>
+          <div className="op-head"><b>{i + 1}</b>{ago(op.at, currentLocale())}{op.undo_of ? tr("changes.undo") : ''} · {op.items.length}  {tr("changes.itemsSuffix")}</div>
           {op.items.map((it, j) => {
             const rec = it.after ?? it.before ?? {};
             const label = rec.name || rec.text || (rec.source || '').split(/[\\/]/).pop() || '';

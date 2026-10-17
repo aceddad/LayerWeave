@@ -1,3 +1,4 @@
+import {tr} from '../i18n';
 // 拖着画板经过另一块画板时：按排版数据算出鼠标落在哪块画板、哪一行、哪个时刻，再交给 model/dropRule 决定怎么拼。
 // 原来用 elementsFromPoint 问页面，每移一下都逼浏览器把整页重新排版（拖画板时最耗时的一项，2026-10-14 量的）
 import {viewport, xToTime} from '../camera';
@@ -24,5 +25,5 @@ export function dropTarget(clientX: number, clientY: number, origin: {left: numb
   // 名字列在画板左边移出画面时跟着往右挪（BoardNode 的 Sticky），挪到哪儿就挡住哪儿的轨道
   const stick = Math.max(0, Math.min(-(vp.x + target.x! * vp.zoom) / vp.zoom, layout.width - NAMES - 60));
   const onTracks = y >= sec.top && y < sec.top + sec.height && x >= NAMES && !(x >= stick && x < stick + NAMES);
-  return decideDrop(model, moving, target, sec.index, xToTime(target, px), onTracks, y < sec.top + sec.height / 2, vp.zoom);
+  return decideDrop(model, moving, target, sec.index, xToTime(target, px), onTracks, y < sec.top + sec.height / 2, vp.zoom, tr);
 }

@@ -1,3 +1,5 @@
+import type {UiMessage} from './i18n/types';
+import {ui, tr, useI18n, currentLocale} from './i18n';
 // 和服务同步：读项目和排版、每 2 秒看有没有变化、保存排版、报告"正在看哪儿"、写批注
 import {api} from './api';
 import {visibleBoards, visibleRange} from './camera';
@@ -15,7 +17,7 @@ import {activeBoard, getState, modelOf, notesOf, setState} from './store';
 import type {Board, FoldRow, Layout} from './types';
 
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
-export function toast(text: string, ms = 2500) {
+export function toast(text: string | UiMessage, ms = 2500) {
   setState({message: text});
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => setState({message: ''}), ms);
@@ -25,7 +27,7 @@ export async function loadProjects() {
   const [capabilities, projects] = await Promise.all([api.capabilities(), api.projects()]);
   setState({frames: capabilities.frames, projects});
   const want = numParam('project') ?? projects[0]?.id;
-  if (!want) return setState({message: '数据库里还没有项目。'});
+  if (!want) return setState({message: ui("app.noProjects")});
   await loadProject(want);
 }
 
@@ -101,8 +103,9 @@ function announceNotes(before: Note[] | undefined): boolean {
   const fresh = info.list.filter((n) => !old.has(n.id) && n.author !== s.me.trim());
   if (!fresh.length) return false;
   const n = fresh[fresh.length - 1], floor = info.threads.findIndex((t) => t.top.id === n.thread) + 1;
-  const what = n.replyTo != null ? `回复了第 ${floor} 楼` : `写了新批注（第 ${floor} 楼）`;
-  notify({text: `${n.author || '有人'}${what}：${n.text.slice(0, 40)}${fresh.length > 1 ? `（共 ${fresh.length} 条新的）` : ''}`, thread: n.thread});
+  notify({text: ui(n.replyTo != null ? 'notice.newReply' : 'notice.newNote', {
+    author: n.author || '', number: floor, text: n.text.slice(0, 40), count: fresh.length,
+  }), thread: n.thread});
   return true;
 }
 
@@ -112,14 +115,14 @@ function announceFolds(before: FoldRow[] | undefined) {
   const s = getState(), model = modelOf(s);
   if (!before || !model || CAPTURE || quietFolds) return;
   const was = new Map(before.map((f) => [f.layer, f]));
-  const name = (id: number) => model.layer(id)?.name || `层 ${id}`;
+  const name = (id: number) => model.layer(id)?.name || tr("common.layerId", {value1: id});
   for (const f of before) if (f.user && !s.data!.folds?.some((g) => g.layer === f.layer && g.user))
-    return notify({text: `你折叠的「${name(f.layer)}」被展开了：AI 想给你看这里`, layer: f.layer});
+    return notify({text: ui("notice.unfolded", {value1: name(f.layer)}), layer: f.layer});
   for (const f of s.data!.folds ?? []) if (f.ai && !was.get(f.layer)?.ai)
-    return notify({text: `${f.ai} 折叠了「${name(f.layer)}」${f.ai_tips ? '：' + f.ai_tips : ''}`, layer: f.layer});
+    return notify({text: ui("notice.folded", {value1: f.ai, value2: name(f.layer), value3: f.ai_tips ? '：' + f.ai_tips : ''}), layer: f.layer});
 }
 
-function notify(notice: {text: string; thread?: number; layer?: number}) {
+function notify(notice: {text: string | UiMessage; thread?: number; layer?: number}) {
   setState({notice});
   clearTimeout(noticeTimer);
   noticeTimer = setTimeout(() => setState({notice: null}), 12000);
@@ -171,7 +174,7 @@ export function loadWalk(): Promise<void> {
   walking = api.walk(project, from, direction, depth).then((walkResult) => {
     const now = getState();
     if (sequence === walkSequence && token && gate.valid(token) && now.side === 'walk' && now.project === project && now.walk?.from === from && now.walk.direction === direction && now.walk.depth === depth) setState({walkResult});
-  }).catch((error) => { if (sequence === walkSequence && token && gate.valid(token)) { setState({walkResult: null}); toast('读不到关联：' + (error as Error).message); } });
+  }).catch((error) => { if (sequence === walkSequence && token && gate.valid(token)) { setState({walkResult: null}); toast(ui("relations.readFailed", undefined, (error as Error).message)); } });
   return walking;
 }
 
@@ -182,7 +185,7 @@ export async function loadChanges() {
   try {
     const changeOps = await api.changes(s.project, s.changeLimit);
     if (sequence === changesSequence && token && gate.valid(token) && getState().side === 'changes') setState({changeOps});
-  } catch { if (sequence === changesSequence && token && gate.valid(token)) toast('读不到改动记录'); }
+  } catch { if (sequence === changesSequence && token && gate.valid(token)) toast(ui("changes.readFailed")); }
 }
 
 let polling: Promise<void> | null = null;
@@ -238,7 +241,7 @@ export function selectionInfo() {
   const b = s.boards.find((x) => keyOf(x) === s.sel!.key);
   if (!b) return null;
   const seg = model.segmentAt(b.rows[0], s.sel.begin) ?? model.segments(b.rows[0])[0];
-  return {root: seg.root, name: model.nameOf(seg.root), begin: +(s.sel.begin - seg.offset).toFixed(3), end: +(s.sel.end - seg.offset).toFixed(3)};
+  return {root: seg.root, name: model.nameOf(seg.root, tr), begin: +(s.sel.begin - seg.offset).toFixed(3), end: +(s.sel.end - seg.offset).toFixed(3)};
 }
 
 let reportTimer: ReturnType<typeof setTimeout> | undefined;
@@ -252,10 +255,10 @@ export function report() {
     const shown = canvas ? visibleBoards() : [];
     const sel = s.selected != null ? model.object(s.selected) : undefined;
     const at = s.playhead != null && act ? act.rows.map((row) => model.segmentAt(row, s.playhead!)).filter(Boolean)
-      .map((seg) => ({root: seg!.root, name: model.nameOf(seg!.root), local: +(s.playhead! - seg!.offset).toFixed(6)})) : undefined;
+      .map((seg) => ({root: seg!.root, name: model.nameOf(seg!.root, tr), local: +(s.playhead! - seg!.offset).toFixed(6)})) : undefined;
     api.state({
-      project: s.project, view: s.view,
-      board: act ? {rows: act.rows, names: act.rows.map((row) => row.map((r) => model.nameOf(r))), unit: model.unitOfRoot(keyOf(act))} : undefined,
+      project: s.project, view: s.view, lang: currentLocale(),
+      board: act ? {rows: act.rows, names: act.rows.map((row) => row.map((r) => model.nameOf(r, tr))), unit: model.unitOfRoot(keyOf(act))} : undefined,
       range: canvas && act ? visibleRange(act) : undefined,
       playhead: s.playhead ?? undefined, playhead_at: at,
       selected: sel ? {id: sel.id, layer: sel.layer.id, name: sel.name} : undefined,
@@ -273,7 +276,7 @@ export function report() {
 export async function foldAction(layers: number[], action: 'fold' | 'unfold' | 'tips', side: 'user' | 'ai' = 'user', tips?: string): Promise<boolean> {
   const s = getState();
   if (s.project == null || !layers.length) return false;
-  if (VIEWER === 'ai') { toast('这是 AI 那边的样子，只看不改折叠'); return false; }
+  if (VIEWER === 'ai') { toast(ui("fold.aiReadOnly")); return false; }
   // 先在本地折好、把下面的画板挪好，再写数据库
   const project = s.project, oldModel = modelOf(s), selection = gate.selection(), endWrite = gate.beginWrite(project);
   let saved = false;
@@ -283,10 +286,10 @@ export async function foldAction(layers: number[], action: 'fold' | 'unfold' | '
     const flowed = reflow(getState().boards, heights, modelOf(getState())!);
     if (flowed.changed) setState({boards: flowed.boards});
   }
-  const failed = (why: string) => { if (getState().project === project) toast('折叠没有存下来：' + why); return false; };
+  const failed = (why: string) => { if (getState().project === project) toast(ui("fold.saveFailed", undefined, why)); return false; };
   try {
     const res = await api.fold(project, {action, side, layers, by: s.me.trim(), tips});
-    if (res.error || res.recorded === false) return failed(res.error ?? '这个页面只读');
+    if (res.error || res.recorded === false) return failed(res.error ?? tr("common.readOnly"));
     saved = true;
     if (gate.sameSelection(selection)) await saveLayoutNow();
     return true;
@@ -351,13 +354,13 @@ async function sendNote(project: number, body: Record<string, unknown>): Promise
   try {
     const res = await api.note(project, body);
     if (res.error || res.recorded === false) {
-      if (getState().project === project) toast('批注没有写进去：' + (res.error ?? '这个页面只读'));
+      if (getState().project === project) toast(ui("notes.saveFailed", undefined, (res.error ?? tr("common.readOnly"))));
       return false;
     }
     saved = true;
     return true;
   } catch (error) {
-    if (getState().project === project) toast('批注没有写进去：' + (error as Error).message);
+    if (getState().project === project) toast(ui("notes.saveFailed", undefined, (error as Error).message));
     return false;
   } finally { await finishWrite(project, endWrite, !saved); }
 }

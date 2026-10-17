@@ -1,3 +1,5 @@
+import {writePreference} from './preferences';
+import {ui, tr, useI18n, currentLocale} from './i18n';
 // 用户在画面上做的事：点选、放播放头、折叠（存进数据库）、拆出、点层名、跳到批注指的地方、切换面板、键盘跳转、复制链接
 import {focusLayer, focusNote, focusObject, focusTime, revealObject, revealTime, visibleRange} from './camera';
 import {sizeOf, split} from './model/layoutOps';
@@ -48,12 +50,12 @@ export function pickLayer(layerId: number) {
 // ---------- 左边的目录树 ----------
 export function setTree(open: boolean) {
   setState({tree: open});
-  if (!CAPTURE) localStorage.setItem('lw-tree', open ? '1' : '0');
+  if (!CAPTURE) writePreference('lw-tree', open ? '1' : '0');
 }
 // 点树上的层名：选中这一层（和点画板上的层名一样，写批注时指向它），镜头对过去
 export function flyToLayer(id: number) {
   setState({view: 'canvas', targetLayer: id, sel: null, wholeProject: false});
-  requestAnimationFrame(() => { if (!focusLayer(id)) toast('这一层现在不在画布上：在折叠的层下面，或者被"只看勾选的"滤掉了'); });
+  requestAnimationFrame(() => { if (!focusLayer(id)) toast(ui("navigation.layerHidden")); });
 }
 // 只看勾选的：把勾选的层交给画布的层过滤（和截图的 --layers、链接里的 layers= 是同一个）；再点一次取消
 export function showOnlyPicked(on: boolean) {
@@ -64,7 +66,7 @@ export function showOnlyPicked(on: boolean) {
 
 export function selectObject(id: number, fly = true) {
   const s = getState(), model = modelOf(s), o = model?.object(id);
-  if (!model || !o) return toast('目标已删除');
+  if (!model || !o) return toast(ui("navigation.deleted"));
   setState({selected: id, active: o.layer.root, playhead: +(o.begin + model.offsetOf(s.boards, o.layer.root!)).toFixed(6), view: 'canvas'});
   if (fly) requestAnimationFrame(() => requestAnimationFrame(() => focusObject(id)));
   report();
@@ -74,10 +76,10 @@ export function selectObject(id: number, fly = true) {
 export function goToTarget(ref: Ref, span: {begin: number; end: number} | null) {
   const s = getState(), model = modelOf(s);
   if (!model) return;
-  if (ref.project !== s.project) return toast('这条批注指向别的项目');
+  if (ref.project !== s.project) return toast(ui("navigation.otherProject"));
   if (ref.kind === 'object') return selectObject(ref.id);
   const layer = model.layer(ref.id), b = layer && model.boardOf(s.boards, layer.root);
-  if (!b || !sizeOf(model, b).h) return toast('目标已删除，或者在收起的层里');
+  if (!b || !sizeOf(model, b).h) return toast(ui("navigation.hiddenOrDeleted"));
   const offset = model.offsetOf(s.boards, layer!.root!);
   const begin = span ? span.begin + offset : model.extent(b)[0];
   setState({view: 'canvas', active: keyOf(b), sel: span ? {key: keyOf(b), begin, end: span.end + offset} : s.sel, playhead: span ? begin : s.playhead});
@@ -117,13 +119,13 @@ export function keyStep(key: string): boolean {
   const onBoard = sel && model.boardOf(s.boards, sel.layer.root) === b;
   const dir = key === 'ArrowLeft' || key === 'ArrowUp' || key === '[' ? -1 : 1;
   const moveTo = (t: number | null) => {
-    if (t == null) return toast(dir < 0 ? '前面没有了' : '后面没有了');
+    if (t == null) return toast(dir < 0 ? tr("navigation.noPrevious") : tr("navigation.noNext"));
     setState({playhead: +t.toFixed(6), noteFocus: null});
     revealTime(b, t);
     report();
   };
   const pick = (item: ReturnType<typeof stepObject>, keepPlayhead: boolean) => {
-    if (!item) return toast(dir < 0 ? '前面没有了' : '后面没有了');
+    if (!item) return toast(dir < 0 ? tr("navigation.noPrevious") : tr("navigation.noNext"));
     const t = s.playhead, inside = keepPlayhead && t != null && item.begin <= t && t < item.end;
     setState({selected: item.o.id, playhead: inside ? t : +item.begin.toFixed(6), noteFocus: null});
     requestAnimationFrame(() => requestAnimationFrame(() => revealObject(item.o.id)));
@@ -131,7 +133,7 @@ export function keyStep(key: string): boolean {
   };
   // [ ]：插件给的跳转点（接缝插件给接缝的时刻）；没有插件给就不跳
   if (key === '[' || key === ']') {
-    if (!s.plugins.some((p) => p.jumpPoints)) { toast('[ ] 的跳转点由插件提供（比如接缝插件），现在没有装'); return true; }
+    if (!s.plugins.some((p) => p.jumpPoints)) { toast(ui("navigation.noJumpPlugin")); return true; }
     moveTo(stepTime(jumpPoints(model, b), s.playhead ?? -Infinity, dir));
     return true;
   }
@@ -156,24 +158,24 @@ export async function copyMoment() {
   const spans = sel ? [`${sel.root}:${sel.begin}:${sel.end}`]
     : s.playhead == null ? [] : b.rows.map((row) => model.segmentAt(row, s.playhead!)).filter(Boolean)
       .map((seg) => { const t = +(s.playhead! - seg!.offset).toFixed(6); return `${seg!.root}:${t}:${t}`; });
-  if (!spans.length) return toast('先在画板上点一下，放好播放头');
+  if (!spans.length) return toast(ui("navigation.placePlayhead"));
   try {
     const {text} = await api.at(s.project, spans);
-    if (await writeClipboard(text)) toast('已复制这一刻的文字版：每层是什么、怎么连着、哪些批注指着它们。贴给 AI 就行');
+    if (await writeClipboard(text)) toast(ui("copy.momentDone"));
     else { setState({message: text}); setTimeout(() => setState({message: ''}), 15000); }
-  } catch (error) { toast('读不到这一刻：' + (error as Error).message); }
+  } catch (error) { toast(ui("copy.momentFailed", undefined, (error as Error).message)); }
 }
 
 // 复制链接：现在看的位置（画板、看得见的范围、播放头、选中的对象、对准的批注）。贴给 AI，它用 view_screenshot --link 拍同一个画面
 export async function copyLink() {
   const s = getState(), act = activeBoard(s);
   if (s.project == null) return;
-  const query = linkQuery({project: s.project, view: s.view, side: s.side, board: act ? keyOf(act) : null,
+  const query = linkQuery({lang: currentLocale(), project: s.project, view: s.view, side: s.side, board: act ? keyOf(act) : null,
                            range: s.view === 'canvas' && act ? visibleRange(act) : null, playhead: s.playhead, select: s.selected,
                            layers: s.only, note: s.noteFocus, changes: s.changeLimit, walk: s.walk, pluginParams: new URLSearchParams(location.search)});
   const url = `${location.origin}${location.pathname}?${query}`;
-  if (await writeClipboard(url)) return toast('已复制链接。贴给 AI，它用 view_screenshot --link 就能拍到这个画面');
-  setState({message: '浏览器不让复制，请手动复制：' + url});
+  if (await writeClipboard(url)) return toast(ui("copy.linkDone"));
+  setState({message: ui("copy.manual", undefined, url)});
   setTimeout(() => setState({message: ''}), 10000);
 }
 

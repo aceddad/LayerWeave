@@ -1,3 +1,5 @@
+import {readPreference} from './preferences';
+import type {UiMessage} from './i18n/types';
 // 页面的全部状态放在一个 zustand store 里；画面模型、批注楼、改动标记都由状态算出来并缓存
 import {create} from 'zustand';
 import {changeMarks, noMarks} from './model/changes';
@@ -22,8 +24,8 @@ export interface State {
   cursor: number | null;                                  // 只有完整页应用成功才前移
   frames: boolean;
   live: boolean;
-  message: string;
-  notice: {text: string; thread?: number; layer?: number} | null;   // 右下角的提示：别人写了新批注、展开了你折叠的层；点一下过去
+  message: string | UiMessage;
+  notice: {text: string | UiMessage; thread?: number; layer?: number} | null;   // 右下角的提示：别人写了新批注、展开了你折叠的层；点一下过去
   view: View;
   side: Side;
   active: number | null;                                  // 当前画板（用其中任一根层的编号表示）
@@ -64,7 +66,7 @@ const clamp = (min: number, v: number, max: number) => Math.min(max, Math.max(mi
 const sideWidth = () => clamp(240, window.innerWidth * .28, 340) + 1;
 const treeWidth = () => clamp(220, window.innerWidth * .2, 300) + 1;
 // 地址里有 tree=0/1 就按它（截图 --tree、测试），否则截图默认关、网页按本机记的（默认开）
-const treeOpen = params.has('tree') ? params.get('tree') === '1' : CAPTURE ? false : localStorage.getItem('lw-tree') !== '0';
+const treeOpen = params.has('tree') ? params.get('tree') === '1' : CAPTURE ? false : readPreference('lw-tree') !== '0';
 export const useStore = create<State>((set) => ({
   projects: [], project: null, data: null, boards: [], serial: null, version: null, cursor: null,
   frames: false, live: false, message: '', notice: null,
@@ -80,7 +82,7 @@ export const useStore = create<State>((set) => ({
   links: params.get('links') === '1',
   sel: null, targetLayer: null, wholeProject: false, picked: [],
   tree: treeOpen,
-  noteFilter: 'open', noteFocus: numParam('note'), me: localStorage.getItem('lw-author') || '用户', reads: {},
+  noteFilter: 'open', noteFocus: numParam('note'), me: readPreference('lw-author') || '用户', reads: {},
   canvasW: Math.max(600, window.innerWidth - sideWidth() - (treeOpen ? treeWidth() : 0)),   // 先按样式估准，画布量到的一样就不用再排一遍
   canvasH: Math.max(400, window.innerHeight - 50),
   dragging: false, drop: null, autoFit: true, settledZoom: 0, plugins: [], pluginList: null, pluginErrors: {}, pluginSerial: null,

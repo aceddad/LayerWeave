@@ -1,16 +1,25 @@
 // 和本机视图服务说话；接口说明见 view/README.md
+import {currentLocale, renderMessage} from './i18n';
+import type {UiMessage} from './i18n/types';
 import type {Board, ChangeOp, Layout, PluginList, PluginResult, ProjectData, ProjectPage, ProjectSummary, WalkDirection, WalkResult} from './types';
+
+export class ViewApiError extends Error {
+  constructor(readonly ui: UiMessage | undefined, fallback: string) {
+    super(fallback);
+    Object.defineProperty(this, 'message', {get: () => ui ? renderMessage(ui) : fallback});
+  }
+}
 
 async function get<T>(path: string): Promise<T> {
   const response = await fetch(path);
-  if (!response.ok) throw new Error(`${path}：${response.status}`);
+  if (!response.ok) { const data = await response.json().catch(() => ({})); throw new ViewApiError(data.ui, data.error ?? `${path}: ${response.status}`); }
   return response.json();
 }
 
 async function post<T>(path: string, body: unknown): Promise<T> {
   const response = await fetch(path, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
   const data = await response.json();
-  if (!response.ok) throw new Error(data?.error ?? `${path}：${response.status}`);
+  if (!response.ok) throw new ViewApiError(data?.ui, data?.error ?? `${path}: ${response.status}`);
   return data;
 }
 
@@ -28,7 +37,7 @@ export const api = {
   saveLayout: (id: number, boards: Board[]) => post<Layout & {recorded?: boolean}>(`/api/layout/${id}`, {boards}),
   version: () => get<{version: number; layout: number; plugins?: number}>('/api/version'),
   changes: (id: number, limit: number) => get<ChangeOp[]>(`/api/changes/${id}?limit=${limit}`),
-  at: (id: number, spans: string[]) => get<{text: string}>(`/api/at/${id}?${spans.map((s) => `span=${encodeURIComponent(s)}`).join('&')}`),
+  at: (id: number, spans: string[]) => get<{text: string}>(`/api/at/${id}?lang=${currentLocale()}&${spans.map((s) => `span=${encodeURIComponent(s)}`).join('&')}`),
   walk: (id: number, from: string, direction: WalkDirection, depth: number) =>
     get<WalkResult>(`/api/walk/${id}?from=${encodeURIComponent(from)}&direction=${direction}&depth=${depth}`),
   state: (body: unknown) => post('/api/state', body),

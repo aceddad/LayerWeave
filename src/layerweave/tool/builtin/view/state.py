@@ -11,7 +11,7 @@ import os
 from pathlib import Path
 import tempfile
 
-FIELDS = {"project": int, "view": str, "board": dict, "range": list, "playhead": (int, float), "playhead_at": list,
+FIELDS = {"lang": str, "project": int, "view": str, "board": dict, "range": list, "playhead": (int, float), "playhead_at": list,
           "selected": dict, "selection": dict, "boards": list, "layers": list, "folded": list}
 
 

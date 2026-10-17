@@ -1,3 +1,4 @@
+import {tr, useI18n} from '../i18n';
 // 轨道共享媒体表面：对象 DOM、文字、标记、连接点仍归 ObjectBlock；这里仅画背景和媒体。
 import {createContext, useContext, useEffect, useMemo, useRef} from 'react';
 import type {ReactNode, RefObject} from 'react';
@@ -205,7 +206,7 @@ export class TrackSurface {
     const out = canvas(w, h), ctx = out.getContext('2d')!;
     if (spec.kind === 'audio') {
       const values = await peaksFor(mediaUrl(spec.o.media!.url!, spec.o.media?.source));
-      return {failure: values ? undefined : '波形无法解码：对象 #' + spec.o.id,
+      return {failure: values ? undefined : tr("media.waveformObjectFailed") + spec.o.id,
         draw: () => { drawWaveform(ctx, values, w, h, devicePixelRatio); return out; }};
     }
     return {draw: () => out};
@@ -219,7 +220,7 @@ export class TrackSurface {
       const urls = (ends ? [frameUrl(spec.project, spec.o.id, .05), frameUrl(spec.project, spec.o.id, spec.last)]
         : [frameUrl(spec.project, spec.o.id, .1)]).map((url) => mediaUrl(url, spec.o.media?.source));
       const images = await Promise.all(urls.map(acquire));
-      if (images.some((image) => !image)) throw new Error('媒体无法解码：对象 #' + spec.o.id);
+      if (images.some((image) => !image)) throw new Error(tr("media.objectFailed") + spec.o.id);
       return {direct: images.map((image, i) => ({image: image!, url: urls[i], identity, rect: rects[i], opacity: ends ? .9 : .85}))};
     }
     const old = previous?.find((part) => part.identity === identity);
@@ -230,14 +231,14 @@ export class TrackSurface {
     let url = old && old.image.naturalWidth >= need ? old.url
       : spec.frames ? mediaUrl(thumbUrl(spec.project, spec.o.id, requested), spec.o.media?.source) : identity;
     let image = await acquire(url);
-    if (!image) throw new Error('媒体无法解码：对象 #' + spec.o.id);
+    if (!image) throw new Error(tr("media.objectFailed") + spec.o.id);
     // 先按目标宽度取足够的一档，获知源比例后再补 cover 所需高度；不先画一份更小的图。
     if (spec.frames) {
       const wanted = sourceWidth(width, height, image.naturalWidth / Math.max(1, image.naturalHeight), scale);
       if (wanted > requested && image.naturalWidth < wanted) {
         requested = wanted; url = mediaUrl(thumbUrl(spec.project, spec.o.id, requested), spec.o.media?.source);
         image = await acquire(url);
-        if (!image) throw new Error('媒体无法解码：对象 #' + spec.o.id);
+        if (!image) throw new Error(tr("media.objectFailed") + spec.o.id);
       }
     }
     return {direct: [{image, url, identity, rect: {x: 1, y: 1, w: width, h: height}, opacity: .85}]};
@@ -383,6 +384,7 @@ export function useSharedMedia(spec: MediaSpec | null, node: RefObject<HTMLDivEl
   useEffect(() => { if (spec) registration.current?.update(spec); }, [spec]);
 }
 export function MediaTrack({width, height, className, children}: {width: number; height: number; className: string; children: ReactNode}) {
+  useI18n();
   const root = useRef<HTMLDivElement>(null);
   const surface = useMemo(() => new TrackSurface(width, height), [width, height]);
   useEffect(() => { if (SHARED_MEDIA && root.current) { surface.attach(root.current); return () => surface.dispose(); } }, [surface]);

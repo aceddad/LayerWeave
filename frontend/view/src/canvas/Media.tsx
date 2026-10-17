@@ -1,3 +1,4 @@
+import {tr, useI18n} from '../i18n';
 // 图片、视频画面的小部件：服务端有 ffmpeg 时视频画面由它抽帧（结果稳定，截图也拍得到），没有时交给浏览器解码
 import {useEffect, useRef} from 'react';
 import {frameUrl, thumbUrl} from '../api';
@@ -11,16 +12,19 @@ import {decodedImages} from './imageCache';
 import type {ImageLease} from './imageCache';
 
 export function Img({src}: {src: string}) {
+  useI18n();
   return <img loading={LAZY} decoding={DECODE} src={src} alt="" />;
 }
 
 // 图片对象的缩略图：服务端有 ffmpeg 时按宽度缩好（缩不了的它自己送原图）；没有 ffmpeg 时直接用原图。
 // 一览网格通常用 320，接缝页/侧栏卡片用 640；共享画布按实际显示尺寸在 TrackMedia 选源档位。
 export function Thumb({project, o, width, frames}: {project: number; o: Obj; width: number; frames: boolean}) {
+  useI18n();
   return <Img src={mediaUrl(frames ? thumbUrl(project, o.id, width) : o.media!.url!, o.media?.source)} />;
 }
 
 export function Frame({project, o, at, frames}: {project: number; o: Obj; at: number | 'end'; frames: boolean}) {
+  useI18n();
   if (frames) return <Img src={mediaUrl(frameUrl(project, o.id, at), o.media?.source)} />;
   return <video muted preload="metadata" src={`${mediaUrl(o.media!.url!, o.media?.source)}#t=${at === 'end' ? 9999 : at}`} />;
 }
@@ -43,6 +47,7 @@ const mark = (canvas: HTMLCanvasElement, state: string, error?: unknown) => {
 export const legacyPaintState = () => [...legacy.values()];
 
 export function CanvasImg({src}: {src: string}) {
+  useI18n();
   const ref = useRef<HTMLCanvasElement>(null);
   const zoom = useStore((s) => s.settledZoom);
   const state = useRef({w: 0, h: 0, zoom: 0, img: undefined as HTMLImageElement | null | undefined, drawn: '', draw: () => {}});
@@ -59,7 +64,7 @@ export function CanvasImg({src}: {src: string}) {
     const owner = {};
     st.draw = () => {
       if (!alive || st.img === undefined) return;
-      if (!st.img) { mark(canvas, 'failed', '媒体无法解码'); return; }
+      if (!st.img) { mark(canvas, 'failed', tr("media.decodeFailed")); return; }
       if (!st.w || !st.h) return;
       const k = st.zoom || viewport().zoom || 1;
       let cw = Math.max(1, Math.round(st.w * k)), ch = Math.max(1, Math.round(st.h * k));
@@ -107,9 +112,11 @@ export function CanvasImg({src}: {src: string}) {
 
 // 画布上的格子用：图片格子的缩略图、视频格子的画面（有 ffmpeg 时）都画进 canvas；没有 ffmpeg 的视频照旧交给浏览器解码
 export function BlockThumb({project, o, width, frames}: {project: number; o: Obj; width: number; frames: boolean}) {
+  useI18n();
   return <CanvasImg src={mediaUrl(frames ? thumbUrl(project, o.id, width) : o.media!.url!, o.media?.source)} />;
 }
 export function BlockFrame({project, o, at, frames}: {project: number; o: Obj; at: number | 'end'; frames: boolean}) {
+  useI18n();
   if (frames) return <CanvasImg src={mediaUrl(frameUrl(project, o.id, at), o.media?.source)} />;
   return <Frame project={project} o={o} at={at} frames={false} />;
 }

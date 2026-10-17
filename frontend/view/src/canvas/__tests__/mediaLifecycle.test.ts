@@ -1,3 +1,4 @@
+vi.mock('../../i18n', async () => ({...await import('../../i18n/core'), useI18n: () => ({locale: 'zh'})}));
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 const hooks = vi.hoisted(() => ({
   effects: [] as (() => void | (() => void))[],

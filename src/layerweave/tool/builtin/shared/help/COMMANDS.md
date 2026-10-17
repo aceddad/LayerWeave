@@ -64,6 +64,10 @@ COMMANDS = [{
 
 ## 参数与业务说明的维护位置
 
+COMMANDS 可选 keywords 字符串列表与 help_order 整数，例如概览声明 keywords=["概览", "总览", "项目结构"]、help_order=10。MCP 搜索匹配身份、摘要、别名和关键词；关键词不注册为调用别名。同类中显式顺序较小者优先，同值按完整身份排序，未填写的排在其后。总览 common 展示可用条目的前三个，表示推荐入口；禁用与 direct 暴露独立决定。MCP 变体可自行覆盖顺序和关键词。
+
+每条 examples.arguments 独立表示一次 MCP 调用，可附 title；所有这类示例都会展示并按 Schema 核对。只带 cli/files 的例子继续用于 CLI，不猜测转换。专用变体可声明自己的 examples 和 properties，避免把其他动作的参数说明套给回复等入口。显式示例优先；继承通用示例的投影只移除该入口不接收的字段，不混入前一条示例的参数。
+
 当前命令参数、默认值、JSON 文件示例以实时 command_help 和各工具 --help 为准，直接读取工具自己的 COMMANDS。本文维护发现方式与开发约定，不再复制各工具参数表。
 
 业务含义与边界仍由专题解释。例如 split/keep/stretch/move 的选择和插空档范围见[范围编辑](../../usage/EDITING.md)，数据库的 operation.status 与 checks 分工见[反馈协议](../../usage/CRUD.md#操作与检测的反馈)。配置 help 的使用/开发两种阅读方式见[配置 help](CONFIG_HELP.md)。

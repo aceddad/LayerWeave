@@ -112,6 +112,8 @@
 
 ## 工具表
 
+tables 为可选结构说明。默认完整项目导出保留已登记的工具表定义，局部导出保留涉及的表及其声明依赖。compact=true 时省略 tables/source_numbering 并标明 scope.compact，format_version 仍为 1；业务节点、引用和 base 结构不变，导入使用目标库已有声明。缺少工具 kind 时失败；未携带结构不表示可忽略对应记录。
+
 tables 沿用 register_tables 的声明：table、fields、scoped、id_source、references、logical_references、exchange。导入先独立准备这些表；已有列、身份及硬引用不能被文件改写，目标表后来增加的其他列保留。业务失败或撤销不会删除已准备的空表或回退声明，schema 字段明确报告这个阶段。
 
 logical_references 默认 []，沿用 references 的 fields/kind 写法；两者都参与范围收集与编号转换，但只有 references 建立数据库外键。声明和旧库升级的完整规则见[工具表开发指导](../../../../../../docs/build-with-layerweave/03-managed-tables.md#逻辑引用与复制策略)。例如，附着某层且与层共用编号的状态：

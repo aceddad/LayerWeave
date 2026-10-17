@@ -36,6 +36,19 @@ class Binding:
     def summary(self):
         return self.options.get('summary', self.command.get('summary', self.id))
 
+    @property
+    def keywords(self):
+        return self.options.get('keywords', self.command.get('keywords', []))
+
+    @property
+    def help_order(self):
+        return self.options.get('help_order', self.command.get('help_order'))
+
+    @property
+    def sort_key(self):
+        order = self.help_order
+        return (order is None, order if order is not None else 0, self.id)
+
     def route(self, arguments):
         selector = self.options.get('route_by')
         if selector == 'request':
@@ -86,7 +99,7 @@ class Catalog:
             if not isinstance(variants,list) or not all(isinstance(v,dict) for v in variants):
                 self.issues.append({'code':'mcp_declaration','id':command['id'],'message':'variants 需要对象列表'})
                 variants=[]
-            for variant in [base, *({**base, **v} for v in variants)]:
+            for variant in [base, *({**base, "help_order": None, **v} for v in variants)]:
                 if variant.get('command') is not None and not isinstance(variant['command'],str):
                     self.issues.append({'code':'mcp_declaration','id':command['id'],'message':'变体 command 需要字符串'})
                     continue
@@ -97,6 +110,14 @@ class Catalog:
                     continue
                 if not isinstance(variant.get('group','other'),str):
                     self.issues.append({'code':'mcp_declaration','id':identity,'message':'group 需要字符串'})
+                    continue
+                order = variant.get('help_order')
+                keywords = variant.get('keywords', [])
+                if ((order is not None and type(order) is not int)
+                        or not isinstance(keywords, list) or not all(isinstance(k, str) for k in keywords)
+                        or type(variant.get('open_world', True)) is not bool):
+                    self.issues.append({'code':'mcp_declaration','id':identity,
+                        'message':'help_order 需要整数或 null，keywords 需要字符串列表，open_world 需要布尔值'})
                     continue
                 try:
                     schema = select_parameters(command['input_schema'], include=variant.get('include'), omit=variant.get('omit',[]))
@@ -111,7 +132,7 @@ class Catalog:
         for item in self.skills:
             command = {'name':item['name'],'summary':item['summary'],'source':item['path']}
             schema = {'type':'object','properties':{'resource':{'type':'string','description':'可选技能内相对支持文件路径'}},'additionalProperties':False}
-            candidates.append(Binding(item['id'],command,schema,{'route':'query','group':'skills','output':'material'},item))
+            candidates.append(Binding(item['id'],command,schema,{'route':'query','group':'skills','output':'material','open_world':False},item))
         by_id = defaultdict(list)
         for binding in candidates:
             by_id[binding.id].append(binding)
@@ -170,4 +191,7 @@ class Catalog:
     def summary(self, binding):
         return {'id':binding.id,'summary':binding.summary,'group':binding.group,
                 'routes':binding.routes(),'direct':binding.direct_name,'enabled':binding.enabled,
+                'open_world':binding.options.get('open_world',True),
+                **({'keywords':binding.keywords} if binding.keywords else {}),
+                **({'help_order':binding.help_order} if binding.help_order is not None else {}),
                 **({'reason':binding.reason} if binding.reason else {})}

@@ -1,5 +1,5 @@
 name = "layerweave.query"
 kind = "tool"
-version = "0.2.1"
+version = "0.2.2"
 description = "项目、子树、对象位置、空档与关联查询"
-changes = "统一 JSON Schema 命令声明，支持可选 MCP 调用；保留原有 Python 与 CLI。"
+changes = "项目概览作为推荐入口，支持中文概览、总览和结构搜索。"

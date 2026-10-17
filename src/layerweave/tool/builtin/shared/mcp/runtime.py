@@ -119,7 +119,8 @@ class Runtime:
             bindings=[b for b in bindings if b.group==group]
         if search:
             phrase=search.casefold()
-            bindings=[b for b in bindings if phrase in ' '.join((b.id,b.summary,*b.command.get('aliases',[]))).casefold()]
+            bindings=[b for b in bindings if phrase in ' '.join((b.id,b.summary,*b.command.get('aliases',[]),*b.keywords)).casefold()]
+        bindings.sort(key=lambda b:b.sort_key)
         if group or search or topic=='skills':
             return {'view':'matches','items':[self.catalog.summary(b) for b in bindings], 'issues':self.catalog.issues}
         groups=[]
@@ -129,6 +130,7 @@ class Runtime:
                            'common':[self.catalog.summary(b) for b in active[:3]]})
         return {'view':'overview','groups':groups,'documentation_only':[
                     {'id':c['id'],'summary':c['summary'],'reason':c['reason'],'cli':c.get('cli')} for c in self.catalog.documentation],
+                'common_note':'common 为声明推荐顺序下的入口，不是使用次数统计。',
                 'next':'指定 group/search 查目录，指定 names 展开参数和示例；已知用法可直接调用。',
                 'issues':self.catalog.issues}
 
@@ -152,15 +154,28 @@ class Runtime:
                 kind=kind[0] if isinstance(kind,list) else kind
                 value={'integer':1,'number':1,'string':'填写实际值','array':[],'object':{},'boolean':False}.get(kind)
             arguments[name]=value
-        for example in binding.command.get('examples',[]):
-            if example.get('arguments'):
-                arguments.update(deepcopy(example['arguments']))
-                break
-        arguments={k:v for k,v in arguments.items() if k in binding.schema.get('properties',{})}
-        route=binding.route(arguments)
-        examples=[{'tool':'layerweave_'+route,'arguments':{'command':binding.id,'arguments':arguments}}]
-        if binding.direct_name:
-            examples.append({'tool':binding.direct_name,'arguments':arguments})
+        from jsonschema import Draft202012Validator
+        declared = binding.options.get('examples', binding.command.get('examples', []))
+        samples = [e for e in declared if 'arguments' in e]
+        examples = []
+        for sample in samples or [{}]:
+            values = {**deepcopy(arguments), **deepcopy(sample.get('arguments', {}))}
+            if ('examples' not in binding.options and
+                    (binding.id != binding.command.get('id') or binding.options.get('omit') or binding.options.get('include') is not None)):
+                values = {k:v for k,v in values.items() if k in binding.schema.get('properties', {})}
+            # 独立示例不继承上一条的字段；默认动作按实际调用规则补齐。
+            effective = {k:deepcopy(v['default']) for k,v in binding.schema.get('properties', {}).items() if 'default' in v}
+            effective.update(values)
+            error = next(Draft202012Validator(binding.schema).iter_errors(effective), None)
+            if error is not None:
+                raise InputError('命令示例不符合参数声明，请维护该工具的 examples',
+                                 code='command_example', command=binding.id,
+                                 field='.'.join(map(str,error.path)), rule=error.validator)
+            route = binding.route(effective)
+            label = {'title':sample['title']} if sample.get('title') else {}
+            examples.append({**label,'tool':'layerweave_'+route,'arguments':{'command':binding.id,'arguments':values}})
+            if binding.direct_name:
+                examples.append({**label,'tool':binding.direct_name,'arguments':deepcopy(values)})
         return examples
 
     def _arguments(self,binding,arguments):
@@ -180,14 +195,15 @@ class Runtime:
             if name not in values and 'default' in spec:
                 values[name]=deepcopy(spec['default'])
         from jsonschema import Draft202012Validator
-        errors=sorted(Draft202012Validator(binding.schema).iter_errors(values),key=lambda e:list(map(str,e.path)))
-        if errors:
-            error=errors[0]
-            location='.'.join(map(str,error.path)) or 'arguments'
+        from jsonschema.exceptions import best_match
+        error=best_match(Draft202012Validator(binding.schema).iter_errors(values))
+        if error is not None:
+            location='.'.join(map(str,error.absolute_path)) or 'arguments'
             detail={'field':location,'rule':error.validator}
             if error.validator=='additionalProperties':
-                unknown=set(values)-set(props)
-                detail.update(allowed=list(props),suggestions={key:get_close_matches(key,props,n=1) for key in unknown})
+                allowed=error.schema.get('properties',{})
+                unknown=set(error.instance)-set(allowed)
+                detail.update(allowed=list(allowed),suggestions={key:get_close_matches(key,allowed,n=1) for key in unknown})
             if error.validator=='required':
                 detail['missing']=[key for key in error.validator_value if key not in error.instance]
             if error.validator=='enum':
@@ -219,7 +235,7 @@ class Runtime:
             function=getattr(function,part)
         return function
 
-    def _call(self,binding,values,route):
+    def _call(self,binding,values,route,execution):
         if binding.material:
             return read_skill(binding.material,**values),None
         function=self._function(binding)
@@ -237,11 +253,13 @@ class Runtime:
                 connection=open_database(path)
             with closing(connection):
                 before=change_cursor(connection) if route=='query' else None
+                execution['started']=True
                 result=function(connection,**{k:v for k,v in values.items() if k!='database'})
                 after=change_cursor(connection) if route=='query' else None
             if before is not None and before!=after:
                 raise InputError('读取期间业务数据发生变化，请重新查询；本次没有执行写入。',code='read_changed')
             return result, {'database':path,'cursor':after} if after is not None else None
+        execution['started']=True
         result=function(**values)
         return result,None
 
@@ -249,6 +267,7 @@ class Runtime:
         context={}
         result=None
         executed=False
+        execution={'started':False}
         try:
             for key,value,minimum in (('limit',limit,1),('max_chars',max_chars,256)):
                 if value is not None and (type(value) is not int or value<minimum):
@@ -259,7 +278,7 @@ class Runtime:
             if route!=actual:
                 raise InputError('该动作不能通过此入口执行',command=binding.id,required_tool='layerweave_'+actual)
             context={k:values[k] for k in ('database','project_id') if k in values}
-            result,version=self._call(binding,values,route)
+            result,version=self._call(binding,values,route,execution)
             executed=True
             images=[]
             # 媒体适配器返回字节，与业务 JSON 分开；SDK 只在最外层编码。
@@ -310,8 +329,9 @@ class Runtime:
             return Outcome(envelope,failed,images)
         except Exception as error:
             logger.info('request=%s command=%s failed=%s',REQUEST_ID.get(),command,type(error).__name__)
-            data={'context':context,'error':error_detail(error),
-                  'note':'未拿到写入响应时先核对历史和目标，不要自动重做。'}
+            data={'context':context,'error':error_detail(error)}
+            if route!='query' and execution['started'] and not executed and getattr(error,'details',{}).get('phase')!='parameters':
+                data['note']='未拿到写入响应时先核对历史和目标，不要自动重做。'
             if executed and isinstance(result,dict):
                 data['operation_id']=result.get('operation_id')
                 data['operation']=result.get('operation')

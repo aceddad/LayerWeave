@@ -11,7 +11,7 @@ python -m pip install -e ".[mcp]"
 python -m layerweave.tool.builtin.shared.mcp --config mcp.json
 ```
 
-安装后也可运行 `layerweave-mcp --config mcp.json`。本地 wheel 可用 `python -m pip install "路径/layerweave-0.7.0-py3-none-any.whl[mcp]"`。基础 Python/CLI 不需要 MCP SDK；本服务使用官方 MCP Python SDK 2.3 系列兼容接口。
+安装后也可运行 `layerweave-mcp --config mcp.json`。本地 wheel 可用 `python -m pip install "路径/layerweave-0.7.1-py3-none-any.whl[mcp]"`。基础 Python/CLI 不需要 MCP SDK；本服务使用官方 MCP Python SDK 2.3 系列兼容接口。
 
 标准输出是协议流，日志在标准错误；这不是交互式命令行。`--list` 只输出有效动作、实际 direct 名称和声明问题。最小配置是 `{}`；[example.json](example.json) 提供可编辑示例：
 
@@ -41,6 +41,10 @@ MCP 客户端配置示意，解释器与文件使用实际绝对路径：
 ```
 
 ## 发现与调用
+
+总览的 common 是声明推荐的入口，不是使用次数统计。查看项目优先展示 project_overview；搜索“概览／总览”可以找到它，搜索“修改／更新”可以找到 dispatch。关键词不自动成为调用别名。详情显示工具声明的多个示例，编号与路径换成实际值。
+
+dispatch 的单项请求结构直接在 Schema 展示，每条 layer/object 或有项目归属的工具表请求自行填写 project_id；启动默认项目不会补入 request。创建 project 不需要 project_id。update 只修改传入字段，information 等 JSON 字段整体替换。
 
 | 工具 | 用途 |
 |---|---|
@@ -102,6 +106,14 @@ direct 是暴露方式，不保证客户端置顶，不改变权限。客户端�
 
 ## 技能与视图
 
+MCP 新建批注与回复要求非空 author，专用 view_reply 和通用 view_note 的 add/reply 使用同一检查。作者与 waiting 使用同一标签，例如先查 waiting="Claude"，再以 author="Claude" 回复；不自动推断身份，不自动标已读或已处理。Python/CLI 仍可保存未署名内容。
+
+view_reply 的 note_id 是被回复的批注编号，text 只表示回复正文。有默认库与项目时，传给 layerweave_view_reply 的示例（编号替换为收件箱返回值）：
+
+```json
+{"note_id": 41, "text": "已调整这一段。", "author": "Claude"}
+```
+
 `{"topic":"skills"}` 列出身份，指定 names 读取正文；支持文本文件可用 resource 指定技能内相对路径。将该身份设为 direct，会产生只读材料入口，不执行脚本。例如自带文本整理技能为 `skill.layerweave.layers.text.text-normalize`，独立名默认 `skill_layerweave_layers_text_text_normalize`。自定义材料使用 help 返回的身份。
 
 视图包推荐 view_inbox、view_reply、view_screenshot 为 direct。看图不接收 output，直接返回图片；view_screenshot_save 明确接收 output，经 admin 排他创建。query 不自动标记批注已读，视图未安装不影响其他工具。
@@ -109,6 +121,10 @@ direct 是暴露方式，不保证客户端置顶，不改变权限。客户端�
 截图需 Chrome、Edge 或 Chromium。timeout_ms 默认 60000，是启动至抓图预算；wait_ms 默认 20000，是页面绘制等待。关闭阶段另有短暂清理时间，客户端请求超时宜更长。截图不改项目和用户视图状态，但可能生成缩略图/波形缓存；state_root 可隔离设置、插件和缓存。params 直接传插件参数对象，复用原解释规则。view_server、view_bench 保留 CLI 指引，不经 MCP 再启动服务或开发测量。
 
 ## 返回与续取
+
+局部导出默认只带实际涉及的工具表及其定义依赖；完整项目保留空表结构。原库编辑或目标库已有所需表声明时，可传 compact=true，省略 tables/source_numbering；业务记录、关联和请求的 baseline 保留。include_tools 另行控制是否收集工具数据。直接 JSON、文件和 CLI 使用同一规则，见[交换说明](../../usage/exchange/README.md)。
+
+只读失败及执行前的参数/路由错误不附写入重试提醒。写动作已进入业务执行但无法确认结果时才提示核对；已明确提交而返回整理失败时保留操作编号和提交状态。
 
 普通返回含 context、result、result_complete。先看 result.operation.status，再看 result.checks：committed 加检查 error 仍是已提交；导入的 data.status=partial 表示有跳过，不代表提交失败。
 
@@ -121,6 +137,10 @@ direct 是暴露方式，不保证客户端置顶，不改变权限。客户端�
 缓存只在当前服务内有效，重启或淘汰后提示 cursor_expired。写入结果失效、取消或超时后先核对历史和目标，不自动重做。服务日志记录请求、命令、操作编号和状态，不打印调用参数或密钥。
 
 ## 扩展一个无 CLI 的工具
+
+COMMANDS 可选 keywords（字符串列表）与 help_order（整数，较小优先），见[命令声明](../help/COMMANDS.md)。MCP 变体可覆盖 keywords/help_order、properties、notes 和 examples。变体默认不继承主体的推荐顺序；不填写时排在显式推荐项之后。
+
+可选 mcp.open_world 为布尔值，省略为 true；direct 入口从绑定生成标准 openWorldHint，routed 的详情显示同一声明。false 表示该能力在声明的封闭范围内工作，不代表是否写入或获准调用。一份绑定包含多个动作时须覆盖全部动作，不自动推断。自带技能材料读取为 false；通用 help/query 保持 true，因为插件详情、市场或外部扩展可能联网。该字段不改变授权和启用规则。
 
 在 alice_tools/commands.py 定义：
 

@@ -1,5 +1,5 @@
 name = "layerweave.mcp"
 kind = "tool"
-version = "0.1.0"
+version = "0.1.1"
 description = "可选 MCP 接入、统一命令目录与 direct/routed 暴露"
-changes = "支持直接 JSON、按需帮助、技能材料、视图媒体与外部工具。"
+changes = "按声明推荐、关键词搜索、多示例与准确的错误阶段；支持绑定 open_world 提示。"

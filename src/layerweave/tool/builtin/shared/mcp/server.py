@@ -32,6 +32,7 @@ def _schemas():
 def create_server(config=None):
     import anyio
     from jsonschema import Draft202012Validator
+    from jsonschema.exceptions import best_match
     from mcp.server.lowlevel import Server
     from mcp.shared.exceptions import MCPError
     from mcp import types
@@ -53,7 +54,7 @@ def create_server(config=None):
         schemas[name]=schema
         tools.append(types.Tool(name=name,description=binding.summary,inputSchema=schema,
             annotations=types.ToolAnnotations(readOnlyHint=binding.routes()==['query'],
-                                               destructiveHint=binding.routes()!=['query'],openWorldHint=True)))
+                                               destructiveHint=binding.routes()!=['query'],openWorldHint=binding.options.get('open_world',True))))
 
     async def list_tools(context,params):
         return types.ListToolsResult(tools=tools,ttlMs=0,cacheScope='private')
@@ -85,14 +86,14 @@ def create_server(config=None):
     async def call_tool(context,params):
         if params.name not in schemas:
             raise MCPError(code=-32602,message='未知 MCP 工具；请重新读取工具列表。')
-        error=next(Draft202012Validator(schemas[params.name]).iter_errors(params.arguments or {}),None)
+        error=best_match(Draft202012Validator(schemas[params.name]).iter_errors(params.arguments or {}))
         if error is not None:
-            detail={'code':'request_schema','field':'.'.join(map(str,error.path)) or 'arguments',
-                    'rule':error.validator,'message':'请求不符合该入口的参数结构；调用命令与 cursor 续取不能混用。'}
+            detail={'code':'request_schema','field':'.'.join(map(str,error.absolute_path)) or 'arguments',
+                    'rule':error.validator,'message':'请求不符合该入口的参数结构，请按 field 和 rule 修正。'}
             if error.validator=='required':
                 detail['missing']=[key for key in error.validator_value if key not in error.instance]
             if error.validator=='additionalProperties':
-                detail['allowed']=list(schemas[params.name].get('properties',{}))
+                detail['allowed']=list(error.schema.get('properties',{}))
             data={'error':detail}
             return types.CallToolResult(content=[types.TextContent(type='text',text=json.dumps(data,ensure_ascii=False))],
                                         structuredContent=data,isError=True)
@@ -106,6 +107,6 @@ def create_server(config=None):
         content.extend(types.ImageContent(type='image',data=base64.b64encode(blob).decode('ascii'),mimeType='image/png') for blob in outcome.images)
         return types.CallToolResult(content=content,structuredContent=outcome.data,isError=outcome.is_error)
 
-    return Server('layerweave',version='0.7.0',
+    return Server('layerweave',version='0.7.1',
         instructions='LayerWeave：未知能力先查 layerweave_help，熟悉后可直接调用。JSON 可直接读写，文件和视图均非前置步骤。操作是否提交看 result.operation，checks 不代表写入失败。',
         get_tool_input_schema=schemas.get,on_list_tools=list_tools,on_call_tool=call_tool)

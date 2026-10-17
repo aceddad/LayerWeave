@@ -52,6 +52,7 @@ def main():
     export.add_argument("--no-tools", action="store_true")
     export.add_argument("--include-global", action="store_true")
     export.add_argument("--include-baseline", action="store_true")
+    export.add_argument("--compact", action="store_true", help="省略表定义和来源发号说明；目标库须已有工具表声明")
     apply = commands.add_parser("apply", help="执行文件或模板", epilog=help_examples([COMMANDS[1]]),
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     apply.add_argument("database", type=Path)
@@ -84,7 +85,7 @@ def main():
             if args.command == "export":
                 document = export_project(connection, args.project_id, layer_ids=args.layer_ids, object_ids=args.object_ids,
                                           begin=args.begin, end=args.end, op=args.op, include_tools=not args.no_tools,
-                                          include_global=args.include_global, include_baseline=args.include_baseline)
+                                          include_global=args.include_global, include_baseline=args.include_baseline, compact=args.compact)
                 path = save_document(document, args.output)
                 print(json.dumps({"path":path,"counts":document["counts"],"scope":document["scope"],
                                   "external_references":len(document["external_references"]),
@@ -121,13 +122,15 @@ COMMANDS = [{'name': 'export_project',
   'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.exchange.cli export DATABASE 1 --output '
                        'project.json',
                 'arguments': {'layer_ids': [4]}},
-               {'cli': 'python -m layerweave.tool.builtin.usage.exchange.cli export DATABASE 1 --layer-ids 4 --op '
-                       'add --output subtree.json'}],
+               {'cli': 'python -m layerweave.tool.builtin.usage.exchange.cli export DATABASE 1 --layer-ids 4 '
+                       '--op add --output subtree.json'}],
   'notes': ['CLI 必须由 AI 指定 --output，不默认打印全部内容。source_numbering 只说明来源发号配置，不自动安装规则。',
-            '工具数据通过 references/logical_references 收集；复制策略随表声明导出，在导入时执行。'],
+            '工具数据通过 references/logical_references 收集；复制策略随表声明导出，在导入时执行。',
+            '局部默认只带涉及的工具表及其定义依赖；compact 只省结构说明，include_tools 决定工具数据。'],
   'aliases': ['export'],
   'input_schema': {'type': 'object',
-                   'properties': {'database': {'type': 'string', 'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
+                   'properties': {'database': {'type': 'string',
+                                               'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
                                   'project_id': {'type': 'integer', 'description': '明确的项目编号'},
                                   'layer_ids': {'type': ['array', 'null'],
                                                 'description': '层子树范围，与 object_ids 互斥',
@@ -148,7 +151,11 @@ COMMANDS = [{'name': 'export_project',
                                                      'description': '另含所有无项目归属工具记录'},
                                   'include_baseline': {'type': 'boolean',
                                                        'default': False,
-                                                       'description': '附原状态摘要，供写回时核对'}},
+                                                       'description': '附原状态摘要，供写回时核对'},
+                                  'compact': {'type': 'boolean',
+                                              'default': False,
+                                              'description': '省略 '
+                                                             'tables/source_numbering，保留业务数据与引用；用于目标库已有所需表声明的情况'}},
                    'additionalProperties': False,
                    'required': ['database', 'project_id']},
   'mcp': {'route': 'query',
@@ -171,7 +178,10 @@ COMMANDS = [{'name': 'export_project',
                         'summary': '把所选范围的交换 JSON 保存到文件；仅明确 overwrite 时覆盖',
                         'returns': 'path 为绝对路径，counts/scope 为导出摘要，document_complete 表示文档完整。',
                         'notes': ['不需要文件时使用 export_project 直接取得 JSON。']}],
-          'notes': ['直接返回所选范围的完整交换文档；无需输出文件。', '复制使用 op=add，原编号用于引用映射，实际创建重新发号。']},
+          'notes': ['直接返回所选范围的完整交换文档；无需输出文件。',
+                    '复制使用 op=add，原编号用于引用映射，实际创建重新发号。',
+                    '局部默认只带相关表定义；compact=true 省略 tables/source_numbering，目标库须已有工具表声明。',
+                    'include_tools 控制是否导出工具数据；compact 不丢业务数据。']},
   'cli_mapping': {'include_tools': ['no_tools']},
   'cli_only': ['command', 'json', 'output', 'result_file']},
  {'name': 'import_project',
@@ -182,8 +192,8 @@ COMMANDS = [{'name': 'export_project',
   'read_only': False,
   'context': ['database'],
   'returns': '标准操作反馈，加 schema 准备信息；data 含逐项状态、跳过原因、计数、编号映射。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.exchange.cli apply DATABASE --template subtitles '
-                       '--new-project --result-file result.json',
+  'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.exchange.cli apply DATABASE --template '
+                       'subtitles --new-project --result-file result.json',
                 'arguments': {'project_id': 1,
                               'document': {'format_version': 1,
                                            'project_id': 1,
@@ -208,7 +218,8 @@ COMMANDS = [{'name': 'export_project',
             '重复运行含 add 的文件会再次创建。需要完整映射用 --json 或 --result-file。'],
   'aliases': ['import'],
   'input_schema': {'type': 'object',
-                   'properties': {'database': {'type': 'string', 'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
+                   'properties': {'database': {'type': 'string',
+                                               'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
                                   'document': {'type': 'object',
                                                'description': '直接传交换文档对象；无需先导出文件',
                                                'additionalProperties': True},
@@ -231,7 +242,8 @@ COMMANDS = [{'name': 'export_project',
                                   'prepare_tables': {'type': 'boolean',
                                                      'default': True,
                                                      'description': '独立准备工具表声明，不属于内容撤销'},
-                                  'config_root': {'type': 'string', 'description': '默认包内 configs，供层类型读取和提交后检查'}},
+                                  'config_root': {'type': 'string',
+                                                  'description': '默认包内 configs，供层类型读取和提交后检查'}},
                    'additionalProperties': False,
                    'required': ['database', 'document']},
   'mcp': {'route': 'edit',

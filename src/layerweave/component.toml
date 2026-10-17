@@ -1,5 +1,5 @@
 name = "layerweave.foundation"
 kind = "foundation"
-version = "0.5.1"
+version = "0.5.2"
 description = "层、对象等抽象结构，以及配置、存储、编号、事务和日志支撑"
-changes = "静态多来源命令发现、可选 CLI 与同源 Schema 展示；基础部分不依赖 MCP SDK。"
+changes = "静态命令说明支持可选搜索关键词与推荐顺序；保持按包声明。"

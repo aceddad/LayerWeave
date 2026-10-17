@@ -6,7 +6,7 @@ from .format import CORE, OPS, address, fail, fingerprint, identity, references,
 
 
 def export_project(connection, project_id, *, layer_ids=None, object_ids=None, begin=None, end=None,
-                   op="update", include_tools=True, include_global=False, include_baseline=False):
+                   op="update", include_tools=True, include_global=False, include_baseline=False, compact=False):
     """返回交换文档；默认项目范围，global 明确选择无项目归属的全部工具记录。"""
     if op not in OPS:
         fail("导出 op 应为 add、update 或 delete", "/op", allowed=list(OPS))
@@ -111,15 +111,29 @@ def export_project(connection, project_id, *, layer_ids=None, object_ids=None, b
             for _, target, _ in references(key[0], row, specs):
                 if target not in selected and target != ("project", None, project_id):
                     externals.add(target)
-        return {"format_version": 1, "project_id": project_id, "project": project_node,
+        # 局部文档只携带用到的表及声明依赖；补结构不扩展业务记录范围。
+        definitions = set(tool_kinds) if whole else {key[0] for key in selected if key[0] in tool_kinds}
+        pending = list(definitions)
+        while pending:
+            spec = specs[pending.pop()]
+            for ref in [*spec["references"], *spec.get("logical_references", [])]:
+                target = ref["kind"]
+                if target not in CORE and target not in definitions:
+                    definitions.add(target)
+                    pending.append(target)
+        document = {"format_version": 1, "project_id": project_id, "project": project_node,
                 "preserve_positions": True,
                 "scope": {"layer_ids": layer_ids, "object_ids": object_ids, "begin": begin, "end": end,
                           "include_tools": include_tools, "include_global": include_global},
-                "tables": {kind: table_definition(specs[kind]) for kind in tool_kinds},
-                "source_numbering": numbering_entries(connection),
+                **({} if compact else {
+                    "tables": {kind: table_definition(specs[kind]) for kind in sorted(definitions)},
+                    "source_numbering": numbering_entries(connection)}),
                 "items": roots,
                 "records": [node(key[0], row) for key, row in selected.items() if key[0] not in {"layer", "object"}],
                 "external_references": [address(key) for key in sorted(externals, key=repr)],
                 "counts": {kind: sum(key[0] == kind for key in selected) for kind in ("layer", "object", "bind", *tool_kinds)},
                 "omitted_tool_records": {kind: sum(key[0] == kind for key in candidates) for kind in tool_kinds
                                          if any(key[0] == kind for key in candidates)}}
+        if compact:
+            document["scope"]["compact"] = True
+        return document

@@ -1,5 +1,5 @@
 name = "layerweave.view"
 kind = "tool"
-version = "0.29.2"
+version = "0.29.3"
 description = "视图：画布上的时间轴画板、批注层、截图与“正在看哪儿”，网页源码在仓库 frontend/view"
-changes = "MCP 看图、存图与批注适配；截图整体等待预算。"
+changes = "MCP 新建批注和回复要求署名；专用入口提供准确参数与示例。"

@@ -107,9 +107,12 @@ class CommandHelpTests(unittest.TestCase):
             seen.add(module)
             run=subprocess.run([sys.executable,"-X","utf8","-B","-m",module,"--help"],capture_output=True,text=True,encoding="utf-8")
             self.assertEqual(run.returncode,0,run.stderr)
-            self.assertIn(command["examples"][0]["cli"],run.stdout)
-            for filename,payload in command["examples"][0].get("files",{}).items():
-                self.assertIn(json.dumps(payload,ensure_ascii=False,allow_nan=False),run.stdout)
+            # MCP 示例可以排在前面；逐条核对实际声明的 CLI 和文件示例。
+            for example in command["examples"]:
+                if example.get("cli"):
+                    self.assertIn(example["cli"],run.stdout)
+                for payload in example.get("files",{}).values():
+                    self.assertIn(json.dumps(payload,ensure_ascii=False,allow_nan=False),run.stdout)
 
     def test_schema_and_cli_have_explicit_correspondence(self):
         class ParserReady(BaseException):

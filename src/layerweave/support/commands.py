@@ -43,10 +43,12 @@ def _description(command, source):
         raise ValueError("read_only 应为布尔值")
     if "session_entrypoint" in command and not isinstance(command["session_entrypoint"], str):
         raise ValueError("session_entrypoint 应为字符串")
-    for key in ("context", "aliases", "notes"):
+    for key in ("context", "aliases", "notes", "keywords"):
         values = command.get(key, [])
         if not isinstance(values, list) or not all(isinstance(value, str) for value in values):
             raise ValueError(f"{key} 应为字符串列表")
+    if "help_order" in command and type(command["help_order"]) is not int:
+        raise ValueError("help_order 应为整数；省略表示不指定推荐顺序")
     declared = command.get("parameters", {})
     if not isinstance(declared, dict) or not all(isinstance(name, str) and isinstance(spec, dict) for name, spec in declared.items()):
         raise ValueError("parameters 应为参数名到说明对象的映射")

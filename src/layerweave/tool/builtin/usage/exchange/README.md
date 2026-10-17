@@ -60,6 +60,10 @@ OTHER_DATABASE 需要先初始化。add 为自动发号表生成新身份，原 
 
 ## 工具自有数据
 
+完整项目默认保留工具表结构，包括空表。局部导出只带实际导出工具记录涉及的表，以及 references/logical_references 递归依赖的工具表定义；补结构不扩大业务记录范围。
+
+原库修改或目标库已有所需表声明时，可传 compact=True（CLI --compact，MCP compact: true）。文档省略 tables/source_numbering，并标明 scope.compact=true；业务数据、关联、定位信息、计数、外部引用和请求的 baseline 都保留。include_tools 仍决定是否收集工具数据，与 compact 分开。目标缺少所需 kind 时导入明确失败，应先登记表或使用默认结构导出，不会猜测结构或静默丢记录。精简选项同时适用于 JSON 直接返回和文件输出。
+
 默认包括本项目的 scoped 工具记录、通过声明引用关联到所选内容的工具记录，以及它们明确依赖的工具数据。与项目无归属关系的全局记录不自动全部带入；omitted_tool_records 列出未选数量，--include-global 明确带上所有全局工具记录。--no-tools 则只导出层、对象及标准关联。
 
 附着状态可用 logical_references 声明目标，复制时随目标换号而不增加硬外键；临时状态可用 exchange.on_copy=skip 跳过旧记录复制。导出保留状态，导入逐条说明跳过原因，普通 update 不受影响。字段写法、旧库补登记与复制判定见 [FORMAT](FORMAT.md#工具表)。

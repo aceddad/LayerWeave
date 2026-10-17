@@ -42,6 +42,10 @@ runpy.run_module('layerweave.tool.builtin.shared.mcp',run_name='__main__')
             async with Client(transport,mode=mode) as client:
                 listing=await client.list_tools()
                 assert 'layerweave_project_overview' in {t.name for t in listing.tools}
+                reply=next(t for t in listing.tools if t.name=='layerweave_view_reply')
+                assert 'author' in reply.input_schema['required']
+                found=await client.call_tool('layerweave_help',{'search':'修改'})
+                assert any(i['id']=='layerweave.dispatch' for i in found.structured_content['result']['items'])
                 created=await client.call_tool('layerweave_admin',{'command':'layerweave.initialize_database','arguments':{'path':mode+'.db'}})
                 assert not created.is_error,created.structured_content
                 project=await client.call_tool('layerweave_edit',{'command':'layerweave.dispatch','arguments':{
@@ -51,7 +55,12 @@ runpy.run_module('layerweave.tool.builtin.shared.mcp',run_name='__main__')
                 result=await client.call_tool('layerweave_project_overview',{'database':mode+'.db','project_id':project_id})
                 assert not result.is_error,result.structured_content
                 assert result.structured_content['result']['project']['name']=='wheel MCP'
-                print('ordinary wheel stdio '+mode+': tools, initialize, JSON write and direct query passed')
+                compact=await client.call_tool('layerweave_query',{'command':'export_project','arguments':{
+                    'database':mode+'.db','project_id':project_id,'compact':True}})
+                assert not compact.is_error,compact.structured_content
+                document=compact.structured_content['result']
+                assert document['scope']['compact'] and 'tables' not in document and 'source_numbering' not in document
+                print('ordinary wheel stdio '+mode+': tools, initialize, JSON write, direct query, help, author schema and compact passed')
         asyncio.run(exercise('auto'))
         asyncio.run(exercise('legacy'))
 

@@ -5,8 +5,7 @@ from functools import partial
 from layerweave.tool.builtin.usage.validation.runner import validate
 from layerweave.support.configuration.loader import DEFAULT_ROOT
 from layerweave.support import records as crud
-from layerweave.support.storage.assembly import _snapshot
-from layerweave.support.storage.details import read_project_details
+from layerweave.support.api import read_snapshot, read_project_details
 
 
 def recheck(connection, project_id, *, layer_ids=None, object_ids=None, config_root=DEFAULT_ROOT):
@@ -20,7 +19,7 @@ def recheck(connection, project_id, *, layer_ids=None, object_ids=None, config_r
         selection = list(dict.fromkeys(selection))
     mode = "subtrees" if layer_ids is not None else "objects" if object_ids is not None else "project"
     counts = {"layers": 0, "objects": 0}
-    with _snapshot(connection):
+    with read_snapshot(connection):
         reader = partial(crud.read, connection)
         project = reader("project", id=project_id)
         if project is None or mode == "project":

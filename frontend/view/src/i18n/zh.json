@@ -324,7 +324,7 @@
   "error.pluginFile": "没有这个插件文件",
   "error.file": "没有这个文件",
   "error.waveform": "算不了这个波形",
-  "error.origin": "插件管理请求必须来自本机视图页面",
+  "error.origin": "网页请求的来源必须是本机地址",
   "error.route": "只支持 /api/state、/api/layout/<项目>、/api/notes/<项目>、/api/folds/<项目>、/api/plugins",
   "error.tooLarge": "内容过大",
   "error.json": "不是 JSON",
@@ -415,5 +415,9 @@
   "notice.newNote": "{author}写了新批注（第 {number} 楼）：{text}（共 {count} 条新的）",
   "notice.newReply": "{author}回复了第 {number} 楼：{text}（共 {count} 条新的）",
   "noteError.targetLayerMissing": "项目 {project} 里没有层 #{id}",
-  "noteError.targetObjectMissing": "项目 {project} 里没有对象 #{id}"
+  "noteError.targetObjectMissing": "项目 {project} 里没有对象 #{id}",
+  "error.length": "Content-Length 必须是非负整数",
+  "error.requestObject": "请求正文必须是 JSON 对象",
+  "error.targets": "targets 必须是由 JSON 对象组成的数组",
+  "error.spanObject": "span 必须是包含 begin/end 的对象或 null"
 }

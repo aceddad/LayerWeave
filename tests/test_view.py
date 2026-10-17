@@ -9,6 +9,7 @@ import threading
 import unittest
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
+from unittest.mock import patch
 
 from layerweave.support.api import initialize_database, open_database, read_record, run_operation, save_layer, save_object, transaction
 from layerweave.models import Audio, ImageLayer, Image, Movie, TextLayer, Text
@@ -72,6 +73,105 @@ class ViewTests(unittest.TestCase):
 
     def json(self, path):
         return json.loads(self.get(path)[2])
+
+    def post(self, path, payload=None, *, origin=None, raw=None, headers=None, url=None):
+        request_headers = {"Content-Type": "application/json", **(headers or {})}
+        if origin is not None:
+            request_headers["Origin"] = origin
+        body = raw if raw is not None else json.dumps(payload).encode()
+        request = Request((url or self.url).rstrip("/") + path, data=body, headers=request_headers)
+        try:
+            with urlopen(request, timeout=10) as response:
+                self.assertIn("application/json", response.headers["Content-Type"])
+                return response.status, json.loads(response.read())
+        except HTTPError as error:
+            with error:
+                self.assertIn("application/json", error.headers["Content-Type"])
+                return error.code, json.loads(error.read())
+
+    def post_cases(self):
+        return [
+            ("/api/state", {"project": self.project, "view": "canvas"}),
+            (f"/api/layout/{self.project}", {"boards": []}),
+            (f"/api/notes/{self.project}", {"action": "add", "text": "外站不能写入"}),
+            (f"/api/folds/{self.project}", {"action": "fold", "layers": [self.main_layer], "by": "测试"}),
+            ("/api/plugins", {"action": "add", "target": str(Path(__file__).parent / "fixtures/view-plugin")}),
+        ]
+
+    def test_all_post_routes_reject_external_origins_without_writes(self):
+        with closing(open_readonly(self.database)) as c:
+            before = list(c.iterdump())
+        for origin in ("https://outside.example", "null", "http://localhost.evil.example", "http://[invalid"):
+            for path, payload in self.post_cases():
+                with self.subTest(path=path, origin=origin):
+                    status, result = self.post(path, payload, origin=origin, headers={"Content-Type": "text/plain"})
+                    self.assertEqual(status, 403)
+                    self.assertEqual(result["ui"]["key"], "error.origin")
+        with closing(open_readonly(self.database)) as c:
+            self.assertEqual(list(c.iterdump()), before)
+        self.assertFalse(self.state_root.exists())
+
+    def test_post_accepts_local_origins_and_originless_programs(self):
+        for origin in (None, "http://localhost:5173", "http://127.0.0.1:8765", "https://[::1]:5173"):
+            with self.subTest(origin=origin):
+                status, state = self.post("/api/state", {"project": self.project, "view": "canvas"}, origin=origin)
+                self.assertEqual(status, 200)
+                self.assertEqual(state["project"], self.project)
+        status, note_result = self.post(f"/api/notes/{self.project}", {"action": "add", "text": "本机写入"})
+        self.assertEqual(status, 200)
+        self.assertIn("operation_id", note_result)
+        with closing(open_readonly(self.database)) as c:
+            self.assertEqual([n["text"] for n in list_notes(c, self.project)], ["本机写入"])
+
+    def test_post_rejects_non_object_json_and_invalid_lengths(self):
+        for path, _ in self.post_cases():
+            for payload in ([], None, "text", 1, True):
+                with self.subTest(path=path, payload=payload):
+                    status, result = self.post(path, payload)
+                    self.assertEqual(status, 400)
+                    self.assertEqual(result["ui"]["key"], "error.requestObject")
+        for body in (b"{broken", b"\xff"):
+            status, result = self.post("/api/state", raw=body)
+            self.assertEqual((status, result["ui"]["key"]), (400, "error.json"))
+        for length in ("-1", "not-a-number"):
+            status, result = self.post("/api/state", {}, headers={"Content-Length": length})
+            self.assertEqual((status, result["ui"]["key"]), (400, "error.length"))
+        status, result = self.post("/api/state", {}, headers={"Content-Length": "65537"})
+        self.assertEqual((status, result["ui"]["key"]), (413, "error.tooLarge"))
+        self.assertFalse(self.state_root.exists())
+        self.assertEqual(self.json("/api/projects")[0]["id"], self.project)
+
+    def test_post_parameter_and_local_io_errors_return_json(self):
+        for fields, key in [({"targets": [1]}, "error.targets"), ({"targets": None}, "error.targets"),
+                            ({"span": []}, "error.spanObject")]:
+            status, result = self.post(f"/api/notes/{self.project}", {"action": "add", "text": "未写入", **fields})
+            self.assertEqual((status, result["ui"]["key"]), (400, key))
+        status, result = self.post(f"/api/folds/{self.project}", {"action": "fold", "layers": None})
+        self.assertEqual(status, 400)
+        self.assertIn("error", result)
+        for function, path, payload in [("save_layout", f"/api/layout/{self.project}", {"boards": []}),
+                                        ("write_state", "/api/state", {"project": self.project})]:
+            with patch("layerweave.tool.builtin.view.server." + function, side_effect=OSError("test-local-write-failed")):
+                status, result = self.post(path, payload)
+                self.assertEqual(status, 400)
+                self.assertIn("test-local-write-failed", result["error"])
+        with closing(open_readonly(self.database)) as c:
+            self.assertEqual(list_notes(c, self.project), [])
+
+    def test_capture_service_does_not_execute_any_post_action(self):
+        quiet, url = make_server(self.database, state_root=self.state_root, record_state=False)
+        threading.Thread(target=quiet.serve_forever, daemon=True).start()
+        try:
+            for path, payload in self.post_cases():
+                self.assertEqual(self.post(path, payload, url=url, origin="http://localhost:5173"),
+                                 (200, {"recorded": False}))
+            status, result = self.post("/api/state", [], url=url)
+            self.assertEqual((status, result["ui"]["key"]), (400, "error.requestObject"))
+            self.assertFalse(self.state_root.exists())
+            with closing(open_readonly(self.database)) as c:
+                self.assertEqual(list_notes(c, self.project), [])
+        finally:
+            quiet.shutdown(); quiet.server_close()
 
     def test_project_view_orders_layers_and_marks_media(self):
         self.assertEqual(self.json("/api/projects")[0]["name"], "视图测试")

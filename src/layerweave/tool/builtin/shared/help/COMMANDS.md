@@ -17,6 +17,8 @@ python -X utf8 -B -m layerweave.tool.builtin.usage.editing.gaps --help
 python -X utf8 -B -m layerweave.tool.builtin.usage.editing.split --help
 ```
 
+read_only 是命令级的粗粒度说明：会修改业务数据或持久化设置的入口标为 false，查询与修改混合的入口也按可写标记。true 不保证没有输出文件、缓存或临时资源；生成截图、导出文件等行为需同时读用途与参数说明，不直接把该字段当作 MCP 的完整副作用描述。
+
 总览只有 name、summary、read_only 和 cli 模块入口。详情还包括 Python entrypoint、参数说明、返回说明、notes、examples 和声明所在 source。可组合写工具另有 session_entrypoint，指向接受 write 的 Python 事务内入口；不增加命令，也不改变 CLI。参数含类型、用途、是否必需，以及适用的 choices/default。示例中的 files 直接保存可解析的 JSON 值；文件最外层的字典或列表不会用省略号代替。
 
 名称支持规范命令名、别名或完整 Python 入口，比如 split、split_object、layerweave.tool.builtin.usage.editing.timeline:split_object。重复指向同一命令的查询去重，names=[] 返回空列表。名称不明或有歧义时给出问题和候选，其他目标继续；有歧义时可以用不同的完整 entrypoint 区分。
@@ -29,7 +31,7 @@ python -X utf8 -B -m layerweave.tool.builtin.usage.editing.split --help
 
 各工具在自己的 Python 文件中放置字面量 COMMANDS 列表，使用普通赋值，且放在执行 main 的语句之前。统一目录按文件递归发现，无需修改中央命令名单；下次查询重新读取。目录只使用 AST 读取字面量，不导入被发现的工具模块。
 
-使用工具位于 src/layerweave/tool/builtin/usage，开发工具位于 src/layerweave/tool/builtin/developer，共用 help 位于 src/layerweave/tool/builtin/shared/help；view 目前没有命令。目录分类见[内部工具导航](../../README.md)。每个命令只在实现模块声明一次，help 的进一步编排留到 MCP 阶段讨论。
+使用工具位于 src/layerweave/tool/builtin/usage，开发工具位于 src/layerweave/tool/builtin/developer，共用 help 位于 src/layerweave/tool/builtin/shared/help；视图命令位于 view。目录分类见[内部工具导航](../../README.md)。每个命令只在实现模块声明一次，help 的进一步编排留到 MCP 阶段讨论。
 
 `layerweave.support.cli.parser_for(..., commands=COMMANDS)` 将同一份 examples/notes 放进根级 --help。使用独立 argparse 的入口通过 layerweave.support.commands.help_examples 复用它。split 和 gaps 的关键参数 help 也直接引用参数描述。
 

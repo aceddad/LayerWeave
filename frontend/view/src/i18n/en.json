@@ -324,7 +324,7 @@
   "error.pluginFile": "Plugin file does not exist",
   "error.file": "File does not exist",
   "error.waveform": "Cannot compute this waveform",
-  "error.origin": "Plugin management requests must come from the local view",
+  "error.origin": "Browser requests must use a local origin",
   "error.route": "Supported routes: /api/state, /api/layout/<project>, /api/notes/<project>, /api/folds/<project>, /api/plugins",
   "error.tooLarge": "Request body is too large",
   "error.json": "Invalid JSON",
@@ -415,5 +415,9 @@
   "notice.newNote": "{author} added a note (thread {number}): {text} ({count} new)",
   "notice.newReply": "{author} replied in thread {number}: {text} ({count} new)",
   "noteError.targetLayerMissing": "Project {project} has no layer #{id}",
-  "noteError.targetObjectMissing": "Project {project} has no object #{id}"
+  "noteError.targetObjectMissing": "Project {project} has no object #{id}",
+  "error.length": "Content-Length must be a non-negative integer",
+  "error.requestObject": "The request body must be a JSON object",
+  "error.targets": "targets must be an array of JSON objects",
+  "error.spanObject": "span must be an object containing begin/end, or null"
 }

@@ -1,7 +1,8 @@
-"""视图服务：本机网页，只读查看项目——画布上每个根一块时间轴画板，另有一览页和插件的页面（比如接缝）。只监听 127.0.0.1，以只读方式打开数据库。
+"""本机视图服务：读取项目，并通过工具入口管理批注、折叠和已读状态。
+只监听 127.0.0.1；普通查询使用只读连接，写入通过现有工具的写会话。
 
 python -m layerweave.tool.builtin.view.server DATABASE [--port 8765] [--project ID]
-然后用浏览器打开打印出来的地址。数据库被工具修改后，页面会在两秒内自动刷新。
+用浏览器打开打印的地址，页面每两秒轮询项目变化。
 """
 import argparse
 from contextlib import closing
@@ -12,6 +13,7 @@ import json
 import mimetypes
 from pathlib import Path
 import re
+import sqlite3
 import threading
 from urllib.parse import parse_qs, quote, unquote, urlparse
 
@@ -35,7 +37,7 @@ mimetypes.add_type("video/mp4", ".mp4")
 
 
 class ViewHandler(SimpleHTTPRequestHandler):
-    """静态网页 + 只读 JSON 接口 + 引用的文件（支持 Range，视频可以拖动）。"""
+    """静态网页、项目查询、视图状态写入及引用的媒体文件。"""
 
     def __init__(self, *args, database, version, state_root, record_state, web_root=None, **kwargs):
         self.database, self.version, self.state_root, self.record_state = database, version, state_root, record_state
@@ -177,91 +179,94 @@ class ViewHandler(SimpleHTTPRequestHandler):
 
     def do_POST(self):
         path = urlparse(self.path).path
-        layout = re.fullmatch(r"/api/layout/(\d+)", path)
-        notes = re.fullmatch(r"/api/notes/(\d+)", path)
-        folds = re.fullmatch(r"/api/folds/(\d+)", path)
-        plugins = path == "/api/plugins"
-        # 安装只能由本机界面明确发起，外部网页不能借 localhost 的 POST 悄悄安装。
-        # CLI/本机程序通常不带 Origin，继续使用同一接口；允许本地 Vite 代理开发。
-        if plugins and (origin := self.headers.get("Origin")):
-            parsed = urlparse(origin)
-            if parsed.scheme not in ("http", "https") or parsed.hostname not in ("127.0.0.1", "localhost", "::1"):
-                return self.send_json(error_payload(ViewError("error.origin")), HTTPStatus.FORBIDDEN)
-        if path != "/api/state" and not layout and not notes and not folds and not plugins:
+        match = re.fullmatch(r"/api/(layout|notes|folds)/(\d+)", path)
+        if match:
+            kind, project_id = match[1], int(match[2])
+        elif path in ("/api/state", "/api/plugins"):
+            kind, project_id = path.rsplit("/", 1)[1], None
+        else:
             return self.send_json(error_payload(ViewError("error.route")), HTTPStatus.NOT_FOUND)
-        length = int(self.headers.get("Content-Length", 0))
+
+        # 所有 POST 共用本机来源规则；无 Origin 的 CLI/本机程序仍可调用，允许本地 Vite 开发。
+        if origin := self.headers.get("Origin"):
+            try:
+                parsed = urlparse(origin)
+                local = parsed.scheme in ("http", "https") and parsed.hostname in ("127.0.0.1", "localhost", "::1")
+            except ValueError:
+                local = False
+            if not local:
+                return self.send_json(error_payload(ViewError("error.origin")), HTTPStatus.FORBIDDEN)
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            if length < 0:
+                raise ValueError()
+        except ValueError:
+            return self.send_json(error_payload(ViewError("error.length")), HTTPStatus.BAD_REQUEST)
         if length > 65536:
             return self.send_json(error_payload(ViewError("error.tooLarge")), HTTPStatus.REQUEST_ENTITY_TOO_LARGE)
         try:
             payload = json.loads(self.rfile.read(length) or b"{}")
         except ValueError:
             return self.send_json(error_payload(ViewError("error.json")), HTTPStatus.BAD_REQUEST)
+        if not isinstance(payload, dict):
+            return self.send_json(error_payload(ViewError("error.requestObject")), HTTPStatus.BAD_REQUEST)
         if not self.record_state:
             return self.send_json({"recorded": False})
-        if notes:
-            return self.write_note(int(notes[1]), payload)
-        if plugins:
-            # 网页顶栏的「插件」：和 view_plugin 命令改同一份本机清单（加链接、去掉、开、关）
-            try:
-                return self.send_json(plugin_action(payload.get("action"), payload.get("target"), name=payload.get("name") or None,
-                                                    root=self.state_root, catalog=payload.get("catalog") or None,
-                                                    version=payload.get("version") or None, file=payload.get("file") or None,
-                                                    files=payload.get("files") is True))
-            except (ValueError, OSError) as error:
-                return self.send_json(error_payload(error), HTTPStatus.BAD_REQUEST)
-        if folds:
-            # 视图的另一种写入：折叠，只写视图自己的表 view_layer（fold.py）。网页是人这边：
-            # 自己这边能折叠、展开、写备注；AI 那边只能展开（让 AI 看回来）
+        try:
+            result = self._apply_post(kind, project_id, payload)
+        except (ValueError, TypeError, KeyError, OSError, sqlite3.Error) as error:
+            return self.send_json(error_payload(error), HTTPStatus.BAD_REQUEST)
+        return self.send_json(result)
+
+    def _apply_post(self, kind, project_id, payload):
+        """HTTP 只负责请求与反馈转换，实际写入继续复用各工具入口。"""
+        if kind == "notes":
+            return self.write_note(project_id, payload)
+        if kind == "plugins":
+            return plugin_action(payload.get("action"), payload.get("target"), name=payload.get("name") or None,
+                                 root=self.state_root, catalog=payload.get("catalog") or None,
+                                 version=payload.get("version") or None, file=payload.get("file") or None,
+                                 files=payload.get("files") is True)
+        if kind == "folds":
             action, side = payload.get("action"), payload.get("side", "user")
             if side == "ai" and action != "unfold":
-                return self.send_json(error_payload(ViewError("error.aiFold")), HTTPStatus.BAD_REQUEST)
-            try:
-                layers = [int(layer) for layer in payload.get("layers", [])]
-                return self.send_json(set_folds(self.database, int(folds[1]), layers, side, action,
-                                                by=payload.get("by") or "", tips=payload.get("tips")))
-            except (ValueError, TypeError) as error:
-                return self.send_json(error_payload(error), HTTPStatus.BAD_REQUEST)
-        if layout:
-            # 网页传来整套画板；按数据库里现有的根校正后再存（单位不同的拼接会被拆开）
-            project_id = int(layout[1])
+                raise ViewError("error.aiFold")
+            layers = [int(layer) for layer in payload.get("layers", [])]
+            return set_folds(self.database, project_id, layers, side, action,
+                             by=payload.get("by") or "", tips=payload.get("tips"))
+        if kind == "layout":
             with closing(open_readonly(self.database)) as connection:
                 roots = project_roots(connection, project_id)
             boards = save_layout(self.database, project_id, reconcile(roots, payload.get("boards")), self.state_root)
-            return self.send_json({"boards": boards, "serial": layout_serial(self.database, self.state_root)})
-        return self.send_json(write_state(self.database, payload, self.state_root))
+            return {"boards": boards, "serial": layout_serial(self.database, self.state_root)}
+        return write_state(self.database, payload, self.state_root)
 
     def write_note(self, project_id, payload):
-        """视图的写入之一：批注，只写批注层，走 note.py（写会话、改动日志、可撤销）。另一种是折叠，见 do_POST。"""
+        """将网页请求交给批注工具；错误统一由 POST 边界转换为 JSON。"""
         action = payload.get("action")
-        try:
+        if action in ("add", "retarget"):
+            raw_targets = payload.get("targets", [])
+            if not isinstance(raw_targets, list) or not all(isinstance(t, dict) for t in raw_targets):
+                raise ViewError("error.targets")
+            targets = [(t["kind"], int(t.get("project", project_id)), int(t["id"])) for t in raw_targets
+                       if t.get("kind") in ("object", "layer")]
+            span = payload.get("span")
+            if span is not None and not isinstance(span, dict):
+                raise ViewError("error.spanObject")
+            span = (span["begin"], span["end"]) if span is not None else None
             if action == "add":
-                targets = [(t["kind"], int(t.get("project", project_id)), int(t["id"])) for t in payload.get("targets", [])
-                           if t.get("kind") in ("object", "layer")]
-                span = payload.get("span")
-                result = add_note(self.database, project_id, payload.get("text", ""), targets=targets,
-                                  span=(span["begin"], span["end"]) if isinstance(span, dict) else None,
-                                  author=payload.get("author") or None)
-            elif action in ("done", "reopen"):
-                result = update_note(self.database, project_id, int(payload["note"]), status="done" if action == "done" else "open")
-            elif action == "edit":
-                result = update_note(self.database, project_id, int(payload["note"]), text=payload.get("text"))
-            elif action == "retarget":
-                # 改指向：和写新批注一样指向页面上选中的东西；回复不能改（note.py 会拒绝）
-                targets = [(t["kind"], int(t.get("project", project_id)), int(t["id"])) for t in payload.get("targets", [])
-                           if t.get("kind") in ("object", "layer")]
-                span = payload.get("span")
-                result = retarget_note(self.database, project_id, int(payload["note"]), targets,
-                                       span=(span["begin"], span["end"]) if isinstance(span, dict) else None)
-            elif action == "remove":
-                result = remove_note(self.database, project_id, int(payload["note"]))
-            elif action in ("read", "unread"):
-                # 已读按网页上的署名记（人这边），写视图自己的表 view_note
-                result = set_read(self.database, project_id, int(payload["note"]), payload.get("reader") or "", read=action == "read")
-            else:
-                return self.send_json(error_payload(ViewError("error.action", {"action": action})), HTTPStatus.BAD_REQUEST)
-        except (ValueError, KeyError, TypeError) as error:
-            return self.send_json(error_payload(error), HTTPStatus.BAD_REQUEST)
-        return self.send_json(result)
+                return add_note(self.database, project_id, payload.get("text", ""), targets=targets,
+                                span=span, author=payload.get("author") or None)
+            return retarget_note(self.database, project_id, int(payload["note"]), targets, span=span)
+        if action in ("done", "reopen"):
+            return update_note(self.database, project_id, int(payload["note"]), status="done" if action == "done" else "open")
+        if action == "edit":
+            return update_note(self.database, project_id, int(payload["note"]), text=payload.get("text"))
+        if action == "remove":
+            return remove_note(self.database, project_id, int(payload["note"]))
+        if action in ("read", "unread"):
+            return set_read(self.database, project_id, int(payload["note"]), payload.get("reader") or "", read=action == "read")
+        raise ViewError("error.action", {"action": action})
 
     def send_file(self, path):
         size = path.stat().st_size
@@ -331,10 +336,10 @@ def make_server(database, *, port=0, state_root=None, record_state=True, web_roo
 
 COMMANDS = [{
     "name": "view_server",
-    "summary": "在本机启动只读视图网页：画布上的时间轴画板、一览页、插件的页面，数据库变化后自动刷新",
+    "summary": "在本机启动视图网页：查看画布与插件页面，并支持批注、折叠和已读状态写入",
     "entrypoint": "layerweave.tool.builtin.view.server:serve",
     "cli": "python -m layerweave.tool.builtin.view.server",
-    "read_only": True,
+    "read_only": False,
     "context": ["database"],
     "parameters": {
         "port": {"type": "integer", "description": "端口；省略时用 8765，0 表示由系统分配", "default": 8765},
@@ -342,7 +347,7 @@ COMMANDS = [{
     },
     "returns": "持续运行的本机网页服务；打印访问地址。",
     "examples": [{"cli": "python -m layerweave.tool.builtin.view.server DATABASE --project 1"}],
-    "notes": ["只监听 127.0.0.1，以只读方式打开数据库；文件只提供数据库里引用过、且存在的本地文件。",
+    "notes": ["只监听 127.0.0.1；查看项目使用只读连接，批注、折叠和已读状态经工具入口写入；文件只提供数据库引用过且存在的本地文件。",
               "相对路径的文件相对于数据库文件所在目录解析。"],
 }]
 
@@ -367,7 +372,7 @@ def serve(database, *, port=8765, project=None):
 
 def main():
     from layerweave.support.commands import help_examples
-    parser = argparse.ArgumentParser(description="LayerWeave 只读视图", formatter_class=argparse.RawDescriptionHelpFormatter,
+    parser = argparse.ArgumentParser(description="LayerWeave 本机视图", formatter_class=argparse.RawDescriptionHelpFormatter,
                                      epilog=help_examples(COMMANDS))
     parser.add_argument("database", type=Path, help="已有的 SQLite 数据库")
     parser.add_argument("--port", type=int, default=8765)

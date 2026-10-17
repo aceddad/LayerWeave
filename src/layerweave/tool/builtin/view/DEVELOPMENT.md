@@ -43,6 +43,12 @@
 排版、视图位置与插件安装清单保存在本机 `~/.layerweave/view/`，浏览器偏好存 localStorage；它们不属于上述业务表。插件管理不修改项目内容。窗口语言不会写入业务数据库。
 
 
+## HTTP 请求边界
+
+所有 POST 入口共用本机来源规则：带 Origin 的网页请求只允许 HTTP(S) 的 localhost、127.0.0.1 或 ::1，保留本地前端开发端口；不带 Origin 的本机程序可以继续调用。此规则集中在服务边界，不加入基础层或对象的构造过程。
+
+请求正文须为 JSON 对象。JSON 语法、根类型和预期参数错误返回 HTTP 400 与 error/ui；来源不符返回 403，超过现有限制的正文返回 413。批注、折叠、排版、状态与插件请求使用同一错误返回路径。截图服务对有效请求继续返回 recorded=false，不执行写入。
+
 ## 网页源码
 
 网页源码在仓库的 `frontend/view/`（不放进 `src/`，免得 `node_modules` 混进 Python 包和测试扫描）：React + TypeScript，画布用 React Flow（`@xyflow/react`，平移缩放、节点拖动、连线、小地图），状态用 zustand，Vite 编译。

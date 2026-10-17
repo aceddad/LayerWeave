@@ -111,6 +111,9 @@ class ViewInteractionTests(unittest.TestCase):
                       return [...c.getContext('2d').getImageData(Math.floor((x-q.left)*c.width/q.width),Math.floor((y-q.top)*c.height/q.height),1,1).data];
                   }}return null;
                 }})()"""
+                # Dragging can replace media tiles asynchronously; wait for the sampled pixel,
+                # just as the replacement-image check below waits for its actual drawing.
+                self.wait(tab, f"(()=>{{const p={pixel};return p&&p[3]>0;}})()")
                 old_pixel = _ev(tab, pixel)
                 self.assertIsNotNone(old_pixel)
                 other_image = root / "replacement.png"

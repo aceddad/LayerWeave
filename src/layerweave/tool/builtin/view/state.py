@@ -1,7 +1,7 @@
 """用户正在看哪儿：视图把当前项目、当前画板、可见的时间范围、播放头和选中的对象记在本机用户目录，AI 读它就知道"这里"指哪里。
 不写业务数据库。每个数据库一份状态文件：~/.layerweave/view/<数据库路径的散列>.json
 
-python -m layerweave.tool.builtin.view.state DATABASE [--json]
+python -X utf8 -m layerweave.tool.builtin.view.state DATABASE [--json]
 """
 import argparse
 from datetime import datetime, timezone
@@ -82,11 +82,11 @@ def describe(state):
 COMMANDS = [{'name': 'view_state',
   'summary': '读取用户在视图里正在看的位置：项目、当前画板、可见范围、播放头、选中的对象',
   'entrypoint': 'layerweave.tool.builtin.view.state:read_state',
-  'cli': 'python -m layerweave.tool.builtin.view.state',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.view.state',
   'read_only': True,
   'context': ['database'],
   'returns': '状态字典（含 age_seconds，表示多少秒前更新）；视图从未打开过时为 None。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.view.state DATABASE --json'}],
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.view.state DATABASE --json'}],
   'notes': ['用户说「这里」「这段」时先读它；age_seconds 很大说明用户可能已经离开视图。',
             'range 和 playhead 用当前画板（board）的单位；不同画板的单位可能不同。',
             '左右接续的画板上，playhead 是连续时间；playhead_at 给出它落在哪个根、是那个根自己的第几秒（或帧）。'],

@@ -34,11 +34,11 @@ def main():
 COMMANDS = [{'name': 'recheck',
   'summary': '只读复查项目、多棵子树或指定对象',
   'entrypoint': 'layerweave.tool.builtin.usage.validation.recheck:recheck',
-  'cli': 'python -m layerweave.tool.builtin.usage.validation.cli',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.validation.cli',
   'read_only': True,
   'context': ['database', 'project_id'],
   'returns': 'scope、范围内数量、status、逐条 issues 与 issue_counts；完成检查不表示没有诊断。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.validation.cli DATABASE 1 --layer-ids 4 7 '
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.validation.cli DATABASE 1 --layer-ids 4 7 '
                        '--json'}],
   'notes': ['省略两种编号列表时复查整个项目；两种列表互斥。'],
   'input_schema': {'type': 'object',

@@ -39,16 +39,16 @@ COMMANDS = [{'name': 'manage_versions',
   'aliases': ['versions'],
   'summary': '自动登记组件声明并核对版本存在状态；查看上次同步记录与更新说明',
   'entrypoint': 'layerweave.tool.builtin.developer.versions.service:manage_versions',
-  'cli': 'python -m layerweave.tool.builtin.developer.versions.cli',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.developer.versions.cli',
   'read_only': False,
   'context': ['database'],
   'returns': '标准 operation/ok/data/checks；data 含 items、counts。sync 附 roots/checked_at/status/issues；读取失败可部分完成，ok '
              '表示数据库操作成功。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.developer.versions.cli DATABASE sync --json',
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.developer.versions.cli DATABASE sync --json',
                 'arguments': {'action': 'read'}},
-               {'cli': 'python -m layerweave.tool.builtin.developer.versions.cli DATABASE sync --root ./my-tools '
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.developer.versions.cli DATABASE sync --root ./my-tools '
                        '--json'},
-               {'cli': 'python -m layerweave.tool.builtin.developer.versions.cli DATABASE read --name '
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.developer.versions.cli DATABASE read --name '
                        'layerweave.editing --json'}],
   'notes': ['声明使用 component.toml，name/version 必填字符串；kind 默认 tool，description/changes 默认空字符串。',
             'name + version 完全匹配；缺席的历史版本标为 inactive，不删除记录；未扫描范围不改变。',

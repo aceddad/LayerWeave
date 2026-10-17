@@ -7,7 +7,7 @@
 安装带视图的 visualization 分支后运行：
 
 ```sh
-python -m layerweave.tool.builtin.view.server DATABASE --project PROJECT_ID --port 8765
+python -X utf8 -m layerweave.tool.builtin.view.server DATABASE --project PROJECT_ID --port 8765
 ```
 
 DATABASE 换成数据库路径，PROJECT_ID 换成已有项目编号；也可以省略 --project。打开命令输出的本机地址。服务只监听 127.0.0.1，网页已编译并随包提供，使用者不需要 Node。
@@ -19,8 +19,8 @@ DATABASE 换成数据库路径，PROJECT_ID 换成已有项目编号；也可以
 一览、接缝、预览从[独立插件仓库](https://gitee.com/emotion1354414/layerweave-plugins)选装，零插件也能使用画布。顶栏“插件”可查询、安装和更新；CLI 入口为：
 
 ```sh
-python -m layerweave.tool.builtin.view.plugins market
-python -m layerweave.tool.builtin.view.plugins info layerweave.preview
+python -X utf8 -m layerweave.tool.builtin.view.plugins market
+python -X utf8 -m layerweave.tool.builtin.view.plugins info layerweave.preview
 ```
 
 查询不会自动安装。已安装旧插件需明确更新才使用新版本的语言资源，详见[插件说明](PLUGINS.md)。

@@ -7,10 +7,10 @@
 不声明引用：层被使用工具删掉时不受阻挡；编号不回收，留下的记录不会被新层误认，视图读的时候忽略。
 写入走统一写会话，进改动日志、可以撤销；视图的"改动"面板不列它们（不是内容的改动）。
 
-python -m layerweave.tool.builtin.view.fold DATABASE PROJECT_ID                                    两边的折叠
-python -m layerweave.tool.builtin.view.fold DATABASE PROJECT_ID fold 5 7 --by Claude --why 先对字幕  AI 这边折叠
-python -m layerweave.tool.builtin.view.fold DATABASE PROJECT_ID unfold 5                            展开 AI 这边的
-python -m layerweave.tool.builtin.view.fold DATABASE PROJECT_ID unfold 5 --side user --by Claude --why 这里要你看一下
+python -X utf8 -m layerweave.tool.builtin.view.fold DATABASE PROJECT_ID                                    两边的折叠
+python -X utf8 -m layerweave.tool.builtin.view.fold DATABASE PROJECT_ID fold 5 7 --by Claude --why 先对字幕  AI 这边折叠
+python -X utf8 -m layerweave.tool.builtin.view.fold DATABASE PROJECT_ID unfold 5                            展开 AI 这边的
+python -X utf8 -m layerweave.tool.builtin.view.fold DATABASE PROJECT_ID unfold 5 --side user --by Claude --why 这里要你看一下
 """
 from .i18n import ViewError
 
@@ -122,13 +122,13 @@ def fold(database, project_id, action="list", *, layers=None, side="ai", by=None
 COMMANDS = [{'name': 'view_fold',
   'summary': '视图里的折叠：人和 AI 各有各的，互相看得见。查看两边的折叠，折叠或展开 AI 这边的层，或者把用户折叠的层展开给用户看',
   'entrypoint': 'layerweave.tool.builtin.view.fold:fold',
-  'cli': 'python -m layerweave.tool.builtin.view.fold',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.view.fold',
   'read_only': False,
   'context': ['database', 'project_id'],
   'returns': 'folds（[{layer, user, user_tips, ai, ai_tips}]，空着的一边是没折叠）、text；改动时另有 changed、operation_id。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.view.fold DATABASE 1', 'arguments': {'action': 'list'}},
-               {'cli': 'python -m layerweave.tool.builtin.view.fold DATABASE 1 fold 5 7 --by Claude --why 先对字幕'},
-               {'cli': 'python -m layerweave.tool.builtin.view.fold DATABASE 1 unfold 5 --side user --by Claude '
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.view.fold DATABASE 1', 'arguments': {'action': 'list'}},
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.view.fold DATABASE 1 fold 5 7 --by Claude --why 先对字幕'},
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.view.fold DATABASE 1 unfold 5 --side user --by Claude '
                        '--why 这一段的画面和字幕对不上'}],
   'notes': ['用户折叠了的层在截图里照常展开，标着"用户折叠了"：内容都在，判断时照常检查；那只说明用户现在不关注它。',
             'AI 这边折叠的层在截图里收成一条细条，内容没画出来；截图返回的 folded 列出两边的折叠。',

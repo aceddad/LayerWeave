@@ -5,9 +5,9 @@
 - 不给根和时间时，读用户此刻在视图里看的地方：圈出了一段就读那一段，否则读播放头那一刻（view_state 的 selection、playhead_at）。
 - 时间用这个根自己的单位；左右接续的画板上，按每一段自己的时间。
 
-python -m layerweave.tool.builtin.view.at DATABASE PROJECT_ID                       用户正在看的地方
-python -m layerweave.tool.builtin.view.at DATABASE PROJECT_ID --root 1 --at 12.5     根层 1 的第 12.5
-python -m layerweave.tool.builtin.view.at DATABASE PROJECT_ID --root 1 --range 10 15
+python -X utf8 -m layerweave.tool.builtin.view.at DATABASE PROJECT_ID                       用户正在看的地方
+python -X utf8 -m layerweave.tool.builtin.view.at DATABASE PROJECT_ID --root 1 --at 12.5     根层 1 的第 12.5
+python -X utf8 -m layerweave.tool.builtin.view.at DATABASE PROJECT_ID --root 1 --range 10 15
 """
 import argparse
 from contextlib import closing
@@ -183,13 +183,13 @@ def describe(m, *, lang="zh"):
 COMMANDS = [{'name': 'view_at',
   'summary': '按时刻读：某个根的某一刻（或一段）上每层是什么、彼此怎么连着、有哪些待处理批注；不给参数就读用户此刻在视图里看的地方',
   'entrypoint': 'layerweave.tool.builtin.view.at:read_at',
-  'cli': 'python -m layerweave.tool.builtin.view.at',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.view.at',
   'read_only': True,
   'context': ['database', 'project_id'],
   'returns': 'moments（每个：root、name、unit、begin、end、layers[{layer, objects, gap}]、relations、notes）、from_view、text。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.view.at DATABASE 1'},
-               {'cli': 'python -m layerweave.tool.builtin.view.at DATABASE 1 --root 1 --at 12.5'},
-               {'cli': 'python -m layerweave.tool.builtin.view.at DATABASE 1 --root 1 --range 10 15'}],
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.view.at DATABASE 1'},
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.view.at DATABASE 1 --root 1 --at 12.5'},
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.view.at DATABASE 1 --root 1 --range 10 15'}],
   'notes': ['用户说"这里""这一刻""这段"时，不给参数直接读：圈出了一段读那一段，否则读播放头；左右接续的画板上每一段各读一刻。',
             '每个对象的写法和 view_walk 一样；连到这一刻以外的东西只数个数，要看就用 view_walk。',
             '截图是给眼睛看的，这个给推理用；两个一起用最稳。'],

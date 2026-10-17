@@ -2,14 +2,14 @@
 批注层是项目里的一个根层（类型 note，轴的单位是"条"，第 n 条占 [n, n+1)），第一次写批注时自动创建。
 写入走 support 的写会话：进改动日志，可以用撤销工具撤回。视图网页写批注也走这里，这是视图唯一会写入的地方。
 
-python -m layerweave.tool.builtin.view.note DATABASE PROJECT_ID                       按楼列出待处理的批注（--status done 看已处理的，all 看全部）
-python -m layerweave.tool.builtin.view.note DATABASE PROJECT_ID --waiting Claude      只列在等 Claude 的楼：没处理、最后一句不是 Claude 说的、Claude 也没标已读
-python -m layerweave.tool.builtin.view.note DATABASE PROJECT_ID read 41 --author Claude  这一楼 Claude 看过了，不再算"等 Claude"（unread 取消）
-python -m layerweave.tool.builtin.view.note DATABASE PROJECT_ID reply 41 "回复正文" [--author Claude]
-python -m layerweave.tool.builtin.view.note DATABASE PROJECT_ID add "正文" [--to object:16] [--to layer:1 --span 3 5] [--author Claude]
-python -m layerweave.tool.builtin.view.note DATABASE PROJECT_ID done 40               标记已处理（reopen 40 重新打开）
-python -m layerweave.tool.builtin.view.note DATABASE PROJECT_ID edit 40 "新正文"
-python -m layerweave.tool.builtin.view.note DATABASE PROJECT_ID remove 40             删除这条批注和它发出的关联
+python -X utf8 -m layerweave.tool.builtin.view.note DATABASE PROJECT_ID                       按楼列出待处理的批注（--status done 看已处理的，all 看全部）
+python -X utf8 -m layerweave.tool.builtin.view.note DATABASE PROJECT_ID --waiting Claude      只列在等 Claude 的楼：没处理、最后一句不是 Claude 说的、Claude 也没标已读
+python -X utf8 -m layerweave.tool.builtin.view.note DATABASE PROJECT_ID read 41 --author Claude  这一楼 Claude 看过了，不再算"等 Claude"（unread 取消）
+python -X utf8 -m layerweave.tool.builtin.view.note DATABASE PROJECT_ID reply 41 "回复正文" [--author Claude]
+python -X utf8 -m layerweave.tool.builtin.view.note DATABASE PROJECT_ID add "正文" [--to object:16] [--to layer:1 --span 3 5] [--author Claude]
+python -X utf8 -m layerweave.tool.builtin.view.note DATABASE PROJECT_ID done 40               标记已处理（reopen 40 重新打开）
+python -X utf8 -m layerweave.tool.builtin.view.note DATABASE PROJECT_ID edit 40 "新正文"
+python -X utf8 -m layerweave.tool.builtin.view.note DATABASE PROJECT_ID remove 40             删除这条批注和它发出的关联
 """
 from .i18n import ViewError
 
@@ -332,25 +332,25 @@ def note(database, project_id, action="list", *, text=None, to=None, span=None, 
 COMMANDS = [{'name': 'view_note',
   'summary': '读写视图工具的批注：给人或 AI 留意见、说明、待办，每条用关联指向它说的对象、层或一段时间',
   'entrypoint': 'layerweave.tool.builtin.view.note:note',
-  'cli': 'python -m layerweave.tool.builtin.view.note',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.view.note',
   'read_only': False,
   'context': ['database', 'project_id'],
   'returns': 'list：notes（顺序、正文、状态、作者、span、指向及其是否还在、reply_to、thread）和按楼排的 text；写入：批注编号和 operation_id。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.view.note DATABASE 1',
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.view.note DATABASE 1',
                 'arguments': {'action': 'list'}},
-               {'cli': 'python -m layerweave.tool.builtin.view.note DATABASE 1 add "球应该落在桌子下面" --to '
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.view.note DATABASE 1 add "球应该落在桌子下面" --to '
                        'object:16 --author 用户',
                 'arguments': {'action': 'add', 'text': '这里的节奏请再看一下', 'to': ['object:8'], 'author': 'Claude'}},
-               {'cli': 'python -m layerweave.tool.builtin.view.note DATABASE 1 add "这两秒太空" --to layer:1 '
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.view.note DATABASE 1 add "这两秒太空" --to layer:1 '
                        '--span 6 8'},
-               {'cli': 'python -m layerweave.tool.builtin.view.note DATABASE 1 --waiting Claude'},
-               {'cli': 'python -m layerweave.tool.builtin.view.note DATABASE 1 reply 41 "已经改了" --author '
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.view.note DATABASE 1 --waiting Claude'},
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.view.note DATABASE 1 reply 41 "已经改了" --author '
                        'Claude',
                 'arguments': {'action': 'reply', 'note_id': 41, 'text': '已调整这一段', 'author': 'Claude'}},
-               {'cli': 'python -m layerweave.tool.builtin.view.note DATABASE 1 done 40'},
-               {'cli': 'python -m layerweave.tool.builtin.view.note DATABASE 1 edit 40 --to object:18'},
-               {'cli': 'python -m layerweave.tool.builtin.view.note DATABASE 1 read 40 --author Claude'},
-               {'cli': 'python -m layerweave.tool.builtin.view.note DATABASE 1 --status done'}],
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.view.note DATABASE 1 done 40'},
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.view.note DATABASE 1 edit 40 --to object:18'},
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.view.note DATABASE 1 read 40 --author Claude'},
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.view.note DATABASE 1 --status done'}],
   'notes': ['批注层第一次写入时自动创建：项目里的一个根层，类型 note，轴的单位是“条”，默认在视图里收起。',
             '写入进改动日志，可以用撤销工具撤回。回复就是一条关联到另一条批注的批注，按楼显示；楼主的状态代表整楼。',
             '开工前先看 --waiting 自己的名字：用户在网页上回复的问题都在那里。',

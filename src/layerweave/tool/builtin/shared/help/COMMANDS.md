@@ -42,7 +42,7 @@ COMMANDS = [{
     "name": "example_tool",
     "summary": "说明这个工具处理什么",
     "entrypoint": "layerweave.tool.builtin.usage.custom.example:example_tool",
-    "cli": "python -m layerweave.tool.builtin.usage.custom.example",
+    "cli": "python -X utf8 -m layerweave.tool.builtin.usage.custom.example",
     "read_only": True,
     "context": ["database", "project_id"],
     "input_schema": {"type": "object", "properties": {
@@ -52,7 +52,7 @@ COMMANDS = [{
     }, "required": ["database", "project_id", "object_id"], "additionalProperties": False},
     "mcp": {"route": "query", "group": "query", "database": "connection"},
     "returns": "返回对象说明",
-    "examples": [{"cli": "python -m layerweave.tool.builtin.usage.custom.example DATABASE 1 8"}]
+    "examples": [{"cli": "python -X utf8 -m layerweave.tool.builtin.usage.custom.example DATABASE 1 8"}]
 }]
 ```
 

@@ -1,4 +1,4 @@
-"""python examples/subtrees.py：内存中的歌词子树复制、删除与恢复。"""
+"""python -X utf8 examples/subtrees.py：内存中的歌词子树复制、删除与恢复。"""
 
 from contextlib import closing
 

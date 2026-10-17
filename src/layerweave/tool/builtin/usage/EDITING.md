@@ -42,7 +42,7 @@ result = split_object(connection, project_id, object_id,
 CLI 使用同样的数据格式：
 
 ```sh
-python -m layerweave.tool.builtin.usage.editing.split DATABASE PROJECT_ID OBJECT_ID --data-file DATA.json --json
+python -X utf8 -m layerweave.tool.builtin.usage.editing.split DATABASE PROJECT_ID OBJECT_ID --data-file DATA.json --json
 ```
 
 DATA.json：
@@ -81,8 +81,8 @@ after = shift_objects(connection, project_id, layer_ids=[4, 7], from_position=30
 - 调用方选择轴含义一致的对象。移动后的重叠按层配置在提交后报告，不自动撤销写入。
 
 ```sh
-python -m layerweave.tool.builtin.usage.editing.positions DATABASE PROJECT_ID shift --ids 8 12 --offset -2
-python -m layerweave.tool.builtin.usage.editing.positions DATABASE PROJECT_ID shift --layer-ids 4 7 --from-position 30 --offset 2
+python -X utf8 -m layerweave.tool.builtin.usage.editing.positions DATABASE PROJECT_ID shift --ids 8 12 --offset -2
+python -X utf8 -m layerweave.tool.builtin.usage.editing.positions DATABASE PROJECT_ID shift --layer-ids 4 7 --from-position 30 --offset 2
 ```
 
 ## 插空档
@@ -134,7 +134,7 @@ result = insert_gap(connection, project_id, layer_id=layer_id, at=10, length=2,
 - 可以先调用分割，再调用插空档；单次 insert_gap 中的组合动作共用一个可撤销操作。
 
 ```sh
-python -m layerweave.tool.builtin.usage.editing.gaps DATABASE PROJECT_ID 10 2 --layer-id 4 --contents-file CONTENTS.json --json
+python -X utf8 -m layerweave.tool.builtin.usage.editing.gaps DATABASE PROJECT_ID 10 2 --layer-id 4 --contents-file CONTENTS.json --json
 ```
 
 CONTENTS.json 示例（编号需替换为本次范围内实际跨界对象）：
@@ -177,8 +177,8 @@ result = transfer_subtree(connection, source_project_id, source_layer_id,
 - 位置保留原数值，具体复制/剪切规则见下方[共同行为](#跨项目操作的共同行为)。
 
 ```sh
-python -m layerweave.tool.builtin.usage.editing.transfer DATABASE SOURCE_PROJECT copy SOURCE_LAYER TARGET_PROJECT --name "新版本" --json
-python -m layerweave.tool.builtin.usage.editing.transfer DATABASE SOURCE_PROJECT cut SOURCE_LAYER TARGET_PROJECT --json
+python -X utf8 -m layerweave.tool.builtin.usage.editing.transfer DATABASE SOURCE_PROJECT copy SOURCE_LAYER TARGET_PROJECT --name "新版本" --json
+python -X utf8 -m layerweave.tool.builtin.usage.editing.transfer DATABASE SOURCE_PROJECT cut SOURCE_LAYER TARGET_PROJECT --json
 ```
 
 ## 跨项目复制或剪切对象
@@ -209,8 +209,8 @@ result = transfer_objects(connection, source_project_id, [8, 9],
 - 关联与编号按下方共同行为处理。
 
 ```sh
-python -m layerweave.tool.builtin.usage.editing.transfer_objects DATABASE 1 copy 2 4 --ids 8 9 --json
-python -m layerweave.tool.builtin.usage.editing.transfer_objects DATABASE 1 cut 2 4 --ids 8 --json
+python -X utf8 -m layerweave.tool.builtin.usage.editing.transfer_objects DATABASE 1 copy 2 4 --ids 8 9 --json
+python -X utf8 -m layerweave.tool.builtin.usage.editing.transfer_objects DATABASE 1 cut 2 4 --ids 8 --json
 ```
 
 ## 跨项目操作的共同行为
@@ -236,4 +236,4 @@ python -m layerweave.tool.builtin.usage.editing.transfer_objects DATABASE 1 cut 
 - Python 接口支持 config_root 和 checker；默认检查，checker=None 关闭自动检查。自定义回调用法见[开发 API](../../../support/API.md)。
 - CLI 的 --config-root 选择检查所用配置目录；不会复制配置文件。带 --json 可读取结构化结果。
 
-完整内存示例：`python examples/editing.py`。
+完整内存示例：`python -X utf8 examples/editing.py`。

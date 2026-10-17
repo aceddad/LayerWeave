@@ -3,7 +3,7 @@ AI 看到的就是用户在视图里看到的：画板的排版用用户那份�
 截图用的页面不记录"正在看哪儿"，也不改排版，不会覆盖用户的状态。
 页面把图片、视频封面、波形都加载完才举手，截图工具通过浏览器调试接口等到它再拍，不会拍到还没出图的空色块。
 
-python -m layerweave.tool.builtin.view.screenshot DATABASE PROJECT_ID 输出.png
+python -X utf8 -m layerweave.tool.builtin.view.screenshot DATABASE PROJECT_ID 输出.png
        [--view canvas|完整插件ID，如 layerweave.cuts] [--board 根层编号] [--begin 起点 --end 终点] [--layers 1 字幕 画面/原画] [--playhead 位置] [--select 对象编号]
        [--focus 对象编号] [--note 批注编号] [--link 用户复制的链接] [--changes 最近几次操作] [--notes | --side 侧栏] [--links] [--full-page]
        [--width 1600 --height 900] [--browser 浏览器路径] [--wait-ms 20000]
@@ -348,23 +348,23 @@ def _shoot(profile, page, output, width, height, wait_ms, full_page=False, *, ov
 COMMANDS = [{'name': 'view_screenshot',
   'summary': '把视图页面截成 PNG：整张画布、某一块画板（可指定时间范围）、接缝页或一览网格；可以对准对象或批注、按用户复制的链接拍、标出最近的改动、画出关系线',
   'entrypoint': 'layerweave.tool.builtin.view.screenshot:capture',
-  'cli': 'python -m layerweave.tool.builtin.view.screenshot',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.view.screenshot',
   'read_only': True,
   'context': ['database', 'project_id'],
   'returns': 'output、page（截图用的页面地址）、browser、size、ready（成功时为 '
              'True；未就绪、目标插件不可用或运行失败时报错，不生成替代截图）、issues（插件参数提醒）、folded（两边的折叠 [{layer, user, user_tips, ai, '
              'ai_tips}]：AI 折叠的在图里只是一条细条；用户折叠的照常画出，标着「用户折叠了」）。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/all.png',
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/all.png',
                 'arguments': {'output': 'output/view.png'}},
-               {'cli': 'python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/t10.png --board 1 '
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/t10.png --board 1 '
                        '--begin 8 --end 14 --playhead 10'},
-               {'cli': 'python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/note42.png --note '
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/note42.png --note '
                        '42'},
-               {'cli': 'python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/user.png --link '
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/user.png --link '
                        '"http://127.0.0.1:8765/?project=1&board=1&begin=8&end=14&select=16"'},
-               {'cli': 'python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/changes.png '
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/changes.png '
                        '--changes 5'},
-               {'cli': 'python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/cuts.png --view '
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/cuts.png --view '
                        'layerweave.cuts --full-page'}],
   'notes': ['截图页面不记录状态、不改排版；用户正在看哪儿请用 view_state，画板怎么排请用 view_layout。',
             '用户贴来视图链接时用 --link；读到一条批注想看它指哪儿时用 --note。',

@@ -6,8 +6,8 @@
 - 别的项目里的东西只列出来，不接着走。
 - 核心的 walk_relations（usage/query）做的是同一件事；这里不引用它，因为视图是可以单独装卸的工具包，只用 support 的读取接口。
 
-python -m layerweave.tool.builtin.view.walk DATABASE PROJECT_ID object:16                  两个方向走 3 步
-python -m layerweave.tool.builtin.view.walk DATABASE PROJECT_ID layer:5 --depth 2 --direction out
+python -X utf8 -m layerweave.tool.builtin.view.walk DATABASE PROJECT_ID object:16                  两个方向走 3 步
+python -X utf8 -m layerweave.tool.builtin.view.walk DATABASE PROJECT_ID layer:5 --depth 2 --direction out
 """
 import argparse
 from contextlib import closing
@@ -234,13 +234,13 @@ def read_along(database, project_id, start, *, direction="both", depth=3, max_no
 COMMANDS = [{'name': 'view_walk',
   'summary': '沿着关联读：从一个对象或层出发，顺着关联一步步往外走，按顺序读出每一步是什么（名字、所在层、位置、文字或文件、怎么连过来的）',
   'entrypoint': 'layerweave.tool.builtin.view.walk:read_along',
-  'cli': 'python -m layerweave.tool.builtin.view.walk',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.view.walk',
   'read_only': True,
   'context': ['database', 'project_id'],
   'returns': 'steps（按步数排好：ref、depth、名字、层、位置、文字、文件、批注的署名和状态、via 怎么连过来的）、edges、loops、beyond、skipped、text。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.view.walk DATABASE 1 object:16',
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.view.walk DATABASE 1 object:16',
                 'arguments': {'start': 'object:16'}},
-               {'cli': 'python -m layerweave.tool.builtin.view.walk DATABASE 1 object:1306 --direction out '
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.view.walk DATABASE 1 object:1306 --direction out '
                        '--depth 2'}],
   'notes': ['批注指着对象、回复指着批注都是关联：从批注出发读得到它指的东西和整楼；从对象出发读得到挂在上面的批注。',
             '同一个东西只列一次；beyond 是最后一步还连着、没走的关联数，skipped 是因为数量上限没列出的个数。',

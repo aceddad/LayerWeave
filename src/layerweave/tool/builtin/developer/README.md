@@ -29,7 +29,7 @@
 完成可编辑安装后运行：
 
 ```sh
-python -m layerweave.tool.builtin.developer.skills.cli SKILL.zip --layer text --json
+python -X utf8 -m layerweave.tool.builtin.developer.skills.cli SKILL.zip --layer text --json
 ```
 
 安装后返回 route，实际绑定由 AI 决定；场景区、多技能 ZIP 和重名处理见[技能安装说明](SKILLS.md)。
@@ -47,9 +47,9 @@ python -X utf8 -B -m layerweave.tool.builtin.developer.database.cli output/ai-pr
 ## 本地 KEY 与连接信息
 
 ```sh
-python -m layerweave.tool.builtin.developer.keys.cli init --json
-python -m layerweave.tool.builtin.developer.keys.cli connections --json
-python -m layerweave.tool.builtin.developer.keys.cli export --output keys.example.json --json
+python -X utf8 -m layerweave.tool.builtin.developer.keys.cli init --json
+python -X utf8 -m layerweave.tool.builtin.developer.keys.cli connections --json
+python -X utf8 -m layerweave.tool.builtin.developer.keys.cli export --output keys.example.json --json
 ```
 
 上例用于本地 JSON 管理；KEY 已在环境变量中时，技能可直接用 --key-env，无需先 init。真实 JSON 配置默认保存到用户目录的 .layerweave/keys.json，只在本机维护。示例保留名称和 used，清空 KEY，并以中文提示替代连接字段的值。两种调用方式、录入密钥与程序读取见[KEY 管理说明](keys/README.md)。

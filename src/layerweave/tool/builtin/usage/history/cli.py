@@ -56,14 +56,14 @@ def main():
 COMMANDS = [{'name': 'read_history',
   'summary': '按操作分页查看历史或展开完整操作，包括已删除实体',
   'entrypoint': 'layerweave.tool.builtin.usage.history.service:read_history',
-  'cli': 'python -m layerweave.tool.builtin.usage.history.cli',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.history.cli',
   'read_only': True,
   'context': ['database'],
   'returns': '操作总数、改动条数、items、next_cursor；每项含字段差异与 undo_of。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.history.cli DATABASE --project-id 1 --kind '
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.history.cli DATABASE --project-id 1 --kind '
                        'object --id 8 --json',
                 'arguments': {'project_id': 1, 'limit': 3}},
-               {'cli': 'python -m layerweave.tool.builtin.usage.history.cli DATABASE --operation-id '
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.history.cli DATABASE --operation-id '
                        'OPERATION_ID --json'}],
   'aliases': ['history'],
   'input_schema': {'type': 'object',

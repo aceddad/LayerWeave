@@ -32,11 +32,11 @@ def main():
 COMMANDS = [{'name': 'query_relations',
   'summary': '查看实体的入向、出向或双向关联',
   'entrypoint': 'layerweave.tool.builtin.usage.query.relations:query_relations',
-  'cli': 'python -m layerweave.tool.builtin.usage.query.relations',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.query.relations',
   'read_only': True,
   'context': ['database', 'project_id'],
   'returns': 'entity、direction、incoming、outgoing；失效引用仍可读取。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.query.relations DATABASE 1 object 8 --direction '
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.query.relations DATABASE 1 object 8 --direction '
                        'both',
                 'arguments': {'kind': 'object', 'id': 8}}],
   'aliases': ['relations'],

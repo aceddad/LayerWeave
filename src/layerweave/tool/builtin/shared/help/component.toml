@@ -1,5 +1,5 @@
 name = "layerweave.help"
 kind = "tool"
-version = "0.1.4"
+version = "0.1.5"
 description = "展示可用命令、层与对象封装的帮助信息"
-changes = "说明分页主列表声明与两类 limit、游标的区别。"
+changes = "内置 CLI 与公开示例显式使用 UTF-8 启动，补充管道读取说明。"

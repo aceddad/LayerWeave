@@ -36,7 +36,7 @@ print(format_help(result))
 development = config_help("objects", ["model", "title"], audience="developer")
 ```
 
-需要纯数据时也可从 layerweave.tool.builtin.shared.help.catalog 导入 read_support，参数相同；config_root 省略时使用包内配置目录。从项目根运行 python examples/config_help.py 可查看四种查询的调用示例。
+需要纯数据时也可从 layerweave.tool.builtin.shared.help.catalog 导入 read_support，参数相同；config_root 省略时使用包内配置目录。从项目根运行 python -X utf8 examples/config_help.py 可查看四种查询的调用示例。
 
 ## 目标与结果
 

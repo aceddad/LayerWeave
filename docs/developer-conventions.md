@@ -9,8 +9,8 @@
 Windows PowerShell 中，在项目根执行：
 
 ```powershell
-python -m venv .venv
-.venv/Scripts/python.exe -m pip install -e .
+python -X utf8 -m venv .venv
+.venv/Scripts/python.exe -X utf8 -m pip install -e .
 .venv/Scripts/python.exe -X utf8 -B examples/read_write.py
 ```
 
@@ -101,12 +101,12 @@ test_namespace.py 验证宿主同名模块不会干扰公开导入、保存和�
 使用干净的构建目录。已经打包过的工作区需先清理或移走 `build/` 生成物，避免 setuptools 把已移除的插件或旧哈希网页资源混入新 wheel；下方检查会核对视图资源集合与源码完全一致。
 
 ```sh
-python -m pip wheel --no-deps --wheel-dir scratch/namespace-dist .
-python -m tests.packaging.check_wheel scratch/namespace-dist/layerweave-0.7.3-py3-none-any.whl
+python -X utf8 -m pip wheel --no-deps --wheel-dir scratch/namespace-dist .
+python -X utf8 -m tests.packaging.check_wheel scratch/namespace-dist/layerweave-0.7.4-py3-none-any.whl
 ```
 
 check_wheel.py 将 wheel 用 pip 安装到临时目标，以禁用 site 的独立进程验证；源码目录不参与导入。它检查只有 layerweave 顶层包、同名模块冲突、默认配置、数据库 schema 和技能正文/脚本。临时目录自动清理，不写用户数据库。
 
 按改动影响从项目根运行[示例](examples.md)。测试和例子不写 output 内的实际数据库。维护说明与命令链接，并明确区分语法检查和实际执行；具体文档规则统一见[文档约定](documentation.md)。
 
-开发与发布验收安装 `python -m pip install -e ".[mcp,dev]"`。测试按架构、基础支撑、内部工具、MCP、视图与打包分类，分组命令见[测试导引](../tests/README.md)。MCP 的 test_runtime.py 验证真实 SDK/stdio，test_installation.py 验证普通和 PEP 660 可编辑扩展安装；发现过程不执行模块。可选依赖未安装时只跳过相应协议验收。发行物构建与源码包重建见[发布指南](releasing.md)。
+开发与发布验收安装 `python -X utf8 -m pip install -e ".[mcp,dev]"`。测试按架构、基础支撑、内部工具、MCP、视图与打包分类，分组命令见[测试导引](../tests/README.md)。MCP 的 test_runtime.py 验证真实 SDK/stdio，test_installation.py 验证普通和 PEP 660 可编辑扩展安装；发现过程不执行模块。可选依赖未安装时只跳过相应协议验收。发行物构建与源码包重建见[发布指南](releasing.md)。

@@ -112,11 +112,11 @@ COMMANDS = [{'name': 'upsert_objects',
   'summary': '按同层名字或稳定键更新原对象，缺失时创建；保留身份与引用',
   'entrypoint': 'layerweave.tool.builtin.usage.editing.upsert:upsert_objects',
   'session_entrypoint': 'layerweave.tool.builtin.usage.editing.upsert:upsert_objects_in_session',
-  'cli': 'python -m layerweave.tool.builtin.usage.editing.upsert',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.editing.upsert',
   'read_only': False,
   'context': ['database', 'project_id'],
   'returns': '标准操作结果；data 含 scope、created/updated/unchanged 计数和逐项匹配值、动作、record。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.editing.upsert DATABASE 1 4 --data-file '
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.editing.upsert DATABASE 1 4 --data-file '
                        'scenes.json --match-by information.source_key',
                 'files': {'scenes.json': [{'name': '开场',
                                            'config_ref': 'objects/text.toml',

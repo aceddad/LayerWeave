@@ -5,8 +5,8 @@
 初始化顺序为 URL 的 `lang=zh/en`、浏览器保存的选择、中文。只有手动切换会保存浏览器偏好；链接中的语言不会覆盖已有偏好。复制链接带上当前语言，“复制文字版”也使用当前语言。
 
 ```sh
-python -m layerweave.tool.builtin.view.screenshot DATABASE PROJECT_ID output.png --lang en
-python -m layerweave.tool.builtin.view.screenshot DATABASE PROJECT_ID output.png --link "http://127.0.0.1:8765/?project=1&lang=en"
+python -X utf8 -m layerweave.tool.builtin.view.screenshot DATABASE PROJECT_ID output.png --lang en
+python -X utf8 -m layerweave.tool.builtin.view.screenshot DATABASE PROJECT_ID output.png --link "http://127.0.0.1:8765/?project=1&lang=en"
 ```
 
 编号与路径替换为实际值。截图的显式 `--lang` 优先于链接；二者都没有时使用中文，不读取用户浏览器偏好。`lang` 是宿主保留参数，插件不能通过 `--param lang=...` 覆盖。CLI/help 和开发文档使用中文。
@@ -66,4 +66,4 @@ export default function plugin(host) {
 
 视图 HTTP 清单带 `localizations`，普通 CLI 清单不附整份词典。插件详情带各语言的 `usage_text`；市场目录只附翻译后的简介。发布脚本收集明确声明的语言文件与说明，验证它们存在；运行时某份语言文件丢失或损坏会提示并回退，不阻断其他可用代码。
 
-验证方法：宿主运行 `npm run build`、Python 回归与 `python -m tests.packaging.check_wheel`；插件运行自己的构建、词条占位符检查和浏览器测试。英文页面允许保留中文用户数据；不能以“页面没有汉字”判断翻译完成。
+验证方法：宿主运行 `npm run build`、Python 回归与 `python -X utf8 -m tests.packaging.check_wheel`；插件运行自己的构建、词条占位符检查和浏览器测试。英文页面允许保留中文用户数据；不能以“页面没有汉字”判断翻译完成。

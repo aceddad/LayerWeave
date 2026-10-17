@@ -74,11 +74,11 @@ def main():
 COMMANDS = [{'name': 'find_gaps',
   'summary': '查询直属层在指定区间内的空档，可按最小可容纳长度筛选',
   'entrypoint': 'layerweave.tool.builtin.usage.query.free_ranges:find_gaps',
-  'cli': 'python -m layerweave.tool.builtin.usage.query.free_ranges',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.query.free_ranges',
   'read_only': True,
   'context': ['database', 'project_id'],
   'returns': 'project_id、layer_id、scope、count、gaps；每段含 begin/end/length/begin_inclusive，终点始终不包含。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.query.free_ranges DATABASE 1 4 0 20 --min-length '
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.query.free_ranges DATABASE 1 4 0 20 --min-length '
                        '3 --json',
                 'arguments': {'layer_id': 4, 'begin': 0, 'end': 20}}],
   'notes': ['合并相交或首尾相接的占用，空层返回整个查询区间。数值不换算、不落点、不加载配置或正文。',

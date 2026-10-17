@@ -7,7 +7,7 @@
 不熟悉已有项目时，可用 project_overview 查看层树和对象数量，再按需要用 project_details 展开，或用 find_objects 定位。目标和编号已明确时，可以直接定向读取或操作，不必每次重读整个项目。
 
 ```sh
-python -m layerweave.tool.builtin.usage.query.project_overview DATABASE PROJECT_ID
+python -X utf8 -m layerweave.tool.builtin.usage.query.project_overview DATABASE PROJECT_ID
 ```
 
 DATABASE/PROJECT_ID 使用实际数据库路径和项目编号。命令 help 可用 overview 别名查这项能力。
@@ -36,15 +36,36 @@ DATABASE/PROJECT_ID 使用实际数据库路径和项目编号。命令 help 可
 | 复查、历史、撤销或重做 | [历史与恢复](HISTORY.md) |
 | 查询工具和可用封装 | [共用 help](../shared/help/README.md) |
 
+## 命令行编码
+
+中文 Windows 的 Python 在输出重定向到管道时可能使用 GBK，而 AI 调用工具通常按 UTF-8 读取。请按文档和 help 的示例显式使用 `python -X utf8 ...`；`-X utf8` 放在 `-m` 或脚本文件之前。普通 help、概览、JSON 输出、错误消息及 MCP 启动入口的 `--list` 都适用。
+
+也可以为启动 Python 的环境设置 `PYTHONUTF8=1`。例如 PowerShell 中的同一次调用：
+
+```powershell
+$env:PYTHONUTF8 = "1"
+layerweave-mcp --list
+```
+
+Bash 中可只为这一条命令设置：
+
+```sh
+PYTHONUTF8=1 layerweave-mcp --list
+```
+
+环境设置作用于对应进程及其子进程；相互独立的终端调用不一定共享设置，因此文档优先写单次命令的 `-X utf8`。读取输出的一方也需使用 UTF-8。如果显式设置了 `PYTHONIOENCODING`，它会覆盖标准流编码，需保持一致。原理见 [Python UTF-8 模式](https://docs.python.org/3.11/library/os.html#python-utf-8-mode)。
+
+MCP 正常通信由 SDK 处理协议编码；`--list` 与 `--help` 是普通 CLI 文本输出。程序不依据“是否管道”自动改写标准流编码，也不修改系统或终端的全局设置。
+
 ## 调用起点
 
 完成可编辑安装后运行命令 help，或查看某个命令的 --help。输入、输出和完整示例由工具自己的说明提供：
 
 ```sh
-python -m layerweave.tool.builtin.shared.help.command_help
-python -m layerweave.tool.builtin.shared.help.command_help project_details append_object --json
-python -m layerweave.tool.builtin.shared.help.config_help
-python -m layerweave.tool.builtin.shared.help.config_help combined text
+python -X utf8 -m layerweave.tool.builtin.shared.help.command_help
+python -X utf8 -m layerweave.tool.builtin.shared.help.command_help project_details append_object --json
+python -X utf8 -m layerweave.tool.builtin.shared.help.config_help
+python -X utf8 -m layerweave.tool.builtin.shared.help.config_help combined text
 ```
 
 Python 公共读写接口见 [API](../../../support/API.md)。实际执行例子见[示例索引](../../../../../docs/examples.md)。写入结果与检测反馈需要分别阅读，格式由 CRUD 协议统一说明。

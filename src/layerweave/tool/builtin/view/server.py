@@ -1,7 +1,7 @@
 """本机视图服务：读取项目，并通过工具入口管理批注、折叠和已读状态。
 只监听 127.0.0.1；普通查询使用只读连接，写入通过现有工具的写会话。
 
-python -m layerweave.tool.builtin.view.server DATABASE [--port 8765] [--project ID]
+python -X utf8 -m layerweave.tool.builtin.view.server DATABASE [--port 8765] [--project ID]
 用浏览器打开打印的地址，页面每两秒轮询项目变化。
 """
 import argparse
@@ -337,11 +337,11 @@ def make_server(database, *, port=0, state_root=None, record_state=True, web_roo
 COMMANDS = [{'name': 'view_server',
   'summary': '在本机启动视图网页：查看画布与插件页面，并支持批注、折叠和已读状态写入',
   'entrypoint': 'layerweave.tool.builtin.view.server:serve',
-  'cli': 'python -m layerweave.tool.builtin.view.server',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.view.server',
   'read_only': False,
   'context': ['database'],
   'returns': '持续运行的本机网页服务；打印访问地址。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.view.server DATABASE --project 1'}],
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.view.server DATABASE --project 1'}],
   'notes': ['只监听 127.0.0.1；查看项目使用只读连接，批注、折叠和已读状态经工具入口写入；文件只提供数据库引用过且存在的本地文件。', '相对路径的文件相对于数据库文件所在目录解析。'],
   'input_schema': {'type': 'object',
                    'properties': {'database': {'type': 'string', 'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
@@ -363,7 +363,7 @@ def serve(database, *, port=8765, project=None):
     from .tables import check_tables   # 只读地查一下视图自己的表是不是旧声明；只提示，不替人升级
     if check_tables(database)["upgrade_needed"]:
         print("提示：这个库里视图的表（折叠、已读）是旧声明。要用 JSON 交换复制项目，先跑一次 "
-              "python -m layerweave.tool.builtin.view.tables DATABASE --upgrade（只改声明，不改数据）", flush=True)
+              "python -X utf8 -m layerweave.tool.builtin.view.tables DATABASE --upgrade（只改声明，不改数据）", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

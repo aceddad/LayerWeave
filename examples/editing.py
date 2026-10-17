@@ -1,4 +1,4 @@
-"""python examples/editing.py：分割、范围平移、插空档与跨项目剪切的内存示例。"""
+"""python -X utf8 examples/editing.py：分割、范围平移、插空档与跨项目剪切的内存示例。"""
 
 from contextlib import closing
 

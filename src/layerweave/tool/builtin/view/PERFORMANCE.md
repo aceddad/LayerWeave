@@ -7,7 +7,7 @@
 在已安装视图包的 Python 环境执行：
 
 ~~~powershell
-python -m layerweave.tool.builtin.view.bench --objects 800 --rounds 3 --json
+python -X utf8 -m layerweave.tool.builtin.view.bench --objects 800 --rounds 3 --json
 ~~~
 
 不给数据库时，工具创建临时合成库和生成的图片、音频，结束后清理。合成项目固定为 240 秒，包含文字、图片、批注、音频；批注层按现行规则不显示在画布。对象增加时，每个对象的时间跨度变短，所以 800、5000、10000 的缩略图数量不会按比例增长。
@@ -15,7 +15,7 @@ python -m layerweave.tool.builtin.view.bench --objects 800 --rounds 3 --json
 也可以指定需要检查的项目：
 
 ~~~powershell
-python -m layerweave.tool.builtin.view.bench DATABASE --project 1 --rounds 3
+python -X utf8 -m layerweave.tool.builtin.view.bench DATABASE --project 1 --rounds 3
 ~~~
 
 数据库只读。测试使用独立本机状态目录、临时插件清单和浏览器配置，页面以正常模式加 record=0 打开，不写批注、折叠或用户排版。浏览器禁用扩展、同步和后台联网；窗口为 1536×760，设备像素比例为 1.25。
@@ -109,7 +109,7 @@ capture 模式用于截图，会改变视角、细节或加载策略，不能用
 ## 与旧构建比较
 
 ~~~powershell
-python -m layerweave.tool.builtin.view.bench --objects 800 --rounds 3 --baseline D:/bench/before-web --json
+python -X utf8 -m layerweave.tool.builtin.view.bench --objects 800 --rounds 3 --baseline D:/bench/before-web --json
 ~~~
 
 baseline 指向含 index.html 的构建目录，不是前端源码目录。两份网页使用相同的服务实现、合成数据和量具，测试顺序交替并反转先后：三轮为 A/B/B/A/A/B。结果包含 order、浏览器版本、当前与基线构建的 SHA-256。

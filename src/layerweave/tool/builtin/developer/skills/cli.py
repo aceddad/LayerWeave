@@ -162,15 +162,15 @@ def main():
 COMMANDS = [{'name': 'install_skill',
   'summary': '把本地技能 ZIP 安装到指定层或场景区，返回 route，不自动绑定',
   'entrypoint': 'layerweave.tool.builtin.developer.skills.cli:install_skill',
-  'cli': 'python -m layerweave.tool.builtin.developer.skills.cli',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.developer.skills.cli',
   'read_only': False,
   'context': [],
   'returns': '成功返回 ok/name/path/route/source_dir/files；Python 失败抛出异常，CLI 返回 ok=false 和 error。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.developer.skills.cli SKILL.zip --layer text --json',
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.developer.skills.cli SKILL.zip --layer text --json',
                 'arguments': {'archive': 'downloaded-skill.zip', 'layer': 'text'}},
-               {'cli': 'python -m layerweave.tool.builtin.developer.skills.cli SKILL.zip --scenario --name '
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.developer.skills.cli SKILL.zip --scenario --name '
                        'lyric-align --json'},
-               {'cli': 'python -m layerweave.tool.builtin.developer.skills.cli BUNDLE.zip --layer audio '
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.developer.skills.cli BUNDLE.zip --layer audio '
                        '--source-dir bundle/audio-skill --json'}],
   'notes': ['支持根目录 SKILL.md 和外层目录包装；只安装选中的技能目录。',
             '不覆盖同名目录；失败清理本次新建的技能目录。拒绝越界路径、链接和路径冲突。',

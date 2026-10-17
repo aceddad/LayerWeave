@@ -5,7 +5,7 @@
 ## 网页操作
 
 ```sh
-python -m layerweave.tool.builtin.view.server DATABASE --project PROJECT_ID --port 8765
+python -X utf8 -m layerweave.tool.builtin.view.server DATABASE --project PROJECT_ID --port 8765
 ```
 
 DATABASE 替换为实际数据库路径，PROJECT_ID 替换为已存在项目编号；省略 --project 时选择默认项目。用浏览器打开打印出来的地址。
@@ -101,8 +101,8 @@ DATABASE 替换为实际数据库路径，PROJECT_ID 替换为已存在项目编
 完整参数和返回从实际命令声明查询，不在本页复制全部参数表：
 
 ```sh
-python -m layerweave.tool.builtin.shared.help.command_help view_at view_note view_screenshot --json
-python -m layerweave.tool.builtin.view.screenshot --help
+python -X utf8 -m layerweave.tool.builtin.shared.help.command_help view_at view_note view_screenshot --json
+python -X utf8 -m layerweave.tool.builtin.view.screenshot --help
 ```
 
 ### 读取、批注与截图示例
@@ -110,14 +110,14 @@ python -m layerweave.tool.builtin.view.screenshot --help
 以下命令分别展示一种调用，不是一套按顺序执行的脚本。DATABASE 换成数据库路径；项目 1、对象 16、层 1、批注 42 都是示意编号，使用前通过查询取得实际编号。输出路径由调用 AI 安排。
 
 ```sh
-python -m layerweave.tool.builtin.view.state DATABASE
-python -m layerweave.tool.builtin.view.at DATABASE 1 --root 1 --range 10 15
-python -m layerweave.tool.builtin.view.walk DATABASE 1 object:16 --depth 3
-python -m layerweave.tool.builtin.view.note DATABASE 1 --waiting Claude
-python -m layerweave.tool.builtin.view.note DATABASE 1 add "这两秒空着" --to layer:1 --span 6 8 --author Claude
-python -m layerweave.tool.builtin.view.note DATABASE 1 reply 42 "改好了" --author Claude
-python -m layerweave.tool.builtin.view.screenshot DATABASE 1 output.png --note 42 --lang en
-python -m layerweave.tool.builtin.view.screenshot DATABASE 1 output.png --link "http://127.0.0.1:8765/?project=1&board=1&begin=8&end=14&select=16"
+python -X utf8 -m layerweave.tool.builtin.view.state DATABASE
+python -X utf8 -m layerweave.tool.builtin.view.at DATABASE 1 --root 1 --range 10 15
+python -X utf8 -m layerweave.tool.builtin.view.walk DATABASE 1 object:16 --depth 3
+python -X utf8 -m layerweave.tool.builtin.view.note DATABASE 1 --waiting Claude
+python -X utf8 -m layerweave.tool.builtin.view.note DATABASE 1 add "这两秒空着" --to layer:1 --span 6 8 --author Claude
+python -X utf8 -m layerweave.tool.builtin.view.note DATABASE 1 reply 42 "改好了" --author Claude
+python -X utf8 -m layerweave.tool.builtin.view.screenshot DATABASE 1 output.png --note 42 --lang en
+python -X utf8 -m layerweave.tool.builtin.view.screenshot DATABASE 1 output.png --link "http://127.0.0.1:8765/?project=1&board=1&begin=8&end=14&select=16"
 ```
 
 拍插件页面前先按[插件说明](PLUGINS.md)安装对应插件。例如一览分页使用 `--view layerweave.assets --param page=3 --param per=30`；接缝可用 `--view layerweave.cuts --full-page`；预览参数以插件自身 `info` 为准。页面、图片和媒体实际就绪后才会输出成功；目标不可用或超时会报错，不生成替代画布截图。

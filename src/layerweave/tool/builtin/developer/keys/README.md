@@ -36,10 +36,10 @@ env_name、base_url 和 model 是供调用方参考的字符串，不验证变�
 完成安装后，用同一个 Python 环境执行：
 
 ```sh
-python -m layerweave.tool.builtin.developer.keys.cli init --json
-python -m layerweave.tool.builtin.developer.keys.cli update example-key --prompt-key --json
-python -m layerweave.tool.builtin.developer.keys.cli connections example-key --json
-python -m layerweave.tool.builtin.developer.keys.cli export --output keys.example.json --json
+python -X utf8 -m layerweave.tool.builtin.developer.keys.cli init --json
+python -X utf8 -m layerweave.tool.builtin.developer.keys.cli update example-key --prompt-key --json
+python -X utf8 -m layerweave.tool.builtin.developer.keys.cli connections example-key --json
+python -X utf8 -m layerweave.tool.builtin.developer.keys.cli export --output keys.example.json --json
 ```
 
 init 从示例建立空条目，已有文件不会被覆盖；也可用 --template keys.example.json 初始化别人提供的模板。只需要自行注册时，直接 create 会建立缺失的本地文件，不必先 init。
@@ -58,9 +58,9 @@ init 从示例建立空条目，已有文件不会被覆盖；也可用 --templa
 上面是填写示意，替换为实际连接信息再执行：
 
 ```sh
-python -m layerweave.tool.builtin.developer.keys.cli update example-key --data-file connection.json --json
-python -m layerweave.tool.builtin.developer.keys.cli read --json
-python -m layerweave.tool.builtin.developer.keys.cli delete example-key --json
+python -X utf8 -m layerweave.tool.builtin.developer.keys.cli update example-key --data-file connection.json --json
+python -X utf8 -m layerweave.tool.builtin.developer.keys.cli read --json
+python -X utf8 -m layerweave.tool.builtin.developer.keys.cli delete example-key --json
 ```
 
 --prompt-key 使用隐藏输入。自动化可用 --key-stdin 从标准输入提供密钥，或从本地 --data-file 读取 key 字段；CLI 不接受把 KEY 直接放在命令行参数里的写法。create/update 省略 key 会保留未配置状态或已有密钥，明确传空字符串则清空密钥。
@@ -103,7 +103,7 @@ get_key 是程序读取接口，不作为 CLI 查询输出。空密钥会明确�
 
 ### KEY 已在环境变量中
 
-KEY 已在环境变量里时，直接使用技能的 `--key-env 变量名`，不必存入 keys.json，也不调用 get_key。例如在生视频技能目录运行 `python scripts/video.py --key-env MY_VIDEO_KEY --base-url 服务地址/v2 ping`；出图技能同样支持 --key-env。通过 Python 启动子进程时，使用继承的环境或 child_env = dict(os.environ)，省略下例中调用 get_key 的那一行。仅登记 env_name 不会让 get_key 去读该环境变量。
+KEY 已在环境变量里时，直接使用技能的 `--key-env 变量名`，不必存入 keys.json，也不调用 get_key。例如在生视频技能目录运行 `python -X utf8 scripts/video.py --key-env MY_VIDEO_KEY --base-url 服务地址/v2 ping`；出图技能同样支持 --key-env。通过 Python 启动子进程时，使用继承的环境或 child_env = dict(os.environ)，省略下例中调用 get_key 的那一行。仅登记 env_name 不会让 get_key 去读该环境变量。
 
 ### KEY 保存在本地 JSON
 

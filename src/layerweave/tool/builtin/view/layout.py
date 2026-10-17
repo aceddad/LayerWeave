@@ -4,11 +4,11 @@
 排版只存在本机（~/.layerweave/view/<数据库路径的散列>.layout.json），不写业务数据库。
 用户在网页里拖动、拼接、拆出，改的也是这份文件；用这个工具改了以后，打开着的网页两秒内跟着变。
 
-python -m layerweave.tool.builtin.view.layout DATABASE PROJECT_ID                              查看画板
-python -m layerweave.tool.builtin.view.layout DATABASE PROJECT_ID merge 根 --to 另一个根 [--side above|below|left|right]
-python -m layerweave.tool.builtin.view.layout DATABASE PROJECT_ID split 根
-python -m layerweave.tool.builtin.view.layout DATABASE PROJECT_ID move 根 --x 0 --y 600
-python -m layerweave.tool.builtin.view.layout DATABASE PROJECT_ID reset
+python -X utf8 -m layerweave.tool.builtin.view.layout DATABASE PROJECT_ID                              查看画板
+python -X utf8 -m layerweave.tool.builtin.view.layout DATABASE PROJECT_ID merge 根 --to 另一个根 [--side above|below|left|right]
+python -X utf8 -m layerweave.tool.builtin.view.layout DATABASE PROJECT_ID split 根
+python -X utf8 -m layerweave.tool.builtin.view.layout DATABASE PROJECT_ID move 根 --x 0 --y 600
+python -X utf8 -m layerweave.tool.builtin.view.layout DATABASE PROJECT_ID reset
 """
 import argparse
 from contextlib import closing
@@ -261,15 +261,15 @@ def arrange(database, project_id, action="show", *, root=None, target=None, side
 COMMANDS = [{'name': 'view_layout',
   'summary': '查看或调整视图画布上的画板：同单位的根上下拼（同时）、左右接（接续）或拆开，移动画板，恢复自动排版',
   'entrypoint': 'layerweave.tool.builtin.view.layout:arrange',
-  'cli': 'python -m layerweave.tool.builtin.view.layout',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.view.layout',
   'read_only': False,
   'context': ['database', 'project_id'],
   'returns': 'boards（每块画板的序号、单位、位置、各行的根层及接续偏移）和 text（给人看的摘要）。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.view.layout DATABASE 1',
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.view.layout DATABASE 1',
                 'arguments': {'action': 'show'}},
-               {'cli': 'python -m layerweave.tool.builtin.view.layout DATABASE 1 split 19'},
-               {'cli': 'python -m layerweave.tool.builtin.view.layout DATABASE 1 merge 19 --to 1 --side above'},
-               {'cli': 'python -m layerweave.tool.builtin.view.layout DATABASE 1 merge 31 --to 1 --side right'}],
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.view.layout DATABASE 1 split 19'},
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.view.layout DATABASE 1 merge 19 --to 1 --side above'},
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.view.layout DATABASE 1 merge 31 --to 1 --side right'}],
   'notes': ['show 只读取；merge/split/move/reset 修改本机排版文件。此复合命令按可写标记，不写业务数据库。',
             '单位相同（秒和 s 算同一种）才能拼。上下拼的根共用时间刻度，同一个数值上下对齐；',
             '左右接的根：后一个的 0 接在前一个的结尾，画板上用连续的时间，名字相同的层合成一条轨道；offset 是这一段在画板上的起点。',

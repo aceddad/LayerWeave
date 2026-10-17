@@ -79,11 +79,11 @@ def main():
 COMMANDS = [{'name': 'project_details',
   'summary': '展开项目或子树的完整/精简内容，支持时间相交筛选',
   'entrypoint': 'layerweave.tool.builtin.usage.query.project_details:project_details',
-  'cli': 'python -m layerweave.tool.builtin.usage.query.project_details',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.query.project_details',
   'read_only': True,
   'context': ['database', 'project_id'],
   'returns': 'project、scope、layers/objects/bind、数量、缺失目标和逐条 issues；空层保留。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.query.project_details DATABASE 1 --layer-ids '
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.query.project_details DATABASE 1 --layer-ids '
                        '4 7 --begin 10 --end 20 --compact --json'}],
   'notes': ['不指定层时展开整个项目；时间只筛选对象，层本身不因零命中被省略。'],
   'input_schema': {'type': 'object',

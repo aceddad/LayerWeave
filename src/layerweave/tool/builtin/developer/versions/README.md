@@ -7,10 +7,10 @@
 提供已经初始化的数据库。完成 LayerWeave 安装后，从任意目录执行：
 
 ```sh
-python -m layerweave.tool.builtin.developer.versions.cli DATABASE sync --json
-python -m layerweave.tool.builtin.developer.versions.cli DATABASE read --json
-python -m layerweave.tool.builtin.developer.versions.cli DATABASE read --name layerweave.editing --status online
-python -m layerweave.tool.builtin.developer.versions.cli DATABASE sync --root ./my-tools --json
+python -X utf8 -m layerweave.tool.builtin.developer.versions.cli DATABASE sync --json
+python -X utf8 -m layerweave.tool.builtin.developer.versions.cli DATABASE read --json
+python -X utf8 -m layerweave.tool.builtin.developer.versions.cli DATABASE read --name layerweave.editing --status online
+python -X utf8 -m layerweave.tool.builtin.developer.versions.cli DATABASE sync --root ./my-tools --json
 ```
 
 DATABASE 替换为实际数据库路径。省略 action 时默认 sync，会写入；read 只返回上次登记结果，不扫描文件，也不会在未登记的数据库中建表。JSON 使用标准 operation/ok/data/checks 结构；data.items 是记录，counts 是状态计数。同步结果另有 roots、checked_at、status 和 issues。status=partial 表示部分声明读取失败；ok 仍只表示数据库操作成功，CLI 此时退出 0，并保留问题详情。

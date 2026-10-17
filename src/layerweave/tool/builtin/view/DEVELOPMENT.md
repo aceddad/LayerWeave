@@ -78,8 +78,8 @@ npm run dev          # 开发：接口转给已经在跑的视图服务（默认
 **性能验收**：先运行以下命令；查看每轮有效性，再判断门槛。完整的输入方式、p95/最长帧、就绪检查、大库定位和基线比较统一见[性能说明](PERFORMANCE.md)。
 
 ~~~sh
-python -m layerweave.tool.builtin.view.bench --objects 800 --rounds 3
-python -m layerweave.tool.builtin.view.bench --objects 800 --rounds 3 --baseline D:/bench/before-web --json
+python -X utf8 -m layerweave.tool.builtin.view.bench --objects 800 --rounds 3
+python -X utf8 -m layerweave.tool.builtin.view.bench --objects 800 --rounds 3 --baseline D:/bench/before-web --json
 ~~~
 
 基线是含 index.html 的旧网页构建。新旧构建共用量具、服务和数据，按交替反转顺序测量；空视口或未画出的插件不能判通过。首个对象进入 DOM 与画好、可操作是不同阶段，热身改善也不能直接归因为显卡频率。

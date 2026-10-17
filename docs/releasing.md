@@ -7,7 +7,7 @@
 从仓库根的开发虚拟环境执行：
 
 ```sh
-python -m pip install -e ".[mcp,dev]"
+python -X utf8 -m pip install -e ".[mcp,dev]"
 ```
 
 改过网页或视图版本时，在 frontend/view 中执行 npm ci 与 npm run build。构建同时生成 SDK、语言资源和根目录 THIRD_PARTY_NOTICES.md；后者取自实际打入网页的依赖包及其许可证，不手改生成文本。
@@ -15,10 +15,10 @@ python -m pip install -e ".[mcp,dev]"
 构建前确认工作区要发布的文件已纳入版本控制，移走或清理已确认可再生成的 build 目录，避免旧资源残留；保留 scratch、output、skills 和本地配置。然后执行：
 
 ```sh
-python -m build --sdist --wheel --outdir dist
-python -m tests.packaging.check_wheel dist/layerweave-0.7.3-py3-none-any.whl
-python -m tests.packaging.check_mcp_wheel dist/layerweave-0.7.3-py3-none-any.whl
-python -m tests.packaging.check_sdist dist/layerweave-0.7.3.tar.gz
+python -X utf8 -m build --sdist --wheel --outdir dist
+python -X utf8 -m tests.packaging.check_wheel dist/layerweave-0.7.4-py3-none-any.whl
+python -X utf8 -m tests.packaging.check_mcp_wheel dist/layerweave-0.7.4-py3-none-any.whl
+python -X utf8 -m tests.packaging.check_sdist dist/layerweave-0.7.4.tar.gz
 ```
 
 上述步骤只在本地构建和验收，不上传包仓库。上传位置、版本标签和正式发行说明应在实际发布时明确选择。

@@ -11,10 +11,10 @@
 | catalog.py、help_data.py | 动态发现层/对象配置、组织用途、参数、继承说明与示例 |
 
 ```sh
-python -m layerweave.tool.builtin.shared.help.command_help
-python -m layerweave.tool.builtin.shared.help.command_help split insert_gap undo --json
-python -m layerweave.tool.builtin.shared.help.config_help combined text
-python -m layerweave.tool.builtin.shared.help.config_help objects model --dev
+python -X utf8 -m layerweave.tool.builtin.shared.help.command_help
+python -X utf8 -m layerweave.tool.builtin.shared.help.command_help split insert_gap undo --json
+python -X utf8 -m layerweave.tool.builtin.shared.help.config_help combined text
+python -X utf8 -m layerweave.tool.builtin.shared.help.config_help objects model --dev
 ```
 
 完成可编辑安装即可调用，无需数据库。静态命令数据由 layerweave.support.commands.command_help 提供；配置数据由本包 catalog.read_support 提供。完整说明见[命令](COMMANDS.md)与[配置 help](CONFIG_HELP.md)。

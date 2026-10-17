@@ -21,14 +21,14 @@ COMMANDS = [{'name': 'transfer_objects',
   'summary': '同库跨项目复制/剪切选中对象及出向关联，放入指定已有层',
   'entrypoint': 'layerweave.tool.builtin.usage.editing.tree_service:transfer_objects',
   'session_entrypoint': 'layerweave.tool.builtin.usage.editing.tree_service:transfer_objects_in_session',
-  'cli': 'python -m layerweave.tool.builtin.usage.editing.transfer_objects',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.editing.transfer_objects',
   'read_only': False,
   'context': ['database', 'project_id'],
   'returns': '标准操作结果与 checks；data 含源对象编号、目标层、counts、id_map 和 redirected_bind_ids；按 operation_id 整批撤销。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.editing.transfer_objects DATABASE 1 copy 2 4 '
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.editing.transfer_objects DATABASE 1 copy 2 4 '
                        '--ids 8 9 --json',
                 'arguments': {'object_ids': [8], 'target_project_id': 2, 'target_layer_id': 4, 'mode': 'copy'}},
-               {'cli': 'python -m layerweave.tool.builtin.usage.editing.transfer_objects DATABASE 1 cut 2 4 --ids '
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.editing.transfer_objects DATABASE 1 cut 2 4 --ids '
                        '8 --json'}],
   'notes': ['源对象可以来自不同层；目标为一个已有层，层本身不复制。',
             '位置原数值保留；不换算轴、不复制媒体或改写 information。兼容性与重叠提交后检查。',

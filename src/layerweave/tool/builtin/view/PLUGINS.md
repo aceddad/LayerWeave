@@ -5,10 +5,10 @@
 ## 先查，再选择安装
 
 ```sh
-python -m layerweave.tool.builtin.view.plugins market
-python -m layerweave.tool.builtin.view.plugins info layerweave.preview
-python -m layerweave.tool.builtin.view.plugins install layerweave.preview
-python -m layerweave.tool.builtin.view.plugins list
+python -X utf8 -m layerweave.tool.builtin.view.plugins market
+python -X utf8 -m layerweave.tool.builtin.view.plugins info layerweave.preview
+python -X utf8 -m layerweave.tool.builtin.view.plugins install layerweave.preview
+python -X utf8 -m layerweave.tool.builtin.view.plugins list
 ```
 
 网页顶栏的「插件」使用同一份管理逻辑，直接展示三个官方推荐和可安装版本、来源。查看目录、项目或链接都不会自动安装；详情可能下载并缓存 ZIP 以读取 README，但不会登记或执行它。

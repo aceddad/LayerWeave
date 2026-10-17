@@ -33,11 +33,11 @@ COMMANDS = [{'name': 'split_object',
   'summary': '按明确切点与各段内容分割对象，第一段保留编号和关联',
   'entrypoint': 'layerweave.tool.builtin.usage.editing.timeline:split_object',
   'session_entrypoint': 'layerweave.tool.builtin.usage.editing.timeline:split_object_in_session',
-  'cli': 'python -m layerweave.tool.builtin.usage.editing.split',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.editing.split',
   'read_only': False,
   'context': ['database', 'project_id'],
   'returns': '标准操作结果；data 含 project_id、object_id、请求与实际 cuts、各段 segments；支持整批撤销。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.editing.split DATABASE 1 8 --data-file parts.json '
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.editing.split DATABASE 1 8 --data-file parts.json '
                        '--json',
                 'files': {'parts.json': {'first_information': {'text': '前段'},
                                          'cuts': [{'at': 14, 'information': {'text': '后段'}}]}},

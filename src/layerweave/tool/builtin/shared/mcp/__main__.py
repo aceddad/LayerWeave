@@ -1,4 +1,4 @@
-"""python -m layerweave.tool.builtin.shared.mcp --config mcp.json。"""
+"""python -X utf8 -m layerweave.tool.builtin.shared.mcp --config mcp.json。"""
 import argparse
 import json
 import logging
@@ -40,13 +40,13 @@ def main():
 COMMANDS = [{'name': 'mcp_server',
   'summary': '启动标准 stdio MCP；四个通用入口与按声明暴露的常用动作',
   'entrypoint': 'layerweave.tool.builtin.shared.mcp:create_server',
-  'cli': 'python -m layerweave.tool.builtin.shared.mcp',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.shared.mcp',
   'read_only': False,
   'input_schema': {'type': 'object',
                    'properties': {'config': {'type': ['string', 'object', 'null'],
                                              'description': '启动 JSON 配置路径或配置对象'}},
                    'additionalProperties': False},
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.shared.mcp --config mcp.json',
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.shared.mcp --config mcp.json',
                 'files': {'mcp.json': {'workspace': '.', 'exposure': {}, 'disabled': []}}}],
   'mcp': {'enabled': False, 'reason': '服务启动入口使用 CLI，不经运行中的 MCP 再启动一个服务'},
   'cli_only': ['list']}]

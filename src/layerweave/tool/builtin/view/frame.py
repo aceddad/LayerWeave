@@ -1,6 +1,6 @@
 """某一刻的画面：取视频对象在某个时间的那一帧，存成 JPEG。需要 ffmpeg（PATH 里，或环境变量 FFMPEG）。
 
-python -m layerweave.tool.builtin.view.frame DATABASE PROJECT_ID OBJECT_ID 输出.jpg (--at 全片秒数 | --offset 片内秒数 | --last) [--width 960]
+python -X utf8 -m layerweave.tool.builtin.view.frame DATABASE PROJECT_ID OBJECT_ID 输出.jpg (--at 全片秒数 | --offset 片内秒数 | --last) [--width 960]
 --at 用时间轴上的全局位置（和视图、播放头一致）；--offset 用这个视频自己的时间；--last 取视频文件的最后一帧。
 """
 import argparse
@@ -37,13 +37,13 @@ def grab(database, project_id, object_id, output, *, at=None, offset=None, last=
 COMMANDS = [{'name': 'view_frame',
   'summary': '取视频对象在某一刻的画面（JPEG），可按时间轴的全局时间、视频自身时间，或取最后一帧',
   'entrypoint': 'layerweave.tool.builtin.view.frame:grab',
-  'cli': 'python -m layerweave.tool.builtin.view.frame',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.view.frame',
   'read_only': True,
   'context': ['database', 'project_id'],
   'returns': 'output、object、source、offset（实际取帧的片内秒数；取最后一帧时为 end）。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.view.frame DATABASE 1 16 frames/ball_3s.jpg --at 3.75',
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.view.frame DATABASE 1 16 frames/ball_3s.jpg --at 3.75',
                 'arguments': {'object_id': 16, 'output': 'frames/ball_3s.jpg', 'at': 3.75}},
-               {'cli': 'python -m layerweave.tool.builtin.view.frame DATABASE 1 16 frames/ball_last.jpg --last'}],
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.view.frame DATABASE 1 16 frames/ball_last.jpg --last'}],
   'notes': ['需要 ffmpeg；超出视频长度时取最后一帧。', '查前后两段是否接得上，可以先看视图的接缝页（view_screenshot --view cuts）。'],
   'input_schema': {'type': 'object',
                    'properties': {'database': {'type': 'string', 'description': 'SQLite 数据库路径；Python 连接由适配器提供'},

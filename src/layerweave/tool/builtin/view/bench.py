@@ -11,7 +11,7 @@
 默认测量条件：1536×760、设备缩放 125%；浏览器关掉扩展、同步、后台联网。输入按有限的 60 Hz 节拍发送，
 记录实际输入和移动；空场景标无效。默认 3 轮；--baseline 交替并反转先后顺序（ABBAAB）。
 
-python -m layerweave.tool.builtin.view.bench [DATABASE --project 1] [--objects 800] [--rounds 3] [--baseline 网页目录] [--json]
+python -X utf8 -m layerweave.tool.builtin.view.bench [DATABASE --project 1] [--objects 800] [--rounds 3] [--baseline 网页目录] [--json]
 """
 import argparse
 from array import array
@@ -719,14 +719,14 @@ def bench(database=None, project_id=None, *, objects=800, rounds=3, baseline=Non
 COMMANDS = [{'name': 'view_bench',
   'summary': '视图的性能门槛：用无界面浏览器量打开、点选、拖画板、放大后平移，和门槛比，超过的标红。改了视图以后跑',
   'entrypoint': 'layerweave.tool.builtin.view.bench:bench',
-  'cli': 'python -m layerweave.tool.builtin.view.bench',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.view.bench',
   'read_only': True,
   'context': [],
   'returns': 'rows（四项，门槛不变；0.23.0 随插件画格子一起去掉了第五项，增加 status/invalid_rounds/sample_counts/max_ms）、passed、runs（含 '
              'diagnostics：活跃帧、输入与实际位移、松手回调、就绪方式）、order、构建 hash、text。回调时机不是实际像素呈现时延。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.view.bench'},
-               {'cli': 'python -m layerweave.tool.builtin.view.bench --baseline D:/old/view/web --rounds 5'},
-               {'cli': 'python -m layerweave.tool.builtin.view.bench DATABASE --project 1'}],
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.view.bench'},
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.view.bench --baseline D:/old/view/web --rounds 5'},
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.view.bench DATABASE --project 1'}],
   'notes': ['门槛：首个对象进入 DOM ≤ 2 秒；点选中位 ≤ 120 毫秒；活跃拖动帧间隔 p95 ≤ 33 毫秒。有超过或无效的退出码是 1。',
             '只读：起只监听本机的临时服务和独立配置的无界面浏览器（关掉扩展、同步），量完都关掉；合成项目放在临时目录，量完删掉。',
             '按 60 Hz 发送有限输入，浏览器可能合并事件；报告实际事件数。基线顺序 ABBAAB，原始数据保留最长帧和样本数。',

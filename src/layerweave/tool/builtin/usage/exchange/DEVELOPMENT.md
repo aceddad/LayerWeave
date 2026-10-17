@@ -65,4 +65,4 @@ python -X utf8 -B examples/logical_references.py
 python -X utf8 -B -m unittest discover -s tests -t . -v
 ~~~
 
-涉及资源或导入路径时还应构建 wheel 并运行 python -m tests.packaging.check_wheel。模板、README、FORMAT、DEVELOPMENT 都随 exchange 包安装；隔离验收会只留下这一工具包，确认它不依赖其他工具。
+涉及资源或导入路径时还应构建 wheel 并运行 python -X utf8 -m tests.packaging.check_wheel。模板、README、FORMAT、DEVELOPMENT 都随 exchange 包安装；隔离验收会只留下这一工具包，确认它不依赖其他工具。

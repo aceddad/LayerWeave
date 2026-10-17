@@ -75,11 +75,11 @@ def main():
 COMMANDS = [{'name': 'walk_relations',
   'summary': '从实体出发按步数展开关联，读取相关节点内容',
   'entrypoint': 'layerweave.tool.builtin.usage.query.walk:walk_relations',
-  'cli': 'python -m layerweave.tool.builtin.usage.query.walk',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.query.walk',
   'read_only': True,
   'context': ['database', 'project_id'],
   'returns': 'scope、nodes、edges、truncated、truncation_reasons；节点含完整身份、最短步数、状态和原始 record。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.query.walk DATABASE 1 object 8 --max-depth 3 '
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.query.walk DATABASE 1 object 8 --max-depth 3 '
                        '--direction both',
                 'arguments': {'kind': 'object', 'id': 8}}],
   'notes': ['按完整身份去重，保留环边；失效引用保留节点，record=null。',

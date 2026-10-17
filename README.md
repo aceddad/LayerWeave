@@ -16,10 +16,10 @@ LayerWeave 提供 Python API、命令行工具、可选 MCP 接入和本机网�
 
 ## 开始使用
 
-需要 Python 3.11+ 和 SQLite 3.35+。取得源码后，在自己的虚拟环境中运行：
+需要 Python 3.11+ 和 SQLite 3.35+。命令示例显式使用 `-X utf8`，让 AI 等程序通过 UTF-8 管道读取中文输出；也可在启动环境中设置 `PYTHONUTF8=1`，见[命令行编码](src/layerweave/tool/builtin/usage/README.md#命令行编码)。取得源码后，在自己的虚拟环境中运行：
 
 ```sh
-python -m pip install -e .
+python -X utf8 -m pip install -e .
 python -X utf8 -B examples/read_write.py
 ```
 
@@ -28,9 +28,9 @@ python -X utf8 -B examples/read_write.py
 从零开始时，先建数据库，再从场景模板建一个项目：
 
 ```sh
-python -m layerweave.tool.builtin.developer.database.cli DATABASE
-python -m layerweave.tool.builtin.usage.exchange.cli templates
-python -m layerweave.tool.builtin.usage.exchange.cli apply DATABASE --template subtitles --new-project
+python -X utf8 -m layerweave.tool.builtin.developer.database.cli DATABASE
+python -X utf8 -m layerweave.tool.builtin.usage.exchange.cli templates
+python -X utf8 -m layerweave.tool.builtin.usage.exchange.cli apply DATABASE --template subtitles --new-project
 ```
 
 templates 列出可用模板及用途；输出会给出新项目的编号。不用模板时，按 [CRUD 请求协议](src/layerweave/tool/builtin/usage/CRUD.md)自行创建项目和层。
@@ -38,8 +38,8 @@ templates 列出可用模板及用途；输出会给出新项目的编号。不�
 已有数据库时，查看结构或打开视图：
 
 ```sh
-python -m layerweave.tool.builtin.usage.query.project_overview DATABASE PROJECT_ID
-python -m layerweave.tool.builtin.view.server DATABASE --project PROJECT_ID
+python -X utf8 -m layerweave.tool.builtin.usage.query.project_overview DATABASE PROJECT_ID
+python -X utf8 -m layerweave.tool.builtin.view.server DATABASE --project PROJECT_ID
 ```
 
 DATABASE 与 PROJECT_ID 换成实际值；网页地址由服务输出。使用视图不需要 Node，开发前端才需要构建环境。此分支包含视图；只需要非可视化能力时可使用 main 分支。
@@ -47,7 +47,7 @@ DATABASE 与 PROJECT_ID 换成实际值；网页地址由服务输出。使用�
 查询可用工具，无需数据库：
 
 ```sh
-python -m layerweave.tool.builtin.shared.help.command_help
+python -X utf8 -m layerweave.tool.builtin.shared.help.command_help
 ```
 
 ## 文档

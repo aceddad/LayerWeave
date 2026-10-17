@@ -5,7 +5,7 @@
 不等下一次折叠才顺带升级（可能先导出了），也不在普通读取里偷偷写库。登记只改表的声明，不改数据、编号和改动日志。
 库里还没有的表不建：等第一次用到时按现在的声明建。
 
-python -m layerweave.tool.builtin.view.tables DATABASE [--upgrade]
+python -X utf8 -m layerweave.tool.builtin.view.tables DATABASE [--upgrade]
 """
 import argparse
 from contextlib import closing
@@ -54,7 +54,7 @@ def describe(result):
     if result.get("upgraded"):
         lines.append("已经按现在的声明登记：" + "、".join(result["upgraded"]) + "（只改声明，不改数据）")
     elif result["upgrade_needed"]:
-        lines.append("要用 JSON 交换复制这个库里的项目，先跑一次：python -m layerweave.tool.builtin.view.tables DATABASE --upgrade")
+        lines.append("要用 JSON 交换复制这个库里的项目，先跑一次：python -X utf8 -m layerweave.tool.builtin.view.tables DATABASE --upgrade")
     return "\n".join(lines)
 
 
@@ -66,12 +66,12 @@ def tables(database, *, upgrade=False):
 COMMANDS = [{'name': 'view_tables',
   'summary': '视图自己的表（折叠、已读）在库里登记的声明：查是不是现在这份；--upgrade 把旧库显式升级（只改声明，不改数据）',
   'entrypoint': 'layerweave.tool.builtin.view.tables:tables',
-  'cli': 'python -m layerweave.tool.builtin.view.tables',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.view.tables',
   'read_only': False,
   'context': ['database'],
   'returns': 'tables（kind、name、state：absent / current / stale、differs）、upgrade_needed、upgraded（升级了哪些）、text。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.view.tables DATABASE'},
-               {'cli': 'python -m layerweave.tool.builtin.view.tables DATABASE --upgrade'}],
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.view.tables DATABASE'},
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.view.tables DATABASE --upgrade'}],
   'notes': ['0.21.0 起，折叠表声明了逻辑引用（JSON 交换复制项目时折叠跟着层换号），已读表复制时不带过去（新项目里重新记）。',
             '旧库要跑一次 --upgrade，复制才按新规矩走；视图服务启动时发现旧声明会提示。',
             '库里还没有的表不建，第一次折叠、标已读时按现在的声明建。'],

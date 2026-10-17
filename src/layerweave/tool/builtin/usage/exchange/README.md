@@ -7,10 +7,10 @@ AI 可以导出所需范围，修改 JSON，再一次导入；无需为每次操
 从已安装 LayerWeave 的 Python 环境运行。DATABASE 是实际数据库路径；输出文件位置由 AI 按项目安排。
 
 ~~~sh
-python -m layerweave.tool.builtin.usage.exchange.cli templates
-python -m layerweave.tool.builtin.usage.exchange.cli templates storyboard
-python -m layerweave.tool.builtin.developer.database.cli DATABASE
-python -m layerweave.tool.builtin.usage.exchange.cli apply DATABASE --template storyboard --new-project --result-file result.json
+python -X utf8 -m layerweave.tool.builtin.usage.exchange.cli templates
+python -X utf8 -m layerweave.tool.builtin.usage.exchange.cli templates storyboard
+python -X utf8 -m layerweave.tool.builtin.developer.database.cli DATABASE
+python -X utf8 -m layerweave.tool.builtin.usage.exchange.cli apply DATABASE --template storyboard --new-project --result-file result.json
 ~~~
 
 已有数据库省略初始化一步。模板总览只给名称、用途和路径；按名称查询才读取完整正文。apply 默认给简短计数与逐条警告，--result-file 保存包括编号映射的完整反馈，--json 则打印完整反馈。
@@ -26,8 +26,8 @@ python -m layerweave.tool.builtin.usage.exchange.cli apply DATABASE --template s
 ## 导出、修改、写回
 
 ~~~sh
-python -m layerweave.tool.builtin.usage.exchange.cli export DATABASE PROJECT_ID --output project.json
-python -m layerweave.tool.builtin.usage.exchange.cli apply DATABASE --data-file project.json --result-file result.json
+python -X utf8 -m layerweave.tool.builtin.usage.exchange.cli export DATABASE PROJECT_ID --output project.json
+python -X utf8 -m layerweave.tool.builtin.usage.exchange.cli apply DATABASE --data-file project.json --result-file result.json
 ~~~
 
 导出默认 op=update；真实编号仍保留。修改某个节点 data 后导入，更新该记录提供的字段。删掉文件中的某个节点只表示本次不处理它；要删除数据库记录必须明确写 op=delete。information 仍整体替换。
@@ -35,9 +35,9 @@ python -m layerweave.tool.builtin.usage.exchange.cli apply DATABASE --data-file 
 不必每次导出整个项目：
 
 ~~~sh
-python -m layerweave.tool.builtin.usage.exchange.cli export DATABASE PROJECT_ID --layer-ids 4 7 --output selected.json
-python -m layerweave.tool.builtin.usage.exchange.cli export DATABASE PROJECT_ID --object-ids 8 12 --include-baseline --output selected.json
-python -m layerweave.tool.builtin.usage.exchange.cli export DATABASE PROJECT_ID --layer-ids 4 --begin 10 --end 20 --output window.json
+python -X utf8 -m layerweave.tool.builtin.usage.exchange.cli export DATABASE PROJECT_ID --layer-ids 4 7 --output selected.json
+python -X utf8 -m layerweave.tool.builtin.usage.exchange.cli export DATABASE PROJECT_ID --object-ids 8 12 --include-baseline --output selected.json
+python -X utf8 -m layerweave.tool.builtin.usage.exchange.cli export DATABASE PROJECT_ID --layer-ids 4 --begin 10 --end 20 --output window.json
 ~~~
 
 编号只是语法示意，实际使用查询返回的编号。导出写文件，只在终端返回路径、数量与范围；已有的概览、详细展开和对象查询仍用于交互阅读。时间范围不换算轴单位；用于 update/delete 的时间筛选中，层只作为上下文，不随命中的几个对象一起删除。
@@ -47,9 +47,9 @@ python -m layerweave.tool.builtin.usage.exchange.cli export DATABASE PROJECT_ID 
 ## 复制与删除
 
 ~~~sh
-python -m layerweave.tool.builtin.usage.exchange.cli export DATABASE PROJECT_ID --op add --output copy.json
-python -m layerweave.tool.builtin.usage.exchange.cli apply OTHER_DATABASE --data-file copy.json --new-project --result-file copied.json
-python -m layerweave.tool.builtin.usage.exchange.cli apply DATABASE --data-file copy.json --project-id TARGET_PROJECT_ID
+python -X utf8 -m layerweave.tool.builtin.usage.exchange.cli export DATABASE PROJECT_ID --op add --output copy.json
+python -X utf8 -m layerweave.tool.builtin.usage.exchange.cli apply OTHER_DATABASE --data-file copy.json --new-project --result-file copied.json
+python -X utf8 -m layerweave.tool.builtin.usage.exchange.cli apply DATABASE --data-file copy.json --project-id TARGET_PROJECT_ID
 ~~~
 
 OTHER_DATABASE 需要先初始化。add 为自动发号表生成新身份，原 ID 只用来重建引用；provided 工具表按自身声明处理。多次执行 add 会创建多份数据，不把它当作幂等更新。

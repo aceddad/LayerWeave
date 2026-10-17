@@ -44,11 +44,11 @@ def main():
 COMMANDS = [{'name': 'find_objects',
   'summary': '按层、名称、内容字符串或位置查询对象',
   'entrypoint': 'layerweave.tool.builtin.usage.query.find_objects:find_objects',
-  'cli': 'python -m layerweave.tool.builtin.usage.query.find_objects',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.query.find_objects',
   'read_only': True,
   'context': ['database', 'project_id'],
   'returns': '匹配的对象记录列表；不修改内容。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.query.find_objects DATABASE 1 --layer-id 4 '
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.query.find_objects DATABASE 1 --layer-id 4 '
                        '--content 歌词',
                 'arguments': {'name': '开场'}}],
   'input_schema': {'type': 'object',

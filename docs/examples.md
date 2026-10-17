@@ -35,3 +35,46 @@ python -X utf8 -B examples/editing.py
 ```
 
 示例中的编号来自该次运行或内存演示上下文。操作实际数据库时使用工具返回的编号；请求格式见 [CRUD 协议](../src/layerweave/tool/builtin/usage/CRUD.md)。
+
+## 连续追加两句字幕
+
+在已安装本项目的 Python 环境中运行下面的 Python 代码。它创建一个临时项目，每句占 2 个位置单位，第二句自动接在第一句后面。
+
+```python
+from contextlib import closing
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+from layerweave.models import TextLayer
+from layerweave.tool.builtin.usage.records.dispatch import dispatch
+from layerweave.support.api import initialize_database, open_database, read_layer
+from layerweave.tool.builtin.usage.records.save import save_layer_with_checks
+from layerweave.tool.builtin.usage.editing.objects import append_object
+
+with TemporaryDirectory() as directory:
+    database = initialize_database(Path(directory) / "demo.sqlite3")
+    with closing(open_database(database)) as connection:
+        project = dispatch(connection, {
+            "action": "create", "kind": "project", "data": {"name": "字幕示例"}
+        })
+        project_id = project["id"]
+        layer = TextLayer(name="字幕")
+        save_layer_with_checks(connection, project_id, layer)
+
+        for text in ("你好", "世界"):
+            append_object(connection, project_id, layer.id, {
+                "config_ref": "objects/text.toml", "information": {"text": text}
+            }, duration=2)
+
+        for obj in read_layer(connection, project_id, layer.id)["objects"]:
+            print(f"[{obj['begin']:g}, {obj['end']:g}) {obj['information']['text']}")
+```
+
+输出：
+
+```text
+[0, 2) 你好
+[2, 4) 世界
+```
+
+编号由接口返回，追加工具计算位置。示例结束后临时数据会清理；实际项目使用自己的数据库路径。更多调用见[使用说明](../src/layerweave/tool/builtin/usage/README.md)。

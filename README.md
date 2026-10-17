@@ -1,104 +1,48 @@
 # LayerWeave
 
-LayerWeave 是一个用层、对象、关联和轴位置组织内容的 Python 工具。AI 或其他程序可以通过 Python 和命令行读写项目，编辑内容的位置，并查看历史、撤销修改。
+用层、对象和关联组织内容，让 AI 与程序按需读取、编辑和扩充项目。
 
-例如，一个短片项目可以用不同层组织段落说明、字幕、图片和音频引用。每个对象保存自己的内容与起止位置；工具负责查询、编辑和持久化，后续工具可以按需要解释具体媒体。
+LayerWeave 提供 Python API、命令行工具和本机网页视图。它可以表达字幕、分镜、素材清单和有序信息列表：对象保存内容与起止位置，层组织结构，关联连接相关条目，轴说明位置数值的含义。
 
-## 主要能力
+## 能做什么
 
-- **组织内容**：层级结构、对象和跨项目关联；已有文字、图片、音频、视频、模型和动作封装。
-- **查询与编辑**：项目概览、子树与区间展开、对象查找、空档查询，以及接续、排列、平移、分割、复制和搬移。
-- **保存与恢复**：SQLite 保存项目，修改记录历史，支持按操作整批撤销与重做。
-- **检查与扩充**：按配置检查约定，分别返回写入结果和诊断；通过 Python 类与 TOML 扩充封装。
-- **工具自有数据**：声明工具自己的表，选择外部 ID 或共享发号，复用统一读写、事务日志、历史和撤销；已有声明随数据库保存。
-- **两种调用方式**：Python API 和 CLI；命令 help 与配置 help 可以查询支持能力和调用示例。
-- **JSON 交换**：按项目、子树或对象导出，修改后批量写回；提供字幕、分镜和手书起始模板，见[导入导出](src/layerweave/tool/builtin/usage/exchange/README.md)。
+- 查询层树、展开子树和时间区间，按名字或稳定键更新内容。
+- 接续、分割、平移、复制与搬移对象，通过 JSON 批量导入导出。
+- 用 SQLite 保存数据和修改历史，按操作撤销与重做。
+- 通过 Python 类、TOML 配置和工具自有表扩充业务。
+- 在画布上查看项目、添加批注、与 AI 协作；按需安装一览、接缝和预览插件。
 
-- **可选视图插件**：本分支的画布支持独立选装一览、接缝和预览；零插件也可运行，见[视图插件](src/layerweave/tool/builtin/view/PLUGINS.md)。
+图片、音视频等对象保存资源引用；具体媒体生成与处理由技能或调用方完成。界面支持中文和英文，用户内容保持原文。
 
 ## 开始使用
 
-当前通过源码的本地可编辑安装使用。需要 Python 3.11+、SQLite 3.35+；核心与内部工具运行时只使用标准库，外置技能的媒体依赖按需安装。建议先启用自己的 Python 虚拟环境，具体准备见[开发指南](docs/developer-conventions.md#准备环境)。
-
-取得源码后，在项目目录执行：
+需要 Python 3.11+ 和 SQLite 3.35+。取得源码后，在自己的虚拟环境中运行：
 
 ```sh
 python -m pip install -e .
 python -X utf8 -B examples/read_write.py
 ```
 
-该示例使用临时数据库，演示写入、关闭重开、装载 Python 对象和再次保存。
+示例使用临时数据库，演示创建、读取、关闭重开和再次保存。更多 Python 用法见[完整示例](docs/examples.md)。
 
-已有数据库时，先看项目结构：
+已有数据库时，查看结构或打开视图：
 
 ```sh
 python -m layerweave.tool.builtin.usage.query.project_overview DATABASE PROJECT_ID
+python -m layerweave.tool.builtin.view.server DATABASE --project PROJECT_ID
 ```
 
-DATABASE 换成数据库路径，PROJECT_ID 换成项目编号。它展示层树和各层直属对象数；需要正文再用 project_details，定位特定对象用 find_objects。反复从文档同步内容时，可用 upsert_objects 按名字或稳定键更新原对象，保留身份与引用；见[使用手册](src/layerweave/tool/builtin/usage/GUIDE.md)。
+DATABASE 与 PROJECT_ID 换成实际值；网页地址由服务输出。使用视图不需要 Node，开发前端才需要构建环境。此分支包含视图；只需要非可视化能力时可使用 main 分支。
 
-也可以直接查询命令和可用封装，这两个入口无需数据库：
+查询可用工具，无需数据库：
 
 ```sh
-python -X utf8 -B -m layerweave.tool.builtin.shared.help.command_help
-python -X utf8 -B -m layerweave.tool.builtin.shared.help.config_help combined text
+python -m layerweave.tool.builtin.shared.help.command_help
 ```
 
-## 示例：连续追加两句字幕
+## 文档
 
-在已安装本项目的 Python 环境中运行下面的 Python 代码。它创建一个临时项目，每句占 2 个位置单位，第二句自动接在第一句后面。
-
-```python
-from contextlib import closing
-from pathlib import Path
-from tempfile import TemporaryDirectory
-
-from layerweave.models import TextLayer
-from layerweave.tool.builtin.usage.records.dispatch import dispatch
-from layerweave.support.api import initialize_database, open_database, read_layer
-from layerweave.tool.builtin.usage.records.save import save_layer_with_checks
-from layerweave.tool.builtin.usage.editing.objects import append_object
-
-with TemporaryDirectory() as directory:
-    database = initialize_database(Path(directory) / "demo.sqlite3")
-    with closing(open_database(database)) as connection:
-        project = dispatch(connection, {
-            "action": "create", "kind": "project", "data": {"name": "字幕示例"}
-        })
-        project_id = project["id"]
-        layer = TextLayer(name="字幕")
-        save_layer_with_checks(connection, project_id, layer)
-
-        for text in ("你好", "世界"):
-            append_object(connection, project_id, layer.id, {
-                "config_ref": "objects/text.toml", "information": {"text": text}
-            }, duration=2)
-
-        for obj in read_layer(connection, project_id, layer.id)["objects"]:
-            print(f"[{obj['begin']:g}, {obj['end']:g}) {obj['information']['text']}")
-```
-
-输出：
-
-```text
-[0, 2) 你好
-[2, 4) 世界
-```
-
-编号由接口返回，追加工具计算位置。示例结束后临时数据会清理；实际项目使用自己的数据库路径。更多调用见[使用说明](src/layerweave/tool/builtin/usage/README.md)。
-
-## 当前状态
-
-本 visualization 分支包含非可视化基础能力、本机视图、中英界面及可选插件接入。MCP 封装尚未实现，正式发行与装载方式待单独确定。图片、音视频等封装保存资源引用；自带 skills 提供部分媒体生成、处理和检查能力，由调用方按需使用。
-
-main 保持无视图版本；视图在 visualization 分支维护。打开网页和 AI 截图从[视图使用入口](src/layerweave/tool/builtin/view/README.md)开始。
-
-## 更多资料
-
-- [使用说明](src/layerweave/tool/builtin/usage/README.md)：各类操作、参数与返回。
-- [开发指南](docs/developer-conventions.md)：开发准备、源码位置、扩充与验证。
-- [架构说明](docs/architecture.md)：概念、模块关系与设计边界。
-- [示例索引](docs/examples.md)：可运行的完整场景。
-- [技能与外部服务](src/layerweave/tool/README.md)：查找技能、层原型绑定、KEY 接入和输出目录。
-
-安装后只使用 `layerweave` 顶层导入。自带配置与技能材料随包提供；示例在仓库 `examples/` 中以脚本运行。
+- [使用与开发文档](docs/README.md)：按任务选择手册。
+- [扩展自己的工具](docs/build-with-layerweave/README.md)：从最小读取、写入或自有表开始。
+- [开发指南](docs/developer-conventions.md)：环境、源码和验证流程。
+- [官方视图插件](https://gitee.com/emotion1354414/layerweave-plugins)：独立选装，主程序不自动安装。

@@ -72,25 +72,4 @@
 
 不设统一的字数或行数上限。允许简短的上下文重复，让读者理解当前任务；详细规则仍有明确的主要维护位置。
 
-阶段计划完成后，先将仍有效的约定并入主要说明；旧交接报告先原样归档并核对，再移出现行入口。当前文档不链接旧报告作为接口依据，历史文本保留当时语境。component.toml 的 changes 只写当前版本摘要，完整历次说明放在组件自己的 CHANGELOG.md。正在协作维护的文档保留，清理范围按当前任务确认。
-
-## 这轮整理得到的经验
-
-| 观察 | 后续做法 |
-|---|---|
-| 将项目 README 写成文件分流表，会让新读者先面对仓库结构 | 首页先介绍软件与示例，工作导引交给开发指南和 AGENTS |
-| 文件搬了位置，使用说明仍可能夹着实现细节 | 按读者需要拆内容；编号和失败行为留给使用者，SQL 和内部步骤留给开发者 |
-| 同一功能在 GUIDE 和专题中各写一遍，容易逐渐分歧 | 一处写完整，其余用短说明和链接 |
-| 示例之前堆积规则，读者难以形成具体理解 | 先呈现一次调用，再解释必要的限制与结果 |
-| 为未发布项目自动保留旧路径，会增加两套入口 | 兼容安排依据实际使用者与版本承诺，不因文件移动机械新增转接 |
-| 缩短首页或比较不同阶段总字节数，不能单独证明阅读更轻松 | 检查具体任务的阅读路径，同时核对比较范围和功能差异 |
-| 文档规则散在 AGENTS 和开发指南里，也会形成重复 | 本文统一维护细则，其他入口仅引用 |
-
-## 参考方式
-
-参考其组织思路，按 LayerWeave 当前能力取舍，不套用尚未具备的安装、发布或贡献流程：
-
-- [GitHub：关于 README](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-readmes)：说明用途、价值、上手和帮助入口。
-- [Click README](https://github.com/pallets/click/blob/main/README.md)：简明介绍、特点和小例子，贡献细节另行链接。
-- [sqlite-utils README](https://github.com/simonw/sqlite-utils/blob/main/README.md)：CLI 与 Python 两种用法分别给例子，链接详细手册。
-- [Rich README](https://github.com/Textualize/rich/blob/main/README.md)：通过典型能力和用法帮助读者理解项目。
+阶段计划完成后，先将仍有效的约定并入主要说明；旧交接报告先原样归档并核对，再移出现行入口。当前文档不链接旧报告作为接口依据，历史文本保留当时语境。component.toml 的 changes 只写当前版本摘要；内部实施历史保存在正式仓库之外，不在 README 或 AGENTS.md 中链接。正式发行记录与内部实施报告分开。正在协作维护的文档保留，清理范围按当前任务确认。

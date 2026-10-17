@@ -9,7 +9,7 @@ python -m layerweave.tool.builtin.view.screenshot DATABASE PROJECT_ID output.png
 python -m layerweave.tool.builtin.view.screenshot DATABASE PROJECT_ID output.png --link "http://127.0.0.1:8765/?project=1&lang=en"
 ```
 
-编号与路径替换为实际值。截图的显式 `--lang` 优先于链接；二者都没有时使用中文，不读取用户浏览器偏好。`lang` 是宿主保留参数，插件不能通过 `--param lang=...` 覆盖。CLI/help 和开发文档本轮仍使用原语言。
+编号与路径替换为实际值。截图的显式 `--lang` 优先于链接；二者都没有时使用中文，不读取用户浏览器偏好。`lang` 是宿主保留参数，插件不能通过 `--param lang=...` 覆盖。CLI/help 和开发文档使用中文。
 
 ## 修改宿主文案
 

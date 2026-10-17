@@ -40,6 +40,5 @@ python -m layerweave.tool.builtin.view.plugins info layerweave.preview
 | 中英使用、词条和插件语言包 | [语言包](LANGUAGES.md) |
 | 测量性能、调整媒体绘制 | [性能说明](PERFORMANCE.md) |
 | 读取快照、增量同步与缓存失效 | [增量协议](INCREMENTAL.md) |
-| 查历次版本变化 | [更新记录](CHANGELOG.md) |
 
 当前版本以同目录 component.toml 为准。后续候选统一记录在[后续方向](../../../../../docs/FUTURE.md)，尚未实现的功能不作为当前接口承诺。

@@ -164,6 +164,17 @@ def require_plugin(identity, *, slot=None, root=None):
     return found
 
 
+def requirement_text(requires):
+    """requires 写成人读的一行：视图 >=0.29.0；host api 3。不认识的键原样带上。"""
+    requires = requires if isinstance(requires, dict) else {}
+    parts = [f"视图 {requires['view']}"] if requires.get("view") else []
+    if requires.get("host_api"):
+        api = requires["host_api"]
+        parts.append("host api " + "/".join(str(v) for v in (api if isinstance(api, list) else [api])))
+    parts += [f"{key} {json.dumps(value, ensure_ascii=False)}" for key, value in requires.items() if key not in ("view", "host_api")]
+    return "；".join(parts) or "未声明"
+
+
 def describe(result):
     lines = []
     for key in ("message", "backup", "recycled"):
@@ -172,7 +183,7 @@ def describe(result):
     if "manifest" in result:
         meta = result["manifest"]
         if meta:
-            lines.extend([f"{meta['id']} {meta['version']} · {meta['label']}", meta["description"], f"需要：{meta['requires']}", "参数："])
+            lines.extend([f"{meta['id']} {meta['version']} · {meta['label']}", meta["description"], f"需要：{requirement_text(meta['requires'])}", "参数："])
             for name, spec in meta["params"].items():
                 optional = "必填" if spec.get("required") else "选填"
                 default = f"；默认 {json.dumps(spec['default'], ensure_ascii=False)}" if "default" in spec else ""
@@ -184,7 +195,7 @@ def describe(result):
             lines.append(f"{item['id']} {item.get('version', '?')} · {item.get('label', '')} · {'可安装' if item['compatible'] else item.get('problem')} · 已装 {item.get('installed_version') or '无'}")
             lines.append("  " + (item.get("description") or ""))
             for version in item.get("versions", []):
-                lines.append(f"  {version.get('version', '?')}：{version.get('problem') or '兼容'}；{version.get('requires', {})}")
+                lines.append(f"  {version.get('version', '?')}：{version.get('problem') or '兼容'}；需要 {requirement_text(version.get('requires'))}")
         lines.append(f"目录：{result['catalog']}")
     elif "results" in result:
         lines.extend(f"{r['id']} [{r['status']}] {r.get('message', '')}" for r in result["results"])
@@ -304,12 +315,14 @@ COMMANDS = [{'name': 'view_plugin',
 
 def main():
     from layerweave.support.commands import help_examples
+    say = {name: spec["description"] for name, spec in COMMANDS[0]["input_schema"]["properties"].items()}   # 说明只写在 input_schema 一处
     parser = argparse.ArgumentParser(description="视图插件管理", formatter_class=argparse.RawDescriptionHelpFormatter, epilog=help_examples(COMMANDS))
-    parser.add_argument("action", nargs="?", default="list", choices=COMMANDS[0]["input_schema"]["properties"]["action"]["enum"])
-    parser.add_argument("target", nargs="?", help="完整插件 ID；add 时为路径")
-    parser.add_argument("--name"); parser.add_argument("--catalog"); parser.add_argument("--version"); parser.add_argument("--file", type=Path)
-    parser.add_argument("--files", action="store_true"); parser.add_argument("--state-root", type=Path)
-    parser.add_argument("--json", action="store_true")
+    parser.add_argument("action", nargs="?", default="list", choices=COMMANDS[0]["input_schema"]["properties"]["action"]["enum"], help=say["action"])
+    parser.add_argument("target", nargs="?", help=say["target"])
+    parser.add_argument("--name", help=say["name"]); parser.add_argument("--catalog", help=say["catalog"])
+    parser.add_argument("--version", help=say["version"]); parser.add_argument("--file", type=Path, help=say["file"])
+    parser.add_argument("--files", action="store_true", help=say["files"]); parser.add_argument("--state-root", type=Path, help=say["root"])
+    parser.add_argument("--json", action="store_true", help="输出完整 JSON 结果，而不是文字摘要")
     args = parser.parse_args()
     try:
         result = plugin(args.action, args.target, name=args.name, root=args.state_root, catalog=args.catalog, version=args.version, file=args.file, files=args.files)

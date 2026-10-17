@@ -1,5 +1,5 @@
 name = "layerweave.view"
 kind = "tool"
-version = "0.29.5"
+version = "0.29.6"
 description = "视图：画布上的时间轴画板、批注层、截图与“正在看哪儿”，网页源码在仓库 frontend/view"
-changes = "构建自动保留实际打入网页的第三方许可；开发测试分组维护。"
+changes = "插件命令的参数说明取自声明并可读显示版本要求；网页产物不再随检出换行方式变化；性能工具说明去掉具体项目。"

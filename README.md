@@ -25,6 +25,16 @@ python -X utf8 -B examples/read_write.py
 
 示例使用临时数据库，演示创建、读取、关闭重开和再次保存。更多 Python 用法见[完整示例](docs/examples.md)。
 
+从零开始时，先建数据库，再从场景模板建一个项目：
+
+```sh
+python -m layerweave.tool.builtin.developer.database.cli DATABASE
+python -m layerweave.tool.builtin.usage.exchange.cli templates
+python -m layerweave.tool.builtin.usage.exchange.cli apply DATABASE --template subtitles --new-project
+```
+
+templates 列出可用模板及用途；输出会给出新项目的编号。不用模板时，按 [CRUD 请求协议](src/layerweave/tool/builtin/usage/CRUD.md)自行创建项目和层。
+
 已有数据库时，查看结构或打开视图：
 
 ```sh

@@ -54,7 +54,7 @@ WIDTH, HEIGHT, DPR = 1536, 760, 1.25
 # ---------- 合成项目 ----------
 # 可复现的合成素材比例；视频需 FFmpeg，此处以图片代表媒体对象
 MIX = (("text", 0.52), ("image", 0.37), ("note", 0.10), ("audio", 0.01))
-LENGTH = 240.0   # 时间轴多长（秒）：每层的对象首尾相接铺满它，和手书一样是一首歌的长度；对象越多每个越短
+LENGTH = 240.0   # 时间轴多长（秒）：每层的对象首尾相接铺满它，约一首歌的长度；对象越多每个越短
 BOARDS = (("成片", {"text": 4, "image": 4, "audio": 1}), ("分镜", {"text": 2, "image": 2}))
 
 
@@ -735,7 +735,7 @@ COMMANDS = [{'name': 'view_bench',
   'input_schema': {'type': 'object',
                    'properties': {'database': {'type': ['string', 'null'], 'description': '量这个库（只读）；省略时造一个合成项目'},
                                   'project_id': {'type': ['integer', 'null'], 'description': '给了库时量哪个项目，默认 1'},
-                                  'objects': {'type': 'integer', 'default': 800, 'description': '合成项目的对象数（构成照手书）'},
+                                  'objects': {'type': 'integer', 'default': 800, 'description': '合成项目的对象数（文字、图片、批注、音频按固定比例混合）'},
                                   'rounds': {'type': 'integer', 'default': 3, 'description': '量几轮取中位；数字忽高忽低时多量几轮'},
                                   'baseline': {'type': ['string', 'null'],
                                                'description': '另一份视图网页的目录（构建好的 view/web，比如改之前的），和现在的每轮交替量'},

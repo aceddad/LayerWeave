@@ -8,7 +8,8 @@ import thirdPartyNotices from './tools/third-party-notices.mjs';
 const backend = process.env.LAYERWEAVE_VIEW ?? 'http://127.0.0.1:8765';
 
 export default defineConfig({
-  plugins: [react(), thirdPartyNotices(), {name: 'stable-html-newlines', transformIndexHtml: (html) => html.replace(/\r\n?/g, '\n')}],
+  // 换行要在 Vite 摘掉入口 script 之前统一：CRLF 检出时摘掉以后会剩一个空行，产物就随检出方式变了
+  plugins: [react(), thirdPartyNotices(), {name: 'stable-html-newlines', transformIndexHtml: {order: 'pre', handler: (html) => html.replace(/\r\n?/g, '\n')}}],
   base: './',
   build: {
     outDir: fileURLToPath(new URL('../../src/layerweave/tool/builtin/view/web', import.meta.url)),

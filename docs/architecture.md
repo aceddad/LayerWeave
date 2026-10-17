@@ -40,7 +40,7 @@ bind 是普通引用，目标失效不会使原始记录不可读。旧库中的
 
 ## 保持轻量
 
-当前仅使用 SQLite 和 TOML，不增加多后端、热卸载或依赖安装框架。CLI 共用模块和命令静态发现位于支撑层，卸掉帮助工具不会破坏其他工具的 --help。命令按文件声明发现，外置技能 route/tier/when 仅供 AI 阅读，不自动执行或检查路由。
+基础支撑当前仅使用 SQLite 和 TOML，不增加多后端、热卸载或依赖安装框架；视图工具自己的选装网页插件由其独立安装器管理。CLI 共用模块和命令静态发现位于支撑层，卸掉帮助工具不会破坏其他工具的 --help。命令按文件声明发现，外置技能 route/tier/when 仅供 AI 阅读，不自动执行或检查路由。
 
 原始读取与区间查询保持数值，不转换轴单位。具体工具的分割内容、跨界策略和引用映射见[使用说明](../src/layerweave/tool/builtin/usage/README.md)。基础支撑的调用与扩展见[API](../src/layerweave/support/API.md)，开发准备见[开发指南](developer-conventions.md)。
 

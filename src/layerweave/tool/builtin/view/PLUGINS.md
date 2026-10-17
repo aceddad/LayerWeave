@@ -95,6 +95,7 @@ python -m layerweave.tool.builtin.view.plugins list
 | `usage` | 默认 README.md，发布包中必须存在 |
 | `params` | 默认空对象，按参数名索引 |
 | `handles`、`slots` | 可选说明性数组，实际运行贡献由 JS 返回 |
+| `locales` | 可选的语言代码 → 包内语言文件路径；消息、展示元数据和说明见[语言包](LANGUAGES.md) |
 | `author`、`license`、`license_file`、`languages` | 可选作者、许可、许可文件和语言说明；不推测作者许可 |
 
 未知字段可保留，未知格式明确报告。本地 `add` 可以没有 manifest，这时生成 `local.<短名>`，兼容性标为“未声明”；有 manifest 时不能用 `--name` 改写身份。说明文件至少写用途、适用场景、参数、完整例子和依赖条件。
@@ -109,13 +110,13 @@ python -m layerweave.tool.builtin.view.plugins list
 
 显式页面的必填缺失或类型不符时停止截图；未声明参数 warn 后照常传入。没有 manifest 时只检查参数名和宿主保留字段。复制链接与 `--link` 保留插件参数，显式 `--param` 覆盖链接里的同名值。侧栏参数不做跨插件合并，仍由插件解释。
 
-插件版本使用三段数字，按数字比较；范围只支持 `>=0.27.0`、`>=0.27.0,<1.0.0`，不支持通配符、预发布、`^`、`~`。当前视图版本和 `host.api` 必须分别满足声明；`host_api: [3]` 不自动支持 4。安装与每次加载都检查。未指定版本时选最高兼容版本，不要求一定是目录最新版本。
+插件版本使用三段数字，按数字比较；范围支持 `>=最低版本` 或 `>=最低版本,<最高版本`，例如 `>=0.29.0`、`>=0.29.0,<1.0.0`，不支持通配符、预发布、`^`、`~`。当前视图版本和 `host.api` 必须分别满足声明；`host_api: [3]` 不自动支持 4。安装与每次加载都检查。未指定版本时选最高兼容版本，不要求一定是目录最新版本。
 
 ## 运行接口与类型快照
 
 插件默认导出 `(host) => ViewPlugin`，入口使用已构建的 ES 模块。React 从 `host.React` 取得，不打包第二套。样式用 `host.addStyle`；插件停用时宿主移除已登记的贡献和样式。
 
-`host` 提供 `useView()`、对象选择和跳转、截图就绪通知，以及图片、帧、波形、分页等组件。完整类型从实际源码生成并随包提供：[host-api-3 类型入口](sdk/host-api-3/index.d.ts)。声明文件只有类型，没有宿主实现。开发仓库固定复制此目录，通过 `import type` 引用，不引用主仓库源码。
+视图 0.29.0 增加 `host.t()` 和 `host.useI18n()`，使用它们需声明相应最低视图版本。`host` 还提供 `useView()`、对象选择和跳转、截图就绪通知，以及图片、帧、波形、分页等组件。完整类型从实际源码生成并随包提供：[host-api-3 类型入口](sdk/host-api-3/index.d.ts)。声明文件只有类型，没有宿主实现。开发仓库固定复制此目录，通过 `import type` 引用，不引用主仓库源码。
 
 | `ViewPlugin` 栏位 | 用途 |
 |---|---|
@@ -134,7 +135,7 @@ python -m layerweave.tool.builtin.view.plugins list
 
 一个 ZIP 对应一个 ID 的一个版本，根目录直接放 plugin.json，不套额外仓库目录。只分发已构建网页资源和说明，安装时不运行脚本、不执行 npm/pip、不处理 Python 依赖。
 
-独立仓库的 `tools/package_plugin.py` 从各插件 dist 和说明生成可重复 ZIP；`tools/build_index.py` 读取版本 ZIP 生成目录。作者不用手工同步两份元数据或计算哈希。先发布包，再更新目录；同 ID、同版本的内容不原地修改。
+独立仓库的 `tools/package_plugin.py` 从各插件 dist 和说明生成可重复 ZIP；`tools/build_index.py` 读取版本 ZIP 生成目录。作者不用手工同步两份元数据或计算哈希。语言文件及其说明按 manifest 声明显式打包，目录只提取本地化的名称和简介。先发布包，再更新目录；同 ID、同版本的内容不原地修改。
 
 目录结构为 `{"format":1,"plugins":[...]}`，每项有 `id`、`publisher`、`name`、`kind`、`version`、`label`、`description`、`requires` 和 `archive`。archive 包含实际 URL、ZIP 字节数 size、64 位十六进制 sha256；相对 URL 以目录文件为基准。同 ID 可保存多个版本。单条损坏单独报告，其余继续显示；未知种类标为暂不支持安装。
 

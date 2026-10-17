@@ -45,6 +45,8 @@ name 是稳定名称；name/version 是必填非空字符串。kind 默认 tool�
 
 基础部分的声明位于 layerweave/component.toml，name=layerweave.foundation，core、models 与 support 等基础部分共同维护一个版本。内置工具按完整包声明，包括本版本登记工具。12 个完整工具包与基础部分最初均从 0.1.0 开始，当前版本以各自 component.toml 为准；usage/developer/shared 分类目录、规则子目录不另定版本。visualization 分支另有视图工具包（view），版本从 0.8.0 开始，沿用它在这条分支上的迭代编号（当前以 view/component.toml 为准）。外置 skills 维持自己的说明，只有提供 component.toml 并纳入扫描范围时才加入此登记。
 
+changes 只保存当前版本的简短更新摘要。需要保留历次说明时，在组件目录维护 CHANGELOG.md，不把完整历史累积进每次查询都返回的字段。
+
 pyproject.toml 的 project.version 仍是整个 Python 安装包的发布版本，与基础版本、各工具版本分别表达不同范围。工具版本不从安装包版本推导。
 
 ## 扫描范围与状态

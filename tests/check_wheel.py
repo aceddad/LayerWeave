@@ -39,7 +39,7 @@ def check(wheel):
         resources.append(package / "support/numbering/README.md")
         resources += list((package / "tool/builtin/usage/exchange/templates").glob("*.json"))
         resources += list((package / "tool/builtin/usage/exchange").glob("*.md"))
-        resources += [package / "tool/builtin/view/PERFORMANCE.md", package / "tool/builtin/view/INCREMENTAL.md", package / "tool/builtin/view/PLUGINS.md"]
+        resources += list((package / "tool/builtin/view").glob("*.md"))
         resources += [p for p in (package / "tool/builtin/view/sdk").rglob("*") if p.is_file()]
         resources += list((package / "tool/builtin/view/locales").glob("*.json"))
         resources += [p for p in (package / "tool/builtin/view/web").rglob("*") if p.is_file()]

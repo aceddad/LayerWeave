@@ -46,9 +46,10 @@
 | 命令声明、发现及 CLI 示例 | [命令专题](../src/layerweave/tool/builtin/shared/help/COMMANDS.md) |
 | 组件声明、版本登记与存在状态 | [版本工具](../src/layerweave/tool/builtin/developer/versions/README.md)，当前版本号和更新摘要在各组件的 component.toml |
 | 配置 help 的使用/开发模式 | [配置 help 专题](../src/layerweave/tool/builtin/shared/help/CONFIG_HELP.md) |
-| 工具包登记自己的层和对象类型 | [工具包登记类型](../src/layerweave/tool/builtin/developer/TOOL_TYPES.md)，以视图工具的批注层为例；有序列表的思路见 AI 开发指导第二篇，批注层自己的约定在视图工具 README |
+| 工具包登记自己的层和对象类型 | [工具包登记类型](../src/layerweave/tool/builtin/developer/TOOL_TYPES.md)，以视图工具的批注层为例；有序列表的思路见 AI 开发指导第二篇，批注层自己的约定在视图开发说明 |
 | 外置技能的存放与绑定示例 | [外置工具](../src/layerweave/tool/README.md)；各技能的能力说明维护在包内 SKILL.md |
 | 技能 ZIP 的安装参数与文件处理 | [安装说明](../src/layerweave/tool/builtin/developer/SKILLS.md) |
+| 视图操作、数据结构、插件和语言包 | [视图首页](../src/layerweave/tool/builtin/view/README.md)按任务进入使用指南与开发专题 |
 | 本地 KEY、连接说明与去除私有内容的示例 | [KEY 管理](../src/layerweave/tool/builtin/developer/keys/README.md) |
 
 ## 写法与示例
@@ -71,7 +72,7 @@
 
 不设统一的字数或行数上限。允许简短的上下文重复，让读者理解当前任务；详细规则仍有明确的主要维护位置。
 
-阶段计划完成后，先将仍有效的约定并入主要说明，再移除没有独立参考价值的计划及入口链接；提交历史保留过程记录。正在协作维护的文档保留，清理范围按当前任务确认。
+阶段计划完成后，先将仍有效的约定并入主要说明；旧交接报告先原样归档并核对，再移出现行入口。当前文档不链接旧报告作为接口依据，历史文本保留当时语境。component.toml 的 changes 只写当前版本摘要，完整历次说明放在组件自己的 CHANGELOG.md。正在协作维护的文档保留，清理范围按当前任务确认。
 
 ## 这轮整理得到的经验
 

@@ -89,9 +89,9 @@ with TemporaryDirectory() as directory:
 
 ## 当前状态
 
-当前无视图版本已完成核心、内部工具和技能接入的收尾，MCP 封装与 LayerWeave 界面尚未实现。图片、音视频等封装保存资源引用；自带 skills 提供部分媒体生成、处理和检查能力，由调用方按需使用。
+本 visualization 分支包含非可视化基础能力、本机视图、中英界面及可选插件接入。MCP 封装尚未实现，正式发行与装载方式待单独确定。图片、音视频等封装保存资源引用；自带 skills 提供部分媒体生成、处理和检查能力，由调用方按需使用。
 
-非可视化核心会继续独立维护；可视化实现将在单独分支推进。
+main 保持无视图版本；视图在 visualization 分支维护。打开网页和 AI 截图从[视图使用入口](src/layerweave/tool/builtin/view/README.md)开始。
 
 ## 更多资料
 

@@ -138,7 +138,7 @@ baseline 指向含 index.html 的构建目录，不是前端源码目录。两�
 
 其中 Node 可用时会实际执行初始化与命中脚本，检查监听器和窄对象的命中行为；不仅检查 JavaScript 语法。
 
-前端修改后，在 frontend/view 执行 npm run build，包含类型检查、前端测试和网页/内置插件构建。然后回到仓库根，先跑较小的浏览器验收：
+前端修改后，在 frontend/view 执行 npm run build，包含类型检查、前端测试、SDK、语言资源复制和宿主网页构建；官方插件在独立仓库构建。然后回到仓库根，先跑较小的浏览器验收：
 
 ~~~powershell
 .venv/Scripts/python.exe -X utf8 -B -m unittest discover -s tests -p test_view.py -k test_bench_measures_in_a_browser -v

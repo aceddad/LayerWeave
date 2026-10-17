@@ -42,7 +42,8 @@ python -m layerweave.tool.builtin.shared.help.command_help
 
 ## 文档
 
-- [使用与开发文档](docs/README.md)：按任务选择手册。
-- [扩展自己的工具](docs/build-with-layerweave/README.md)：从最小读取、写入或自有表开始。
-- [开发指南](docs/developer-conventions.md)：环境、源码和验证流程。
+- [使用 LayerWeave](src/layerweave/tool/builtin/usage/README.md)：AI 或程序操作项目，从任务选择工具并查询现有 help。
+- [开发自己的扩展](docs/build-with-layerweave/README.md)：通过公共接口开发工具、封装、自有表或视图插件。
+- [维护 LayerWeave 源码](docs/developer-conventions.md)：修改本仓库的实现，准备开发环境并验证改动。
+- [文档目录](docs/README.md)：各条路径的专题与完整示例。
 - [官方视图插件](https://gitee.com/emotion1354414/layerweave-plugins)：独立选装，主程序不自动安装。

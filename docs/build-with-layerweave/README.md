@@ -2,7 +2,7 @@
 
 你可以把 LayerWeave 当作组织数据、保存关系和记录修改的底座，按需接入自己的工具。工具只处理当前任务关心的数据；它的界面、算法、参数、缓存和临时结果，由工具自己设计。
 
-这里按使用思路分篇。安装、源码位置与贡献流程见[开发指南](../developer-conventions.md)，具体参数见[基础支撑 API](../../src/layerweave/support/API.md)。
+本页面向在自己工程中编写工具、封装或插件的 AI 与开发者，按接入思路分篇。安装方式见[项目首页](../../README.md)，具体参数见[基础支撑 API](../../src/layerweave/support/API.md)。仅操作已有项目时使用[使用入口](../../src/layerweave/tool/builtin/usage/README.md)；需要修改 LayerWeave 自身实现时，再进入[源码开发指南](../developer-conventions.md)。
 
 ## 选择一种思路
 
@@ -36,9 +36,12 @@
 | 使用现成的查询展示、编辑、历史或撤销 | 对应的[内部工具包](../../src/layerweave/tool/builtin/README.md) |
 | 用 JSON 表达批量操作或复用场景模板 | [交换工具](../../src/layerweave/tool/builtin/usage/exchange/README.md)；新模板只需添加 JSON |
 | 声明工具表、复用层编号或共享发号 | [工具表](03-managed-tables.md)与[编号模块](../../src/layerweave/support/numbering/README.md)；可运行示例在[示例索引](../examples.md) |
+| 为已有数据提供专用页面或侧栏 | [视图插件协议](../../src/layerweave/tool/builtin/view/PLUGINS.md)，通过 host 接口接入 |
 | 让 AI 发现工具用途、调用方式与版本 | [命令声明](../../src/layerweave/tool/builtin/shared/help/COMMANDS.md)负责使用说明，[组件声明](../../src/layerweave/tool/builtin/developer/versions/README.md#声明放在哪里)负责版本登记 |
 
 可以直接在自己的 Python 工程里导入公开接口。借用写会话不要求使用 CDUR 请求格式，也不要求构造完整的 Layer/Object 实例。读取普通记录时，配置文件和类不必可用；需要还原派生实例时再用 load。
+
+查询现有封装时，普通调用使用默认配置 help；需要查看完整定义、继承来源和 TOML 时再使用开发模式，见[两种配置 help](../../src/layerweave/tool/builtin/shared/help/CONFIG_HELP.md)。
 
 工具提交当前需要修改的字段，支撑统一维护身份、归属和事务日志。information、axis 等 JSON 字段整体替换；修改其中一个键时在同一会话中读取并合并，示例见[局部修改](02-ordered-metadata.md#只修改自己关心的字段)。
 

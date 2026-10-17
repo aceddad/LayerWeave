@@ -1,5 +1,13 @@
 # 开发约定
 
+本文件用于维护 LayerWeave 自身源码。先按任务选择入口：
+
+- 操作项目内容：读[使用入口](src/layerweave/tool/builtin/usage/README.md)，按需查询命令与配置 help。
+- 在自己的工程中开发工具或插件：读[扩展指南](docs/build-with-layerweave/README.md)，复用公共接口。
+- 修改本仓库的实现：遵循下列约定和[开发指南](docs/developer-conventions.md)。
+
+使用软件或编写外部扩展时，无需执行本仓库的源码维护流程；扩展代码纳入本仓库时再遵循相应约定。
+
 ## 定位代码
 
 - `src/layerweave/core`、`models`：抽象结构和封装类。

@@ -9,7 +9,7 @@ import tempfile
 import unittest
 
 
-ROOT=Path(__file__).resolve().parents[1]
+from tests._support.paths import ROOT
 READY=all(importlib.util.find_spec(name) is not None for name in ('pip','wheel','jsonschema','mcp'))
 
 

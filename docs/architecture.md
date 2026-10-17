@@ -42,7 +42,7 @@ bind 是普通引用，目标失效不会使原始记录不可读。旧库中的
 
 基础支撑当前仅使用 SQLite 和 TOML，不增加多后端、热卸载或依赖安装框架；视图工具自己的选装网页插件由其独立安装器管理。CLI 共用模块和命令静态发现位于支撑层，卸掉帮助工具不会破坏其他工具的 --help。命令按文件声明发现，外置技能 route/tier/when 仅供 AI 阅读，不自动执行或检查路由。
 
-原始读取与区间查询保持数值，不转换轴单位。具体工具的分割内容、跨界策略和引用映射见[使用说明](../src/layerweave/tool/builtin/usage/README.md)。基础支撑的调用与扩展见[API](../src/layerweave/support/API.md)，开发准备见[开发指南](developer-conventions.md)。
+原始读取与区间查询保持数值，不转换轴单位。具体工具的分割内容、跨界策略和引用映射见[使用说明](../src/layerweave/tool/builtin/usage/README.md)。公共接口包括 core/models 的显式导出、support.api、发号入口、工具声明及专题明确说明的 commands/providers/feedback/paths 等开发辅助入口；__all__ 用于明确稳定入口，不是访问控制。内部实现模块保持可检查，扩展不应依赖私有辅助的路径。基础支撑的调用与扩展见[API](../src/layerweave/support/API.md)，开发准备见[开发指南](developer-conventions.md)。
 
 ## 包与安装边界
 
@@ -52,4 +52,4 @@ bind 是普通引用，目标失效不会使原始记录不可读。旧库中的
 
 这层包名不改变依赖方向，也不要求安装所有工具。ZIP 下载目标默认是调用方工作目录的 tool/skills，可通过 skills_root 指定；不默认向普通安装的库目录追加内容。
 
-基础部分与每个完整内部工具包分别用 component.toml 声明版本；Python 安装包的发布版本仍在 pyproject.toml 中。可选的[版本工具](../src/layerweave/tool/builtin/developer/versions/README.md)将扫描结果登记到自己的工具表，报告声明的存在状态，不参与工具运行许可或基础读写流程。
+基础部分与每个完整内部工具包分别用 component.toml 声明版本；Python 安装包版本由 layerweave.__version__ 维护，pyproject 动态读取该值。可选的[版本工具](../src/layerweave/tool/builtin/developer/versions/README.md)将扫描结果登记到自己的工具表，报告声明的存在状态，不参与工具运行许可或基础读写流程。

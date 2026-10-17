@@ -1,4 +1,4 @@
-"""用法：python tests/check_wheel.py <wheel>。普通安装与完整资源验收，全部使用临时目录。"""
+"""用法：python -m tests.packaging.check_wheel <wheel>。普通安装与完整资源验收，全部使用临时目录。"""
 import json
 import os
 from pathlib import Path
@@ -9,18 +9,27 @@ import sys
 import tempfile
 from zipfile import ZipFile
 
-from test_namespace import COMMON_NAMES, ROOT, SMOKE, make_host_modules
+from tests._support.namespace import COMMON_NAMES, ROOT, SMOKE, make_host_modules
+from tests._support.distribution import local_only
 
 
 def check(wheel):
     package = ROOT / "src/layerweave"
     with ZipFile(wheel) as archive:
         names = set(archive.namelist())
+        assert not any(local_only(name) for name in names), [name for name in names if local_only(name)]
         roots = {name.split("/", 1)[0] for name in names}
         assert len(roots) == 2 and "layerweave" in roots
         assert all(name == "layerweave" or name.endswith(".dist-info") for name in roots), roots
         metadata = next(name for name in names if name.endswith(".dist-info/top_level.txt"))
         assert archive.read(metadata).decode().splitlines() == ["layerweave"]
+        from email import message_from_bytes
+        metadata_text=message_from_bytes(archive.read(next(n for n in names if n.endswith('.dist-info/METADATA'))))
+        assert 'MIT' in metadata_text['License-Expression']
+        assert set(metadata_text.get_all('License-File'))=={'LICENSE','THIRD_PARTY_NOTICES.md'}
+        for license_name in ('LICENSE','THIRD_PARTY_NOTICES.md'):
+            installed_license=next(n for n in names if n.endswith('.dist-info/licenses/'+license_name))
+            assert archive.read(installed_license)==(ROOT/license_name).read_bytes()
         key_template = json.loads(archive.read("layerweave/tool/builtin/developer/keys/example.json"))
         assert all(record["key"] == "" for record in key_template.values())
         assert not any(name.endswith(("/keys.local.json", "/keys.json")) for name in names)
@@ -42,7 +51,9 @@ def check(wheel):
         resources += list((package / "tool/builtin/view").glob("*.md"))
         resources += [p for p in (package / "tool/builtin/view/sdk").rglob("*") if p.is_file()]
         resources += list((package / "tool/builtin/view/locales").glob("*.json"))
+        resources += list(package.rglob('*.md'))
         resources += [p for p in (package / "tool/builtin/view/web").rglob("*") if p.is_file()]
+        resources = sorted({p for p in resources if not local_only(p.relative_to(package).as_posix())})
         for path in resources:
             member = "layerweave/" + path.relative_to(package).as_posix()
             assert member in names, f"Missing package resource: {member}"
@@ -75,6 +86,8 @@ def check(wheel):
         origin = f'''\nimport layerweave
 assert str(layerweave.__file__).startswith({str(installed)!r}), layerweave.__file__
 assert {str(ROOT)!r} not in sys.path
+from importlib.metadata import version
+assert layerweave.__version__ == version('layerweave')
 '''
         run = subprocess.run([sys.executable, "-X", "utf8", "-B", "-S", "-c", bootstrap + SMOKE + origin],
                              cwd=host, env=env, capture_output=True, text=True, encoding="utf-8", timeout=45)
@@ -103,5 +116,5 @@ print('ordinary install: zero plugins; host available without official payloads'
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        raise SystemExit("Usage: python tests/check_wheel.py PATH_TO_WHEEL")
+        raise SystemExit("Usage: python -m tests.packaging.check_wheel PATH_TO_WHEEL")
     check(Path(sys.argv[1]).resolve())

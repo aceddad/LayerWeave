@@ -48,7 +48,6 @@ def main():
     return run_cli(parser, execute, formatter=format_gap)
 
 
-
 # 命令目录和 --help 共用的只读接口说明。
 COMMANDS = [{'name': 'insert_gap',
   'summary': '明确选范围并插入时间；跨界对象逐个选择 split、keep、stretch 或 move',

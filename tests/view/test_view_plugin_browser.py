@@ -3,6 +3,7 @@ from contextlib import closing
 from pathlib import Path
 import tempfile
 import unittest
+from tests._support.paths import ROOT
 
 from layerweave.support.api import initialize_database, open_database, transaction
 from layerweave.tool.builtin.view.plugins import plugin
@@ -31,7 +32,7 @@ class PluginBrowserTests(unittest.TestCase):
                        width=800, height=600, state_root=self.state, wait_ms=5000, **kwargs)
 
     def test_nested_module_and_link_params(self):
-        identity = plugin("add", str(Path(__file__).parent / "fixtures/view-plugin"), root=self.state)["added"]
+        identity = plugin("add", str(ROOT / "tests/fixtures/view-plugin"), root=self.state)["added"]
         link = f"http://localhost/?project={self.project}&view={identity}&ids=%5B1%2C2%5D&capture=0&record=1"
         query = link_query(link, self.project)
         self.assertEqual(query["ids"], "[1,2]")

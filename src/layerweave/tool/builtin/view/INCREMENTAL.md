@@ -120,4 +120,4 @@ PRAGMA data_version 继续提供在线/变化提示，页面不再用它代替�
 
 新增事件时同时补服务端投影、TypeScript 联合类型、纯合成函数和失效范围。不要先读一页旧日志，再用较晚的业务行替换 after；如果希望采用“日志只通知失效、客户端重读最新值”的方案，需要整体约定这种读取方式，不能与当前日志回放交错使用。
 
-后端回归见 [test_view_incremental.py](../../../../../tests/test_view_incremental.py)：双连接快照、完整操作、工具表撤销、跨项目关联移出、HTTP 路由。前端见 [incremental.test.ts](../../../../../frontend/view/src/model/__tests__/incremental.test.ts) 和 [sync.test.ts](../../../../../frontend/view/src/model/__tests__/sync.test.ts)：缓存引用、根范围、接续偏移、乱序请求、失败重试和乐观状态保护。
+后端回归见 [test_view_incremental.py](../../../../../tests/view/test_view_incremental.py)：双连接快照、完整操作、工具表撤销、跨项目关联移出、HTTP 路由。前端见 [incremental.test.ts](../../../../../frontend/view/src/model/__tests__/incremental.test.ts) 和 [sync.test.ts](../../../../../frontend/view/src/model/__tests__/sync.test.ts)：缓存引用、根范围、接续偏移、乱序请求、失败重试和乐观状态保护。

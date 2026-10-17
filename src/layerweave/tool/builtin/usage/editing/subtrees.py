@@ -45,7 +45,6 @@ def main():
     return run_cli(parser, execute, formatter=format_subtree)
 
 
-
 # 命令目录和 --help 共用的只读接口说明。
 COMMANDS = [{'name': 'copy_subtree',
   'summary': '同项目同父层复制整棵子树并重映射内部关联',

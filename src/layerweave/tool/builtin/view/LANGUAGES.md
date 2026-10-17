@@ -66,4 +66,4 @@ export default function plugin(host) {
 
 视图 HTTP 清单带 `localizations`，普通 CLI 清单不附整份词典。插件详情带各语言的 `usage_text`；市场目录只附翻译后的简介。发布脚本收集明确声明的语言文件与说明，验证它们存在；运行时某份语言文件丢失或损坏会提示并回退，不阻断其他可用代码。
 
-验证方法：宿主运行 `npm run build`、Python 回归与 `tests/check_wheel.py`；插件运行自己的构建、词条占位符检查和浏览器测试。英文页面允许保留中文用户数据；不能以“页面没有汉字”判断翻译完成。
+验证方法：宿主运行 `npm run build`、Python 回归与 `python -m tests.packaging.check_wheel`；插件运行自己的构建、词条占位符检查和浏览器测试。英文页面允许保留中文用户数据；不能以“页面没有汉字”判断翻译完成。

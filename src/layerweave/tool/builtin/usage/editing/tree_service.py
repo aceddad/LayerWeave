@@ -1,7 +1,7 @@
 """子树批量操作：写事务内读取范围，复用 CRUD 发号、日志和提交后检查。"""
 
 from collections import defaultdict
-from copy import deepcopy
+from ._records import _payload
 from functools import partial
 
 from layerweave.support import records as crud
@@ -45,15 +45,6 @@ def _ordered_layers(layers, root_id):
         ordered.append(by_id[id])
         pending.extend(reversed(children[id]))
     return ordered
-
-
-def _checker(checker, config_root):
-    checker = optional_checker(checker, config_root=config_root)
-    return checker
-
-
-def _payload(kind, row):
-    return {key: deepcopy(row[key]) for key in crud.writable_fields(kind)}
 
 
 def _delete_records(connection, source, operation_id):
@@ -129,7 +120,7 @@ def delete_subtree(connection, project_id, layer_id, *, config_root=DEFAULT_ROOT
         lambda write: delete_subtree_in_session(
             write, project_id, layer_id,
         ),
-        checker=_checker(checker, config_root),
+        checker=optional_checker(checker, config_root=config_root),
     )
     return {**result, "tool": 'delete_subtree'}
 
@@ -150,7 +141,7 @@ def copy_subtree(connection, project_id, layer_id, *, name=None, config_root=DEF
         lambda write: copy_subtree_in_session(
             write, project_id, layer_id, name=name,
         ),
-        checker=_checker(checker, config_root),
+        checker=optional_checker(checker, config_root=config_root),
     )
     return {**result, "tool": 'copy_subtree'}
 
@@ -173,7 +164,7 @@ def transfer_subtree(connection, project_id, layer_id, target_project_id, *, mod
         lambda write: transfer_subtree_in_session(
             write, project_id, layer_id, target_project_id, mode=mode, name=name,
         ),
-        checker=_checker(checker, config_root),
+        checker=optional_checker(checker, config_root=config_root),
     )
     return {**result, "tool": 'transfer_subtree'}
 
@@ -229,7 +220,7 @@ def transfer_objects(connection, project_id, object_ids, target_project_id, targ
         lambda write: transfer_objects_in_session(
             write, project_id, object_ids, target_project_id, target_layer_id, mode=mode,
         ),
-        checker=_checker(checker, config_root),
+        checker=optional_checker(checker, config_root=config_root),
     )
     return {**result, "tool": 'transfer_objects'}
 

@@ -7,6 +7,7 @@ import sqlite3
 import tempfile
 import threading
 import unittest
+from tests._support.paths import ROOT
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 from unittest.mock import patch
@@ -95,7 +96,7 @@ class ViewTests(unittest.TestCase):
             (f"/api/layout/{self.project}", {"boards": []}),
             (f"/api/notes/{self.project}", {"action": "add", "text": "外站不能写入"}),
             (f"/api/folds/{self.project}", {"action": "fold", "layers": [self.main_layer], "by": "测试"}),
-            ("/api/plugins", {"action": "add", "target": str(Path(__file__).parent / "fixtures/view-plugin")}),
+            ("/api/plugins", {"action": "add", "target": str(ROOT / "tests/fixtures/view-plugin")}),
         ]
 
     def test_all_post_routes_reject_external_origins_without_writes(self):
@@ -471,7 +472,7 @@ class ViewTests(unittest.TestCase):
         from layerweave.tool.builtin.view.plugins import list_plugins, plugin
         root = self.state_root
         self.assertEqual(self.json("/api/plugins")["plugins"], [])
-        fixture = Path(__file__).parent / "fixtures/view-plugin"
+        fixture = ROOT / "tests/fixtures/view-plugin"
         body = json.dumps({"action": "add", "target": str(fixture)}).encode()
         with self.assertRaises(HTTPError) as blocked:
             urlopen(Request(self.url + "api/plugins", data=body, headers={"Origin": "https://outside.example"}), timeout=10)
@@ -775,7 +776,7 @@ class ViewTests(unittest.TestCase):
         self.assertIsNone(read_state(self.database, self.state_root))
         self.assertFalse(layout_path(self.database, self.state_root).exists())     # 截图页面不改排版
         from layerweave.tool.builtin.view.plugins import plugin
-        plugin("add", str(Path(__file__).parent / "fixtures/view-plugin"), root=self.state_root)                                 # 合成插件，不依赖官方插件
+        plugin("add", str(ROOT / "tests/fixtures/view-plugin"), root=self.state_root)                                 # 合成插件，不依赖官方插件
         cuts = capture(self.database, self.project, Path(self.temp.name) / "shots" / "cuts.png", view="local.view-plugin", full_page=True,
                        links=True, width=900, height=400, wait_ms=15000, state_root=self.state_root)
         self.assertTrue(cuts["ready"])
@@ -797,7 +798,7 @@ class ViewTests(unittest.TestCase):
     def test_example_plugin_fills_side_and_detail(self):
         # 仓库里的样板插件「字数」：链接进来，侧栏、对象详情由它画；截图等它画完
         from layerweave.tool.builtin.view.plugins import plugin
-        example = Path(__file__).resolve().parents[1] / "frontend" / "view" / "example-plugin"
+        example = ROOT / "frontend" / "view" / "example-plugin"
         self.assertEqual(plugin("add", str(example), root=self.state_root)["added"], "local.example-plugin")
         with self.assertRaisesRegex(ValueError, "未安装"):
             capture(self.database, self.project, Path(self.temp.name) / "x.png", side="nope", state_root=self.state_root)

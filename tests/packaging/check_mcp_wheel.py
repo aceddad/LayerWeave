@@ -83,5 +83,5 @@ runpy.run_module('layerweave.tool.builtin.shared.mcp',run_name='__main__')
 
 if __name__=='__main__':
     if len(sys.argv)!=2:
-        raise SystemExit('Usage: python tests/check_mcp_wheel.py PATH_TO_WHEEL')
+        raise SystemExit('Usage: python -m tests.packaging.check_mcp_wheel PATH_TO_WHEEL')
     check(Path(sys.argv[1]).resolve())

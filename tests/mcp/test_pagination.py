@@ -5,7 +5,8 @@ import json
 import unittest
 from unittest.mock import patch
 
-import test_mcp as base
+from pathlib import Path
+from tests._support.mcpfixture import MCPFixture, HAS_MCP
 from layerweave.support.feedback import InputError
 from layerweave.tool.builtin.shared.mcp.results import ResultPages, encoded
 from layerweave.tool.builtin.usage.records.dispatch import dispatch
@@ -120,11 +121,8 @@ class ResultPagingTests(unittest.TestCase):
         self.assertEqual(json.loads(content),value)
 
 
-@unittest.skipUnless(base.HAS_MCP,'安装 layerweave[mcp] 运行协议验收')
-class MCPPagingTests(unittest.TestCase):
-    setUp=base.MCPTests.setUp
-    call=base.MCPTests.call
-    runtime_with=base.MCPTests.runtime_with
+@unittest.skipUnless(HAS_MCP,'安装 layerweave[mcp] 运行协议验收')
+class MCPPagingTests(MCPFixture, unittest.TestCase):
 
     def history_rows(self):
         for i in range(22):

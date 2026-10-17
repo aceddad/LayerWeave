@@ -31,7 +31,6 @@ def main():
                    **({"config_root": args.config_root} if args.config_root is not None else {})), formatter=format_transfer)
 
 
-
 # 命令目录和 --help 共用的只读接口说明。
 COMMANDS = [{'name': 'transfer_subtree',
   'summary': '同库跨项目复制/剪切子树；剪切的外部入向引用跟随新身份',

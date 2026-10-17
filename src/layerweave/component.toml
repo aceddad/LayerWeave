@@ -1,5 +1,5 @@
 name = "layerweave.foundation"
 kind = "foundation"
-version = "0.5.2"
+version = "0.5.3"
 description = "层、对象等抽象结构，以及配置、存储、编号、事务和日志支撑"
-changes = "静态命令说明支持可选搜索关键词与推荐顺序；保持按包声明。"
+changes = "明确公共导出，读取快照独立于实体装配；包版本统一维护。"

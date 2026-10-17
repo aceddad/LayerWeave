@@ -5,15 +5,13 @@ import json
 import unittest
 from unittest.mock import patch
 
-import test_mcp as base
+from pathlib import Path
+from tests._support.mcpfixture import MCPFixture, HAS_MCP
 from layerweave.support.api import read_record, register_tables, transaction
 
 
-@unittest.skipUnless(base.HAS_MCP, '安装 layerweave[mcp] 运行协议验收')
-class MCPTrialTests(unittest.TestCase):
-    setUp = base.MCPTests.setUp
-    runtime_with = base.MCPTests.runtime_with
-    call = base.MCPTests.call
+@unittest.skipUnless(HAS_MCP, '安装 layerweave[mcp] 运行协议验收')
+class MCPTrialTests(MCPFixture, unittest.TestCase):
 
     def test_first_use_discovers_overview_and_updates_from_help(self):
         overview = self.runtime.help()
@@ -155,7 +153,7 @@ class MCPTrialTests(unittest.TestCase):
         self.assertNotIn('tables',compact)
         self.assertNotIn('source_numbering',compact)
         path = self.call('admin','export_project_file',object_ids=[self.obj],compact=True,output='compact.json')['result']['path']
-        self.assertEqual(json.loads(base.Path(path).read_text(encoding='utf-8')), compact)
+        self.assertEqual(json.loads(Path(path).read_text(encoding='utf-8')), compact)
         compact['items'][0]['data']['tips']='直接修改'
         result = self.call('edit','import_project',document=compact)['result']
         self.assertEqual(result['operation']['status'],'committed')

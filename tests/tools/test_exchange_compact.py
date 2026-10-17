@@ -1,17 +1,12 @@
 """局部结构依赖与精简文档的往返；不丢工具数据和逻辑引用。"""
 from copy import deepcopy
 import unittest
-import test_exchange as base
+from tests._support.exchangefixture import ExchangeFixture
 from layerweave.support.api import register_tables, transaction, read_record
 from layerweave.tool.builtin.usage.exchange import export_project, import_project, prepare_exchange
 
 
-class CompactExchangeTests(unittest.TestCase):
-    setUp=base.ExchangeTests.setUp
-    database=base.ExchangeTests.database
-    tools=base.ExchangeTests.tools
-    nodes=base.ExchangeTests.nodes
-    find=base.ExchangeTests.find
+class CompactExchangeTests(ExchangeFixture, unittest.TestCase):
 
     def test_partial_definitions_include_transitive_empty_and_cyclic_dependencies(self):
         register_tables(self.c,{

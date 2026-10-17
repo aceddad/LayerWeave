@@ -48,3 +48,7 @@ python -m layerweave.tool.builtin.shared.help.command_help
 - [维护 LayerWeave 源码](docs/developer-conventions.md)：修改本仓库的实现，准备开发环境并验证改动。
 - [文档目录](docs/README.md)：各条路径的专题与完整示例。
 - [官方视图插件](https://gitee.com/emotion1354414/layerweave-plugins)：独立选装，主程序不自动安装。
+
+## 许可证
+
+LayerWeave 自身采用 [MIT](LICENSE)。网页构建包含的第三方组件保留各自许可，见[第三方声明](THIRD_PARTY_NOTICES.md)。独立安装的插件和技能遵循其自身说明。

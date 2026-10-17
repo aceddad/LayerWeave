@@ -11,6 +11,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from tests._support.mcpfixture import MCPFixture, HAS_MCP
 import zipfile
 from unittest.mock import patch
 
@@ -18,35 +19,10 @@ from layerweave.support.api import initialize_database, open_database, read_reco
 from layerweave.support.commands import discover_commands, command_help
 from layerweave.tool.builtin.usage.records.dispatch import dispatch
 
-HAS_MCP=importlib.util.find_spec('mcp') is not None and importlib.util.find_spec('jsonschema') is not None
-
 
 @unittest.skipUnless(HAS_MCP,'安装 layerweave[mcp] 运行可选协议验收')
-class MCPTests(unittest.TestCase):
-    def setUp(self):
-        from layerweave.tool.builtin.shared.mcp import create_runtime
-        self.temp=tempfile.TemporaryDirectory(prefix='layerweave-mcp-test-')
-        self.addCleanup(self.temp.cleanup)
-        self.root=Path(self.temp.name)
-        self.db=initialize_database(self.root/'project.sqlite3')
-        c=open_database(self.db)
-        self.addCleanup(c.close)
-        self.c=c
-        self.project=dispatch(c,{'action':'create','kind':'project','data':{'name':'原项目'}},checker=None)['id']
-        self.layer=dispatch(c,{'action':'create','kind':'layer','project_id':self.project,'data':{'config_ref':'layers/text.toml'}},checker=None)['id']
-        self.obj=dispatch(c,{'action':'create','kind':'object','project_id':self.project,'data':{
-            'config_ref':'objects/text.toml','layer':self.layer,'begin':10,'end':20,'information':{'text':'原文'}}},checker=None)['id']
-        self.options={'workspace':str(self.root),'database':str(self.db),'project_id':self.project,'installed':False,'skills_roots':[]}
-        self.runtime=create_runtime(self.options)
+class MCPTests(MCPFixture, unittest.TestCase):
 
-    def runtime_with(self,**changes):
-        from layerweave.tool.builtin.shared.mcp import create_runtime
-        return create_runtime({**self.options,**changes})
-
-    def call(self,route,name,**arguments):
-        result=self.runtime.invoke(route,name,arguments)
-        self.assertFalse(result.is_error,result.data)
-        return result.data
 
     def test_schemas_valid_aliases_and_optional_cli(self):
         from jsonschema import Draft202012Validator

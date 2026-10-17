@@ -1,5 +1,5 @@
 name = "layerweave.mcp"
 kind = "tool"
-version = "0.1.2"
+version = "0.1.3"
 description = "可选 MCP 接入、统一命令目录与 direct/routed 暴露"
-changes = "回复按声明主列表分页，业务游标在续取完成后返回；明确查询 limit 与回复 limit。"
+changes = "服务版本读取安装包的统一版本来源。"

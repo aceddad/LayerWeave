@@ -28,7 +28,6 @@ def main():
     return run_cli(parser, execute, formatter=format_split)
 
 
-
 # 命令目录和 --help 共用的只读接口说明。
 COMMANDS = [{'name': 'split_object',
   'summary': '按明确切点与各段内容分割对象，第一段保留编号和关联',

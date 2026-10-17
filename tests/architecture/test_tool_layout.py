@@ -11,7 +11,7 @@ import unittest
 from layerweave.support.commands import command_help
 
 
-ROOT = Path(__file__).resolve().parents[1]
+from tests._support.paths import ROOT
 
 
 class ToolLayoutTests(unittest.TestCase):

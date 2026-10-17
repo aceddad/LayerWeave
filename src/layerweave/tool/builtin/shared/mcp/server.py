@@ -3,6 +3,7 @@ import base64
 from functools import partial
 import json
 
+from layerweave import __version__
 from .catalog import BASE_NAMES
 from .runtime import Runtime, Outcome, REQUEST_ID
 
@@ -112,6 +113,6 @@ def create_server(config=None):
         content.extend(types.ImageContent(type='image',data=base64.b64encode(blob).decode('ascii'),mimeType='image/png') for blob in outcome.images)
         return types.CallToolResult(content=content,structuredContent=outcome.data,isError=outcome.is_error)
 
-    return Server('layerweave',version='0.7.2',
+    return Server('layerweave',version=__version__,
         instructions='LayerWeave：未知能力先查 layerweave_help，熟悉后可直接调用。JSON 可直接读写，文件和视图均非前置步骤。操作是否提交看 result.operation，checks 不代表写入失败。',
         get_tool_input_schema=schemas.get,on_list_tools=list_tools,on_call_tool=call_tool)

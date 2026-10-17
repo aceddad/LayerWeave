@@ -23,6 +23,8 @@
 
 - [AGENTS.md](../AGENTS.md)：本仓库的工作约定和任务分流。
 - [开发指南](developer-conventions.md)：准备环境、定位源码、运行检查。
+- [测试导引](../tests/README.md)：按功能选择回归范围和共享夹具。
+- [发布验收](releasing.md)：wheel、源码包、许可与隔离重建。
 - [架构](architecture.md)：核心、支撑、工具的职责和依赖。
 - [文档约定](documentation.md)：说明的放置位置、示例与维护方式。
 

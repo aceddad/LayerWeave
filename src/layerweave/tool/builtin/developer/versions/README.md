@@ -47,7 +47,7 @@ name 是稳定名称；name/version 是必填非空字符串。kind 默认 tool�
 
 changes 只保存当前版本的简短更新摘要。正式发行日志可另行维护；内部实施历史保存在开发档案中，不累积进每次查询都返回的字段。
 
-pyproject.toml 的 project.version 仍是整个 Python 安装包的发布版本，与基础版本、各工具版本分别表达不同范围。工具版本不从安装包版本推导。
+整个 Python 安装包的发布版本由 layerweave.__version__ 维护，pyproject.toml 动态读取该值，与基础版本、各工具版本分别表达不同范围。工具版本不从安装包版本推导。
 
 ## 扫描范围与状态
 

@@ -1,0 +1,40 @@
+# 构建与发布验收
+
+发行版本只在 `src/layerweave/__init__.py` 的 __version__ 维护，pyproject 和 MCP 服务读取同一来源。组件版本仍由各 component.toml 维护；视图版本同步到 frontend/view/package.json，SDK 快照通过构建生成。
+
+## 准备和构建
+
+从仓库根的开发虚拟环境执行：
+
+```sh
+python -m pip install -e ".[mcp,dev]"
+```
+
+改过网页或视图版本时，在 frontend/view 中执行 npm ci 与 npm run build。构建同时生成 SDK、语言资源和根目录 THIRD_PARTY_NOTICES.md；后者取自实际打入网页的依赖包及其许可证，不手改生成文本。
+
+构建前确认工作区要发布的文件已纳入版本控制，移走或清理已确认可再生成的 build 目录，避免旧资源残留；保留 scratch、output、skills 和本地配置。然后执行：
+
+```sh
+python -m build --sdist --wheel --outdir dist
+python -m tests.packaging.check_wheel dist/layerweave-0.7.3-py3-none-any.whl
+python -m tests.packaging.check_mcp_wheel dist/layerweave-0.7.3-py3-none-any.whl
+python -m tests.packaging.check_sdist dist/layerweave-0.7.3.tar.gz
+```
+
+上述步骤只在本地构建和验收，不上传包仓库。上传位置、版本标签和正式发行说明应在实际发布时明确选择。
+
+## 两种发行物
+
+wheel 只安装 layerweave 命名空间、运行所需配置/技能/网页资源、模块手册和许可文件；不安装 tests、examples、前端开发依赖或本地数据库。使用接口从实时 help 查询；需要完整仓库文档、示例和网页源码时取得 sdist 或仓库源码。
+
+sdist 包含 Python 源码、完整文档、示例、测试夹具、前端源码与锁文件，以及已经编译的网页。用户从 sdist 安装 Python 包无需先装 Node；修改网页再执行前端构建。验收会解包到临时目录重建 wheel，确认不依赖原工作区的 scratch、node_modules 或临时文件。
+
+技能允许携带支持脚本和素材；本地缓存、.env、密钥 JSON、日志和 SQLite 文件由打包排除规则过滤。验证同时检查归档内容；不能把 .gitignore 当成所有构建后端的资源过滤规则。
+
+## 维护和接口边界
+
+按[测试导引](../tests/README.md)执行完整 Python 回归，记录任何跳过项；前端构建也须通过对应测试。修改基础入口时保留核心/支撑独立运行和各完整工具包隔离验收。
+
+稳定 Python 入口包括 core/models 的显式导出、support.api、编号接口、工具公开声明及专题中明确说明的开发辅助入口（如 commands/providers/feedback/paths）。内部模块仍可读取与调试，__all__ 和下划线不是安全屏障；不因为实现细节可导入就把它自动登记成 MCP 能力。原始读写、会话组合与恢复保留给工具开发者，模型调用继续走已声明命令。
+
+LayerWeave 自身采用 [MIT](../LICENSE)，网页中第三方内容保留其原许可与版权声明。当前发行物包含 MIT、ISC 和 BSD-3-Clause 组件，因此分发元数据记录组合表达式 MIT AND ISC AND BSD-3-Clause；这不改变项目自身的 MIT 授权。升级前端依赖时同时核对生成声明与该表达式。许可文本参考 [OSI MIT](https://opensource.org/license/mit)，分发元数据依照 [Python Packaging 的组合许可示例](https://packaging.python.org/en/latest/guides/licensing-examples-and-user-scenarios/)维护；独立安装的插件、技能和外部服务仍遵循自身条件。

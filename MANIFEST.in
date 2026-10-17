@@ -1,0 +1,10 @@
+include README.md AGENTS.md LICENSE THIRD_PARTY_NOTICES.md pyproject.toml
+graft src/layerweave
+graft docs
+graft examples
+graft tests
+graft frontend/view
+prune frontend/view/node_modules
+prune frontend/view/.vite
+prune frontend/view/coverage
+global-exclude *.py[cod] .DS_Store .env .env.* keys.local.json keys.json .keys.local.json.*.tmp *.sqlite3 *.sqlite3-* *.db *.log

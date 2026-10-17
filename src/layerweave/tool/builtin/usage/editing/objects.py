@@ -2,7 +2,7 @@
 
 from layerweave.support.api import DEFAULT_CHECKER
 from ._plan import dispatch, execute_in_session
-from layerweave.tool.builtin.usage.editing.positions import _duration, _number, _objects, _tail
+from ._records import _duration, _number, _objects, _tail
 from layerweave.support.api import PositionMath, decimal_value
 
 
@@ -96,7 +96,6 @@ def main():
         return copy_object(connection, args.project_id, args.object_id, layer_id=args.layer_id,
                            name=args.name, begin=args.begin, append=args.append)
     return run_cli(parser, execute, operation_output=True)
-
 
 
 # 命令目录和 --help 共用的只读接口说明。

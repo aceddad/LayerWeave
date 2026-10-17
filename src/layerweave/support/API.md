@@ -1,5 +1,7 @@
 # 基础支撑 API
 
+公共导出由 `layerweave.support.api.__all__` 明确列出。下面的入口保持可组合；storage 内部辅助模块不属于稳定导入约定，读取快照通过本页的 read_snapshot 使用。
+
 从 layerweave.support.api 导入读取、实例装配、写会话和通用反馈。默认配置从 layerweave 包内 configs 读取，也可传入自己的 config_root。所有能力在没有内置工具时仍可运行。CDUR 请求协议、编辑、历史、撤销、内容检测和 help 从对应[完整工具包](../tool/builtin/README.md)导入，不通过本模块转接。
 
 本页说明 LayerWeave 自身的 Python 读写接口。若要配置出图、生视频等外部服务的 API KEY、地址与模型，使用[KEY 与连接说明](../tool/builtin/developer/keys/README.md)；技能选择和调用顺序见[工具区](../tool/README.md#选择与定位技能)。

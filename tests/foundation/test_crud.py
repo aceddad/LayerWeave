@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from tests._support.paths import ROOT
 from uuid import UUID, uuid4
 
 from layerweave.tool.builtin.usage.records.dispatch import dispatch
@@ -307,7 +308,7 @@ class CrudTests(unittest.TestCase):
         self.addCleanup(path.unlink)
         initialize_database(path)
         command = [sys.executable, "-X", "utf8", "-B", "-m", "layerweave.tool.builtin.usage.records.cli", str(path)]
-        cwd = Path(__file__).resolve().parents[1] / "src"
+        cwd = ROOT / "src"
         result = subprocess.run(command, input=json.dumps({
             "action": "create", "kind": "project", "data": {"name": "CLI 项目"},
         }), text=True, encoding="utf-8", capture_output=True, cwd=cwd)

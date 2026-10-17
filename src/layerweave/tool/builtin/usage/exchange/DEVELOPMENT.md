@@ -58,11 +58,11 @@ prepare_exchange 对逻辑引用只补充不清除，对复制策略保留任一
 在仓库根使用已安装本项目的 Python：
 
 ~~~sh
-python -X utf8 -B -m unittest discover -s tests -p test_exchange.py -v
+python -X utf8 -B -m unittest discover -s tests/tools -t . -p test_exchange.py -v
 python -X utf8 -B -m unittest discover -s tests -p test_logical_references.py -v
 python -X utf8 -B examples/exchange.py
 python -X utf8 -B examples/logical_references.py
-python -X utf8 -B -m unittest discover -s tests -v
+python -X utf8 -B -m unittest discover -s tests -t . -v
 ~~~
 
-涉及资源或导入路径时还应构建 wheel 并运行 tests/check_wheel.py。模板、README、FORMAT、DEVELOPMENT 都随 exchange 包安装；隔离验收会只留下这一工具包，确认它不依赖其他工具。
+涉及资源或导入路径时还应构建 wheel 并运行 python -m tests.packaging.check_wheel。模板、README、FORMAT、DEVELOPMENT 都随 exchange 包安装；隔离验收会只留下这一工具包，确认它不依赖其他工具。

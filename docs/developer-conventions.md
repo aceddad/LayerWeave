@@ -91,7 +91,7 @@ python -m venv .venv
 从项目根、使用已安装本项目的 Python：
 
 ```sh
-python -X utf8 -B -m unittest discover -s tests -v
+python -X utf8 -B -m unittest discover -s tests -t . -v
 ```
 
 test_namespace.py 验证宿主同名模块不会干扰公开导入、保存和还原。test_architecture.py 验证核心单独运行、无工具的支撑读写和 Title 往返、每次仅一个工具包的实际调用、外部目录启动，以及统一写入口的结构保证。隔离进程使用临时副本与 -S，不能借回完整仓库。
@@ -102,11 +102,11 @@ test_namespace.py 验证宿主同名模块不会干扰公开导入、保存和�
 
 ```sh
 python -m pip wheel --no-deps --wheel-dir scratch/namespace-dist .
-python tests/check_wheel.py scratch/namespace-dist/layerweave-0.7.2-py3-none-any.whl
+python -m tests.packaging.check_wheel scratch/namespace-dist/layerweave-0.7.3-py3-none-any.whl
 ```
 
 check_wheel.py 将 wheel 用 pip 安装到临时目标，以禁用 site 的独立进程验证；源码目录不参与导入。它检查只有 layerweave 顶层包、同名模块冲突、默认配置、数据库 schema 和技能正文/脚本。临时目录自动清理，不写用户数据库。
 
 按改动影响从项目根运行[示例](examples.md)。测试和例子不写 output 内的实际数据库。维护说明与命令链接，并明确区分语法检查和实际执行；具体文档规则统一见[文档约定](documentation.md)。
 
-MCP 开发先安装 `python -m pip install -e ".[mcp]"`。test_mcp.py 验证真实 SDK/stdio、直接 JSON、暴露、材料及分页；test_mcp_install.py 使用临时外部包验证普通安装和真正的 PEP 660 可编辑安装，发现过程不能运行业务模块。未安装可选依赖时只跳过这组协议验收，基础测试仍可运行。
+开发与发布验收安装 `python -m pip install -e ".[mcp,dev]"`。测试按架构、基础支撑、内部工具、MCP、视图与打包分类，分组命令见[测试导引](../tests/README.md)。MCP 的 test_runtime.py 验证真实 SDK/stdio，test_installation.py 验证普通和 PEP 660 可编辑扩展安装；发现过程不执行模块。可选依赖未安装时只跳过相应协议验收。发行物构建与源码包重建见[发布指南](releasing.md)。

@@ -1,7 +1,7 @@
 """按项目/多棵子树读取详情；时间仅筛选对象，层范围保持完整。"""
 
 from layerweave.support.storage import crud
-from layerweave.support.storage.assembly import _snapshot
+from .snapshot import read_snapshot
 from layerweave.support.storage.queries import _object_conditions
 
 
@@ -28,7 +28,7 @@ def read_project_details(connection, project_id, *, layer_id=None, layer_ids=Non
             raise ValueError("layer_ids 中的每个编号应为整数")
         requested = list(dict.fromkeys(requested))
     where, object_values = _object_conditions(project_id, begin=begin, end=end)
-    with _snapshot(connection):
+    with read_snapshot(connection):
         project = crud.read(connection, "project", id=project_id)
         if project is None:
             return None

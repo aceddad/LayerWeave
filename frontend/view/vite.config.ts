@@ -3,11 +3,12 @@
 import {defineConfig} from 'vite';
 import react from '@vitejs/plugin-react';
 import {fileURLToPath} from 'node:url';
+import thirdPartyNotices from './tools/third-party-notices.mjs';
 
 const backend = process.env.LAYERWEAVE_VIEW ?? 'http://127.0.0.1:8765';
 
 export default defineConfig({
-  plugins: [react(), {name: 'stable-html-newlines', transformIndexHtml: (html) => html.replace(/\r\n?/g, '\n')}],
+  plugins: [react(), thirdPartyNotices(), {name: 'stable-html-newlines', transformIndexHtml: (html) => html.replace(/\r\n?/g, '\n')}],
   base: './',
   build: {
     outDir: fileURLToPath(new URL('../../src/layerweave/tool/builtin/view/web', import.meta.url)),

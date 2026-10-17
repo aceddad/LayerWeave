@@ -1,13 +1,13 @@
 """按日志编号连续读取业务变更；页尾延伸到完整操作，不依赖任何工具包。"""
 from layerweave.support.feedback import InputError
-from .assembly import _snapshot
+from .snapshot import read_snapshot
 from .crud import _decode
 from .tables import SPECS
 
 
 def change_cursor(connection):
     """当前读取快照的最后一个 changes.id；空库为 0，与项目初始加载共用 read_snapshot。"""
-    with _snapshot(connection):
+    with read_snapshot(connection):
         return connection.execute("SELECT COALESCE(MAX(id), 0) FROM changes").fetchone()[0]
 
 
@@ -17,7 +17,7 @@ def read_changes(connection, *, after=0, limit=100):
         raise ValueError("after 应为 change_cursor 或上次 next_cursor 返回的非负日志编号")
     if type(limit) is not int or limit < 1:
         raise ValueError("limit 应为正整数")
-    with _snapshot(connection):
+    with read_snapshot(connection):
         head = change_cursor(connection)
         if after > head:
             raise InputError("游标超过本库当前日志末尾，请重新加载快照与游标", code="cursor_ahead",

@@ -14,6 +14,7 @@ output/*
 .env.*
 !.env.example
 keys.local.json
+keys.json
 .keys.local.json.*.tmp
 
 # 视图网页源码的依赖（npm install 生成，不提交；编译结果在 src/layerweave/tool/builtin/view/web/）

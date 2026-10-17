@@ -20,7 +20,7 @@
 | 4. 显示 | 容器一类不该占画布的层写 `[layer.display] default_visible = false`，视图默认收起，可以勾选显示 | 批注层默认收起 |
 | 5. 创建 | 不改项目创建流程。工具第一次用到时在写会话里创建这个层，之后按 `config_ref` 找回同一个 | `view/note.py` 的 `_note_layer`：找不到就建一个名为「批注」的根层 |
 | 6. 读写 | 照常走 `layerweave.support.api` 的 `transaction` / `run_operation`，进改动日志，可以撤销；删除时一并删掉自己发出的关联 | `add_note`、`update_note`、`remove_note` |
-| 7. 测试 | 配置数量变了，更新 `test_configuration.py` 的缓存数；配置 help 的期望在 `test_config_help.py`；再给工具写往返和检测测试 | `tests/test_view.py` 的批注测试 |
+| 7. 测试 | 配置数量变了，更新 `test_configuration.py` 的缓存数；配置 help 的期望在 `test_config_help.py`；再给工具写往返和检测测试 | `tests/view/test_view.py` 的批注测试 |
 
 要点：
 

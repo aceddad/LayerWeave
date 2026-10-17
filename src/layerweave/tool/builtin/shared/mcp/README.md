@@ -11,7 +11,7 @@ python -m pip install -e ".[mcp]"
 python -m layerweave.tool.builtin.shared.mcp --config mcp.json
 ```
 
-安装后也可运行 `layerweave-mcp --config mcp.json`。本地 wheel 可用 `python -m pip install "路径/layerweave-0.7.1-py3-none-any.whl[mcp]"`。基础 Python/CLI 不需要 MCP SDK；本服务使用官方 MCP Python SDK 2.3 系列兼容接口。
+安装后也可运行 `layerweave-mcp --config mcp.json`。本地 wheel 可用 `python -m pip install "路径/layerweave-0.7.2-py3-none-any.whl[mcp]"`。基础 Python/CLI 不需要 MCP SDK；本服务使用官方 MCP Python SDK 2.3 系列兼容接口。
 
 标准输出是协议流，日志在标准错误；这不是交互式命令行。`--list` 只输出有效动作、实际 direct 名称和声明问题。最小配置是 `{}`；[example.json](example.json) 提供可编辑示例：
 
@@ -95,7 +95,7 @@ export_project 直接返回交换文档，import_project 的 document 直接接�
 | sources | 开发来源，含 namespace/path 和按需提供的 import_root |
 | installed、include_builtin | 发现已安装 entry points / 包内命令，默认 true |
 | skills_roots | 替换技能扫描目录；省略用自带 skills，空列表不扫描 |
-| limit、max_chars | 默认列表条数和 JSON 回复体字符预算，默认 100、24000 |
+| limit、max_chars | 默认回复每页项数和 JSON 回复体字符预算，默认 100、24000；不替命令填写 arguments.limit |
 | result_cache_size | 内存中保留的续取结果数量，默认 32 |
 
 禁用优先；direct 不重新启用能力。配置与来源在启动时加载，改动后重启。独立名称默认将完整身份的点号/连字符换成下划线；声明可用 mcp.name 自定义。名称冲突报告来源，不覆盖；只有独立名称冲突时仍可通过完整身份 routed 调用。
@@ -130,9 +130,21 @@ view_reply 的 note_id 是被回复的批注编号，text 只表示回复正文�
 
 已提交且有可撤销业务记录时给出 undo 调用。视图旧入口只给 operation_id 时，适配器读取该操作的日志补充反馈。文件、KEY、安装、表结构准备不虚构内容撤销能力。
 
-分页返回 more.cursor，用 query 的 `{"cursor":"返回的游标"}` 续取，不再执行原命令。单项过长则返回明确的 json_text 片段，按 offset 拼接；result_complete=false 的数据不能整体写回。more.unit 区分项数和字符数。业务数据变化时提示 cursor_stale；文件、材料等从同次结果快照续取。
+查询数量与回复分页分开。以历史为例，`arguments.limit=3` 查询最近三次操作；外层 `limit=3` 将本次已经查到的结果每三项展示，不修改命令自己的默认查询数量。独立工具入口中的 limit 就是该命令的参数；默认回复预算仍来自启动配置。full=true 只绕过回复预算，不扩大查询范围。
 
-完整交换文档过大时返回 result_too_large，不截断、不自动保存。可缩小范围、明确 full=true，或选文件输出。预算不减少已执行操作；JSON 包装、图片数据和客户端 token 消耗并不等同。
+最近三次操作，传给 layerweave_query 的示例（项目编号换成实际值）：
+
+```json
+{"command":"layerweave.read_history","arguments":{"project_id":1,"limit":3}}
+```
+
+分页优先使用工具声明的主列表，例如历史的 items、详细展开的 layers。未声明时只选择唯一最外层列表；同层多个列表不猜主次，也不进入某项内部寻找更长的列表。未能确定主列表时不按项数拆分，超出 max_chars 才以整个结果的 JSON 文本分段。单个业务项过大也用明确片段处理，历史的 changes 不会被伪装成完整操作而部分返回。
+
+more.cursor 续取本次已生成的回复，向 query 只传 `{"cursor":"返回的游标"}`；不重做命令，沿用首次回复预算。业务 next_cursor 用来查询下一批，例如历史将它传给 arguments.before，两种游标不能互换。声明了业务游标的命令，在回复尚未续取完时将该字段暂置 null，并给 more.business_cursor_pending=true 与 business_cursor_path；读完后恢复原值。null 加 pending=true 不代表业务已到末尾。若回复为整体 JSON 片段，需在所有片段结束后还原文档，再读取其中的业务游标。
+
+文本片段以 json_text 标明并按 offset 拼接；result_complete=false 的局部页或片段不能整体写回。more.unit 区分项数和字符数。业务数据变化时提示 cursor_stale；文件、材料等从同次结果快照续取。
+
+完整交换文档只按字符预算判断过大，忽略外层项数 limit；超出时返回 result_too_large，不截断、不自动保存。可缩小范围、明确 full=true，或选文件输出。预算不减少已执行操作；JSON 包装、图片数据和客户端 token 消耗并不等同。
 
 缓存只在当前服务内有效，重启或淘汰后提示 cursor_expired。写入结果失效、取消或超时后先核对历史和目标，不自动重做。服务日志记录请求、命令、操作编号和状态，不打印调用参数或密钥。
 
@@ -140,7 +152,9 @@ view_reply 的 note_id 是被回复的批注编号，text 只表示回复正文�
 
 COMMANDS 可选 keywords（字符串列表）与 help_order（整数，较小优先），见[命令声明](../help/COMMANDS.md)。MCP 变体可覆盖 keywords/help_order、properties、notes 和 examples。变体默认不继承主体的推荐顺序；不填写时排在显式推荐项之后。
 
-可选 mcp.open_world 为布尔值，省略为 true；direct 入口从绑定生成标准 openWorldHint，routed 的详情显示同一声明。false 表示该能力在声明的封闭范围内工作，不代表是否写入或获准调用。一份绑定包含多个动作时须覆盖全部动作，不自动推断。自带技能材料读取为 false；通用 help/query 保持 true，因为插件详情、市场或外部扩展可能联网。该字段不改变授权和启用规则。
+可选 mcp.open_world 为布尔值，省略为 true；direct 入口从绑定生成标准 openWorldHint，routed 的详情显示同一声明。false 表示该能力在声明的封闭范围内工作，不代表是否写入或获准调用。一份绑定包含多个动作时须覆盖全部动作，不自动推断。自带技能材料读取、视图收件箱与回复为 false；截图、通用 help/query 保持 true，因为插件页面、详情、市场或外部扩展可能联网。该字段不改变授权和启用规则。
+
+工具可用 mcp.pagination 声明分页主列表，字段路径相对于业务 result，用字符串列表表示；items=[] 表示结果本身是列表。例如历史声明 `{"items":["items"],"next_cursor":["next_cursor"]}`。next_cursor 可省略，只在工具自身已有下一批游标时填写；MCP 不发明业务游标、不自动发起下一次查询。嵌套包装可写 items=["data","rows"]。声明路径未命中列表时按整体结果处理，不猜其他字段；变体可覆盖 pagination，设为 null 恢复自动选择。详情 help 会展示有效分页声明。
 
 在 alice_tools/commands.py 定义：
 

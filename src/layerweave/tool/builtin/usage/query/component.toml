@@ -1,5 +1,5 @@
 name = "layerweave.query"
 kind = "tool"
-version = "0.2.2"
+version = "0.2.3"
 description = "项目、子树、对象位置、空档与关联查询"
-changes = "项目概览作为推荐入口，支持中文概览、总览和结构搜索。"
+changes = "声明概览与详细展开的分页主列表，保持层内对象完整。"

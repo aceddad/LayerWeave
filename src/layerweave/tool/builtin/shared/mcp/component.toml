@@ -1,5 +1,5 @@
 name = "layerweave.mcp"
 kind = "tool"
-version = "0.1.1"
+version = "0.1.2"
 description = "可选 MCP 接入、统一命令目录与 direct/routed 暴露"
-changes = "按声明推荐、关键词搜索、多示例与准确的错误阶段；支持绑定 open_world 提示。"
+changes = "回复按声明主列表分页，业务游标在续取完成后返回；明确查询 limit 与回复 limit。"

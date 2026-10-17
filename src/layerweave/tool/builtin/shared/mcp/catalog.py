@@ -120,6 +120,13 @@ class Catalog:
                         'message':'help_order 需要整数或 null，keywords 需要字符串列表，open_world 需要布尔值'})
                     continue
                 try:
+                    pagination = variant.get('pagination')
+                    if pagination is not None:
+                        if (not isinstance(pagination,dict) or 'items' not in pagination
+                                or set(pagination)-{'items','next_cursor'}
+                                or any(not isinstance(path,list) or not all(isinstance(key,str) for key in path)
+                                       for path in pagination.values())):
+                            raise ValueError('pagination 需要 items 和可选 next_cursor，路径为相对 result 的字符串列表')
                     schema = select_parameters(command['input_schema'], include=variant.get('include'), omit=variant.get('omit',[]))
                     schema['properties'].update(deepcopy(variant.get('properties',{})))
                     schema['required'] = sorted(set(schema.get('required',[])) | set(variant.get('required',[])))

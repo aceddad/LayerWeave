@@ -1,5 +1,5 @@
 name = "layerweave.exchange"
 kind = "tool"
-version = "0.2.2"
+version = "0.2.3"
 description = "分层 JSON 导入导出、工具表数据交换与可复用操作模板"
-changes = "局部导出只携带必要表定义；compact 省略结构说明并保留业务数据与引用。"
+changes = "优先推荐直接 JSON 导出与导入，文件包装继续可选。"

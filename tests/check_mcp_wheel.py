@@ -44,6 +44,7 @@ runpy.run_module('layerweave.tool.builtin.shared.mcp',run_name='__main__')
                 assert 'layerweave_project_overview' in {t.name for t in listing.tools}
                 reply=next(t for t in listing.tools if t.name=='layerweave_view_reply')
                 assert 'author' in reply.input_schema['required']
+                assert reply.annotations.model_dump(by_alias=True)['openWorldHint'] is False
                 found=await client.call_tool('layerweave_help',{'search':'修改'})
                 assert any(i['id']=='layerweave.dispatch' for i in found.structured_content['result']['items'])
                 created=await client.call_tool('layerweave_admin',{'command':'layerweave.initialize_database','arguments':{'path':mode+'.db'}})
@@ -60,7 +61,22 @@ runpy.run_module('layerweave.tool.builtin.shared.mcp',run_name='__main__')
                 assert not compact.is_error,compact.structured_content
                 document=compact.structured_content['result']
                 assert document['scope']['compact'] and 'tables' not in document and 'source_numbering' not in document
-                print('ordinary wheel stdio '+mode+': tools, initialize, JSON write, direct query, help, author schema and compact passed')
+                for i in range(4):
+                    added=await client.call_tool('layerweave_edit',{'command':'dispatch','arguments':{
+                        'database':mode+'.db','request':{'action':'create','kind':'project','data':{'name':str(i)}}}})
+                    assert not added.is_error,added.structured_content
+                first=await client.call_tool('layerweave_query',{'command':'read_history','arguments':{
+                    'database':mode+'.db','limit':3},'limit':2})
+                assert not first.is_error,first.structured_content
+                page=first.structured_content
+                assert page['more']['path']==['items'] and len(page['result']['items'])==2
+                assert page['more']['business_cursor_pending'] and page['result']['next_cursor'] is None
+                last=await client.call_tool('layerweave_query',{'cursor':page['more']['cursor']})
+                assert not last.is_error,last.structured_content
+                page=last.structured_content
+                assert len(page['result']['items'])==1 and not page['more']['has_more']
+                assert page['result']['next_cursor'] is not None and not page['more']['business_cursor_pending']
+                print('ordinary wheel stdio '+mode+': tools, JSON, compact, help, author, annotations and both pagination cursors passed')
         asyncio.run(exercise('auto'))
         asyncio.run(exercise('legacy'))
 

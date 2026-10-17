@@ -106,6 +106,9 @@ class Runtime:
                                 'returns':binding.options.get('returns',binding.command.get('returns','见 result；操作与检查分别报告')),
                                 'notes':binding.options.get('notes',binding.command.get('notes',[])),
                                 'examples':self.examples(binding),'example_note':'示例编号、路径及素材替换为实际目标；数据可直接传入，无需创建文件。'}
+                        if binding.options.get('pagination'):
+                            item['pagination'] = deepcopy(binding.options['pagination'])
+                            item['pagination_note'] = '外层 limit 是回复每页项数，不修改 arguments.limit；先续取 more.cursor，再使用业务下一页游标。'
                         if audience=='developer':
                             item.update({k:binding.command.get(k) for k in ('source','source_root','entrypoint','session_entrypoint','cli')})
                             item['binding']=deepcopy(binding.options)
@@ -325,7 +328,8 @@ class Runtime:
                                       'arguments':{'database':values.get('database'),'operation_id':result['operation_id']}}}
             failed=isinstance(result,dict) and (result.get('ok') is False or operation.get('status')=='failed')
             envelope=self.pages.first(envelope,limit=limit or self.config['limit'],max_chars=max_chars or self.config['max_chars'],
-                                      full=full,document=binding.options.get('output')=='document',version=version)
+                                      full=full,document=binding.options.get('output')=='document',version=version,
+                                      pagination=binding.options.get('pagination'))
             return Outcome(envelope,failed,images)
         except Exception as error:
             logger.info('request=%s command=%s failed=%s',REQUEST_ID.get(),command,type(error).__name__)

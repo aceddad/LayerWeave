@@ -23,14 +23,30 @@ def encoded(value):
     return json.dumps(value,ensure_ascii=False,allow_nan=False,separators=(',',':'))
 
 
-def _lists(value, path=()):
-    if isinstance(value,list):
-        yield path,value
-        for i, child in enumerate(value):
-            yield from _lists(child,(*path,i))
-    elif isinstance(value,dict):
-        for key,child in value.items():
-            yield from _lists(child,(*path,key))
+_MISSING = object()
+
+
+def _value(value, path):
+    for key in path:
+        if not isinstance(value, dict) or key not in value:
+            return _MISSING
+        value = value[key]
+    return value
+
+
+def _primary_list(value, declared=None):
+    if declared is not None:
+        found = _value(value, declared)
+        return (tuple(declared), found) if isinstance(found, list) else ((), None)
+    # 只选唯一的最外层列表，不进入列表项，也不凭长度猜业务主次。
+    level = [((), value)]
+    while level:
+        lists = [(path, node) for path, node in level if isinstance(node, list)]
+        if lists:
+            return lists[0] if len(lists) == 1 else ((), None)
+        level = [(path + (key,), child) for path, node in level if isinstance(node, dict)
+                 for key, child in node.items() if isinstance(child, (dict, list))]
+    return (), None
 
 
 def _replace(value, path, replacement):
@@ -56,24 +72,32 @@ class ResultPages:
             while len(self.records)>self.size:
                 self.records.popitem(last=False)
 
-    def first(self, envelope, *, limit, max_chars, full=False, document=False, version=None):
+    def first(self, envelope, *, limit, max_chars, full=False, document=False, version=None, pagination=None):
         text = encoded(envelope)
-        candidates = list(_lists(envelope.get('result')))
-        longest = max(candidates,key=lambda row:len(row[1]),default=((),[]))
-        if full or (len(text)<=max_chars and len(longest[1])<=limit):
+        # 交换文档不按项目数量拆分；外层 limit 不解释为导出范围。
+        if full:
             return {**envelope,'result_complete':True}
         if document:
+            if len(text) <= max_chars:
+                return {**envelope,'result_complete':True}
             raise InputError('交换文档超出当前返回预算，未截断、未保存文件。缩小范围或明确 full=true；也可选择文件导出。',
                              code='result_too_large',characters=len(text),limit=max_chars)
+        pagination = pagination or {}
+        primary_path, values = _primary_list(envelope.get('result'), pagination.get('items'))
+        if len(text)<=max_chars and (values is None or len(values)<=limit):
+            return {**envelope,'result_complete':True}
         key = uuid4().hex
-        # 先尝试按原结果中的列表分页，保留树层级及其他上下文；无法容纳一项时按完整 JSON 文本分段。
+        # 保留一条业务项的内部结构；一项过大则明确按 JSON 文本分段。
         mode, path = 'json_chunks', ()
-        if longest[1]:
-            skeleton = _replace(envelope['result'],longest[0],[])
+        if values:
+            skeleton = _replace(envelope['result'],primary_path,[])
             if len(encoded({**envelope,'result':skeleton}))+256 < max_chars:
-                mode,path = 'items',longest[0]
+                mode,path = 'items',primary_path
+        next_path = pagination.get('next_cursor')
+        if next_path is not None and _value(envelope.get('result'), next_path) is _MISSING:
+            next_path = None
         record = {'envelope':deepcopy(envelope),'text':text,'mode':mode,'path':path,
-                  'limit':limit,'max_chars':max_chars,'version':version}
+                  'limit':limit,'max_chars':max_chars,'version':version,'next_path':next_path}
         self._remember(key,record)
         return self.page(key+':0')
 
@@ -122,9 +146,12 @@ class ResultPages:
                 return self._fragment(record,fragment,key+':fragment:'+fragment_key+':0',0,
                                       key+':'+str(start+1),list(record['path'])+[start])
             remaining = len(values)-end
+            if remaining and record['next_path'] is not None:
+                result['result'] = _replace(result['result'], record['next_path'], None)
             result['more']={'remaining':remaining,'unit':'items','has_more':bool(remaining),'path':list(record['path']),
                             'cursor':key+':'+str(end) if remaining else None,
-                            'how':'用 layerweave_query 的 cursor 继续；result 为局部页，不能当作完整对象整体写回。'}
+                            'how':'先用 layerweave_query 的 cursor 续取本次结果；读完后再用业务游标查询下一批。result 为局部页，不能整体写回。'}
+            self._business_cursor(result, record, bool(remaining))
             return result
         text = record['text']
         return self._fragment(record,text,key+':'+str(start),start,record.get('after'),record.get('fragment_of',[]))
@@ -140,6 +167,7 @@ class ResultPages:
                 'more':{'remaining':len(text)-end,'unit':'characters','has_more':end<len(text) or after is not None,
                         'cursor':cursor.rsplit(':',1)[0]+':'+str(end) if end<len(text) else after,
                         'how':'这是 JSON 文本片段，需按 offset 拼接；不要将片段直接导入。'}}
+        self._business_cursor(result, record, result['more']['has_more'])
         raw=original.get('result')
         if isinstance(raw,dict) and raw.get('operation_id'):
             result['operation_id']=raw['operation_id']
@@ -150,3 +178,8 @@ class ResultPages:
         if original.get('undo'):
             result['undo']=deepcopy(original['undo'])
         return result
+
+    @staticmethod
+    def _business_cursor(result, record, pending):
+        if record['next_path'] is not None:
+            result['more'].update(business_cursor_path=list(record['next_path']), business_cursor_pending=pending)

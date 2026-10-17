@@ -60,27 +60,42 @@ COMMANDS = [{'name': 'read_history',
   'read_only': True,
   'context': ['database'],
   'returns': '操作总数、改动条数、items、next_cursor；每项含字段差异与 undo_of。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.history.cli DATABASE --project-id 1 --kind object '
-                       '--id 8 --json',
-                'arguments': {'project_id': 1, 'limit': 10}},
-               {'cli': 'python -m layerweave.tool.builtin.usage.history.cli DATABASE --operation-id OPERATION_ID '
-                       '--json'}],
+  'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.history.cli DATABASE --project-id 1 --kind '
+                       'object --id 8 --json',
+                'arguments': {'project_id': 1, 'limit': 3}},
+               {'cli': 'python -m layerweave.tool.builtin.usage.history.cli DATABASE --operation-id '
+                       'OPERATION_ID --json'}],
   'aliases': ['history'],
   'input_schema': {'type': 'object',
-                   'properties': {'database': {'type': 'string', 'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
+                   'properties': {'database': {'type': 'string',
+                                               'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
                                   'project_id': {'type': ['integer', 'null'],
                                                  'description': '按项目筛选相关操作；完整批次仍可跨项目'},
-                                  'kind': {'type': ['string', 'null'], 'description': '内置种类或本数据库已登记的工具表 kind'},
-                                  'id': {'type': ['integer', 'null'], 'description': '记录编号，按项目管理的种类还需 project_id'},
+                                  'kind': {'type': ['string', 'null'],
+                                           'description': '内置种类或本数据库已登记的工具表 kind'},
+                                  'id': {'type': ['integer', 'null'],
+                                         'description': '记录编号，按项目管理的种类还需 project_id'},
                                   'operation_id': {'type': ['string', 'null'],
                                                    'description': '展开一个完整操作，与项目/实体筛选互斥'},
-                                  'limit': {'type': 'integer', 'description': '每页操作数', 'default': 20},
-                                  'before': {'type': ['integer', 'null'], 'description': '上一页 next_cursor'},
-                                  'detail': {'type': 'boolean', 'description': '列表也展开前后快照', 'default': False}},
+                                  'limit': {'type': 'integer',
+                                            'description': '每次业务查询的操作数；通过通用入口时写在 arguments.limit，不是外层回复页大小',
+                                            'default': 20},
+                                  'before': {'type': ['integer', 'null'],
+                                             'description': '读完当前回复的 more.cursor 后，将业务结果的 next_cursor '
+                                                            '传到这里查询下一批操作'},
+                                  'detail': {'type': 'boolean',
+                                             'description': '列表也展开前后快照',
+                                             'default': False}},
                    'additionalProperties': False,
                    'required': ['database']},
-  'mcp': {'route': 'query', 'group': 'history', 'database': 'connection', 'paths': []},
-  'cli_only': ['json']}]
+  'mcp': {'route': 'query',
+          'group': 'history',
+          'database': 'connection',
+          'paths': [],
+          'pagination': {'items': ['items'], 'next_cursor': ['next_cursor']}},
+  'cli_only': ['json'],
+  'notes': ['要查询最近 3 次操作，传 arguments.limit=3；外层 limit 仅把本次已查到的 items 分页。先续取 more.cursor，读完后再以 next_cursor 作为 '
+            'before 查询下一批。']}]
 
 
 if __name__ == "__main__":

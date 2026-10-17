@@ -1,5 +1,5 @@
 name = "layerweave.history"
 kind = "tool"
-version = "0.2.1"
+version = "0.2.2"
 description = "按操作查看改动历史和字段变化"
-changes = "统一 JSON Schema 命令声明，支持可选 MCP 调用；保留原有 Python 与 CLI。"
+changes = "MCP 按完整操作分页，说明业务与回复游标的顺序。"

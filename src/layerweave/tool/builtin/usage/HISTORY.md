@@ -40,6 +40,8 @@ python -m layerweave.tool.builtin.usage.validation.cli DATABASE PROJECT_ID --obj
 
 ## 历史
 
+MCP 通用 query 的外层 limit 只控制回复每页展示几次操作；查询最近三次操作使用 arguments.limit=3。历史结果按 items 分页，一次操作内部的 changes 保持完整，过大时明确给出文本片段。先以 more.cursor 续取本次回复；读完后再把业务 next_cursor 作为 arguments.before 查询下一批。回复尚未读完时 next_cursor 暂置 null，more.business_cursor_pending=true 表示它尚未交付，而不是历史已到末尾。Python/CLI 的 limit 和 before 仍按下文表示业务分页。
+
 查看相关操作、每次改动的字段及前后数据，已删除的实体也可以查询。
 
 ```python

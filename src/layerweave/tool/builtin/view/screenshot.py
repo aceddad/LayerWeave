@@ -358,11 +358,12 @@ COMMANDS = [{'name': 'view_screenshot',
                 'arguments': {'output': 'output/view.png'}},
                {'cli': 'python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/t10.png --board 1 '
                        '--begin 8 --end 14 --playhead 10'},
-               {'cli': 'python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/note42.png --note 42'},
+               {'cli': 'python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/note42.png --note '
+                       '42'},
                {'cli': 'python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/user.png --link '
                        '"http://127.0.0.1:8765/?project=1&board=1&begin=8&end=14&select=16"'},
-               {'cli': 'python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/changes.png --changes '
-                       '5'},
+               {'cli': 'python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/changes.png '
+                       '--changes 5'},
                {'cli': 'python -m layerweave.tool.builtin.view.screenshot DATABASE 1 shots/cuts.png --view '
                        'layerweave.cuts --full-page'}],
   'notes': ['截图页面不记录状态、不改排版；用户正在看哪儿请用 view_state，画板怎么排请用 view_layout。',
@@ -371,7 +372,8 @@ COMMANDS = [{'name': 'view_screenshot',
             '左右接续的画板上，begin、end、playhead 用画板上的连续时间；view_layout 的 offset 是每一段的起点。',
             '接缝页列出同一条轨道里前后相接的图片和视频：上一段的最后一帧和下一段的第一帧并排，用来查衔接；--board、--begin、--end 可以缩小范围。'],
   'input_schema': {'type': 'object',
-                   'properties': {'database': {'type': 'string', 'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
+                   'properties': {'database': {'type': 'string',
+                                               'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
                                   'project_id': {'type': 'integer', 'description': '明确的项目编号'},
                                   'output': {'type': 'string', 'description': '由 AI 指定的 PNG 输出路径'},
                                   'lang': {'type': ['string', 'null'],
@@ -379,8 +381,10 @@ COMMANDS = [{'name': 'view_screenshot',
                                            'enum': ['zh', 'en']},
                                   'view': {'type': ['string', 'null'],
                                            'description': 'canvas（画布）、layerweave.assets（选装一览：按种类列出所有对象），或插件的页面，比如 '
-                                                          'layerweave.cuts（选装接缝插件：前后相接的画面并排）；省略时是画布，给了 link 时按链接'},
-                                  'board': {'type': ['integer', 'null'], 'description': '只拍这个根层所在的画板；省略时拍整张画布'},
+                                                          'layerweave.cuts（选装接缝插件：前后相接的画面并排）；省略时是画布，给了 link '
+                                                          '时按链接'},
+                                  'board': {'type': ['integer', 'null'],
+                                            'description': '只拍这个根层所在的画板；省略时拍整张画布'},
                                   'begin': {'type': ['number', 'null'],
                                             'description': '画板显示的起点，用这块画板的单位；和 end 一起用'},
                                   'end': {'type': ['number', 'null'], 'description': '画板显示的终点'},
@@ -391,7 +395,8 @@ COMMANDS = [{'name': 'view_screenshot',
                                                'description': '播放头位置（落在 board 指定的画板上，省略 board '
                                                               '时是第一块）；右侧会列出这一刻每层的内容'},
                                   'select': {'type': ['integer', 'null'], 'description': '选中并展开详情的对象编号'},
-                                  'focus': {'type': ['integer', 'null'], 'description': '把镜头移到这个对象上（放在画面左上三分之一处）'},
+                                  'focus': {'type': ['integer', 'null'],
+                                            'description': '把镜头移到这个对象上（放在画面左上三分之一处）'},
                                   'note': {'type': ['integer', 'null'],
                                            'description': '对准这条批注（回复也行，按它所在的楼）：镜头框住楼主指的对象、层或那一段时间并高亮，右侧打开批注列表、标出这一楼'},
                                   'link': {'type': ['string', 'null'],
@@ -451,7 +456,8 @@ COMMANDS = [{'name': 'view_screenshot',
                         'notes': ['明确提供输出路径；目标已存在时报告冲突，不覆盖。']}],
           'summary': '查看当前画布或指定插件页面，直接返回图片；不保存到指定文件',
           'returns': '图片内容块；result 包含 size/ready/saved=false/issues，不包含持久化输出路径。',
-          'notes': ['只读取项目和用户视图状态；内部可能生成可重建媒体缓存。', 'params 直接传插件参数对象；需要保存时使用 view_screenshot_save。']},
+          'notes': ['只读取项目和用户视图状态；内部可能生成可重建媒体缓存。', 'params 直接传插件参数对象；需要保存时使用 view_screenshot_save。'],
+          'open_world': True},
   'cli_mapping': {'params': ['param']}}]
 
 

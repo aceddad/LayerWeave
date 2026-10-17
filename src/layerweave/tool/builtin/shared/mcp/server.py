@@ -7,13 +7,16 @@ from .catalog import BASE_NAMES
 from .runtime import Runtime, Outcome, REQUEST_ID
 
 
+PAGE_LIMIT_DESCRIPTION = '本次结果的回复每页项数，不控制查询数量；命令有 limit 时填 arguments.limit。续取只传 cursor，沿用首次预算。'
+
+
 def _schemas():
     query={'type':'object','properties':{
         'command':{'type':'string','description':'help 返回的完整命令身份'},
         'arguments':{'type':'object','description':'动作的 JSON 参数；先按需查 help'},
-        'cursor':{'type':'string','description':'上一份结果的续取游标；续取不执行原操作'},
-        'limit':{'type':'integer','minimum':1},'max_chars':{'type':'integer','minimum':256},
-        'full':{'type':'boolean','default':False}},'additionalProperties':False,
+        'cursor':{'type':'string','description':'more.cursor：续取本次结果，不重做操作；业务 next_cursor 应放在原命令的翻页参数中'},
+        'limit':{'type':'integer','minimum':1,'description':PAGE_LIMIT_DESCRIPTION},'max_chars':{'type':'integer','minimum':256,'description':'本次回复 JSON 字符预算；不改变命令查询范围'},
+        'full':{'type':'boolean','default':False,'description':'完整返回本次已查到的结果，绕过回复分页预算；不扩大业务查询范围'}},'additionalProperties':False,
         'oneOf':[{'required':['command'],'not':{'required':['cursor']}},
                  {'required':['cursor'],'not':{'required':['command']}}]}
     write={**query,'properties':{k:v for k,v in query['properties'].items() if k!='cursor'},'required':['command']}
@@ -24,7 +27,7 @@ def _schemas():
         'audience':{'enum':['usage','developer'],'default':'usage'},
         'view':{'enum':['overview','layers','objects','combined']},'config_root':{'type':'string'},
         'resource':{'type':'string'},'root':{'type':'string'},
-        'limit':{'type':'integer','minimum':1},'max_chars':{'type':'integer','minimum':256},'full':{'type':'boolean'}},
+        'limit':{'type':'integer','minimum':1,'description':PAGE_LIMIT_DESCRIPTION},'max_chars':{'type':'integer','minimum':256,'description':'本次回复 JSON 字符预算；不改变命令查询范围'},'full':{'type':'boolean','description':'完整返回本次帮助，绕过回复分页预算'}},
         'additionalProperties':False}
     return {'layerweave_help':help_schema,'layerweave_query':query,'layerweave_edit':write,'layerweave_admin':write}
 
@@ -41,7 +44,7 @@ def create_server(config=None):
     schemas=_schemas()
     descriptions={
         'layerweave_help':'查 LayerWeave 能力：分类、关键词、多个命令详情、层/对象配置、技能说明、插件和默认上下文。不需要数据库。',
-        'layerweave_query':'查询项目、导出 JSON、读取材料或看图。传 command 与 arguments；参数按需查 help。仅 cursor 续取先前结果，不重做操作。',
+        'layerweave_query':'查询项目、导出 JSON、读取材料或看图。传 command 与 arguments；参数按需查 help。外层 limit 是回复页大小；查询几条用 arguments.limit。more.cursor 读完本次结果后，再用业务游标查下一批。',
         'layerweave_edit':'修改项目、直接传入 JSON、批量 CRUD 或撤销。写入结果与 checks 分开；没有响应时先查历史，不自动重做。',
         'layerweave_admin':'初始化库、安装、修改配置或明确保存文件。具体动作按需查 help；展示此入口不等于已获客户端授权。'}
     tools=[]
@@ -65,9 +68,11 @@ def create_server(config=None):
             page={key:args.pop(key) for key in ('limit','max_chars','full') if key in args}
             try:
                 data=runtime.help(**args)
+                page_path = 'groups' if data.get('view')=='overview' else 'items'
+                pagination = {'items':[page_path]} if isinstance(data.get(page_path),list) else None
                 envelope={'context':runtime.context(),'result':data}
                 return Outcome(runtime.pages.first(envelope,limit=page.get('limit',runtime.config['limit']),
-                    max_chars=page.get('max_chars',runtime.config['max_chars']),full=page.get('full',False)))
+                    max_chars=page.get('max_chars',runtime.config['max_chars']),full=page.get('full',False),pagination=pagination))
             except Exception as error:
                 return Outcome({'error':error_detail(error)},True)
         if name in BASE_NAMES:
@@ -107,6 +112,6 @@ def create_server(config=None):
         content.extend(types.ImageContent(type='image',data=base64.b64encode(blob).decode('ascii'),mimeType='image/png') for blob in outcome.images)
         return types.CallToolResult(content=content,structuredContent=outcome.data,isError=outcome.is_error)
 
-    return Server('layerweave',version='0.7.1',
+    return Server('layerweave',version='0.7.2',
         instructions='LayerWeave：未知能力先查 layerweave_help，熟悉后可直接调用。JSON 可直接读写，文件和视图均非前置步骤。操作是否提交看 result.operation，checks 不代表写入失败。',
         get_tool_input_schema=schemas.get,on_list_tools=list_tools,on_call_tool=call_tool)

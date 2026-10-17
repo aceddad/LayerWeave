@@ -68,6 +68,8 @@ COMMANDS 可选 keywords 字符串列表与 help_order 整数，例如概览声�
 
 每条 examples.arguments 独立表示一次 MCP 调用，可附 title；所有这类示例都会展示并按 Schema 核对。只带 cli/files 的例子继续用于 CLI，不猜测转换。专用变体可声明自己的 examples 和 properties，避免把其他动作的参数说明套给回复等入口。显式示例优先；继承通用示例的投影只移除该入口不接收的字段，不混入前一条示例的参数。
 
+结果含多个列表时，工具在 mcp.pagination 中声明 items 的字段路径，按需声明已有业务 next_cursor 的路径；有效声明也在使用 help 展示。回复 limit 与命令 arguments.limit、回复 more.cursor 与业务下一批游标的区别，统一见[MCP 返回与续取](../mcp/README.md#返回与续取)。声明只组织输出，不改变业务查询或再次执行命令。
+
 当前命令参数、默认值、JSON 文件示例以实时 command_help 和各工具 --help 为准，直接读取工具自己的 COMMANDS。本文维护发现方式与开发约定，不再复制各工具参数表。
 
 业务含义与边界仍由专题解释。例如 split/keep/stretch/move 的选择和插空档范围见[范围编辑](../../usage/EDITING.md)，数据库的 operation.status 与 checks 分工见[反馈协议](../../usage/CRUD.md#操作与检测的反馈)。配置 help 的使用/开发两种阅读方式见[配置 help](CONFIG_HELP.md)。

@@ -84,7 +84,9 @@ made = import_project(c,template_help("storyboard")["items"][0]["document"],new_
 assert made["ok"] and made["data"]["status"] == "completed", made
 snapshot = export_project(c,made["data"]["project_id"],op="add")
 copied = import_project(c,snapshot)
-assert copied["ok"] and copied["data"]["counts"]["created"] == 4, copied
+assert copied["ok"] and copied["data"]["status"] == "completed", copied
+assert copied["data"]["counts"]["created"] == sum(snapshot["counts"].values()), copied
+assert export_project(c,copied["data"]["project_id"])["counts"] == snapshot["counts"]
 assert undo_operation(c,copied["operation_id"])["ok"]
 register_tables(c, {
     "layer_cache":{"id_source":"provided","fields":{"fold":"TEXT"},

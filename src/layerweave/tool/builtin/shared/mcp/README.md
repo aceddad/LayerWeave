@@ -11,7 +11,7 @@ python -X utf8 -m pip install -e ".[mcp]"
 python -X utf8 -m layerweave.tool.builtin.shared.mcp --config mcp.json
 ```
 
-安装后也可运行 `layerweave-mcp --config mcp.json`。本地 wheel 可用 `python -X utf8 -m pip install "路径/layerweave-0.7.4-py3-none-any.whl[mcp]"`。基础 Python/CLI 不需要 MCP SDK；本服务使用官方 MCP Python SDK 2.3 系列兼容接口。
+安装后也可运行 `layerweave-mcp --config mcp.json`。本地 wheel 可用 `python -X utf8 -m pip install "路径/layerweave-0.7.5-py3-none-any.whl[mcp]"`。基础 Python/CLI 不需要 MCP SDK；本服务使用官方 MCP Python SDK 2.3 系列兼容接口。
 
 `layerweave-mcp --list` 和 `--help` 输出普通文本；中文 Windows 上经管道调用时，推荐 `python -X utf8 -m layerweave.tool.builtin.shared.mcp --list`，或给脚本入口设置 `PYTHONUTF8=1`，见[命令行编码](../../usage/README.md#命令行编码)。这不改变正常 MCP 协议的编码处理。
 

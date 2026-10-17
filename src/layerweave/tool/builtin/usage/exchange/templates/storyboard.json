@@ -1,18 +1,175 @@
 {
   "format_version": 1,
-  "name": "分镜与参考",
-  "when": "用独立根层组织分镜说明与参考图；示例演示跨根关联",
-  "project": {"data": {"name": "分镜项目"}},
+  "name": "分镜与参考起始结构",
+  "when": "组织镜头说明、草图、对白与动态预演，不要求已有歌曲；分镜按秒、参考资料按序号，含可替换的文字和跨根关联示例",
+  "project": {
+    "data": {
+      "name": "分镜项目",
+      "tips": "分镜根层直接放镜头说明对象，子层放对应草图、对白和可选预演。制作内容使用同一成片秒轴；对象覆盖实际对应区间，不要求每层边界相同。参考资料用序号列表，通过 bind 与镜头关联。模板的层、分段和制作顺序可自由增减，tips 只是用途建议，不增加检测规则。示例文字可修改或删除；删除有引用的示例时一并处理对应 bind。媒体目录由 AI 自定，information.source 使用真实路径，字段与技能按需查询 help。"
+    }
+  },
   "items": [
-    {"kind": "layer", "op": "add", "key": "story", "data": {"name": "分镜", "config_ref": "layers/text.toml"},
-     "children": [
-       {"kind": "object", "op": "add", "key": "opening",
-        "data": {"name": "开场", "config_ref": "objects/text.toml", "begin": 0, "end": 3, "information": {"text": "描述开场镜头"}}}
-     ]},
-    {"kind": "layer", "op": "add", "key": "references", "data": {"name": "参考图", "config_ref": "layers/image.toml"}}
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "story",
+      "data": {
+        "name": "分镜",
+        "config_ref": "layers/text.toml",
+        "axis": {
+          "unit": "second",
+          "precision": 0.001
+        },
+        "tips": "建议每镜一个文字对象，说明发生什么、构图光线、运动和衔接意图。子层对象放在它们实际表现的时间，必要时 bind 到具体镜头；无需每镜再建一套层。"
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "opening",
+          "data": {
+            "name": "示例镜头：开场",
+            "config_ref": "objects/text.toml",
+            "begin": 0,
+            "end": 3,
+            "information": {
+              "text": "清晨，固定中景：窗边的空椅子占画面一侧，另一侧留白。人物尚未入画，声音先进入。此内容与时长仅作示例，可直接替换。"
+            }
+          }
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "sketches",
+          "data": {
+            "name": "分镜草图",
+            "config_ref": "layers/image.toml",
+            "tips": "information.source 写实际草图图片或 SVG 路径，可关联对应镜头；同镜可用多张图，一张图也可覆盖多个镜头。模板未预填媒体。"
+          }
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "dialogue",
+          "data": {
+            "name": "对白与字幕",
+            "config_ref": "layers/text.toml",
+            "tips": "information.text 写对白或字幕，按实际出现时间安排；可以短于镜头或跨镜头，按需关联相应镜头。"
+          },
+          "children": [
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "opening-line",
+              "data": {
+                "name": "示例对白",
+                "config_ref": "objects/text.toml",
+                "begin": 0.8,
+                "end": 2.4,
+                "information": {
+                  "text": "你还记得这里吗？"
+                },
+                "tips": "可替换或删除的示例；对白区间与开场镜头不同。"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "animatic",
+          "data": {
+            "name": "动态预演",
+            "config_ref": "layers/movie.toml",
+            "tips": "可选：information.source 写实际渲染的预演视频，覆盖它表现的成片区间；源工程路径可记在文字设定中并关联。不要求使用特定动画方式或技能。"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "references",
+      "data": {
+        "name": "参考资料",
+        "config_ref": "layers/text.toml",
+        "axis": {
+          "unit": "序号",
+          "precision": 1
+        },
+        "tips": "存放与时间无关的参考与设定，根层可放资料说明。建议第 n 条占 [n,n+1)，n 从 1 起，表示顺序而非数据库 ID；镜头可 bind 到实际采用的资料对象。"
+      },
+      "children": [
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "image-references",
+          "data": {
+            "name": "图片参考",
+            "config_ref": "layers/image.toml",
+            "tips": "information.source 写图片路径，可记录构图、光线、角色或场景参考；先按序号收藏，不必预先确定出场时间。"
+          }
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "settings",
+          "data": {
+            "name": "文字设定",
+            "config_ref": "layers/text.toml",
+            "tips": "information.text 写角色、场景、风格或工程说明，一条设定可被多个镜头引用；示例演示从镜头关联到具体资料。"
+          },
+          "children": [
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "room-setting",
+              "data": {
+                "name": "示例设定：清晨的房间",
+                "config_ref": "objects/text.toml",
+                "begin": 1,
+                "end": 2,
+                "information": {
+                  "text": "室内陈设简洁，窗侧自然光，保留空椅子作为视觉重心。仅作可替换的场景设定。"
+                },
+                "tips": "[1,2) 是第一个资料条目的位置，不是成片第 1～2 秒。"
+              }
+            }
+          ]
+        }
+      ]
+    }
   ],
   "records": [
-    {"kind": "bind", "op": "add", "data": {"tips": "此镜头的参考图放在该层"},
-     "refs": {"source": {"key": "opening"}, "target": {"key": "references"}}}
+    {
+      "kind": "bind",
+      "op": "add",
+      "data": {
+        "tips": "示例：开场镜头参考这条场景设定"
+      },
+      "refs": {
+        "source": {
+          "key": "opening"
+        },
+        "target": {
+          "key": "room-setting"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "data": {
+        "tips": "示例：这句对白用于开场镜头，区间可独立调整"
+      },
+      "refs": {
+        "source": {
+          "key": "opening-line"
+        },
+        "target": {
+          "key": "opening"
+        }
+      }
+    }
   ]
 }

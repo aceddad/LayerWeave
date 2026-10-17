@@ -79,20 +79,23 @@ def describe(state):
     return "\n".join(lines)
 
 
-COMMANDS = [{
-    "name": "view_state",
-    "summary": "读取用户在视图里正在看的位置：项目、当前画板、可见范围、播放头、选中的对象",
-    "entrypoint": "layerweave.tool.builtin.view.state:read_state",
-    "cli": "python -m layerweave.tool.builtin.view.state",
-    "read_only": True,
-    "context": ["database"],
-    "parameters": {},
-    "returns": "状态字典（含 age_seconds，表示多少秒前更新）；视图从未打开过时为 None。",
-    "examples": [{"cli": "python -m layerweave.tool.builtin.view.state DATABASE --json"}],
-    "notes": ["用户说「这里」「这段」时先读它；age_seconds 很大说明用户可能已经离开视图。",
-              "range 和 playhead 用当前画板（board）的单位；不同画板的单位可能不同。",
-              "左右接续的画板上，playhead 是连续时间；playhead_at 给出它落在哪个根、是那个根自己的第几秒（或帧）。"],
-}]
+COMMANDS = [{'name': 'view_state',
+  'summary': '读取用户在视图里正在看的位置：项目、当前画板、可见范围、播放头、选中的对象',
+  'entrypoint': 'layerweave.tool.builtin.view.state:read_state',
+  'cli': 'python -m layerweave.tool.builtin.view.state',
+  'read_only': True,
+  'context': ['database'],
+  'returns': '状态字典（含 age_seconds，表示多少秒前更新）；视图从未打开过时为 None。',
+  'examples': [{'cli': 'python -m layerweave.tool.builtin.view.state DATABASE --json'}],
+  'notes': ['用户说「这里」「这段」时先读它；age_seconds 很大说明用户可能已经离开视图。',
+            'range 和 playhead 用当前画板（board）的单位；不同画板的单位可能不同。',
+            '左右接续的画板上，playhead 是连续时间；playhead_at 给出它落在哪个根、是那个根自己的第几秒（或帧）。'],
+  'input_schema': {'type': 'object',
+                   'properties': {'database': {'type': 'string', 'description': 'SQLite 数据库路径；Python 连接由适配器提供'}},
+                   'additionalProperties': False,
+                   'required': ['database']},
+  'mcp': {'route': 'query', 'group': 'view', 'database': 'path', 'paths': []},
+  'cli_only': ['json']}]
 
 
 def main():

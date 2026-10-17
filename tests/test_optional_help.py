@@ -1,6 +1,7 @@
 """可选字段是继承约定；两种 help 的说明与实际保存行为保持一致。"""
 
 import importlib
+import ast
 import json
 from pathlib import Path
 import shutil
@@ -204,7 +205,9 @@ information={text="你好",speaker="A"}
     def test_example_does_not_reuse_ids_and_explains_composite_context(self):
         self.derive("ExampleText", "text", '[object.example]\nid=99\nlayer=99\ninformation={text="hello"}\nbind=[{target_kind="object",target_id=99,target_project_id=99}]\n')
         example = self.query("objects", "ExampleText")["items"][0]["save_example"]
-        self.assertNotIn("99", example["code"])
+        # 编号是数值常量；临时目录的随机字符串恰好含 99 不代表复用了对象编号。
+        self.assertFalse(any(isinstance(node, ast.Constant) and type(node.value) is int and node.value == 99
+                             for node in ast.walk(ast.parse(example["code"]))))
         self.assertEqual(set(example["required_context"]), {"connection", "project_id", "layer_id", "bind"})
         scope = {"connection": self.c, "project_id": self.project, "layer_id": self.layer("text"), "bind": []}
         exec(example["code"], scope)

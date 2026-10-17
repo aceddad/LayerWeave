@@ -1,5 +1,5 @@
 name = "layerweave.foundation"
 kind = "foundation"
-version = "0.5.0"
+version = "0.5.1"
 description = "层、对象等抽象结构，以及配置、存储、编号、事务和日志支撑"
-changes = "工具表可声明逻辑引用和复制策略；元信息可补登记，保留现有数据、硬外键与恢复行为。"
+changes = "静态多来源命令发现、可选 CLI 与同源 Schema 展示；基础部分不依赖 MCP SDK。"

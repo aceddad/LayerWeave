@@ -47,13 +47,21 @@ COMMANDS = [{'name': 'find_objects',
   'cli': 'python -m layerweave.tool.builtin.usage.query.find_objects',
   'read_only': True,
   'context': ['database', 'project_id'],
-  'parameters': {'layer_id': {'type': 'integer', 'description': '该项目内的层编号，仅直属对象'},
-                 'name': {'type': 'string', 'description': '名字字面子串'},
-                 'content': {'type': 'string', 'description': 'information 中字符串值的字面子串'},
-                 'begin': {'type': 'number', 'description': '轴上的数值位置，不换算单位'},
-                 'end': {'type': 'number', 'description': '轴上的数值位置，不换算单位'}},
   'returns': '匹配的对象记录列表；不修改内容。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.query.find_objects DATABASE 1 --layer-id 4 --content 歌词'}]}]
+  'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.query.find_objects DATABASE 1 --layer-id 4 '
+                       '--content 歌词',
+                'arguments': {'name': '开场'}}],
+  'input_schema': {'type': 'object',
+                   'properties': {'database': {'type': 'string', 'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
+                                  'project_id': {'type': 'integer', 'description': '明确的项目编号'},
+                                  'layer_id': {'type': ['integer', 'null'], 'description': '该项目内的层编号，仅直属对象'},
+                                  'name': {'type': ['string', 'null'], 'description': '名字字面子串'},
+                                  'content': {'type': ['string', 'null'], 'description': 'information 中字符串值的字面子串'},
+                                  'begin': {'type': ['number', 'null'], 'description': '轴上的数值位置，不换算单位'},
+                                  'end': {'type': ['number', 'null'], 'description': '轴上的数值位置，不换算单位'}},
+                   'additionalProperties': False,
+                   'required': ['database', 'project_id']},
+  'mcp': {'route': 'query', 'group': 'query', 'database': 'connection', 'paths': []}}]
 
 
 if __name__ == "__main__":

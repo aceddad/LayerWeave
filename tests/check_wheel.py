@@ -85,8 +85,8 @@ assert {str(ROOT)!r} not in sys.path
                              env=env, capture_output=True, text=True, encoding="utf-8", timeout=30)
         assert run.returncode == 0, run.stdout + run.stderr
         data = json.loads(run.stdout)
-        assert data["status"] == "completed" and len(data["items"]) == 45, data
-        print("ordinary install CLI: 45 commands discovered, no editable source fallback")
+        assert data["status"] == "completed" and len(data["items"]) == 46, data
+        print("ordinary install CLI: 46 commands discovered, no editable source fallback")
         zero = bootstrap + '''
 import tempfile
 from layerweave.tool.builtin.view.plugins import list_plugins

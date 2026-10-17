@@ -39,12 +39,20 @@ COMMANDS = [{'name': 'undo_operation',
   'cli': 'python -m layerweave.tool.builtin.usage.undo.cli',
   'read_only': False,
   'context': ['database'],
-  'parameters': {'operation_id': {'type': 'string', 'description': '写入返回或历史查询取得的完整操作编号', 'required': True},
-                 'config_root': {'type': 'string', 'description': '检查或配置查询采用的配置根目录；省略使用项目 configs'}},
   'returns': '标准操作结果及 undo_of；data 含恢复数量；error.conflicts 给出顶层字段或整条记录冲突。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.undo.cli DATABASE OPERATION_ID --json'}],
+  'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.undo.cli DATABASE OPERATION_ID --json',
+                'arguments': {'operation_id': '替换为写入结果的 operation_id'}}],
   'aliases': ['undo'],
-  'notes': ['information 与 axis 都按整体字段处理，不合并内部键。', '重做使用上次撤销返回的新 operation_id；冲突时整批不写。']}]
+  'notes': ['information 与 axis 都按整体字段处理，不合并内部键。', '重做使用上次撤销返回的新 operation_id；冲突时整批不写。'],
+  'input_schema': {'type': 'object',
+                   'properties': {'database': {'type': 'string', 'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
+                                  'operation_id': {'type': 'string', 'description': '写入返回或历史查询取得的完整操作编号'},
+                                  'config_root': {'type': 'string',
+                                                  'description': '检查或配置查询采用的配置根目录；省略使用项目 configs'}},
+                   'additionalProperties': False,
+                   'required': ['database', 'operation_id']},
+  'mcp': {'route': 'edit', 'group': 'undo', 'database': 'connection', 'paths': ['config_root']},
+  'cli_only': ['json']}]
 
 
 if __name__ == "__main__":

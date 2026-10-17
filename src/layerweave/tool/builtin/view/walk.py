@@ -231,27 +231,34 @@ def read_along(database, project_id, start, *, direction="both", depth=3, max_no
         return walk_from(connection, project_id, start, direction=direction, depth=depth, max_nodes=max_nodes)
 
 
-COMMANDS = [{
-    "name": "view_walk",
-    "summary": "沿着关联读：从一个对象或层出发，顺着关联一步步往外走，按顺序读出每一步是什么（名字、所在层、位置、文字或文件、怎么连过来的）",
-    "entrypoint": "layerweave.tool.builtin.view.walk:read_along",
-    "cli": "python -m layerweave.tool.builtin.view.walk",
-    "read_only": True,
-    "context": ["database", "project_id"],
-    "parameters": {
-        "start": {"type": "string", "required": True, "description": "起点：object:16、layer:5"},
-        "direction": {"type": "string", "default": "both", "choices": ["both", "out", "in"],
-                      "description": "both 两个方向；out 只顺着关联的方向（它指着谁）；in 只逆着走（谁指着它）"},
-        "depth": {"type": "integer", "default": 3, "description": "走几步，0 只读起点"},
-        "max_nodes": {"type": "integer", "default": 60, "description": "最多列出几个（含起点）"},
-    },
-    "returns": "steps（按步数排好：ref、depth、名字、层、位置、文字、文件、批注的署名和状态、via 怎么连过来的）、edges、loops、beyond、skipped、text。",
-    "examples": [{"cli": "python -m layerweave.tool.builtin.view.walk DATABASE 1 object:16"},
-                 {"cli": "python -m layerweave.tool.builtin.view.walk DATABASE 1 object:1306 --direction out --depth 2"}],
-    "notes": ["批注指着对象、回复指着批注都是关联：从批注出发读得到它指的东西和整楼；从对象出发读得到挂在上面的批注。",
-              "同一个东西只列一次；beyond 是最后一步还连着、没走的关联数，skipped 是因为数量上限没列出的个数。",
-              "网页上楼主卡片和对象详情里的「沿读」用的是同一份结果，侧栏「沿读」里按步列出，点一步镜头就过去。"],
-}]
+COMMANDS = [{'name': 'view_walk',
+  'summary': '沿着关联读：从一个对象或层出发，顺着关联一步步往外走，按顺序读出每一步是什么（名字、所在层、位置、文字或文件、怎么连过来的）',
+  'entrypoint': 'layerweave.tool.builtin.view.walk:read_along',
+  'cli': 'python -m layerweave.tool.builtin.view.walk',
+  'read_only': True,
+  'context': ['database', 'project_id'],
+  'returns': 'steps（按步数排好：ref、depth、名字、层、位置、文字、文件、批注的署名和状态、via 怎么连过来的）、edges、loops、beyond、skipped、text。',
+  'examples': [{'cli': 'python -m layerweave.tool.builtin.view.walk DATABASE 1 object:16',
+                'arguments': {'start': 'object:16'}},
+               {'cli': 'python -m layerweave.tool.builtin.view.walk DATABASE 1 object:1306 --direction out '
+                       '--depth 2'}],
+  'notes': ['批注指着对象、回复指着批注都是关联：从批注出发读得到它指的东西和整楼；从对象出发读得到挂在上面的批注。',
+            '同一个东西只列一次；beyond 是最后一步还连着、没走的关联数，skipped 是因为数量上限没列出的个数。',
+            '网页上楼主卡片和对象详情里的「沿读」用的是同一份结果，侧栏「沿读」里按步列出，点一步镜头就过去。'],
+  'input_schema': {'type': 'object',
+                   'properties': {'database': {'type': 'string', 'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
+                                  'project_id': {'type': 'integer', 'description': '明确的项目编号'},
+                                  'start': {'type': 'string', 'description': '起点：object:16、layer:5'},
+                                  'direction': {'type': 'string',
+                                                'default': 'both',
+                                                'description': 'both 两个方向；out 只顺着关联的方向（它指着谁）；in 只逆着走（谁指着它）',
+                                                'enum': ['both', 'out', 'in']},
+                                  'depth': {'type': 'integer', 'default': 3, 'description': '走几步，0 只读起点'},
+                                  'max_nodes': {'type': 'integer', 'default': 60, 'description': '最多列出几个（含起点）'}},
+                   'additionalProperties': False,
+                   'required': ['database', 'project_id', 'start']},
+  'mcp': {'route': 'query', 'group': 'view', 'database': 'path', 'paths': []},
+  'cli_only': ['json']}]
 
 
 def main():

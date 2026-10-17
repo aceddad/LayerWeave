@@ -3,6 +3,7 @@
 本文件用于维护 LayerWeave 自身源码。先按任务选择入口：
 
 - 操作项目内容：读[使用入口](src/layerweave/tool/builtin/usage/README.md)，按需查询命令与配置 help。
+- 接入 MCP 或维护命令暴露：读[MCP](src/layerweave/tool/builtin/shared/mcp/README.md)，参数以工具自身 input_schema 为准，direct/routed 共用绑定。
 - 在自己的工程中开发工具或插件：读[扩展指南](docs/build-with-layerweave/README.md)，复用公共接口。
 - 修改本仓库的实现：遵循下列约定和[开发指南](docs/developer-conventions.md)。
 

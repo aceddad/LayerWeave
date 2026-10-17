@@ -1,5 +1,5 @@
 name = "layerweave.history"
 kind = "tool"
-version = "0.2.0"
+version = "0.2.1"
 description = "按操作查看改动历史和字段变化"
-changes = "混合操作区分整批撤销与部分撤销来源，逐条保留 undo_of。"
+changes = "统一 JSON Schema 命令声明，支持可选 MCP 调用；保留原有 Python 与 CLI。"

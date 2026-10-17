@@ -85,13 +85,22 @@ COMMANDS = [{'name': 'collect_text',
   'cli': 'python -m layerweave.tool.builtin.usage.text.collect',
   'read_only': True,
   'context': ['database', 'project_id'],
-  'parameters': {'layer_id': {'type': 'integer', 'description': '仅汇集该层直属对象', 'required': True},
-                 'separator': {'type': 'string', 'description': '文本分隔符', 'default': '\n'},
-                 'begin': {'type': 'number', 'description': '轴上的数值位置，不换算单位'},
-                 'end': {'type': 'number', 'description': '轴上的数值位置，不换算单位'},
-                 'config_root': {'type': 'string', 'description': '检查或配置查询采用的配置根目录；省略使用项目 configs'}},
   'returns': 'text、来源 items、skipped_count、status 和逐条 issues。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.text.collect DATABASE 1 4 --json'}]}]
+  'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.text.collect DATABASE 1 4 --json',
+                'arguments': {'layer_id': 4}}],
+  'input_schema': {'type': 'object',
+                   'properties': {'database': {'type': 'string', 'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
+                                  'project_id': {'type': 'integer', 'description': '明确的项目编号'},
+                                  'layer_id': {'type': 'integer', 'description': '仅汇集该层直属对象'},
+                                  'separator': {'type': 'string', 'description': '文本分隔符', 'default': '\n'},
+                                  'begin': {'type': ['number', 'null'], 'description': '轴上的数值位置，不换算单位'},
+                                  'end': {'type': ['number', 'null'], 'description': '轴上的数值位置，不换算单位'},
+                                  'config_root': {'type': ['string', 'null'],
+                                                  'description': '检查或配置查询采用的配置根目录；省略使用项目 configs'}},
+                   'additionalProperties': False,
+                   'required': ['database', 'layer_id', 'project_id']},
+  'mcp': {'route': 'query', 'group': 'text', 'database': 'connection', 'paths': ['config_root']},
+  'cli_only': ['json']}]
 
 
 if __name__ == "__main__":

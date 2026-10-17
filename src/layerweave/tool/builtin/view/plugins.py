@@ -234,35 +234,78 @@ def plugin(action="list", target=None, *, name=None, root=None, catalog=None, ve
     return {**result, "text": describe(result)}
 
 
-COMMANDS = [{
-    "name": "view_plugin", "summary": "视图插件：查询市场/说明、安装版本 ZIP、更新、开发链接、开关和卸载；零插件也可使用画布",
-    "entrypoint": "layerweave.tool.builtin.view.plugins:plugin", "cli": "python -m layerweave.tool.builtin.view.plugins",
-    "read_only": False, "context": [],
-    "parameters": {
-        "action": {"type": "string", "default": "list", "choices": ["list", "market", "info", "install", "update", "add", "remove", "on", "off", "migrate"],
-                   "description": "list 本机；market 目录；info 参数/说明；install 安装；update 更新；add 开发链接；remove 解除登记；on/off 开关；migrate 显式迁移旧清单"},
-        "target": {"type": "string", "description": "完整 ID，例如 layerweave.preview；add 时是 JS 文件或插件目录路径"},
-        "name": {"type": "string", "description": "仅为无 manifest 的开发链接指定短名，最终 ID 为 local.短名"},
-        "catalog": {"type": "string", "description": "本次目录 URL/本机 index.json，不改变已有插件的更新来源"},
-        "version": {"type": "string", "description": "info/install 指定版本；install 可用它明确切回旧版本"},
-        "file": {"type": "string", "description": "install 的本地 ZIP，不能同时给 ID、catalog 或 version"},
-        "files": {"type": "boolean", "default": False, "description": "remove 时将安装器拥有的文件移至可恢复目录；不删除开发链接源码"},
-        "root": {"type": "string", "description": "可选本机状态目录；测试使用临时目录，CLI 对应 --state-root"},
-    },
-    "returns": "text；本机 plugins（完整 id/name、version、source、on、problem）；market 的 items；info 的 manifest/usage；安装状态与页面加载状态分开。",
-    "examples": [{"cli": "python -m layerweave.tool.builtin.view.plugins market"},
-                 {"cli": "python -m layerweave.tool.builtin.view.plugins info layerweave.preview"},
-                 {"cli": "python -m layerweave.tool.builtin.view.plugins install layerweave.preview"},
-                 {"cli": "python -m layerweave.tool.builtin.view.plugins install --file preview-1.0.0.zip"},
-                 {"cli": "python -m layerweave.tool.builtin.view.plugins add D:/tools/my-plugin"}],
-    "notes": ["显式安装/更新才下载并登记，不因打开项目自动安装。", "插件是页面内执行的代码；哈希验证包内容，不是作者认证。", "接口和声明见 view/PLUGINS.md；Python 组件本版只预留种类。"],
-}]
+COMMANDS = [{'name': 'view_plugin',
+  'summary': '视图插件：查询市场/说明、安装版本 ZIP、更新、开发链接、开关和卸载；零插件也可使用画布',
+  'entrypoint': 'layerweave.tool.builtin.view.plugins:plugin',
+  'cli': 'python -m layerweave.tool.builtin.view.plugins',
+  'read_only': False,
+  'context': [],
+  'returns': 'text；本机 plugins（完整 id/name、version、source、on、problem）；market 的 items；info 的 '
+             'manifest/usage；安装状态与页面加载状态分开。',
+  'examples': [{'cli': 'python -m layerweave.tool.builtin.view.plugins market', 'arguments': {'action': 'list'}},
+               {'cli': 'python -m layerweave.tool.builtin.view.plugins info layerweave.preview'},
+               {'cli': 'python -m layerweave.tool.builtin.view.plugins install layerweave.preview'},
+               {'cli': 'python -m layerweave.tool.builtin.view.plugins install --file preview-1.0.0.zip'},
+               {'cli': 'python -m layerweave.tool.builtin.view.plugins add D:/tools/my-plugin'}],
+  'notes': ['显式安装/更新才下载并登记，不因打开项目自动安装。',
+            '插件是页面内执行的代码；哈希验证包内容，不是作者认证。',
+            '接口和声明见 view/PLUGINS.md；Python 组件本版只预留种类。'],
+  'input_schema': {'type': 'object',
+                   'properties': {'action': {'type': 'string',
+                                             'default': 'list',
+                                             'description': 'list 本机；market 目录；info 参数/说明；install 安装；update '
+                                                            '更新；add 开发链接；remove 解除登记；on/off 开关；migrate 显式迁移旧清单',
+                                             'enum': ['list',
+                                                      'market',
+                                                      'info',
+                                                      'install',
+                                                      'update',
+                                                      'add',
+                                                      'remove',
+                                                      'on',
+                                                      'off',
+                                                      'migrate']},
+                                  'target': {'type': ['string', 'null'],
+                                             'description': '完整 ID，例如 layerweave.preview；add 时是 JS 文件或插件目录路径'},
+                                  'name': {'type': ['string', 'null'],
+                                           'description': '仅为无 manifest 的开发链接指定短名，最终 ID 为 local.短名'},
+                                  'catalog': {'type': ['string', 'null'],
+                                              'description': '本次目录 URL/本机 index.json，不改变已有插件的更新来源'},
+                                  'version': {'type': ['string', 'null'],
+                                              'description': 'info/install 指定版本；install 可用它明确切回旧版本'},
+                                  'file': {'type': ['string', 'null'],
+                                           'description': 'install 的本地 ZIP，不能同时给 ID、catalog 或 version'},
+                                  'files': {'type': 'boolean',
+                                            'default': False,
+                                            'description': 'remove 时将安装器拥有的文件移至可恢复目录；不删除开发链接源码'},
+                                  'root': {'type': ['string', 'null'],
+                                           'description': '可选本机状态目录；测试使用临时目录，CLI 对应 --state-root'}},
+                   'additionalProperties': False,
+                   'required': []},
+  'mcp': {'route': 'admin',
+          'group': 'view',
+          'paths': ['file', 'root'],
+          'route_by': 'action',
+          'action_routes': {'list': 'query',
+                            'market': 'query',
+                            'info': 'query',
+                            'install': 'admin',
+                            'update': 'admin',
+                            'add': 'admin',
+                            'remove': 'admin',
+                            'on': 'admin',
+                            'off': 'admin',
+                            'migrate': 'admin'},
+          'action_paths': {'add': ['target']},
+          'uri_paths': ['catalog']},
+  'cli_mapping': {'root': ['state_root']},
+  'cli_only': ['json']}]
 
 
 def main():
     from layerweave.support.commands import help_examples
     parser = argparse.ArgumentParser(description="视图插件管理", formatter_class=argparse.RawDescriptionHelpFormatter, epilog=help_examples(COMMANDS))
-    parser.add_argument("action", nargs="?", default="list", choices=COMMANDS[0]["parameters"]["action"]["choices"])
+    parser.add_argument("action", nargs="?", default="list", choices=COMMANDS[0]["input_schema"]["properties"]["action"]["enum"])
     parser.add_argument("target", nargs="?", help="完整插件 ID；add 时为路径")
     parser.add_argument("--name"); parser.add_argument("--catalog"); parser.add_argument("--version"); parser.add_argument("--file", type=Path)
     parser.add_argument("--files", action="store_true"); parser.add_argument("--state-root", type=Path)

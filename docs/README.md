@@ -5,6 +5,7 @@
 ## 使用 LayerWeave 操作项目
 
 - [使用入口](../src/layerweave/tool/builtin/usage/README.md)：从任务选择工具，按需查询命令与配置 help。
+- [MCP 接入](../src/layerweave/tool/builtin/shared/mcp/README.md)：stdio 启动、直接 JSON、常用独立入口与技能材料。
 - [JSON 导入导出](../src/layerweave/tool/builtin/usage/exchange/README.md)：批量写回、复制和场景模板。
 - [视图](../src/layerweave/tool/builtin/view/README.md)：画布、批注、截图与选装插件。
 - [技能与外部服务](../src/layerweave/tool/README.md)：查找技能、连接信息与输出目录。

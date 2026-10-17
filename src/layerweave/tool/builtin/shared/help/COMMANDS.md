@@ -1,6 +1,6 @@
 # 命令目录与命令行帮助
 
-统一入口是 `layerweave.support.commands.command_help`。它列出内部工具、基础 CRUD 分流和开发工具命令，或按名称展开说明；不会执行命令，也不需要数据库。
+静态说明入口是 `layerweave.support.commands.command_help`。它列出内部工具、基础 CRUD 分流和开发工具命令，或按名称展开说明；不会执行命令，也不需要数据库。可选 [MCP](../mcp/README.md) 复用同源 Schema 与声明，按分类提供帮助并执行已登记的动作。
 
 ```python
 from layerweave.support.commands import command_help
@@ -19,7 +19,7 @@ python -X utf8 -B -m layerweave.tool.builtin.usage.editing.split --help
 
 read_only 是命令级的粗粒度说明：会修改业务数据或持久化设置的入口标为 false，查询与修改混合的入口也按可写标记。true 不保证没有输出文件、缓存或临时资源；生成截图、导出文件等行为需同时读用途与参数说明，不直接把该字段当作 MCP 的完整副作用描述。
 
-总览只有 name、summary、read_only 和 cli 模块入口。详情还包括 Python entrypoint、参数说明、返回说明、notes、examples 和声明所在 source。可组合写工具另有 session_entrypoint，指向接受 write 的 Python 事务内入口；不增加命令，也不改变 CLI。参数含类型、用途、是否必需，以及适用的 choices/default。示例中的 files 直接保存可解析的 JSON 值；文件最外层的字典或列表不会用省略号代替。
+CLI 总览有 name、summary、read_only 和可选 cli。详情包含 input_schema、由它派生的 parameters 展示、可选 Python entrypoint、返回说明、notes、examples 与 source。可组合写工具另有 session_entrypoint，指向接受 write 的事务内入口。参数以标准 JSON Schema 维护，展示会派生是否必需和 choices/default。示例中的 files 是完整 JSON 值；MCP 示例参数可放 examples.arguments，不要求有 CLI。
 
 名称支持规范命令名、别名或完整 Python 入口，比如 split、split_object、layerweave.tool.builtin.usage.editing.timeline:split_object。重复指向同一命令的查询去重，names=[] 返回空列表。名称不明或有歧义时给出问题和候选，其他目标继续；有歧义时可以用不同的完整 entrypoint 区分。
 
@@ -31,7 +31,7 @@ read_only 是命令级的粗粒度说明：会修改业务数据或持久化设�
 
 各工具在自己的 Python 文件中放置字面量 COMMANDS 列表，使用普通赋值，且放在执行 main 的语句之前。统一目录按文件递归发现，无需修改中央命令名单；下次查询重新读取。目录只使用 AST 读取字面量，不导入被发现的工具模块。
 
-使用工具位于 src/layerweave/tool/builtin/usage，开发工具位于 src/layerweave/tool/builtin/developer，共用 help 位于 src/layerweave/tool/builtin/shared/help；视图命令位于 view。目录分类见[内部工具导航](../../README.md)。每个命令只在实现模块声明一次，help 的进一步编排留到 MCP 阶段讨论。
+使用工具位于 src/layerweave/tool/builtin/usage，开发工具位于 developer，共用 help 位于 shared/help；视图命令位于 view。每个命令的 Schema 在自身声明处维护一次；MCP 的 route/exposure 与函数适配也随包声明。通过 discover_commands(sources=...) 可合并开发来源与已安装的 layerweave.tools entry points，发现不会导入模块。旧 command_help 的 source_root 仍表示替换一次查询的扫描范围。
 
 `layerweave.support.cli.parser_for(..., commands=COMMANDS)` 将同一份 examples/notes 放进根级 --help。使用独立 argparse 的入口通过 layerweave.support.commands.help_examples 复用它。split 和 gaps 的关键参数 help 也直接引用参数描述。
 
@@ -45,17 +45,22 @@ COMMANDS = [{
     "cli": "python -m layerweave.tool.builtin.usage.custom.example",
     "read_only": True,
     "context": ["database", "project_id"],
-    "parameters": {
-        "object_id": {"type": "integer", "required": True, "description": "项目内对象编号"}
-    },
+    "input_schema": {"type": "object", "properties": {
+        "database": {"type": "string", "description": "数据库路径"},
+        "project_id": {"type": "integer", "description": "项目编号"},
+        "object_id": {"type": "integer", "description": "项目内对象编号"}
+    }, "required": ["database", "project_id", "object_id"], "additionalProperties": False},
+    "mcp": {"route": "query", "group": "query", "database": "connection"},
     "returns": "返回对象说明",
     "examples": [{"cli": "python -m layerweave.tool.builtin.usage.custom.example DATABASE 1 8"}]
 }]
 ```
 
-这里只示范说明格式，实际工具仍需有对应函数和 CLI。context 中的 database/project_id 由目录补入共用参数说明；无数据库的 help 类工具使用空列表。Python 业务接口使用已打开的 connection，database 是 CLI 及未来适配器的连接上下文，不是直接传给 Python 函数的同名参数。checker 等 Python 回调由开发 API 文档说明，不作为普通 JSON 命令参数。
+这里只示范声明格式，实际可调用工具需提供对应函数；CLI 可省略。context 描述可补的上下文，标准 input_schema 明确声明其字段。旧 parameters 格式仍可读取并转换，新增声明使用 input_schema。mcp.database=connection 时适配器打开连接传给首参，路径型入口用 path；checker 等 Python 回调不作为 JSON 参数。
 
-未来 MCP 可以复用这个只读目录进行展示和适配。当前没有新增 MCP 服务，也没有根据字符串名称自动执行 Python 函数；parameters 是接口说明数据，不是完整的 MCP 工具注册协议。
+命令目录本身始终只读。MCP 在启动时生成绑定与独立入口，调用时才导入已登记函数；没有 mcp 声明的条目只展示说明。input_schema 约束调用参数，不复制 TOML 内容约束。具体启用范围、名称、变体与 SDK 启动见 [MCP 接入](../mcp/README.md)。
+
+有 CLI 的命令使用 cli_mapping 显式记录 Schema 参数到 argparse dest 的映射，例如 cuts/first_information 都来自 data_file；cli_only 列出 json/text 等只属于命令行的选项。参数同名时无需重复映射。对应测试同时核对两端，新增参数若没有对应或专用说明会失败；没有 CLI 的工具不受此项约束。
 
 ## 参数与业务说明的维护位置
 

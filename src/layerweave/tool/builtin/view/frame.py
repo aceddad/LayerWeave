@@ -34,26 +34,35 @@ def grab(database, project_id, object_id, output, *, at=None, offset=None, last=
             "offset": "end" if seconds == "end" else round(seconds, 3)}
 
 
-COMMANDS = [{
-    "name": "view_frame",
-    "summary": "取视频对象在某一刻的画面（JPEG），可按时间轴的全局时间、视频自身时间，或取最后一帧",
-    "entrypoint": "layerweave.tool.builtin.view.frame:grab",
-    "cli": "python -m layerweave.tool.builtin.view.frame",
-    "read_only": True,
-    "context": ["database", "project_id"],
-    "parameters": {
-        "object_id": {"type": "integer", "required": True, "description": "视频对象编号"},
-        "output": {"type": "string", "required": True, "description": "由 AI 指定的 JPEG 输出路径"},
-        "at": {"type": "number", "description": "时间轴上的全局位置；与 offset、last 三选一"},
-        "offset": {"type": "number", "description": "视频自身的秒数；与 at、last 三选一"},
-        "last": {"type": "boolean", "description": "取视频文件的最后一帧；与 at、offset 三选一", "default": False},
-        "width": {"type": "integer", "default": 960},
-    },
-    "returns": "output、object、source、offset（实际取帧的片内秒数；取最后一帧时为 end）。",
-    "examples": [{"cli": "python -m layerweave.tool.builtin.view.frame DATABASE 1 16 frames/ball_3s.jpg --at 3.75"},
-                 {"cli": "python -m layerweave.tool.builtin.view.frame DATABASE 1 16 frames/ball_last.jpg --last"}],
-    "notes": ["需要 ffmpeg；超出视频长度时取最后一帧。", "查前后两段是否接得上，可以先看视图的接缝页（view_screenshot --view cuts）。"],
-}]
+COMMANDS = [{'name': 'view_frame',
+  'summary': '取视频对象在某一刻的画面（JPEG），可按时间轴的全局时间、视频自身时间，或取最后一帧',
+  'entrypoint': 'layerweave.tool.builtin.view.frame:grab',
+  'cli': 'python -m layerweave.tool.builtin.view.frame',
+  'read_only': True,
+  'context': ['database', 'project_id'],
+  'returns': 'output、object、source、offset（实际取帧的片内秒数；取最后一帧时为 end）。',
+  'examples': [{'cli': 'python -m layerweave.tool.builtin.view.frame DATABASE 1 16 frames/ball_3s.jpg --at 3.75',
+                'arguments': {'object_id': 16, 'output': 'frames/ball_3s.jpg', 'at': 3.75}},
+               {'cli': 'python -m layerweave.tool.builtin.view.frame DATABASE 1 16 frames/ball_last.jpg --last'}],
+  'notes': ['需要 ffmpeg；超出视频长度时取最后一帧。', '查前后两段是否接得上，可以先看视图的接缝页（view_screenshot --view cuts）。'],
+  'input_schema': {'type': 'object',
+                   'properties': {'database': {'type': 'string', 'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
+                                  'project_id': {'type': 'integer', 'description': '明确的项目编号'},
+                                  'object_id': {'type': 'integer', 'description': '视频对象编号'},
+                                  'output': {'type': 'string', 'description': '由 AI 指定的 JPEG 输出路径'},
+                                  'at': {'type': ['number', 'null'], 'description': '时间轴上的全局位置；与 offset、last 三选一'},
+                                  'offset': {'type': ['number', 'null'], 'description': '视频自身的秒数；与 at、last 三选一'},
+                                  'last': {'type': 'boolean',
+                                           'description': '取视频文件的最后一帧；与 at、offset 三选一',
+                                           'default': False},
+                                  'width': {'type': 'integer', 'default': 960}},
+                   'additionalProperties': False,
+                   'required': ['database', 'object_id', 'output', 'project_id']},
+  'mcp': {'route': 'admin',
+          'group': 'view',
+          'database': 'path',
+          'paths': ['output'],
+          'handler': 'layerweave.tool.builtin.view.mcp:save_frame'}}]
 
 
 def main():

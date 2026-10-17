@@ -716,31 +716,36 @@ def bench(database=None, project_id=None, *, objects=800, rounds=3, baseline=Non
     return {**result, "text": describe(result)}
 
 
-COMMANDS = [{
-    "name": "view_bench",
-    "summary": "视图的性能门槛：用无界面浏览器量打开、点选、拖画板、放大后平移，和门槛比，超过的标红。改了视图以后跑",
-    "entrypoint": "layerweave.tool.builtin.view.bench:bench",
-    "cli": "python -m layerweave.tool.builtin.view.bench",
-    "read_only": True,
-    "context": [],
-    "parameters": {
-        "database": {"type": "string", "description": "量这个库（只读）；省略时造一个合成项目"},
-        "project_id": {"type": "integer", "description": "给了库时量哪个项目，默认 1"},
-        "objects": {"type": "integer", "default": 800, "description": "合成项目的对象数（构成照手书）"},
-        "rounds": {"type": "integer", "default": 3, "description": "量几轮取中位；数字忽高忽低时多量几轮"},
-        "baseline": {"type": "string", "description": "另一份视图网页的目录（构建好的 view/web，比如改之前的），和现在的每轮交替量"},
-        "browser": {"type": "string", "description": "浏览器路径；省略时自动找 Chrome、Edge、Chromium"},
-    },
-    "returns": "rows（四项，门槛不变；0.23.0 随插件画格子一起去掉了第五项，增加 status/invalid_rounds/sample_counts/max_ms）、passed、runs（含 diagnostics：活跃帧、输入与实际位移、松手回调、就绪方式）、order、构建 hash、text。回调时机不是实际像素呈现时延。",
-    "examples": [{"cli": "python -m layerweave.tool.builtin.view.bench"},
-                 {"cli": "python -m layerweave.tool.builtin.view.bench --baseline D:/old/view/web --rounds 5"},
-                 {"cli": "python -m layerweave.tool.builtin.view.bench DATABASE --project 1"}],
-    "notes": ["门槛：首个对象进入 DOM ≤ 2 秒；点选中位 ≤ 120 毫秒；活跃拖动帧间隔 p95 ≤ 33 毫秒。有超过或无效的退出码是 1。",
-              "只读：起只监听本机的临时服务和独立配置的无界面浏览器（关掉扩展、同步），量完都关掉；合成项目放在临时目录，量完删掉。",
-              "按 60 Hz 发送有限输入，浏览器可能合并事件；报告实际事件数。基线顺序 ABBAAB，原始数据保留最长帧和样本数。",
-              "热身用于稳定连续拖动对照，不推断显卡频率。点选首个样本另外记录；正常模式等待媒体队列，旧构建使用明确标记的较弱 DOM 就绪检查。",
-              "标题先移入视口内部，保留产品自动平移；测量时若视口仍变动则标无效。空视口、图片没画好都不能通过。"],
-}]
+COMMANDS = [{'name': 'view_bench',
+  'summary': '视图的性能门槛：用无界面浏览器量打开、点选、拖画板、放大后平移，和门槛比，超过的标红。改了视图以后跑',
+  'entrypoint': 'layerweave.tool.builtin.view.bench:bench',
+  'cli': 'python -m layerweave.tool.builtin.view.bench',
+  'read_only': True,
+  'context': [],
+  'returns': 'rows（四项，门槛不变；0.23.0 随插件画格子一起去掉了第五项，增加 status/invalid_rounds/sample_counts/max_ms）、passed、runs（含 '
+             'diagnostics：活跃帧、输入与实际位移、松手回调、就绪方式）、order、构建 hash、text。回调时机不是实际像素呈现时延。',
+  'examples': [{'cli': 'python -m layerweave.tool.builtin.view.bench'},
+               {'cli': 'python -m layerweave.tool.builtin.view.bench --baseline D:/old/view/web --rounds 5'},
+               {'cli': 'python -m layerweave.tool.builtin.view.bench DATABASE --project 1'}],
+  'notes': ['门槛：首个对象进入 DOM ≤ 2 秒；点选中位 ≤ 120 毫秒；活跃拖动帧间隔 p95 ≤ 33 毫秒。有超过或无效的退出码是 1。',
+            '只读：起只监听本机的临时服务和独立配置的无界面浏览器（关掉扩展、同步），量完都关掉；合成项目放在临时目录，量完删掉。',
+            '按 60 Hz 发送有限输入，浏览器可能合并事件；报告实际事件数。基线顺序 ABBAAB，原始数据保留最长帧和样本数。',
+            '热身用于稳定连续拖动对照，不推断显卡频率。点选首个样本另外记录；正常模式等待媒体队列，旧构建使用明确标记的较弱 DOM 就绪检查。',
+            '标题先移入视口内部，保留产品自动平移；测量时若视口仍变动则标无效。空视口、图片没画好都不能通过。'],
+  'input_schema': {'type': 'object',
+                   'properties': {'database': {'type': ['string', 'null'], 'description': '量这个库（只读）；省略时造一个合成项目'},
+                                  'project_id': {'type': ['integer', 'null'], 'description': '给了库时量哪个项目，默认 1'},
+                                  'objects': {'type': 'integer', 'default': 800, 'description': '合成项目的对象数（构成照手书）'},
+                                  'rounds': {'type': 'integer', 'default': 3, 'description': '量几轮取中位；数字忽高忽低时多量几轮'},
+                                  'baseline': {'type': ['string', 'null'],
+                                               'description': '另一份视图网页的目录（构建好的 view/web，比如改之前的），和现在的每轮交替量'},
+                                  'browser': {'type': ['string', 'null'],
+                                              'description': '浏览器路径；省略时自动找 Chrome、Edge、Chromium'}},
+                   'additionalProperties': False,
+                   'required': []},
+  'mcp': {'enabled': False, 'group': 'view', 'reason': '驻留服务或开发性能测量请使用现有 CLI'},
+  'cli_mapping': {'project_id': ['project']},
+  'cli_only': ['json']}]
 
 
 def main():

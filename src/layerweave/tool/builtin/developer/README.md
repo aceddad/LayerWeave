@@ -9,6 +9,7 @@
 | 用 LayerWeave 搭建自己的工具 | [AI 开发指导](../../../../../docs/build-with-layerweave/README.md)，嵌套时序与有序管理等分篇示例 |
 | 新增 Python 层类或对象类 | [模型](../../../models/README.md)和[配置](../../../configs/README.md)，参考 [Title](../../../../../examples/title.py) |
 | 新增内部工具 | 本页的开发流程、[公共 API](../../../support/API.md)、[命令声明](../shared/help/COMMANDS.md) |
+| 将工具或技能接入 MCP | [MCP 接入](../shared/mcp/README.md)，统一声明与可选 direct，不要求 CLI |
 | 工具包需要自己的层或对象类型（比如批注层） | [工具包登记类型](TOOL_TYPES.md)，以视图工具的批注层为例 |
 | 安装下载的技能 ZIP | [技能安装](SKILLS.md)，选择层目录或场景补充区 |
 | 管理本地 API KEY 与连接说明 | [KEY 管理](keys/README.md)，used 可记录任意使用方，公开查询不显示密钥 |

@@ -13,8 +13,8 @@
 ## 发行与对外接入
 
 - 正式安装包、发行渠道和支持的平台范围。
-- MCP 暴露哪些能力、如何分组以及怎样装载；当前公开调用仍为 Python 和 CLI。
-- Python 组件的标准安装、发现与环境接入；视图插件市场目前只执行 view-plugin 的安装流程。
+- MCP 的远程部署、鉴权与长任务扩展；当前已提供本地 stdio、统一 direct/routed 和外部声明发现，见[MCP 接入](../src/layerweave/tool/builtin/shared/mcp/README.md)。
+- Python 插件市场的安装与环境管理；命令发现已有 entry points 和开发目录接入，视图市场仍只安装 view-plugin。
 
 ## 视图
 

@@ -17,7 +17,7 @@ from layerweave.support.storage.database import SCHEMA_PATH
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = ROOT / "src/layerweave"
 PACKAGES = ("usage/records", "usage/query", "usage/editing", "usage/history", "usage/undo",
-            "usage/validation", "usage/text", "usage/exchange", "shared/help", "developer/database", "developer/skills", "developer/keys", "developer/versions",
+            "usage/validation", "usage/text", "usage/exchange", "shared/help", "shared/mcp", "developer/database", "developer/skills", "developer/keys", "developer/versions",
             "view")   # visualization 分支：视图工具包
 
 FIXTURE = '''
@@ -246,6 +246,14 @@ from layerweave.tool.builtin.shared.help.config_help import format_help
 r = read_support("combined", "text")
 assert r["status"] == "completed" and "objects/title.toml" in format_help(r), r
 ''',
+            "shared/mcp": '''
+from layerweave.tool.builtin.shared.mcp import create_runtime
+import sys
+runtime = create_runtime({"installed":False,"skills_roots":[]})
+assert runtime.help()["groups"] == []
+assert runtime.catalog.documentation[0]["id"] == "layerweave.mcp_server"
+assert not any(n == "mcp" or n.startswith("mcp.") for n in sys.modules)
+''',
             "developer/database": '''
 from layerweave.tool.builtin.developer.database.cli import main
 import sys
@@ -306,6 +314,8 @@ for item in overview["items"]:
     parts = shlex.split(item["cli"])
     module = parts[parts.index("-m")+1]
     command = import_module(module)
+    if not hasattr(command, "main"):
+        command = import_module(module + ".__main__")
     try:
         sys.argv = [module, "--help"]
         command.main()

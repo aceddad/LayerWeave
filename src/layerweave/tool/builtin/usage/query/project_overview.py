@@ -56,9 +56,15 @@ COMMANDS = [{'name': 'project_overview',
   'cli': 'python -m layerweave.tool.builtin.usage.query.project_overview',
   'read_only': True,
   'context': ['database', 'project_id'],
-  'parameters': {},
   'returns': '项目与层树摘要；项目不存在返回 None。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.query.project_overview DATABASE 1 --json'}]}]
+  'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.query.project_overview DATABASE 1 --json'}],
+  'input_schema': {'type': 'object',
+                   'properties': {'database': {'type': 'string', 'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
+                                  'project_id': {'type': 'integer', 'description': '明确的项目编号'}},
+                   'additionalProperties': False,
+                   'required': ['database', 'project_id']},
+  'mcp': {'route': 'query', 'group': 'query', 'database': 'connection', 'paths': []},
+  'cli_only': ['json']}]
 
 
 if __name__ == "__main__":

@@ -56,6 +56,8 @@ class ViewInteractionTests(unittest.TestCase):
                 tab.call("Page.enable")
                 tab.call("Page.navigate", url=url + f"?project={project}&record=0&tree=0")
                 self.wait(tab, "document.querySelectorAll('.board').length===2 && document.querySelectorAll('.obj').length===2")
+                # DOM 和队列短暂空闲不代表懒加载图像已经绘制；后续比较旧/新像素需要明确的初始画面。
+                self.wait(tab, "document.querySelectorAll('.obj[data-media-state=ready]').length===2")
                 _ev(tab, "(async()=>{await window.__layerweavePaintIdle?.();return true})()")
 
                 def position(key):

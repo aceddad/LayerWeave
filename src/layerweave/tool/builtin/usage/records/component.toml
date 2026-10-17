@@ -1,5 +1,5 @@
 name = "layerweave.records"
 kind = "tool"
-version = "0.2.0"
+version = "0.2.1"
 description = "项目内容的 CRUD 请求分流和模型保存"
-changes = "带检测保存明确命名；增加事务内 CRUD 请求执行入口。"
+changes = "统一 JSON Schema 命令声明，支持可选 MCP 调用；保留原有 Python 与 CLI。"

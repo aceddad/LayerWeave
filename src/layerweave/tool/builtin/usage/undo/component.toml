@@ -1,5 +1,5 @@
 name = "layerweave.undo"
 kind = "tool"
-version = "0.3.0"
+version = "0.3.1"
 description = "基于改动日志规划撤销、冲突核对和再次撤销"
-changes = "增加事务内撤销入口，可与其他项目内容操作共同提交。"
+changes = "统一 JSON Schema 命令声明，支持可选 MCP 调用；保留原有 Python 与 CLI。"

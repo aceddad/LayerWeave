@@ -180,26 +180,32 @@ def describe(m, *, lang="zh"):
     return "\n".join(lines)
 
 
-COMMANDS = [{
-    "name": "view_at",
-    "summary": "按时刻读：某个根的某一刻（或一段）上每层是什么、彼此怎么连着、有哪些待处理批注；不给参数就读用户此刻在视图里看的地方",
-    "entrypoint": "layerweave.tool.builtin.view.at:read_at",
-    "cli": "python -m layerweave.tool.builtin.view.at",
-    "read_only": True,
-    "context": ["database", "project_id"],
-    "parameters": {
-        "root": {"type": "integer", "description": "根层编号；不给时读视图里用户圈出的一段或播放头那一刻"},
-        "at": {"type": "number", "description": "某一刻，用这个根自己的单位"},
-        "range": {"type": "array", "description": "一段 [起点, 终点]，用这个根自己的单位"},
-    },
-    "returns": "moments（每个：root、name、unit、begin、end、layers[{layer, objects, gap}]、relations、notes）、from_view、text。",
-    "examples": [{"cli": "python -m layerweave.tool.builtin.view.at DATABASE 1"},
-                 {"cli": "python -m layerweave.tool.builtin.view.at DATABASE 1 --root 1 --at 12.5"},
-                 {"cli": "python -m layerweave.tool.builtin.view.at DATABASE 1 --root 1 --range 10 15"}],
-    "notes": ["用户说\"这里\"\"这一刻\"\"这段\"时，不给参数直接读：圈出了一段读那一段，否则读播放头；左右接续的画板上每一段各读一刻。",
-              "每个对象的写法和 view_walk 一样；连到这一刻以外的东西只数个数，要看就用 view_walk。",
-              "截图是给眼睛看的，这个给推理用；两个一起用最稳。"],
-}]
+COMMANDS = [{'name': 'view_at',
+  'summary': '按时刻读：某个根的某一刻（或一段）上每层是什么、彼此怎么连着、有哪些待处理批注；不给参数就读用户此刻在视图里看的地方',
+  'entrypoint': 'layerweave.tool.builtin.view.at:read_at',
+  'cli': 'python -m layerweave.tool.builtin.view.at',
+  'read_only': True,
+  'context': ['database', 'project_id'],
+  'returns': 'moments（每个：root、name、unit、begin、end、layers[{layer, objects, gap}]、relations、notes）、from_view、text。',
+  'examples': [{'cli': 'python -m layerweave.tool.builtin.view.at DATABASE 1'},
+               {'cli': 'python -m layerweave.tool.builtin.view.at DATABASE 1 --root 1 --at 12.5'},
+               {'cli': 'python -m layerweave.tool.builtin.view.at DATABASE 1 --root 1 --range 10 15'}],
+  'notes': ['用户说"这里""这一刻""这段"时，不给参数直接读：圈出了一段读那一段，否则读播放头；左右接续的画板上每一段各读一刻。',
+            '每个对象的写法和 view_walk 一样；连到这一刻以外的东西只数个数，要看就用 view_walk。',
+            '截图是给眼睛看的，这个给推理用；两个一起用最稳。'],
+  'input_schema': {'type': 'object',
+                   'properties': {'database': {'type': 'string', 'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
+                                  'project_id': {'type': 'integer', 'description': '明确的项目编号'},
+                                  'root': {'type': ['integer', 'null'],
+                                           'description': '根层编号；不给时读视图里用户圈出的一段或播放头那一刻'},
+                                  'at': {'type': ['number', 'null'], 'description': '某一刻，用这个根自己的单位'},
+                                  'range': {'type': ['array', 'null'],
+                                            'description': '一段 [起点, 终点]，用这个根自己的单位',
+                                            'items': {}}},
+                   'additionalProperties': False,
+                   'required': ['database', 'project_id']},
+  'mcp': {'route': 'query', 'group': 'view', 'database': 'path', 'paths': []},
+  'cli_only': ['json']}]
 
 
 def main():

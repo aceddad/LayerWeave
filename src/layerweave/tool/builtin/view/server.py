@@ -334,22 +334,24 @@ def make_server(database, *, port=0, state_root=None, record_state=True, web_roo
     return server, f"http://127.0.0.1:{server.server_address[1]}/"
 
 
-COMMANDS = [{
-    "name": "view_server",
-    "summary": "在本机启动视图网页：查看画布与插件页面，并支持批注、折叠和已读状态写入",
-    "entrypoint": "layerweave.tool.builtin.view.server:serve",
-    "cli": "python -m layerweave.tool.builtin.view.server",
-    "read_only": False,
-    "context": ["database"],
-    "parameters": {
-        "port": {"type": "integer", "description": "端口；省略时用 8765，0 表示由系统分配", "default": 8765},
-        "project": {"type": "integer", "description": "打开后直接显示的项目编号"},
-    },
-    "returns": "持续运行的本机网页服务；打印访问地址。",
-    "examples": [{"cli": "python -m layerweave.tool.builtin.view.server DATABASE --project 1"}],
-    "notes": ["只监听 127.0.0.1；查看项目使用只读连接，批注、折叠和已读状态经工具入口写入；文件只提供数据库引用过且存在的本地文件。",
-              "相对路径的文件相对于数据库文件所在目录解析。"],
-}]
+COMMANDS = [{'name': 'view_server',
+  'summary': '在本机启动视图网页：查看画布与插件页面，并支持批注、折叠和已读状态写入',
+  'entrypoint': 'layerweave.tool.builtin.view.server:serve',
+  'cli': 'python -m layerweave.tool.builtin.view.server',
+  'read_only': False,
+  'context': ['database'],
+  'returns': '持续运行的本机网页服务；打印访问地址。',
+  'examples': [{'cli': 'python -m layerweave.tool.builtin.view.server DATABASE --project 1'}],
+  'notes': ['只监听 127.0.0.1；查看项目使用只读连接，批注、折叠和已读状态经工具入口写入；文件只提供数据库引用过且存在的本地文件。', '相对路径的文件相对于数据库文件所在目录解析。'],
+  'input_schema': {'type': 'object',
+                   'properties': {'database': {'type': 'string', 'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
+                                  'port': {'type': 'integer',
+                                           'description': '端口；省略时用 8765，0 表示由系统分配',
+                                           'default': 8765},
+                                  'project': {'type': ['integer', 'null'], 'description': '打开后直接显示的项目编号'}},
+                   'additionalProperties': False,
+                   'required': ['database']},
+  'mcp': {'enabled': False, 'group': 'view', 'reason': '驻留服务或开发性能测量请使用现有 CLI'}}]
 
 
 def serve(database, *, port=8765, project=None):

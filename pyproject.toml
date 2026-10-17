@@ -4,10 +4,16 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "layerweave"
-version = "0.6.0"
+version = "0.7.0"
 description = "Layers, objects and composable tools for AI workflows"
 requires-python = ">=3.11"
 dependencies = []
+
+[project.optional-dependencies]
+mcp = ["mcp>=2.3,<3", "jsonschema>=4.23,<5"]
+
+[project.scripts]
+layerweave-mcp = "layerweave.tool.builtin.shared.mcp.__main__:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
@@ -25,5 +31,7 @@ namespaces = false
 "layerweave.support.numbering" = ["README.md"]
 "layerweave.tool.builtin.developer.keys" = ["example.json", "README.md"]
 "layerweave.tool.builtin.developer.versions" = ["README.md"]
+"layerweave.tool.builtin.shared.mcp" = ["README.md", "example.json"]
+"layerweave.tool.builtin.shared.help" = ["README.md", "COMMANDS.md", "CONFIG_HELP.md"]
 "layerweave.tool.builtin.usage.exchange" = ["templates/*.json", "README.md", "FORMAT.md", "DEVELOPMENT.md"]
 "layerweave.tool.builtin.view" = ["web/*", "web/assets/*", "locales/*.json", "LANGUAGES.md", "GUIDE.md", "DEVELOPMENT.md", "sdk/**/*.d.ts", "sdk/**/snapshot.json", "README.md", "PLUGINS.md", "PERFORMANCE.md", "INCREMENTAL.md"]

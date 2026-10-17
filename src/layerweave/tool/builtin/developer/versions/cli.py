@@ -35,27 +35,48 @@ def main():
                    name=args.name, status=args.status), formatter=format_versions)
 
 
-COMMANDS = [{
-    "name": "manage_versions", "aliases": ["versions"],
-    "summary": "自动登记组件声明并核对版本存在状态；查看上次同步记录与更新说明",
-    "entrypoint": "layerweave.tool.builtin.developer.versions.service:manage_versions",
-    "cli": "python -m layerweave.tool.builtin.developer.versions.cli", "read_only": False, "context": ["database"],
-    "parameters": {
-        "action": {"type": "string", "default": "sync", "choices": ["sync", "read"], "description": "sync 会写入版本表及日志；read 只查询"},
-        "roots": {"type": "array", "description": "sync 的目录或 component.toml 路径列表；替换默认扫描范围，CLI 重复 --root；省略时基础声明加内置工具目录"},
-        "name": {"type": "string", "description": "read 按组件名精确筛选"},
-        "status": {"type": "string", "choices": ["online", "inactive", "unknown"], "description": "read 按上次核对状态筛选"}
-    },
-    "returns": "标准 operation/ok/data/checks；data 含 items、counts。sync 附 roots/checked_at/status/issues；读取失败可部分完成，ok 表示数据库操作成功。",
-    "examples": [
-        {"cli": "python -m layerweave.tool.builtin.developer.versions.cli DATABASE sync --json"},
-        {"cli": "python -m layerweave.tool.builtin.developer.versions.cli DATABASE sync --root ./my-tools --json"},
-        {"cli": "python -m layerweave.tool.builtin.developer.versions.cli DATABASE read --name layerweave.editing --json"}
-    ],
-    "notes": ["声明使用 component.toml，name/version 必填字符串；kind 默认 tool，description/changes 默认空字符串。",
-              "name + version 完全匹配；缺席的历史版本标为 inactive，不删除记录；未扫描范围不改变。",
-              "在线只表示声明存在可读，不测试工具功能，不自动下载、升级或限制使用。"]
-}]
+COMMANDS = [{'name': 'manage_versions',
+  'aliases': ['versions'],
+  'summary': '自动登记组件声明并核对版本存在状态；查看上次同步记录与更新说明',
+  'entrypoint': 'layerweave.tool.builtin.developer.versions.service:manage_versions',
+  'cli': 'python -m layerweave.tool.builtin.developer.versions.cli',
+  'read_only': False,
+  'context': ['database'],
+  'returns': '标准 operation/ok/data/checks；data 含 items、counts。sync 附 roots/checked_at/status/issues；读取失败可部分完成，ok '
+             '表示数据库操作成功。',
+  'examples': [{'cli': 'python -m layerweave.tool.builtin.developer.versions.cli DATABASE sync --json',
+                'arguments': {'action': 'read'}},
+               {'cli': 'python -m layerweave.tool.builtin.developer.versions.cli DATABASE sync --root ./my-tools '
+                       '--json'},
+               {'cli': 'python -m layerweave.tool.builtin.developer.versions.cli DATABASE read --name '
+                       'layerweave.editing --json'}],
+  'notes': ['声明使用 component.toml，name/version 必填字符串；kind 默认 tool，description/changes 默认空字符串。',
+            'name + version 完全匹配；缺席的历史版本标为 inactive，不删除记录；未扫描范围不改变。',
+            '在线只表示声明存在可读，不测试工具功能，不自动下载、升级或限制使用。'],
+  'input_schema': {'type': 'object',
+                   'properties': {'database': {'type': 'string', 'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
+                                  'action': {'type': 'string',
+                                             'default': 'sync',
+                                             'description': 'sync 会写入版本表及日志；read 只查询',
+                                             'enum': ['sync', 'read']},
+                                  'roots': {'type': ['array', 'null'],
+                                            'description': 'sync 的目录或 component.toml 路径列表；替换默认扫描范围，CLI 重复 '
+                                                           '--root；省略时基础声明加内置工具目录',
+                                            'items': {}},
+                                  'name': {'type': ['string', 'null'], 'description': 'read 按组件名精确筛选'},
+                                  'status': {'type': ['string', 'null'],
+                                             'description': 'read 按上次核对状态筛选',
+                                             'enum': ['online', 'inactive', 'unknown']}},
+                   'additionalProperties': False,
+                   'required': ['database']},
+  'mcp': {'route': 'edit',
+          'group': 'developer',
+          'database': 'connection',
+          'paths': [],
+          'route_by': 'action',
+          'action_routes': {'sync': 'edit', 'read': 'query'},
+          'path_arrays': ['roots']},
+  'cli_only': ['json']}]
 
 
 if __name__ == "__main__":

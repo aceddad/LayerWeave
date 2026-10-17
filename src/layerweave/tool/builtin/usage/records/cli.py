@@ -45,13 +45,26 @@ COMMANDS = [{'name': 'dispatch',
   'cli': 'python -m layerweave.tool.builtin.usage.records.cli',
   'read_only': False,
   'context': ['database'],
-  'parameters': {'request': {'type': 'object|array',
-                             'description': '单条请求或请求列表；action=create/read/update/delete，kind 为内置种类或本库已登记的工具表；change 仅可读取',
-                             'required': True}},
-  'returns': '数据库操作是否写入看 operation.status：committed/unchanged/failed/read；checks 只说明检查进度与问题。具体改动见 operation.changes，记录见 data/results；change 仅支持 read。',
+  'returns': '数据库操作是否写入看 operation.status：committed/unchanged/failed/read；checks 只说明检查进度与问题。具体改动见 '
+             'operation.changes，记录见 data/results；change 仅支持 read。',
   'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.records.cli DATABASE --request request.json',
-                'files': {'request.json': {'action': 'read', 'kind': 'project'}}}],
-  'notes': ['写请求与业务日志同事务；配置和语义在提交后检查。']}]
+                'files': {'request.json': {'action': 'read', 'kind': 'project'}},
+                'arguments': {'request': {'action': 'create', 'kind': 'project', 'data': {'name': '示例项目'}}}}],
+  'notes': ['写请求与业务日志同事务；配置和语义在提交后检查。'],
+  'input_schema': {'type': 'object',
+                   'properties': {'database': {'type': 'string', 'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
+                                  'request': {'type': ['object', 'array'],
+                                              'description': '单条 CRUD 对象或同一事务内的请求数组；read 可走 query，写入走 edit',
+                                              'items': {'type': 'object'}}},
+                   'additionalProperties': False,
+                   'required': ['database', 'request']},
+  'mcp': {'route': 'edit',
+          'group': 'records',
+          'database': 'connection',
+          'paths': [],
+          'default_project': False,
+          'route_by': 'request'},
+  'cli_only': ['text']}]
 
 
 if __name__ == "__main__":

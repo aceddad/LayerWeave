@@ -1,0 +1,10 @@
+{
+  "workspace": ".",
+  "database": "project.sqlite3",
+  "project_id": 1,
+  "exposure": {
+    "layerweave.project_overview": "direct",
+    "skill.layerweave.layers.text.text-normalize": "direct"
+  },
+  "disabled": []
+}

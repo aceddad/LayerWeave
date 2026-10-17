@@ -72,26 +72,34 @@ def main():
         max_nodes=args.max_nodes, max_edges=args.max_edges))
 
 
-COMMANDS = [{
-    "name": "walk_relations", "summary": "从实体出发按步数展开关联，读取相关节点内容",
-    "entrypoint": "layerweave.tool.builtin.usage.query.walk:walk_relations",
-    "cli": "python -m layerweave.tool.builtin.usage.query.walk", "read_only": True,
-    "context": ["database", "project_id"],
-    "parameters": {
-        "kind": {"type": "string", "required": True, "choices": ["layer", "object"], "description": "起点种类"},
-        "id": {"type": "integer", "required": True, "description": "起点的项目内编号"},
-        "direction": {"type": "string", "default": "outgoing", "choices": ["outgoing", "incoming", "both"]},
-        "max_depth": {"type": "integer", "default": 3, "description": "最大步数，0 只读取起点"},
-        "max_nodes": {"type": "integer", "default": 100, "description": "最大节点数，包含起点"},
-        "max_edges": {"type": "integer", "default": 300, "description": "最大关联数"},
-    },
-    "returns": "scope、nodes、edges、truncated、truncation_reasons；节点含完整身份、最短步数、状态和原始 record。",
-    "examples": [{"cli": "python -m layerweave.tool.builtin.usage.query.walk DATABASE 1 object 8 --max-depth 3 --direction both"}],
-    "notes": ["按完整身份去重，保留环边；失效引用保留节点，record=null。",
-              "只走标准 bind，不解释其他工具表中的关联；摘要与排版由调用方决定。",
-              "max_depth 是查询范围；truncated 表示数量上限令范围内结果不完整。"],
-    "aliases": ["walk"],
-}]
+COMMANDS = [{'name': 'walk_relations',
+  'summary': '从实体出发按步数展开关联，读取相关节点内容',
+  'entrypoint': 'layerweave.tool.builtin.usage.query.walk:walk_relations',
+  'cli': 'python -m layerweave.tool.builtin.usage.query.walk',
+  'read_only': True,
+  'context': ['database', 'project_id'],
+  'returns': 'scope、nodes、edges、truncated、truncation_reasons；节点含完整身份、最短步数、状态和原始 record。',
+  'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.query.walk DATABASE 1 object 8 --max-depth 3 '
+                       '--direction both',
+                'arguments': {'kind': 'object', 'id': 8}}],
+  'notes': ['按完整身份去重，保留环边；失效引用保留节点，record=null。',
+            '只走标准 bind，不解释其他工具表中的关联；摘要与排版由调用方决定。',
+            'max_depth 是查询范围；truncated 表示数量上限令范围内结果不完整。'],
+  'aliases': ['walk'],
+  'input_schema': {'type': 'object',
+                   'properties': {'database': {'type': 'string', 'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
+                                  'project_id': {'type': 'integer', 'description': '明确的项目编号'},
+                                  'kind': {'type': 'string', 'description': '起点种类', 'enum': ['layer', 'object']},
+                                  'id': {'type': 'integer', 'description': '起点的项目内编号'},
+                                  'direction': {'type': 'string',
+                                                'default': 'outgoing',
+                                                'enum': ['outgoing', 'incoming', 'both']},
+                                  'max_depth': {'type': 'integer', 'default': 3, 'description': '最大步数，0 只读取起点'},
+                                  'max_nodes': {'type': 'integer', 'default': 100, 'description': '最大节点数，包含起点'},
+                                  'max_edges': {'type': 'integer', 'default': 300, 'description': '最大关联数'}},
+                   'additionalProperties': False,
+                   'required': ['database', 'id', 'kind', 'project_id']},
+  'mcp': {'route': 'query', 'group': 'query', 'database': 'connection', 'paths': []}}]
 
 
 if __name__ == "__main__":

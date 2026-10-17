@@ -63,23 +63,27 @@ def tables(database, *, upgrade=False):
     return {**result, "text": describe(result)}
 
 
-COMMANDS = [{
-    "name": "view_tables",
-    "summary": "视图自己的表（折叠、已读）在库里登记的声明：查是不是现在这份；--upgrade 把旧库显式升级（只改声明，不改数据）",
-    "entrypoint": "layerweave.tool.builtin.view.tables:tables",
-    "cli": "python -m layerweave.tool.builtin.view.tables",
-    "read_only": False,
-    "context": ["database"],
-    "parameters": {
-        "upgrade": {"type": "boolean", "default": False, "description": "把旧声明的表按现在的声明登记一遍；不给就只查"},
-    },
-    "returns": "tables（kind、name、state：absent / current / stale、differs）、upgrade_needed、upgraded（升级了哪些）、text。",
-    "examples": [{"cli": "python -m layerweave.tool.builtin.view.tables DATABASE"},
-                 {"cli": "python -m layerweave.tool.builtin.view.tables DATABASE --upgrade"}],
-    "notes": ["0.21.0 起，折叠表声明了逻辑引用（JSON 交换复制项目时折叠跟着层换号），已读表复制时不带过去（新项目里重新记）。",
-              "旧库要跑一次 --upgrade，复制才按新规矩走；视图服务启动时发现旧声明会提示。",
-              "库里还没有的表不建，第一次折叠、标已读时按现在的声明建。"],
-}]
+COMMANDS = [{'name': 'view_tables',
+  'summary': '视图自己的表（折叠、已读）在库里登记的声明：查是不是现在这份；--upgrade 把旧库显式升级（只改声明，不改数据）',
+  'entrypoint': 'layerweave.tool.builtin.view.tables:tables',
+  'cli': 'python -m layerweave.tool.builtin.view.tables',
+  'read_only': False,
+  'context': ['database'],
+  'returns': 'tables（kind、name、state：absent / current / stale、differs）、upgrade_needed、upgraded（升级了哪些）、text。',
+  'examples': [{'cli': 'python -m layerweave.tool.builtin.view.tables DATABASE'},
+               {'cli': 'python -m layerweave.tool.builtin.view.tables DATABASE --upgrade'}],
+  'notes': ['0.21.0 起，折叠表声明了逻辑引用（JSON 交换复制项目时折叠跟着层换号），已读表复制时不带过去（新项目里重新记）。',
+            '旧库要跑一次 --upgrade，复制才按新规矩走；视图服务启动时发现旧声明会提示。',
+            '库里还没有的表不建，第一次折叠、标已读时按现在的声明建。'],
+  'input_schema': {'type': 'object',
+                   'properties': {'database': {'type': 'string', 'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
+                                  'upgrade': {'type': 'boolean',
+                                              'default': False,
+                                              'description': '把旧声明的表按现在的声明登记一遍；不给就只查'}},
+                   'additionalProperties': False,
+                   'required': ['database']},
+  'mcp': {'route': 'admin', 'group': 'view', 'database': 'path', 'paths': [], 'route_by': 'upgrade'},
+  'cli_only': ['json']}]
 
 
 def main():

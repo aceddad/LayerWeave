@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "layerweave-demo-tools"
+version = "0.1.0"
+requires-python = ">=3.11"
+
+[project.entry-points."layerweave.tools"]
+demo = "layerweave_demo_tools.commands:COMMANDS"
+
+[tool.setuptools.packages.find]
+where = ["src"]

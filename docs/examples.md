@@ -29,6 +29,8 @@
 
 例如：
 
+[mcp_extension](../examples/mcp_extension/README.md) 是可独立安装、没有 CLI 的外部工具示例，演示 entry points、开发目录与 direct/routed。
+
 ```sh
 python -X utf8 -B examples/read_write.py
 python -X utf8 -B examples/editing.py

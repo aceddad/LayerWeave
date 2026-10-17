@@ -1,6 +1,6 @@
 # 内部工具 · 使用工具
 
-本页供 AI 或程序使用现成工具操作项目内容，支持 Python 和 CLI 调用。开发自己的工具见[扩展指南](../../../../../docs/build-with-layerweave/README.md)，修改 LayerWeave 本身见[源码开发指南](../../../../../docs/developer-conventions.md)。[返回内部工具](../README.md)。
+本页供 AI 或程序使用现成工具操作项目内容，支持 Python、CLI 和可选 [MCP](../shared/mcp/README.md) 调用。开发自己的工具见[扩展指南](../../../../../docs/build-with-layerweave/README.md)，修改 LayerWeave 本身见[源码开发指南](../../../../../docs/developer-conventions.md)。[返回内部工具](../README.md)。
 
 ## 从当前任务开始
 

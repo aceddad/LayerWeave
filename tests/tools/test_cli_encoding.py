@@ -46,7 +46,7 @@ class CLIEncodingTests(unittest.TestCase):
                     self.assertEqual(tokens[1:3],['-X','utf8'])
 
     def test_maintained_cli_docs_enable_utf8(self):
-        docs=[ROOT/'README.md', *(ROOT/'docs').rglob('*.md'), *(ROOT/'examples').rglob('*.md'),
+        docs=[*ROOT.glob('README*.md'), *(ROOT/'docs').rglob('*.md'), *(ROOT/'examples').rglob('*.md'),
               *(ROOT/'tests').rglob('*.md'), *(ROOT/'src/layerweave/tool/builtin').rglob('*.md'),
               ROOT/'src/layerweave/tool/README.md']
         bare=re.compile(r'\bpython(?:3|\.exe)?\s+(?:-m\b|-c\b|-B\b|[\w./\\-]+\.py\b)')

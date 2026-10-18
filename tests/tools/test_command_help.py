@@ -1,6 +1,7 @@
 """命令目录静态发现、覆盖现有入口、可用示例和 CLI 就地帮助。"""
 
 import ast
+import argparse
 import importlib
 import inspect
 import json
@@ -90,7 +91,9 @@ class CommandHelpTests(unittest.TestCase):
                 continue  # layerweave.support.api 的延迟包装；行为由对应工具测试覆盖。
             for parameter in command["parameters"]:
                 if parameter=="database":
-                    self.assertTrue("connection" in signature.parameters or command["name"]=="initialize_database")
+                    # 视图工具自己以只读方式打开数据库文件，入口直接接收 database 路径（visualization 分支）
+                    self.assertTrue("connection" in signature.parameters or "database" in signature.parameters
+                                    or command["name"]=="initialize_database")
                 else:
                     self.assertIn(parameter,signature.parameters,command["name"])
 
@@ -104,9 +107,50 @@ class CommandHelpTests(unittest.TestCase):
             seen.add(module)
             run=subprocess.run([sys.executable,"-X","utf8","-B","-m",module,"--help"],capture_output=True,text=True,encoding="utf-8")
             self.assertEqual(run.returncode,0,run.stderr)
-            self.assertIn(command["examples"][0]["cli"],run.stdout)
-            for filename,payload in command["examples"][0].get("files",{}).items():
-                self.assertIn(json.dumps(payload,ensure_ascii=False,allow_nan=False),run.stdout)
+            # MCP 示例可以排在前面；逐条核对实际声明的 CLI 和文件示例。
+            for example in command["examples"]:
+                if example.get("cli"):
+                    self.assertIn(example["cli"],run.stdout)
+                for payload in example.get("files",{}).values():
+                    self.assertIn(json.dumps(payload,ensure_ascii=False,allow_nan=False),run.stdout)
+
+    def test_schema_and_cli_have_explicit_correspondence(self):
+        class ParserReady(BaseException):
+            def __init__(self,parser): self.parser=parser
+        def capture(parser,*args,**kwargs):
+            raise ParserReady(parser)
+        def options(parser):
+            result=set()
+            for action in parser._actions:
+                if action.dest!='help': result.add(action.dest)
+                if isinstance(action,argparse._SubParsersAction):
+                    for child in action.choices.values(): result.update(options(child))
+            return result
+        modules={}
+        for item in command_help()['items']:
+            command=command_help(item['name'])['items'][0]
+            if command.get('cli'):
+                modules.setdefault(command['cli'].split()[-1],[]).append(command)
+        for name,commands in modules.items():
+            with self.subTest(module=name):
+                module=importlib.import_module(name)
+                if not hasattr(module,'main'):
+                    module=importlib.import_module(name+'.__main__')
+                with self.assertRaises(ParserReady) as caught:
+                    with patch.object(argparse.ArgumentParser,'parse_args',capture): module.main()
+                available=options(caught.exception.parser)
+                explained=set()
+                for command in commands:
+                    schema=set(command['input_schema'].get('properties',{}))
+                    mapping=command.get('cli_mapping',{})
+                    self.assertLessEqual(set(mapping),schema)
+                    self.assertLessEqual(schema-available,set(mapping),command['name'])
+                    for targets in mapping.values():
+                        self.assertLessEqual(set(targets),available,command['name'])
+                        explained.update(targets)
+                    explained.update(schema & available)
+                    explained.update(command.get('cli_only',[]))
+                self.assertEqual(available-explained,set(),name)
 
     def test_help_json_files_can_be_used_for_actual_split_and_keep(self):
         c=open_database(":memory:")

@@ -20,14 +20,20 @@ def main():
 COMMANDS = [{'name': 'initialize_database',
   'summary': '初始化或显式升级 SQLite 表结构，保留已有数据与日志',
   'entrypoint': 'layerweave.support.api:initialize_database',
-  'cli': 'python -m layerweave.tool.builtin.developer.database.cli',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.developer.database.cli',
   'read_only': False,
   'context': [],
-  'parameters': {'path': {'type': 'string', 'required': True,
-                          'description': '数据库文件路径；Python 参数名为 path，对应 CLI 的 database 位置参数'}},
   'returns': 'Python 返回数据库路径，CLI 输出该路径。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.developer.database.cli DATABASE'}],
-  'notes': ['这是写入操作；普通只读工具不会暗中迁移数据库。']}]
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.developer.database.cli DATABASE',
+                'arguments': {'path': 'project.sqlite3'}}],
+  'notes': ['这是写入操作；普通只读工具不会暗中迁移数据库。'],
+  'input_schema': {'type': 'object',
+                   'properties': {'path': {'type': 'string',
+                                           'description': '数据库文件路径；Python 参数名为 path，对应 CLI 的 database 位置参数'}},
+                   'additionalProperties': False,
+                   'required': ['path']},
+  'mcp': {'route': 'admin', 'group': 'developer', 'paths': ['path']},
+  'cli_mapping': {'path': ['database']}}]
 
 
 

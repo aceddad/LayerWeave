@@ -1,5 +1,5 @@
 name = "layerweave.records"
 kind = "tool"
-version = "0.2.0"
+version = "0.2.2"
 description = "项目内容的 CRUD 请求分流和模型保存"
-changes = "带检测保存明确命名；增加事务内 CRUD 请求执行入口。"
+changes = "完善 CRUD 请求 Schema、常用搜索词与单条和批次调用示例。"

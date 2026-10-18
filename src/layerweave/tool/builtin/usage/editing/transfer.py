@@ -31,28 +31,37 @@ def main():
                    **({"config_root": args.config_root} if args.config_root is not None else {})), formatter=format_transfer)
 
 
-
 # 命令目录和 --help 共用的只读接口说明。
 COMMANDS = [{'name': 'transfer_subtree',
   'summary': '同库跨项目复制/剪切子树；剪切的外部入向引用跟随新身份',
   'entrypoint': 'layerweave.tool.builtin.usage.editing.tree_service:transfer_subtree',
   'session_entrypoint': 'layerweave.tool.builtin.usage.editing.tree_service:transfer_subtree_in_session',
-  'cli': 'python -m layerweave.tool.builtin.usage.editing.transfer',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.editing.transfer',
   'read_only': False,
   'context': ['database', 'project_id'],
-  'parameters': {'layer_id': {'type': 'integer', 'description': '源项目起始层', 'required': True},
-                 'target_project_id': {'type': 'integer', 'description': '不同的目标项目', 'required': True},
-                 'mode': {'type': 'string',
-                          'description': '复制或剪切',
-                          'default': 'copy',
-                          'choices': ['copy', 'cut']},
-                 'name': {'type': 'string', 'description': '目标根层名字'},
-                 'config_root': {'type': 'string', 'description': '检查或配置查询采用的配置根目录；省略使用项目 configs'}},
   'returns': '标准操作结果、operation_id、data/results 和提交后 checks；可按操作编号撤销。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.editing.transfer DATABASE 1 copy 4 2 --json'},
-               {'cli': 'python -m layerweave.tool.builtin.usage.editing.transfer DATABASE 1 cut 4 2 --json'}],
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.editing.transfer DATABASE 1 copy 4 2 --json',
+                'arguments': {'layer_id': 4, 'target_project_id': 2, 'mode': 'copy'}},
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.editing.transfer DATABASE 1 cut 4 2 --json'}],
   'aliases': ['transfer'],
-  'notes': ['目标根层重新发号，位置数值精确保留，不做单位换算或重新落点。']}]
+  'notes': ['目标根层重新发号，位置数值精确保留，不做单位换算或重新落点。'],
+  'input_schema': {'type': 'object',
+                   'properties': {'database': {'type': 'string', 'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
+                                  'project_id': {'type': 'integer', 'description': '明确的项目编号'},
+                                  'layer_id': {'type': 'integer', 'description': '源项目起始层'},
+                                  'target_project_id': {'type': 'integer', 'description': '不同的目标项目'},
+                                  'mode': {'type': 'string',
+                                           'description': '复制或剪切',
+                                           'default': 'copy',
+                                           'enum': ['copy', 'cut']},
+                                  'name': {'type': ['string', 'null'], 'description': '目标根层名字'},
+                                  'config_root': {'type': 'string',
+                                                  'description': '检查或配置查询采用的配置根目录；省略使用项目 configs'}},
+                   'additionalProperties': False,
+                   'required': ['database', 'layer_id', 'project_id', 'target_project_id']},
+  'mcp': {'route': 'edit', 'group': 'editing', 'database': 'connection', 'paths': ['config_root']},
+  'cli_mapping': {'mode': ['command']},
+  'cli_only': ['json']}]
 
 
 if __name__ == "__main__":

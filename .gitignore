@@ -8,13 +8,16 @@ __pycache__/
 venv/
 scratch/
 output/*
-!output/2026-10-10-gap-help-undo-report.md
-!output/2026-10-12-interface-migration.md
-!output/2026-10-15-logical-references-handoff.md
+# 本地历史报告与审视材料，不进入开发源码。
+/archive/
 *.sqlite3
 *.sqlite3-*
 .env
 .env.*
 !.env.example
 keys.local.json
+keys.json
 .keys.local.json.*.tmp
+
+# 视图网页源码的依赖（npm install 生成，不提交；编译结果在 src/layerweave/tool/builtin/view/web/）
+frontend/view/node_modules/

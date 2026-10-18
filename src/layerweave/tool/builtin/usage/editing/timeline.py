@@ -5,13 +5,13 @@ from functools import partial
 
 from layerweave.support import records as crud
 from layerweave.support.storage.details import read_project_details
-from layerweave.tool.builtin.usage.editing.tree_service import _checker, _payload
+from ._records import _payload
 from layerweave.support.configuration.loader import DEFAULT_ROOT
 from ._plan import dispatch, execute_in_session
 from layerweave.support.feedback import InputError, target
 from layerweave.support.operation import run_operation
 from layerweave.support.transaction import require_write_session
-from layerweave.support.providers import DEFAULT_CHECKER
+from layerweave.support.providers import DEFAULT_CHECKER, optional_checker
 from layerweave.support.positions import PositionMath, decimal_value, numeric_position, shifted_positions
 
 
@@ -147,7 +147,7 @@ def split_object(connection, project_id, object_id, *, cuts, first_information=N
         lambda write: split_object_in_session(
             write, project_id, object_id, cuts=cuts, first_information=first_information,
         ),
-        checker=_checker(checker, config_root),
+        checker=optional_checker(checker, config_root=config_root),
     )
     return {**result, "tool": 'split_object'}
 
@@ -172,7 +172,7 @@ def insert_gap(connection, project_id, *, at, length, layer_id=None, layer_ids=N
             write, project_id, at=at, length=length, layer_id=layer_id, layer_ids=layer_ids,
             whole_project=whole_project, crossing_actions=crossing_actions, split_contents=split_contents,
         ),
-        checker=_checker(checker, config_root),
+        checker=optional_checker(checker, config_root=config_root),
     )
     return {**result, "tool": 'insert_gap'}
 

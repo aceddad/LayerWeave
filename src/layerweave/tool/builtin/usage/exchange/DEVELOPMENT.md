@@ -4,6 +4,8 @@
 
 ## 按任务修改
 
+局部导出的表定义从实际工具记录出发，递归补齐硬引用与逻辑引用的目标定义；使用访问集合处理循环，补定义不扩张记录选择。compact 只在输出时省略定义和来源发号说明，不改变选中数据、引用映射、复制策略与基线检查。JSON、文件包装和 CLI 复用 export_project 的 compact 参数。
+
 | 任务 | 修改位置 |
 |---|---|
 | 新增场景模板 | templates 中增加 JSON，或放在外部模板目录；填写 name/when，template_help 自动发现 |
@@ -17,6 +19,8 @@
 | 增加命令参数、就地帮助 | cli.py 中的解析器与字面量 COMMANDS |
 
 不需要为新模板改 Python 或维护中央清单。模板若要创建新封装，调用环境先安装相应类/TOML；JSON 只引用 config_ref。
+
+场景模板把总体用法放在 project.data.tips，各层的用途放在 data.tips；按名称查询模板或详细展开即可读取，不增加另一套 help。明确每个根的坐标含义：制作时间与资料序号可以分开，不因为使用同一时间轴就要求所有对象同样分段。制作流程、技能和层结构写成可调整的建议；技能先由调用方确认可用，不通过模板安装或执行。媒体示例只引用实际提供的资源，否则保留空层。模板验证使用临时库，检查导入、轴解释、示例引用与撤销；不把某份模板的层名、层数和流程加入通用校验器。
 
 ## 与现有写会话组合
 
@@ -56,11 +60,11 @@ prepare_exchange 对逻辑引用只补充不清除，对复制策略保留任一
 在仓库根使用已安装本项目的 Python：
 
 ~~~sh
-python -X utf8 -B -m unittest discover -s tests -p test_exchange.py -v
+python -X utf8 -B -m unittest discover -s tests/tools -t . -p test_exchange.py -v
 python -X utf8 -B -m unittest discover -s tests -p test_logical_references.py -v
 python -X utf8 -B examples/exchange.py
 python -X utf8 -B examples/logical_references.py
-python -X utf8 -B -m unittest discover -s tests -v
+python -X utf8 -B -m unittest discover -s tests -t . -v
 ~~~
 
-涉及资源或导入路径时还应构建 wheel 并运行 tests/check_wheel.py。模板、README、FORMAT、DEVELOPMENT 都随 exchange 包安装；隔离验收会只留下这一工具包，确认它不依赖其他工具。
+涉及资源或导入路径时还应构建 wheel 并运行 python -X utf8 -m tests.packaging.check_wheel。模板、README、FORMAT、DEVELOPMENT 都随 exchange 包安装；隔离验收会只留下这一工具包，确认它不依赖其他工具。

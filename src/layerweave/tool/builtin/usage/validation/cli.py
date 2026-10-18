@@ -34,15 +34,28 @@ def main():
 COMMANDS = [{'name': 'recheck',
   'summary': '只读复查项目、多棵子树或指定对象',
   'entrypoint': 'layerweave.tool.builtin.usage.validation.recheck:recheck',
-  'cli': 'python -m layerweave.tool.builtin.usage.validation.cli',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.validation.cli',
   'read_only': True,
   'context': ['database', 'project_id'],
-  'parameters': {'layer_ids': {'type': 'array', 'description': '子树起始层编号列表，包含全部后代；空列表为空选择'},
-                 'object_ids': {'type': 'array', 'description': '明确选择的对象编号列表，重复编号只处理一次'},
-                 'config_root': {'type': 'string', 'description': '检查或配置查询采用的配置根目录；省略使用项目 configs'}},
   'returns': 'scope、范围内数量、status、逐条 issues 与 issue_counts；完成检查不表示没有诊断。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.validation.cli DATABASE 1 --layer-ids 4 7 --json'}],
-  'notes': ['省略两种编号列表时复查整个项目；两种列表互斥。']}]
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.validation.cli DATABASE 1 --layer-ids 4 7 '
+                       '--json'}],
+  'notes': ['省略两种编号列表时复查整个项目；两种列表互斥。'],
+  'input_schema': {'type': 'object',
+                   'properties': {'database': {'type': 'string', 'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
+                                  'project_id': {'type': 'integer', 'description': '明确的项目编号'},
+                                  'layer_ids': {'type': ['array', 'null'],
+                                                'description': '子树起始层编号列表，包含全部后代；空列表为空选择',
+                                                'items': {'type': 'integer'}},
+                                  'object_ids': {'type': ['array', 'null'],
+                                                 'description': '明确选择的对象编号列表，重复编号只处理一次',
+                                                 'items': {'type': 'integer'}},
+                                  'config_root': {'type': 'string',
+                                                  'description': '检查或配置查询采用的配置根目录；省略使用项目 configs'}},
+                   'additionalProperties': False,
+                   'required': ['database', 'project_id']},
+  'mcp': {'route': 'query', 'group': 'validation', 'database': 'connection', 'paths': ['config_root']},
+  'cli_only': ['json']}]
 
 
 if __name__ == "__main__":

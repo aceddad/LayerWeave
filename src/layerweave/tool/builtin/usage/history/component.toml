@@ -1,5 +1,5 @@
 name = "layerweave.history"
 kind = "tool"
-version = "0.2.0"
+version = "0.2.2"
 description = "按操作查看改动历史和字段变化"
-changes = "混合操作区分整批撤销与部分撤销来源，逐条保留 undo_of。"
+changes = "MCP 按完整操作分页，说明业务与回复游标的顺序。"

@@ -9,7 +9,7 @@
 | overview | 所有层及各自接受的对象类摘要 |
 | layers | 指定层的支持说明；对象类只列摘要 |
 | objects | 指定对象类的支持说明 |
-| combined | 指定层的说明，加上它们接受的对象类详情 |
+| combined | 指定层的说明，加上它们接受的对象类详情；工具包登记的派生类型（配置里声明了 requires，例如视图工具的 note）只在支持列表里点名，查它所属的层时才展开 |
 
 ## 使用
 
@@ -36,7 +36,7 @@ print(format_help(result))
 development = config_help("objects", ["model", "title"], audience="developer")
 ```
 
-需要纯数据时也可从 layerweave.tool.builtin.shared.help.catalog 导入 read_support，参数相同；config_root 省略时使用包内配置目录。从项目根运行 python examples/config_help.py 可查看四种查询的调用示例。
+需要纯数据时也可从 layerweave.tool.builtin.shared.help.catalog 导入 read_support，参数相同；config_root 省略时使用包内配置目录。从项目根运行 python -X utf8 examples/config_help.py 可查看四种查询的调用示例。
 
 ## 目标与结果
 

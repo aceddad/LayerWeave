@@ -108,26 +108,41 @@ def main():
         match_by=args.match_by, config_root=args.config_root), operation_output=True)
 
 
-COMMANDS = [{
-    "name": "upsert_objects", "summary": "按同层名字或稳定键更新原对象，缺失时创建；保留身份与引用",
-    "entrypoint": "layerweave.tool.builtin.usage.editing.upsert:upsert_objects",
-    "session_entrypoint": "layerweave.tool.builtin.usage.editing.upsert:upsert_objects_in_session",
-    "cli": "python -m layerweave.tool.builtin.usage.editing.upsert", "read_only": False,
-    "context": ["database", "project_id"],
-    "parameters": {
-        "layer_id": {"type": "integer", "required": True, "description": "匹配范围为该层直属对象"},
-        "objects": {"type": "array", "required": True, "description": "对象字段字典列表；创建项需要 config_ref"},
-        "match_by": {"type": "string", "default": "name", "description": "精确匹配路径，例如 information.source_key；名字改动时宜使用稳定键"},
-        "config_root": {"type": "string", "description": "提交后检查使用的配置根目录"},
-    },
-    "returns": "标准操作结果；data 含 scope、created/updated/unchanged 计数和逐项匹配值、动作、record。",
-    "examples": [{"cli": "python -m layerweave.tool.builtin.usage.editing.upsert DATABASE 1 4 --data-file scenes.json --match-by information.source_key",
-                  "files": {"scenes.json": [{"name": "开场", "config_ref": "objects/text.toml",
-                                              "information": {"source_key": "scene_017", "text": "故事正文"}}]}}],
-    "notes": ["只匹配指定层，不模糊匹配；空键、批内重复键及匹配歧义会令整批失败。",
-              "不删除未提供的旧对象，不改关联或批注；更新只覆盖传入字段，information 整体替换。"],
-    "aliases": ["upsert"],
-}]
+COMMANDS = [{'name': 'upsert_objects',
+  'summary': '按同层名字或稳定键更新原对象，缺失时创建；保留身份与引用',
+  'entrypoint': 'layerweave.tool.builtin.usage.editing.upsert:upsert_objects',
+  'session_entrypoint': 'layerweave.tool.builtin.usage.editing.upsert:upsert_objects_in_session',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.editing.upsert',
+  'read_only': False,
+  'context': ['database', 'project_id'],
+  'returns': '标准操作结果；data 含 scope、created/updated/unchanged 计数和逐项匹配值、动作、record。',
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.editing.upsert DATABASE 1 4 --data-file '
+                       'scenes.json --match-by information.source_key',
+                'files': {'scenes.json': [{'name': '开场',
+                                           'config_ref': 'objects/text.toml',
+                                           'information': {'source_key': 'scene_017', 'text': '故事正文'}}]},
+                'arguments': {'layer_id': 4,
+                              'objects': [{'name': '开场',
+                                           'config_ref': 'objects/text.toml',
+                                           'information': {'text': '正文'}}]}}],
+  'notes': ['只匹配指定层，不模糊匹配；空键、批内重复键及匹配歧义会令整批失败。', '不删除未提供的旧对象，不改关联或批注；更新只覆盖传入字段，information 整体替换。'],
+  'aliases': ['upsert'],
+  'input_schema': {'type': 'object',
+                   'properties': {'database': {'type': 'string', 'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
+                                  'project_id': {'type': 'integer', 'description': '明确的项目编号'},
+                                  'layer_id': {'type': 'integer', 'description': '匹配范围为该层直属对象'},
+                                  'objects': {'type': 'array',
+                                              'description': '对象字段字典列表；创建项需要 config_ref',
+                                              'items': {}},
+                                  'match_by': {'type': 'string',
+                                               'default': 'name',
+                                               'description': '精确匹配路径，例如 information.source_key；名字改动时宜使用稳定键'},
+                                  'config_root': {'type': 'string', 'description': '提交后检查使用的配置根目录'}},
+                   'additionalProperties': False,
+                   'required': ['database', 'layer_id', 'objects', 'project_id']},
+  'mcp': {'route': 'edit', 'group': 'editing', 'database': 'connection', 'paths': ['config_root']},
+  'cli_mapping': {'objects': ['data_file']},
+  'cli_only': ['text']}]
 
 
 if __name__ == "__main__":

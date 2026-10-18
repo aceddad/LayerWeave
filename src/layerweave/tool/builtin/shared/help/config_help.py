@@ -83,7 +83,7 @@ def _format_entry(item):
     if item["status"] == "unavailable":
         lines.append("  状态：配置不可用")
     else:
-        for name, label in (("when", "用途"), ("note", "说明"), ("not_for", "适用边界")):
+        for name, label in (("requires", "依赖的工具包"), ("when", "用途"), ("note", "说明"), ("not_for", "适用边界")):
             if definition.get(name):
                 lines.append(f"  {label}：{definition[name]}")
         if "tools" in definition:
@@ -93,7 +93,8 @@ def _format_entry(item):
         if "accepted_objects" in item:
             lines.append("  支持的对象类：")
             for obj in item["accepted_objects"]:
-                lines.append(f"    - {_identity(obj)} · {obj['config_ref']}")
+                owner = f" · 由 {obj['requires']} 登记" if obj.get("requires") else ""
+                lines.append(f"    - {_identity(obj)} · {obj['config_ref']}{owner}")
             if not item["accepted_objects"]:
                 lines.append("    （没有可列出的对象类）")
             if not item["accepted_objects_complete"]:
@@ -209,23 +210,34 @@ def main():
 COMMANDS = [{'name': 'config_help',
   'summary': '查看层/对象封装的支持能力与保存示例',
   'entrypoint': 'layerweave.tool.builtin.shared.help.config_help:config_help',
-  'cli': 'python -m layerweave.tool.builtin.shared.help.config_help',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.shared.help.config_help',
   'read_only': True,
   'context': [],
-  'parameters': {'view': {'type': 'string',
-                          'description': '查询范围',
-                          'default': 'overview',
-                          'choices': ['overview', 'layers', 'objects', 'combined']},
-                 'targets': {'type': 'array', 'description': '详情的配置路径/type/Python 类名列表'},
-                 'audience': {'type': 'string',
-                              'description': '使用版或开发版',
-                              'default': 'usage',
-                              'choices': ['usage', 'developer']},
-                 'include_source': {'type': 'boolean', 'description': '附带 TOML 原文；开发详情默认提供'},
-                 'config_root': {'type': 'string', 'description': '检查或配置查询采用的配置根目录；省略使用项目 configs'}},
   'returns': 'items、配置支持与逐条 issues；不读取项目数据库或导入封装类。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.shared.help.config_help combined text --json'},
-               {'cli': 'python -m layerweave.tool.builtin.shared.help.config_help objects model --dev'}]}]
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.shared.help.config_help combined text --json',
+                'arguments': {'view': 'combined', 'targets': ['text']}},
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.shared.help.config_help objects model --dev'}],
+  'input_schema': {'type': 'object',
+                   'properties': {'view': {'type': 'string',
+                                           'description': '查询范围',
+                                           'default': 'overview',
+                                           'enum': ['overview', 'layers', 'objects', 'combined']},
+                                  'targets': {'type': ['array', 'null'],
+                                              'description': '详情的配置路径/type/Python 类名列表',
+                                              'items': {}},
+                                  'audience': {'type': 'string',
+                                               'description': '使用版或开发版',
+                                               'default': 'usage',
+                                               'enum': ['usage', 'developer']},
+                                  'include_source': {'type': ['boolean', 'null'],
+                                                     'description': '附带 TOML 原文；开发详情默认提供'},
+                                  'config_root': {'type': ['string', 'null'],
+                                                  'description': '检查或配置查询采用的配置根目录；省略使用项目 configs'}},
+                   'additionalProperties': False,
+                   'required': []},
+  'mcp': {'route': 'query', 'group': 'help', 'paths': ['config_root']},
+  'cli_mapping': {'audience': ['dev'], 'include_source': ['raw']},
+  'cli_only': ['json']}]
 
 
 if __name__ == "__main__":

@@ -1,10 +1,9 @@
 """按操作查看历史与字段差异；查询已删除实体也不依赖实体仍存在。"""
 
 from layerweave.support.storage.log_reader import content, operation_rows, operation_page
-from layerweave.support.storage.assembly import _snapshot
 from layerweave.support.feedback import InputError, target
 from layerweave.support.values import same_value
-from layerweave.support.api import table_specs
+from layerweave.support.api import read_snapshot, table_specs
 
 
 def differences(before, after, path=()):
@@ -58,7 +57,7 @@ def _operation(rows, *, detail=False, matched_count=None, connection=None):
 def read_history(connection, project_id=None, *, kind=None, id=None, operation_id=None,
                  limit=20, before=None, detail=False):
     """过滤用于选操作；每项仍展示该操作完整批次，跨项目不截断。before 是日志游标。"""
-    with _snapshot(connection):
+    with read_snapshot(connection):
         if operation_id is not None:
             if project_id is not None or kind is not None or id is not None or before is not None:
                 raise ValueError("按 operation_id 展开完整操作时不再提供项目、实体或分页范围")

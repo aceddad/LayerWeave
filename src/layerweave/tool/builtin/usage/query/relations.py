@@ -32,21 +32,26 @@ def main():
 COMMANDS = [{'name': 'query_relations',
   'summary': '查看实体的入向、出向或双向关联',
   'entrypoint': 'layerweave.tool.builtin.usage.query.relations:query_relations',
-  'cli': 'python -m layerweave.tool.builtin.usage.query.relations',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.query.relations',
   'read_only': True,
   'context': ['database', 'project_id'],
-  'parameters': {'kind': {'type': 'string',
-                          'description': '实体种类',
-                          'required': True,
-                          'choices': ['layer', 'object']},
-                 'id': {'type': 'integer', 'description': '项目内实体编号', 'required': True},
-                 'direction': {'type': 'string',
-                               'description': '关联方向',
-                               'default': 'both',
-                               'choices': ['both', 'incoming', 'outgoing']}},
   'returns': 'entity、direction、incoming、outgoing；失效引用仍可读取。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.query.relations DATABASE 1 object 8 --direction both'}],
-  'aliases': ['relations']}]
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.query.relations DATABASE 1 object 8 --direction '
+                       'both',
+                'arguments': {'kind': 'object', 'id': 8}}],
+  'aliases': ['relations'],
+  'input_schema': {'type': 'object',
+                   'properties': {'database': {'type': 'string', 'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
+                                  'project_id': {'type': 'integer', 'description': '明确的项目编号'},
+                                  'kind': {'type': 'string', 'description': '实体种类', 'enum': ['layer', 'object']},
+                                  'id': {'type': 'integer', 'description': '项目内实体编号'},
+                                  'direction': {'type': 'string',
+                                                'description': '关联方向',
+                                                'default': 'both',
+                                                'enum': ['both', 'incoming', 'outgoing']}},
+                   'additionalProperties': False,
+                   'required': ['database', 'id', 'kind', 'project_id']},
+  'mcp': {'route': 'query', 'group': 'query', 'database': 'connection', 'paths': []}}]
 
 
 if __name__ == "__main__":

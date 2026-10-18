@@ -14,7 +14,7 @@ from layerweave.support.feedback import InputError
 from layerweave.support.storage.database import SCHEMA_PATH
 
 
-ROOT = Path(__file__).resolve().parents[1]
+from tests._support.paths import ROOT
 PACKAGE = ROOT / "src/layerweave"
 PACKAGES = ("usage/records", "usage/query", "usage/editing", "usage/history", "usage/undo",
             "usage/validation", "usage/text", "usage/exchange", "shared/help", "developer/database", "developer/skills", "developer/keys", "developer/versions")
@@ -296,6 +296,8 @@ for item in overview["items"]:
     parts = shlex.split(item["cli"])
     module = parts[parts.index("-m")+1]
     command = import_module(module)
+    if not hasattr(command, "main"):
+        command = import_module(module + ".__main__")
     try:
         sys.argv = [module, "--help"]
         command.main()

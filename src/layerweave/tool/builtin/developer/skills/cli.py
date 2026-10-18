@@ -159,26 +159,38 @@ def main():
     return 0 if result["ok"] else 1
 
 
-COMMANDS = [{
-    "name": "install_skill", "summary": "把本地技能 ZIP 安装到指定层或场景区，返回 route，不自动绑定",
-    "entrypoint": "layerweave.tool.builtin.developer.skills.cli:install_skill", "cli": "python -m layerweave.tool.builtin.developer.skills.cli",
-    "read_only": False, "context": [],
-    "parameters": {
-        "archive": {"type": "string", "required": True, "description": "本地 ZIP 路径，按 ZIP 内容读取"},
-        "layer": {"type": "string", "description": "目标层类型，与 scenario 二选一"},
-        "scenario": {"type": "boolean", "default": False, "description": "安装到场景补充区，与 layer 二选一"},
-        "name": {"type": "string", "description": "安装目录名；默认技能所在目录名，平铺包使用 ZIP 文件名去扩展名"},
-        "source_dir": {"type": "string", "description": "包内技能目录，多个技能时明确选择；根目录用 ."},
-        "skills_root": {"type": "string", "description": "存放根目录，默认当前工作目录的 tool/skills；不写入安装包"}
-    },
-    "returns": "成功返回 ok/name/path/route/source_dir/files；Python 失败抛出异常，CLI 返回 ok=false 和 error。",
-    "examples": [{"cli": "python -m layerweave.tool.builtin.developer.skills.cli SKILL.zip --layer text --json"},
-                 {"cli": "python -m layerweave.tool.builtin.developer.skills.cli SKILL.zip --scenario --name lyric-align --json"},
-                 {"cli": "python -m layerweave.tool.builtin.developer.skills.cli BUNDLE.zip --layer audio --source-dir bundle/audio-skill --json"}],
-    "notes": ["支持根目录 SKILL.md 和外层目录包装；只安装选中的技能目录。",
-              "不覆盖同名目录；失败清理本次新建的技能目录。拒绝越界路径、链接和路径冲突。",
-              "保留技能正文和附带文件，不检查 frontmatter、不执行脚本、不安装依赖、不修改层 tools。"]
-}]
+COMMANDS = [{'name': 'install_skill',
+  'summary': '把本地技能 ZIP 安装到指定层或场景区，返回 route，不自动绑定',
+  'entrypoint': 'layerweave.tool.builtin.developer.skills.cli:install_skill',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.developer.skills.cli',
+  'read_only': False,
+  'context': [],
+  'returns': '成功返回 ok/name/path/route/source_dir/files；Python 失败抛出异常，CLI 返回 ok=false 和 error。',
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.developer.skills.cli SKILL.zip --layer text --json',
+                'arguments': {'archive': 'downloaded-skill.zip', 'layer': 'text'}},
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.developer.skills.cli SKILL.zip --scenario --name '
+                       'lyric-align --json'},
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.developer.skills.cli BUNDLE.zip --layer audio '
+                       '--source-dir bundle/audio-skill --json'}],
+  'notes': ['支持根目录 SKILL.md 和外层目录包装；只安装选中的技能目录。',
+            '不覆盖同名目录；失败清理本次新建的技能目录。拒绝越界路径、链接和路径冲突。',
+            '保留技能正文和附带文件，不检查 frontmatter、不执行脚本、不安装依赖、不修改层 tools。'],
+  'input_schema': {'type': 'object',
+                   'properties': {'archive': {'type': 'string', 'description': '本地 ZIP 路径，按 ZIP 内容读取'},
+                                  'layer': {'type': ['string', 'null'], 'description': '目标层类型，与 scenario 二选一'},
+                                  'scenario': {'type': 'boolean',
+                                               'default': False,
+                                               'description': '安装到场景补充区，与 layer 二选一'},
+                                  'name': {'type': ['string', 'null'],
+                                           'description': '安装目录名；默认技能所在目录名，平铺包使用 ZIP 文件名去扩展名'},
+                                  'source_dir': {'type': ['string', 'null'],
+                                                 'description': '包内技能目录，多个技能时明确选择；根目录用 .'},
+                                  'skills_root': {'type': ['string', 'null'],
+                                                  'description': '存放根目录，默认当前工作目录的 tool/skills；不写入安装包'}},
+                   'additionalProperties': False,
+                   'required': ['archive']},
+  'mcp': {'route': 'admin', 'group': 'developer', 'paths': ['archive', 'skills_root']},
+  'cli_only': ['json']}]
 
 
 if __name__ == "__main__":

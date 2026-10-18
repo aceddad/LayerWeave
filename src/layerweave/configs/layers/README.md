@@ -10,6 +10,8 @@ base.toml 说明字段、返回方法、固定规则、默认取值和可调选�
 
 层的 objects 按对象配置 type 唯一定位，接受该类型及其派生配置。六种内置层分别为 text、image、audio、movie、model、active。
 
+工具包也可以在这里登记自己的层类型：配置照常放在本目录，class 指向工具包里的类，并用 `requires = "工具包模块"` 写明依赖。这样 AI 和工具按类型就能找到它，配置帮助也会列出；卸掉那个工具包后，配置仍说明数据的样子、检测照常，只是不能还原成实例。现有的例子是视图工具的批注层 note.toml（装 objects/note.toml 的批注对象），约定见[视图工具](https://gitee.com/emotion1354414/layer-weave/blob/visualization/src/layerweave/tool/builtin/view/DEVELOPMENT.md#批注层用一个层当有序列表)。完整步骤见[工具包登记类型](../../tool/builtin/developer/TOOL_TYPES.md)。
+
 axis.precision 是位置写入、工具和检查共用的正数步长。子层未声明轴时沿父链取得轴，默认来自根；显式自有轴覆盖上级轴。没有轴或当前轴没有 precision 时默认 1e-6。所有对象位置写入按精度落点，比较使用同一整数刻度；不换算单位或 fps。读取保持原始存储数值，不批量重写旧数据。
 
 ## 外置技能 tools

@@ -3,7 +3,7 @@
 from math import isfinite
 
 from layerweave.support.storage import crud
-from layerweave.support.storage.assembly import _snapshot
+from .snapshot import read_snapshot
 
 
 def _object_conditions(project_id, *, layer_id=None, name=None, begin=None, end=None):
@@ -41,7 +41,7 @@ def _object_conditions(project_id, *, layer_id=None, name=None, begin=None, end=
 def query_objects(connection, project_id, *, layer_id=None, name=None, begin=None, end=None):
     """对象记录，不装载关联。name 为字面子串；位置为相交范围，相等边界表示点查询。"""
     where, values = _object_conditions(project_id, layer_id=layer_id, name=name, begin=begin, end=end)
-    with _snapshot(connection):
+    with read_snapshot(connection):
         rows = connection.execute(
             'SELECT * FROM objects WHERE ' + where + ' ORDER BY layer, "begin", "end", id', values,
         )
@@ -60,7 +60,7 @@ def read_bindings(connection, kind, project_id, id, *, direction="both"):
     for side in sides:
         terms.append(f'({side}_kind = ? AND {side}_project_id = ? AND {side}_id = ?)')
         values.extend((kind, project_id, id))
-    with _snapshot(connection):
+    with read_snapshot(connection):
         rows = connection.execute('SELECT * FROM binds WHERE ' + ' OR '.join(terms) + ' ORDER BY id', values)
         return [dict(row) for row in rows]
 
@@ -69,7 +69,7 @@ def read_layer_positions(connection, project_id, layer_id):
     """同一读取快照内取层身份和直属对象位置；不加载正文，也不隐藏异常位置。"""
     if layer_id is None:
         raise ValueError("需要明确的 layer_id")
-    with _snapshot(connection):
+    with read_snapshot(connection):
         layer = crud.read(connection, "layer", project_id=project_id, id=layer_id)
         if layer is None:
             return None

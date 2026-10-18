@@ -1,13 +1,25 @@
 [build-system]
-requires = ["setuptools>=64", "wheel"]
+requires = ["setuptools>=77.0.3", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "layerweave"
-version = "0.6.0"
-description = "Layers, objects and composable tools for AI workflows"
+dynamic = ["version"]
+description = "LayerWeave development sources and composable non-visual tools"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
 dependencies = []
+
+[project.urls]
+Repository = "https://gitee.com/emotion1354414/layer-weave/tree/main"
+
+[project.optional-dependencies]
+dev = ["build>=1.2", "setuptools>=77.0.3", "wheel"]
+
+[tool.setuptools.dynamic]
+version = {attr = "layerweave.__version__"}
 
 [tool.setuptools]
 package-dir = {"" = "src"}
@@ -20,9 +32,10 @@ exclude = ["layerweave.configs*", "layerweave.tool.skills*"]
 namespaces = false
 
 [tool.setuptools.package-data]
-"layerweave" = ["component.toml", "tool/builtin/**/component.toml", "configs/**/*.toml", "configs/**/*.md", "tool/skills/**/*", "tool/README.md"]
+"layerweave" = ["component.toml", "tool/builtin/**/component.toml", "configs/**/*.toml", "**/*.md", "tool/skills/**/*"]
 "layerweave.support.storage" = ["schema.sql"]
-"layerweave.support.numbering" = ["README.md"]
-"layerweave.tool.builtin.developer.keys" = ["example.json", "README.md"]
-"layerweave.tool.builtin.developer.versions" = ["README.md"]
-"layerweave.tool.builtin.usage.exchange" = ["templates/*.json", "README.md", "FORMAT.md", "DEVELOPMENT.md"]
+"layerweave.tool.builtin.developer.keys" = ["example.json"]
+"layerweave.tool.builtin.usage.exchange" = ["templates/*.json"]
+
+[tool.setuptools.exclude-package-data]
+"*" = ["**/__pycache__/*", "**/*.py[cod]", "**/.env", "**/.env.*", "**/keys.local.json", "**/keys.json", "**/.keys.local.json.*.tmp", "**/*.sqlite3", "**/*.sqlite3-*", "**/*.db", "**/*.log", "**/.DS_Store"]

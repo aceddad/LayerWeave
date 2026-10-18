@@ -46,8 +46,10 @@
 | 命令声明、发现及 CLI 示例 | [命令专题](../src/layerweave/tool/builtin/shared/help/COMMANDS.md) |
 | 组件声明、版本登记与存在状态 | [版本工具](../src/layerweave/tool/builtin/developer/versions/README.md)，当前版本号和更新摘要在各组件的 component.toml |
 | 配置 help 的使用/开发模式 | [配置 help 专题](../src/layerweave/tool/builtin/shared/help/CONFIG_HELP.md) |
+| 工具包登记自己的层和对象类型 | [工具包登记类型](../src/layerweave/tool/builtin/developer/TOOL_TYPES.md)，以视图工具的批注层为例；有序列表的思路见 AI 开发指导第二篇，批注层自己的约定在视图开发说明 |
 | 外置技能的存放与绑定示例 | [外置工具](../src/layerweave/tool/README.md)；各技能的能力说明维护在包内 SKILL.md |
 | 技能 ZIP 的安装参数与文件处理 | [安装说明](../src/layerweave/tool/builtin/developer/SKILLS.md) |
+| 视图操作、数据结构、插件和语言包 | [视图首页](https://gitee.com/emotion1354414/layer-weave/blob/visualization/src/layerweave/tool/builtin/view/README.md)按任务进入使用指南与开发专题 |
 | 本地 KEY、连接说明与去除私有内容的示例 | [KEY 管理](../src/layerweave/tool/builtin/developer/keys/README.md) |
 
 ## 写法与示例
@@ -55,6 +57,7 @@
 - 使用章节通常按“用途 → 最短示例 → 必要参数与返回 → 边界行为”展开；章节按实际内容选用。
 - 实现说明按模块职责、执行流程、扩展位置组织，并链接对应使用说明。
 - 一段集中解释一件事。独立规则用列表，参数和选项用表格，需要因果解释的内容保留短段落。
+- 面向调用方的 Python 命令与 COMMANDS 中 cli/examples.cli 统一显式写 `python -X utf8 ...`，使中文管道输出与 AI 的 UTF-8 解码一致；保留已有 -B 等参数。执行入口示例需把解释器选项放在 -m/脚本之前，避免只在测试进程里添加而漏掉公开示例。
 - 示例核对实际接口和返回。完整例子提供导入与初始化；依赖已有连接、配置或编号的片段明确列出前置条件。
 - 示意编号要标明；可运行例子优先使用接口返回的编号。修改输出、参数或默认值时同步例子。
 - 名称、用途、参数和默认值保持与源码、TOML、COMMANDS 一致。支持清单由现有 help 发现，不另建文档专用登记表。
@@ -70,25 +73,4 @@
 
 不设统一的字数或行数上限。允许简短的上下文重复，让读者理解当前任务；详细规则仍有明确的主要维护位置。
 
-阶段计划完成后，先将仍有效的约定并入主要说明，再移除没有独立参考价值的计划及入口链接；提交历史保留过程记录。正在协作维护的文档保留，清理范围按当前任务确认。
-
-## 这轮整理得到的经验
-
-| 观察 | 后续做法 |
-|---|---|
-| 将项目 README 写成文件分流表，会让新读者先面对仓库结构 | 首页先介绍软件与示例，工作导引交给开发指南和 AGENTS |
-| 文件搬了位置，使用说明仍可能夹着实现细节 | 按读者需要拆内容；编号和失败行为留给使用者，SQL 和内部步骤留给开发者 |
-| 同一功能在 GUIDE 和专题中各写一遍，容易逐渐分歧 | 一处写完整，其余用短说明和链接 |
-| 示例之前堆积规则，读者难以形成具体理解 | 先呈现一次调用，再解释必要的限制与结果 |
-| 为未发布项目自动保留旧路径，会增加两套入口 | 兼容安排依据实际使用者与版本承诺，不因文件移动机械新增转接 |
-| 缩短首页或比较不同阶段总字节数，不能单独证明阅读更轻松 | 检查具体任务的阅读路径，同时核对比较范围和功能差异 |
-| 文档规则散在 AGENTS 和开发指南里，也会形成重复 | 本文统一维护细则，其他入口仅引用 |
-
-## 参考方式
-
-参考其组织思路，按 LayerWeave 当前能力取舍，不套用尚未具备的安装、发布或贡献流程：
-
-- [GitHub：关于 README](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-readmes)：说明用途、价值、上手和帮助入口。
-- [Click README](https://github.com/pallets/click/blob/main/README.md)：简明介绍、特点和小例子，贡献细节另行链接。
-- [sqlite-utils README](https://github.com/simonw/sqlite-utils/blob/main/README.md)：CLI 与 Python 两种用法分别给例子，链接详细手册。
-- [Rich README](https://github.com/Textualize/rich/blob/main/README.md)：通过典型能力和用法帮助读者理解项目。
+阶段计划完成后，先将仍有效的约定并入主要说明；旧交接报告先原样归档并核对，再移出现行入口。当前文档不链接旧报告作为接口依据，历史文本保留当时语境。component.toml 的 changes 只写当前版本摘要；内部实施历史保存在正式仓库之外，不在 README 或 AGENTS.md 中链接。正式发行记录与内部实施报告分开。正在协作维护的文档保留，清理范围按当前任务确认。

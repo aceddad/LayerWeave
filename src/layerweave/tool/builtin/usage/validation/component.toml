@@ -1,5 +1,5 @@
 name = "layerweave.validation"
 kind = "tool"
-version = "0.1.0"
+version = "0.1.1"
 description = "按封装约定检查内容，并复查项目或子树"
-changes = "首次登记当前组件；后续版本由维护者更新本声明。"
+changes = "统一 JSON Schema 命令声明，支持可选 MCP 调用；保留原有 Python 与 CLI。"

@@ -1,18 +1,8 @@
 """读取完整记录：层含直接装载对象，每个实体的 bind 是它发出的完整关联。"""
 
-from contextlib import contextmanager
+from .snapshot import read_snapshot
 
 from layerweave.support.storage import crud
-
-
-@contextmanager
-def _snapshot(connection):
-    if connection.in_transaction:
-        yield  # 使用调用方的事务，不替调用方提交。
-    else:
-        with connection:
-            connection.execute("BEGIN")
-            yield
 
 
 def _bindings(connection, kind, project_id, entity_id):
@@ -23,7 +13,7 @@ def _bindings(connection, kind, project_id, entity_id):
 
 def read_object(connection, project_id, id):
     """返回对象字典及发出的 bind；不存在返回 None，不加载配置或执行检测。"""
-    with _snapshot(connection):
+    with read_snapshot(connection):
         record = crud.read(connection, "object", project_id=project_id, id=id)
         if record is not None:
             record["bind"] = _bindings(connection, "object", project_id, id)
@@ -32,7 +22,7 @@ def read_object(connection, project_id, id):
 
 def read_layer(connection, project_id, id):
     """返回层、直接装载对象与它们发出的 bind；不递归父层、子层或关联目标。"""
-    with _snapshot(connection):
+    with read_snapshot(connection):
         record = crud.read(connection, "layer", project_id=project_id, id=id)
         if record is None:
             return None
@@ -56,7 +46,7 @@ def read_layer(connection, project_id, id):
 
 def read_project_index(connection, project_id):
     """项目与层摘要：只取身份、层级和直属对象数，不读取正文、轴或配置文件。"""
-    with _snapshot(connection):
+    with read_snapshot(connection):
         project = crud.read(connection, "project", id=project_id)
         if project is None:
             return None

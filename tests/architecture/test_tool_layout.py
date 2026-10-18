@@ -11,7 +11,7 @@ import unittest
 from layerweave.support.commands import command_help
 
 
-ROOT = Path(__file__).resolve().parents[1]
+from tests._support.paths import ROOT
 
 
 class ToolLayoutTests(unittest.TestCase):
@@ -32,9 +32,8 @@ class ToolLayoutTests(unittest.TestCase):
             group = command["source"].split("/")[0]
             groups[group] = groups.get(group, 0) + 1
         self.assertEqual(groups, {"usage": 27, "shared": 2, "developer": 4})
-        view = ROOT / "src/layerweave/tool/builtin/view"
-        self.assertTrue(view.is_dir())
-        self.assertEqual(list(view.glob("*.py")), [])
+        self.assertFalse((ROOT / "src/layerweave/tool/builtin/view/__init__.py").exists())
+        self.assertFalse((ROOT / "src/layerweave/tool/builtin/shared/mcp").exists())
 
     def test_database_and_crud_execute_through_canonical_tools(self):
         with tempfile.TemporaryDirectory() as folder:

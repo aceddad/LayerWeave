@@ -20,6 +20,24 @@ def save_document(document, path):
     return str(path.resolve())
 
 
+def export_to_file(connection, project_id, output, *, overwrite=False, **options):
+    """显式文件包装；普通 JSON 导出不依赖本函数。"""
+    from .exporting import export_project
+    document = export_project(connection, project_id, **options)
+    path = Path(output).resolve()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    text = json.dumps(document, ensure_ascii=False, allow_nan=False, indent=2) + '\n'
+    with path.open('w' if overwrite else 'x', encoding='utf-8') as stream:
+        stream.write(text)
+    return {'path': str(path), 'counts': document['counts'], 'scope': document['scope'],
+            'overwritten': overwrite, 'document_complete': True}
+
+
+def import_from_file(connection, document_file, **options):
+    from .importing import import_project
+    return import_project(connection, load_document(document_file), **options)
+
+
 def template_help(name=None, *, template_root=None):
     """不传名称只列用途与路径；传名称返回那一份模板，新增 JSON 自动发现。"""
     root = TEMPLATE_ROOT if template_root is None else Path(template_root)

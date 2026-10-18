@@ -1,4 +1,4 @@
-"""python examples/review_history.py：内存中的复查、历史、撤销与重做。"""
+"""python -X utf8 examples/review_history.py：内存中的复查、历史、撤销与重做。"""
 
 from contextlib import closing
 

@@ -1,5 +1,5 @@
 name = "layerweave.foundation"
 kind = "foundation"
-version = "0.5.0"
+version = "0.5.3"
 description = "层、对象等抽象结构，以及配置、存储、编号、事务和日志支撑"
-changes = "工具表可声明逻辑引用和复制策略；元信息可补登记，保留现有数据、硬外键与恢复行为。"
+changes = "明确公共导出，读取快照独立于实体装配；包版本统一维护。"

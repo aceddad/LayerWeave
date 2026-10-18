@@ -9,6 +9,8 @@
 | 用 LayerWeave 搭建自己的工具 | [AI 开发指导](../../../../../docs/build-with-layerweave/README.md)，嵌套时序与有序管理等分篇示例 |
 | 新增 Python 层类或对象类 | [模型](../../../models/README.md)和[配置](../../../configs/README.md)，参考 [Title](../../../../../examples/title.py) |
 | 新增内部工具 | 本页的开发流程、[公共 API](../../../support/API.md)、[命令声明](../shared/help/COMMANDS.md) |
+| 将工具或技能接入 MCP | [MCP 接入](https://gitee.com/emotion1354414/layer-weave/blob/visualization/src/layerweave/tool/builtin/shared/mcp/README.md)，统一声明与可选 direct，不要求 CLI |
+| 工具包需要自己的层或对象类型（比如批注层） | [工具包登记类型](TOOL_TYPES.md)，以视图工具的批注层为例 |
 | 安装下载的技能 ZIP | [技能安装](SKILLS.md)，选择层目录或场景补充区 |
 | 管理本地 API KEY 与连接说明 | [KEY 管理](keys/README.md)，used 可记录任意使用方，公开查询不显示密钥 |
 | 登记和核对基础部分、工具包的版本 | [版本工具](versions/README.md)，扫描 component.toml 自动登记并标记在线/失效 |
@@ -27,7 +29,7 @@
 完成可编辑安装后运行：
 
 ```sh
-python -m layerweave.tool.builtin.developer.skills.cli SKILL.zip --layer text --json
+python -X utf8 -m layerweave.tool.builtin.developer.skills.cli SKILL.zip --layer text --json
 ```
 
 安装后返回 route，实际绑定由 AI 决定；场景区、多技能 ZIP 和重名处理见[技能安装说明](SKILLS.md)。
@@ -45,9 +47,9 @@ python -X utf8 -B -m layerweave.tool.builtin.developer.database.cli output/ai-pr
 ## 本地 KEY 与连接信息
 
 ```sh
-python -m layerweave.tool.builtin.developer.keys.cli init --json
-python -m layerweave.tool.builtin.developer.keys.cli connections --json
-python -m layerweave.tool.builtin.developer.keys.cli export --output keys.example.json --json
+python -X utf8 -m layerweave.tool.builtin.developer.keys.cli init --json
+python -X utf8 -m layerweave.tool.builtin.developer.keys.cli connections --json
+python -X utf8 -m layerweave.tool.builtin.developer.keys.cli export --output keys.example.json --json
 ```
 
 上例用于本地 JSON 管理；KEY 已在环境变量中时，技能可直接用 --key-env，无需先 init。真实 JSON 配置默认保存到用户目录的 .layerweave/keys.json，只在本机维护。示例保留名称和 used，清空 KEY，并以中文提示替代连接字段的值。两种调用方式、录入密钥与程序读取见[KEY 管理说明](keys/README.md)。

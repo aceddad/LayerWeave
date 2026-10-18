@@ -122,7 +122,9 @@ class ConfigHelpTests(unittest.TestCase):
         result = self.query("combined", ["text", "Layer"])
         self.assertEqual(len(result["items"]), 2)
         refs = [item["config_ref"] for item in result["object_details"]]
-        expected = {obj["config_ref"] for layer in result["items"] for obj in layer["accepted_objects"]}
+        # 工具包登记的派生类型（requires 与层不同）只在支持列表里点名，不在别的层下展开详情
+        expected = {obj["config_ref"] for layer in result["items"] for obj in layer["accepted_objects"]
+                    if not obj.get("requires") or obj["requires"] == layer.get("summary", {}).get("requires")}
         self.assertEqual(set(refs), expected)
         self.assertEqual(len(refs), len(set(refs)))
         self.assertTrue(all("definition" in item for item in result["object_details"]))

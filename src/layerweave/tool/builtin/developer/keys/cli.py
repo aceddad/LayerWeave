@@ -80,33 +80,66 @@ def main():
     return 0 if result["ok"] else 1
 
 
-COMMANDS = [{
-    "name": "manage_keys", "aliases": ["keys"],
-    "summary": "管理本地 KEY、环境变量名、服务地址、默认模型与通用 used 指引；导出空密钥示例",
-    "entrypoint": "layerweave.tool.builtin.developer.keys.service:manage_keys",
-    "cli": "python -m layerweave.tool.builtin.developer.keys.cli", "read_only": False, "context": [],
-    "parameters": {
-        "action": {"type": "string", "default": "read", "choices": ["init", "create", "read", "update", "delete", "connections", "export"],
-                   "description": "connections 只展示连接和 used，不检测网络；export 不含实际 KEY"},
-        "name": {"type": "string", "description": "任意调用方共用的条目名称；create/update/delete 必填"},
-        "data": {"type": "object", "description": "create/update 字段：key/env_name/base_url/model 字符串、used 字符串列表；CLI 用 --data-file"},
-        "store": {"type": "string", "description": "本地明文 JSON，默认用户目录 .layerweave/keys.json，不随软件分发"},
-        "template": {"type": "string", "description": "init 来源，默认包内 example.json；建立空条目，不覆盖已有文件"},
-        "output": {"type": "string", "description": "export 示例输出文件；名称和 used 保留，KEY 清空，连接字段替换为中文提示"}
-    },
-    "returns": "ok/action/store/data；普通结果包含 key_configured，不含 key。程序读取密钥使用本包 service.get_key。",
-    "examples": [
-        {"cli": "python -m layerweave.tool.builtin.developer.keys.cli init --json"},
-        {"cli": "python -m layerweave.tool.builtin.developer.keys.cli create image-service --data-file connection.json --prompt-key --json",
-         "files": {"connection.json": {"env_name": "<请填上环境变量名>", "base_url": "<请填上模型服务地址>",
-                                        "model": "<请填上你的所选模型>", "used": []}}},
-        {"cli": "python -m layerweave.tool.builtin.developer.keys.cli connections image-service --json"},
-        {"cli": "python -m layerweave.tool.builtin.developer.keys.cli export --output keys.example.json --json"}
-    ],
-    "notes": ["used 是技能、脚本、工具或其他调用方的使用指引，不是权限限制。",
-              "KEY 从隐藏输入、标准输入或本地文件录入；不提供把 KEY 直接放入命令行的参数。",
-              "真实文件只在本机维护；上传生成的示例，三个连接字段保留中文填写提示。"]
-}]
+COMMANDS = [{'name': 'manage_keys',
+  'aliases': ['keys'],
+  'summary': '管理本地 KEY、环境变量名、服务地址、默认模型与通用 used 指引；导出空密钥示例',
+  'entrypoint': 'layerweave.tool.builtin.developer.keys.service:manage_keys',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.developer.keys.cli',
+  'read_only': False,
+  'context': [],
+  'returns': 'ok/action/store/data；普通结果包含 key_configured，不含 key。程序读取密钥使用本包 service.get_key。',
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.developer.keys.cli init --json',
+                'arguments': {'action': 'read'}},
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.developer.keys.cli create image-service --data-file '
+                       'connection.json --prompt-key --json',
+                'files': {'connection.json': {'env_name': '<请填上环境变量名>',
+                                              'base_url': '<请填上模型服务地址>',
+                                              'model': '<请填上你的所选模型>',
+                                              'used': []}}},
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.developer.keys.cli connections image-service --json'},
+               {'cli': 'python -X utf8 -m layerweave.tool.builtin.developer.keys.cli export --output keys.example.json '
+                       '--json'}],
+  'notes': ['used 是技能、脚本、工具或其他调用方的使用指引，不是权限限制。',
+            'KEY 从隐藏输入、标准输入或本地文件录入；不提供把 KEY 直接放入命令行的参数。',
+            '真实文件只在本机维护；上传生成的示例，三个连接字段保留中文填写提示。'],
+  'input_schema': {'type': 'object',
+                   'properties': {'action': {'type': 'string',
+                                             'default': 'read',
+                                             'description': 'connections 只展示连接和 used，不检测网络；export 不含实际 KEY',
+                                             'enum': ['init',
+                                                      'create',
+                                                      'read',
+                                                      'update',
+                                                      'delete',
+                                                      'connections',
+                                                      'export']},
+                                  'name': {'type': ['string', 'null'],
+                                           'description': '任意调用方共用的条目名称；create/update/delete 必填'},
+                                  'data': {'type': ['object', 'null'],
+                                           'description': 'create/update 字段：key/env_name/base_url/model 字符串、used '
+                                                          '字符串列表；CLI 用 --data-file'},
+                                  'store': {'type': ['string', 'null'],
+                                            'description': '本地明文 JSON，默认用户目录 .layerweave/keys.json，不随软件分发'},
+                                  'template': {'type': ['string', 'null'],
+                                               'description': 'init 来源，默认包内 example.json；建立空条目，不覆盖已有文件'},
+                                  'output': {'type': ['string', 'null'],
+                                             'description': 'export 示例输出文件；名称和 used 保留，KEY 清空，连接字段替换为中文提示'}},
+                   'additionalProperties': False,
+                   'required': []},
+  'mcp': {'route': 'admin',
+          'group': 'developer',
+          'paths': ['output', 'store', 'template'],
+          'route_by': 'action',
+          'action_routes': {'init': 'admin',
+                            'create': 'admin',
+                            'read': 'query',
+                            'update': 'admin',
+                            'delete': 'admin',
+                            'connections': 'query',
+                            'export': 'query'},
+          'output_path_route': 'admin'},
+  'cli_mapping': {'data': ['data_file', 'key_stdin', 'prompt_key']},
+  'cli_only': ['json']}]
 
 
 if __name__ == "__main__":

@@ -1,35 +1,339 @@
 {
   "format_version": 1,
-  "name": "手书多模块起始结构",
-  "when": "用多个 root 分别管理含义、图片、视频和资源；各模块按需扩充对象",
-  "project": {"data": {"name": "手书项目", "tips": "示例结构可改名、增减；媒体由 AI 选择自己的输出目录"}},
+  "name": "手书起始结构",
+  "when": "围绕歌曲组织理解、画面试作和动态成片；制作模块按秒对齐，资源按序号管理，另留候选与旧稿。层与流程可自由增减，不要求使用 SVG 或特定技能",
+  "project": {
+    "data": {
+      "name": "手书项目",
+      "tips": "建议从歌曲与歌词出发，在理解、草图试作和成片之间反复调整；也可从关键画面开始。模板是可改名、增删和重组的起点，不是检查规则。制作模块共享成片时间，各对象覆盖实际对应区间，不要求各层同样分段；需要说明依据时用 bind 关联具体对象。资源按序号存放，候选与旧稿按秒保留且不会自动从查询排除。各层用途见 tips（详细展开可读），字段和可用技能按需查 help；技能可选且需确认已安装。媒体与源工程的输出目录由 AI 按项目选择，媒体对象用 information.source 记录真实路径。"
+    }
+  },
   "items": [
-    {"kind": "layer", "op": "add", "key": "meaning", "data": {"name": "内涵控制", "config_ref": "layers/text.toml"},
-     "children": [
-       {"kind": "layer", "op": "add", "data": {"name": "含义推测", "config_ref": "layers/text.toml"}},
-       {"kind": "layer", "op": "add", "data": {"name": "理解与意境素材", "config_ref": "layers/text.toml"}},
-       {"kind": "layer", "op": "add", "data": {"name": "赋予的意境与含义", "config_ref": "layers/text.toml"}}
-     ]},
-    {"kind": "layer", "op": "add", "key": "images", "data": {"name": "图片控制", "config_ref": "layers/text.toml"},
-     "children": [
-       {"kind": "layer", "op": "add", "data": {"name": "意愿说明", "config_ref": "layers/text.toml"}},
-       {"kind": "layer", "op": "add", "data": {"name": "SVG 草图", "config_ref": "layers/image.toml"}},
-       {"kind": "layer", "op": "add", "data": {"name": "成品图片", "config_ref": "layers/image.toml"}}
-     ]},
-    {"kind": "layer", "op": "add", "key": "video", "data": {"name": "视频控制", "config_ref": "layers/text.toml"},
-     "children": [
-       {"kind": "layer", "op": "add", "data": {"name": "意愿说明", "config_ref": "layers/text.toml"}},
-       {"kind": "layer", "op": "add", "data": {"name": "首尾帧", "config_ref": "layers/image.toml"}},
-       {"kind": "layer", "op": "add", "data": {"name": "模型", "config_ref": "layers/model.toml"}},
-       {"kind": "layer", "op": "add", "data": {"name": "动作", "config_ref": "layers/active.toml"}},
-       {"kind": "layer", "op": "add", "data": {"name": "成片", "config_ref": "layers/movie.toml"}}
-     ]},
-    {"kind": "layer", "op": "add", "key": "resources", "data": {"name": "资源管理", "config_ref": "layers/text.toml"},
-     "children": [
-       {"kind": "layer", "op": "add", "data": {"name": "图片", "config_ref": "layers/image.toml"}},
-       {"kind": "layer", "op": "add", "data": {"name": "视频", "config_ref": "layers/movie.toml"}},
-       {"kind": "layer", "op": "add", "data": {"name": "代码", "config_ref": "layers/text.toml"}},
-       {"kind": "layer", "op": "add", "data": {"name": "结果", "config_ref": "layers/image.toml"}}
-     ]}
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "song",
+      "data": {
+        "name": "歌曲",
+        "config_ref": "layers/text.toml",
+        "axis": {
+          "unit": "second",
+          "precision": 0.001
+        },
+        "tips": "作品的时间参照。可先放歌曲和已有字幕，再补音乐结构与卡点；根层也可放整曲说明。"
+      },
+      "children": [
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "audio",
+          "data": {
+            "name": "音频",
+            "config_ref": "layers/audio.toml",
+            "tips": "可用一个对象放整首歌：begin=0，end=实际歌长，information.source 写音频路径；多段音频也可分别安排。"
+          },
+          "children": [
+            {
+              "kind": "layer",
+              "op": "add",
+              "key": "beats",
+              "data": {
+                "name": "节拍与卡点",
+                "config_ref": "layers/text.toml",
+                "tips": "只记录有用的拍、小节或变化点，information.text 写含义；单个卡点可用 begin=end，持续段用区间。可按需查找已安装的 audio-cues 技能。"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "lyrics",
+          "data": {
+            "name": "歌词",
+            "config_ref": "layers/text.toml",
+            "tips": "建议每句一个对象，information.text 写歌词，起止位置取实际演唱或字幕时间；可按表达需要合并或拆分。"
+          }
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "sections",
+          "data": {
+            "name": "歌曲段落",
+            "config_ref": "layers/text.toml",
+            "tips": "用文字对象记录前奏、主歌、副歌、间奏等音乐结构；每个对象覆盖该段。故事和镜头可以有自己的分段。"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "meaning",
+      "data": {
+        "name": "内涵控制",
+        "config_ref": "layers/text.toml",
+        "axis": {
+          "unit": "second",
+          "precision": 0.001
+        },
+        "tips": "理解歌曲并决定表达内容。允许先试画面再回来调整；对象覆盖它解释的实际时间，整体设定也可放资源管理。"
+      },
+      "children": [
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "reading",
+          "data": {
+            "name": "含义推测",
+            "config_ref": "layers/text.toml",
+            "tips": "按句、段或其他合适范围，写歌词可能的含义、依据和不确定处；information.text 存正文，可 bind 到相关歌词对象。"
+          }
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "understanding",
+          "data": {
+            "name": "个人理解",
+            "config_ref": "layers/text.toml",
+            "tips": "用文字记录自己的感受、情绪变化和表达取向，范围按实际含义安排；可关联歌词或含义推测。"
+          }
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "story",
+          "data": {
+            "name": "故事",
+            "config_ref": "layers/text.toml",
+            "tips": "记录希望讲述的事件与人物变化，一段故事可跨多个镜头，不必沿用歌词或音乐段落的边界；可关联其理解依据。"
+          }
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "imagery",
+          "data": {
+            "name": "意象与表达",
+            "config_ref": "layers/text.toml",
+            "tips": "用文字写意象、它代表什么及准备怎样被看见，例如物件、地点或动作；可 bind 到相关故事对象。"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "images",
+      "data": {
+        "name": "图片控制",
+        "config_ref": "layers/text.toml",
+        "axis": {
+          "unit": "second",
+          "precision": 0.001
+        },
+        "tips": "用画面设计、草图和样片验证表达。可用静态图、动态 SVG 或其他方式试作，按结果返回调整故事；源工程放资源管理，渲染的预演视频放动态样片。"
+      },
+      "children": [
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "shots",
+          "data": {
+            "name": "画面设计",
+            "config_ref": "layers/text.toml",
+            "tips": "建议每镜一个文字对象：想产生什么感觉、地点光线、景别角度、构图留白、什么动或不动、需要哪些画面。其区间可作为该镜头草图的参照，可关联意象与表达。"
+          }
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "sketches",
+          "data": {
+            "name": "画面草图",
+            "config_ref": "layers/image.toml",
+            "tips": "information.source 写草图图片或 SVG 文件路径，放在它表现的区间；可关联画面设计。一镜可以有多张草图，一张也可跨镜复用，不限定绘制方式。"
+          }
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "animatic",
+          "data": {
+            "name": "动态样片",
+            "config_ref": "layers/movie.toml",
+            "tips": "information.source 写已渲染的预演视频，覆盖实际表现的成片时间；可逐段或整段检查画面与音乐配合。SVG、代码等源工程放资源管理并用 bind 关联，想保留的旧版可移至候选与旧稿。"
+          }
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "artwork",
+          "data": {
+            "name": "原画",
+            "config_ref": "layers/image.toml",
+            "tips": "information.source 写实际图片路径，对象放在成片使用它的区间，可关联草图和角色设定图。相同文件可被多个使用区间引用；生图技能只是可选制作方式。"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "video",
+      "data": {
+        "name": "视频控制",
+        "config_ref": "layers/text.toml",
+        "axis": {
+          "unit": "second",
+          "precision": 0.001
+        },
+        "tips": "安排镜头运动与实现方式，记录制作结果；按需使用或删除各子层。不同片段可以使用不同技术。"
+      },
+      "children": [
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "camera",
+          "data": {
+            "name": "镜头设计",
+            "config_ref": "layers/text.toml",
+            "tips": "文字说明镜头怎样运动、为何运动、怎样衔接下一镜及对应的音乐位置；可关联画面设计和卡点。静态镜头也可使用。"
+          }
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "methods",
+          "data": {
+            "name": "实现方式",
+            "config_ref": "layers/text.toml",
+            "tips": "按实际片段记录图片、代码动画、视频生成或其他实现方法，以及文件和关键参数；可关联原画、代码和技术记录。按需查找已安装的 remotion-animate、video-generate 等技能。"
+          }
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "keyframes",
+          "data": {
+            "name": "首尾帧",
+            "config_ref": "layers/image.toml",
+            "tips": "需要时记录首帧、尾帧或关键帧图片，information.source 写路径；可用 begin=end 表示发生位置，用名称或 tips 区分用途，并关联对应镜头。"
+          }
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "models",
+          "data": {
+            "name": "模型",
+            "config_ref": "layers/model.toml",
+            "tips": "可选：角色模型或骨架等资源，按实际使用区间安排；并非填写调用哪个 AI 模型。字段按需查模型对象 help。"
+          }
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "motion",
+          "data": {
+            "name": "动作",
+            "config_ref": "layers/active.toml",
+            "tips": "可选：驱动模型或图片的动作数据，可 bind 到被驱动的具体对象；字段按需查动作对象 help，也可查已安装的 puppet-motion 技能。"
+          }
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "film",
+          "data": {
+            "name": "成片",
+            "config_ref": "layers/movie.toml",
+            "tips": "information.source 写已渲染的分段或整片视频，区间对应其成片位置，可关联实现方式；可按需使用已安装的 video-verify 技能检查。候选版本可另放候选与旧稿。"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "resources",
+      "data": {
+        "name": "资源管理",
+        "config_ref": "layers/text.toml",
+        "axis": {
+          "unit": "序号",
+          "precision": 1
+        },
+        "tips": "收藏与成片时间无关的设定、参考和源工程。建议第 n 条占 [n,n+1)，n 从 1 起，只表示顺序，不是数据库 ID；根层可放文字设定。制作对象可用 bind 指向具体资料。"
+      },
+      "children": [
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "designs",
+          "data": {
+            "name": "角色设定图",
+            "config_ref": "layers/image.toml",
+            "tips": "information.source 写设定图、三视图或色板路径，名称和 tips 说明角色与版本；文字设定可放资源管理根层，使用它的原画可关联过来。"
+          }
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "image-references",
+          "data": {
+            "name": "图片参考",
+            "config_ref": "layers/image.toml",
+            "tips": "收藏风格、构图、场景等参考和未采用的候选图片，information.source 写路径；无需先决定成片时间，采用后由制作对象关联。"
+          }
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "video-references",
+          "data": {
+            "name": "视频参考",
+            "config_ref": "layers/movie.toml",
+            "tips": "收藏运动、节奏等视频参考，information.source 写路径；这里 begin/end 表示列表位置，不是媒体片长或使用时间。"
+          }
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "code",
+          "data": {
+            "name": "代码与源工程",
+            "config_ref": "layers/text.toml",
+            "tips": "一个工程或脚本可用一个条目，information.text 记录文件位置、用途和运行方式；包括 SVG、动画工程等。制作对象可 bind 到具体条目。"
+          }
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "techniques",
+          "data": {
+            "name": "技术记录",
+            "config_ref": "layers/text.toml",
+            "tips": "information.text 记录可复用的方法、参数和经验，按条目排序；具体片段的实现方式可关联到这里。"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "alternatives",
+      "data": {
+        "name": "候选与旧稿",
+        "config_ref": "layers/text.toml",
+        "axis": {
+          "unit": "second",
+          "precision": 0.001
+        },
+        "tips": "可选：保留仍想对照的替代故事、草图或样片，可按版本添加对应类型的子层；沿用成片时间。挪入单位与精度均一致的旧根层时，同时修改 father 并将其 axis 清为 null 以沿用本根轴。不自动隐藏或排除查询，查看当前方案时选择制作根；视图可另行折叠或拆出。撤销日志仍负责操作历史。"
+      }
+    }
   ]
 }

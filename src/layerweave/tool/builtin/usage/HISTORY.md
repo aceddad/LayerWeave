@@ -34,11 +34,13 @@ objects = recheck(connection, project_id, object_ids=[8, 12])
 - 修改 TOML 后可直接复查；不修改业务数据、不制造操作历史。
 
 ```sh
-python -m layerweave.tool.builtin.usage.validation.cli DATABASE PROJECT_ID --layer-ids 4 7 --json
-python -m layerweave.tool.builtin.usage.validation.cli DATABASE PROJECT_ID --object-ids 8 12 --json
+python -X utf8 -m layerweave.tool.builtin.usage.validation.cli DATABASE PROJECT_ID --layer-ids 4 7 --json
+python -X utf8 -m layerweave.tool.builtin.usage.validation.cli DATABASE PROJECT_ID --object-ids 8 12 --json
 ```
 
 ## 历史
+
+MCP 通用 query 的外层 limit 只控制回复每页展示几次操作；查询最近三次操作使用 arguments.limit=3。历史结果按 items 分页，一次操作内部的 changes 保持完整，过大时明确给出文本片段。先以 more.cursor 续取本次回复；读完后再把业务 next_cursor 作为 arguments.before 查询下一批。回复尚未读完时 next_cursor 暂置 null，more.business_cursor_pending=true 表示它尚未交付，而不是历史已到末尾。Python/CLI 的 limit 和 before 仍按下文表示业务分页。
 
 查看相关操作、每次改动的字段及前后数据，已删除的实体也可以查询。
 
@@ -75,9 +77,9 @@ operation = read_history(connection, operation_id=operation_id)
 - undo_of 记录该操作撤销了哪次操作，原历史保持不变。
 
 ```sh
-python -m layerweave.tool.builtin.usage.history.cli DATABASE --project-id PROJECT_ID --kind object --id OBJECT_ID
-python -m layerweave.tool.builtin.usage.history.cli DATABASE --project-id PROJECT_ID --limit 20 --before CURSOR --json
-python -m layerweave.tool.builtin.usage.history.cli DATABASE --operation-id OPERATION_ID --json
+python -X utf8 -m layerweave.tool.builtin.usage.history.cli DATABASE --project-id PROJECT_ID --kind object --id OBJECT_ID
+python -X utf8 -m layerweave.tool.builtin.usage.history.cli DATABASE --project-id PROJECT_ID --limit 20 --before CURSOR --json
+python -X utf8 -m layerweave.tool.builtin.usage.history.cli DATABASE --operation-id OPERATION_ID --json
 ```
 
 历史中只有整批改动属于同一撤销来源时，顶层 undo_of 才是该操作编号。混合撤销与其他修改时，undo_of 为 None，undo_of_operations 列出涉及来源，各条撤销改动保留自己的 undo_of。
@@ -119,10 +121,10 @@ if undone["ok"] and undone["applied"]:
 - 恢复后按当前配置检查，诊断 error 不撤销已完成的恢复。Python、TOML 和媒体文件不属于数据库撤销范围。
 
 ```sh
-python -m layerweave.tool.builtin.usage.undo.cli DATABASE OPERATION_ID
-python -m layerweave.tool.builtin.usage.undo.cli DATABASE UNDO_OPERATION_ID --json
+python -X utf8 -m layerweave.tool.builtin.usage.undo.cli DATABASE OPERATION_ID
+python -X utf8 -m layerweave.tool.builtin.usage.undo.cli DATABASE UNDO_OPERATION_ID --json
 ```
 
 文字反馈将写入结果和检查问题分开，完整协议见 [CRUD](CRUD.md)。旧数据库在写入前使用[开发工具](../developer/README.md)显式升级；普通读取不自动升级。
 
-完整内存示例：`python examples/review_history.py`。
+完整内存示例：`python -X utf8 examples/review_history.py`。

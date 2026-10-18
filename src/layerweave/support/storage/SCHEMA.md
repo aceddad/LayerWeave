@@ -105,7 +105,7 @@ UPDATE 前会排除已经能判定无变化的字段；最终是否记日志，�
 完成安装后，在项目根运行存储检查：
 
 ```sh
-python -X utf8 -B -m unittest discover -s tests -v
+python -X utf8 -B -m unittest discover -s tests -t . -v
 ```
 
 检查使用内存数据库；CLI 检查另外创建并清理专用临时数据库，不写入用户的项目数据。

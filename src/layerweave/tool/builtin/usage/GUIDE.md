@@ -7,7 +7,7 @@
 打开已有项目时，先调用 project_overview 看层树和各层对象数；需要正文再调用 project_details，按条件定位对象用 find_objects。
 
 ```sh
-python -m layerweave.tool.builtin.usage.query.project_overview DATABASE PROJECT_ID
+python -X utf8 -m layerweave.tool.builtin.usage.query.project_overview DATABASE PROJECT_ID
 ```
 
 ## 帮助入口
@@ -15,8 +15,8 @@ python -m layerweave.tool.builtin.usage.query.project_overview DATABASE PROJECT_
 查工具用途与调用示例使用命令 help；查可用层、对象类与配置示例使用配置 help。两个入口均无需数据库：
 
 ```sh
-python -m layerweave.tool.builtin.shared.help.command_help split insert_gap undo --json
-python -m layerweave.tool.builtin.shared.help.config_help combined text
+python -X utf8 -m layerweave.tool.builtin.shared.help.command_help split insert_gap undo --json
+python -X utf8 -m layerweave.tool.builtin.shared.help.config_help combined text
 ```
 
 完整说明分别维护在[命令说明](../shared/help/COMMANDS.md)和[配置 help](../shared/help/CONFIG_HELP.md)。
@@ -174,7 +174,7 @@ graph = walk_relations(connection, project_id, "object", object_id,
 - 只解释标准 bind。其他工具自有表的引用，由该工具读取和解释；本接口不会扫描这些表寻找关系。
 
 ```sh
-python -m layerweave.tool.builtin.usage.query.walk DATABASE PROJECT_ID object OBJECT_ID --direction both --max-depth 3
+python -X utf8 -m layerweave.tool.builtin.usage.query.walk DATABASE PROJECT_ID object OBJECT_ID --direction both --max-depth 3
 ```
 
 ## 文本汇集
@@ -233,7 +233,7 @@ match_by 默认为 name，也可指定 information 下的点分路径，例如 i
 返回标准操作结果；data 含 scope、counts（created/updated/unchanged）、items。每项为 match_value、action（create/update/unchanged）和 record。整批共享事务、日志和撤销；内容检测仍在提交后执行。组合调用使用同模块的 upsert_objects_in_session(write, project_id, layer_id, objects, match_by=...)，检测交给外层。
 
 ```sh
-python -m layerweave.tool.builtin.usage.editing.upsert DATABASE PROJECT_ID LAYER_ID --data-file scenes.json --match-by information.source_key
+python -X utf8 -m layerweave.tool.builtin.usage.editing.upsert DATABASE PROJECT_ID LAYER_ID --data-file scenes.json --match-by information.source_key
 ```
 
 scenes.json 是上例对象字段字典组成的 JSON 列表；--help 带完整最短文件示例。
@@ -341,7 +341,7 @@ result = find_gaps(connection, project_id, layer_id, begin=0, end=20, min_length
 ```
 
 ```sh
-python -m layerweave.tool.builtin.usage.query.free_ranges DATABASE 1 4 0 20 --min-length 3 --json
+python -X utf8 -m layerweave.tool.builtin.usage.query.free_ranges DATABASE 1 4 0 20 --min-length 3 --json
 ```
 
 只查询指定层直属对象，不自动包含子层。begin/end 明确限定 [begin,end)，min_length 默认 0；先合并占用区间，再返回正长度空档。相邻对象的首尾相接不产生空档；空层返回整个查询区间，begin=end 返回空列表。负位置可用。

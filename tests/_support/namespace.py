@@ -1,16 +1,7 @@
-"""宿主的常见模块名不能遮蔽 LayerWeave；独立进程避免导入缓存掩盖问题。"""
-import os
-from pathlib import Path
-import subprocess
-import sys
-import tempfile
-import unittest
+"""宿主遮蔽与普通安装共用的独立进程场景。"""
+from tests._support.paths import ROOT
 
-
-ROOT = Path(__file__).resolve().parents[1]
 COMMON_NAMES = ("core", "models", "support", "tool", "examples")
-
-# check_wheel.py 在不加载测试环境中 layerweave 的独立进程中复用这些行为断言。
 SMOKE = '''
 from importlib import import_module
 from pathlib import Path
@@ -93,7 +84,9 @@ made = import_project(c,template_help("storyboard")["items"][0]["document"],new_
 assert made["ok"] and made["data"]["status"] == "completed", made
 snapshot = export_project(c,made["data"]["project_id"],op="add")
 copied = import_project(c,snapshot)
-assert copied["ok"] and copied["data"]["counts"]["created"] == 4, copied
+assert copied["ok"] and copied["data"]["status"] == "completed", copied
+assert copied["data"]["counts"]["created"] == sum(snapshot["counts"].values()), copied
+assert export_project(c,copied["data"]["project_id"])["counts"] == snapshot["counts"]
 assert undo_operation(c,copied["operation_id"])["ok"]
 register_tables(c, {
     "layer_cache":{"id_source":"provided","fields":{"fold":"TEXT"},
@@ -121,9 +114,9 @@ assert len(commands["items"]) == 33 and commands["status"] == "completed", comma
 from layerweave.tool.builtin.developer.versions import manage_versions
 versions = manage_versions(c)
 assert versions["ok"] and versions["data"]["status"] == "completed", versions
-assert len(versions["data"]["items"]) == 14, versions
+assert len(versions["data"]["items"]) == 14, versions   # 基础部分与 13 个非视图工具包。
 assert all(row["status"] == "online" for row in versions["data"]["items"]), versions
-assert manage_versions(c,"read",name="layerweave.versions")["data"]["items"][0]["version"] == "0.1.0"
+assert manage_versions(c,"read",name="layerweave.versions")["data"]["items"][0]["version"] == "0.1.1"
 from layerweave.tool.builtin.developer.keys.service import manage_keys, get_key
 key_store = Path.cwd() / "keys.local.json"
 assert manage_keys("init", store=key_store)["ok"]
@@ -147,49 +140,8 @@ for name, module in hosts.items():
 c.close()
 print("namespace, model roundtrip, tool tables/undo, session composition, numbering feedback, component versions, commands, config/schema and skills passed")
 '''
-
-
 def make_host_modules(folder, *, packages=False):
     for name in COMMON_NAMES:
         path = folder / name / "__init__.py" if packages else folder / (name + ".py")
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(f'MARKER = "host:{name}"\n', encoding="utf-8")
-
-
-class NamespaceTests(unittest.TestCase):
-    def test_host_files_and_packages_do_not_break_layerweave(self):
-        for packages in (False, True):
-            with self.subTest(packages=packages), tempfile.TemporaryDirectory(prefix="layerweave-shadow-") as folder:
-                make_host_modules(Path(folder), packages=packages)
-                env = dict(os.environ)
-                env.pop("PYTHONPATH", None)
-                result = subprocess.run([sys.executable, "-X", "utf8", "-B", "-c", SMOKE], cwd=folder,
-                                        env=env, capture_output=True, text=True, encoding="utf-8", timeout=45)
-                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-
-    def test_distribution_declares_only_layerweave(self):
-        from importlib.metadata import distribution
-        names = distribution("layerweave").read_text("top_level.txt").splitlines()
-        self.assertEqual(names, ["layerweave"])
-
-    def test_source_install_does_not_expose_old_empty_namespace_directories(self):
-        with tempfile.TemporaryDirectory() as folder:
-            code = '''
-from importlib.util import find_spec
-from pathlib import Path
-from layerweave.support.paths import PACKAGE_ROOT
-for name in ("core", "models", "support", "tool", "examples"):
-    spec = find_spec(name)
-    if spec is not None:
-        paths = [*(spec.submodule_search_locations or []), *([spec.origin] if spec.origin else [])]
-        assert not any(Path(p).resolve().is_relative_to(PACKAGE_ROOT.parent) for p in paths), (name,paths)
-'''
-            env = dict(os.environ)
-            env.pop("PYTHONPATH", None)
-            result = subprocess.run([sys.executable, "-X", "utf8", "-B", "-c", code], cwd=folder,
-                                    env=env, capture_output=True, text=True, encoding="utf-8", timeout=30)
-            self.assertEqual(result.returncode, 0, result.stderr)
-
-
-if __name__ == "__main__":
-    unittest.main()

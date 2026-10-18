@@ -50,15 +50,28 @@ def main():
 
 # 命令目录和 --help 共用的只读接口说明。
 COMMANDS = [{'name': 'project_overview',
-  'summary': '打开已有项目先看这里：层树、层类型和直属对象数量',
+  'summary': '查看项目概览／总览：层树、层类型和直属对象数量；打开已有项目先看这里',
   'aliases': ['overview'],
   'entrypoint': 'layerweave.tool.builtin.usage.query.project_overview:project_overview',
-  'cli': 'python -m layerweave.tool.builtin.usage.query.project_overview',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.query.project_overview',
   'read_only': True,
   'context': ['database', 'project_id'],
-  'parameters': {},
   'returns': '项目与层树摘要；项目不存在返回 None。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.query.project_overview DATABASE 1 --json'}]}]
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.query.project_overview DATABASE 1 --json'}],
+  'input_schema': {'type': 'object',
+                   'properties': {'database': {'type': 'string',
+                                               'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
+                                  'project_id': {'type': 'integer', 'description': '明确的项目编号'}},
+                   'additionalProperties': False,
+                   'required': ['database', 'project_id']},
+  'mcp': {'route': 'query',
+          'group': 'query',
+          'database': 'connection',
+          'paths': [],
+          'pagination': {'items': ['layers']}},
+  'cli_only': ['json'],
+  'keywords': ['概览', '总览', '项目结构', '层树'],
+  'help_order': 10}]
 
 
 if __name__ == "__main__":

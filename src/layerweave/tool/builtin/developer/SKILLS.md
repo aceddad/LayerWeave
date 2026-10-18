@@ -7,8 +7,8 @@
 完成可编辑安装后运行，将 SKILL.zip 替换为实际文件路径：
 
 ```sh
-python -m layerweave.tool.builtin.developer.skills.cli SKILL.zip --layer text --json
-python -m layerweave.tool.builtin.developer.skills.cli SKILL.zip --scenario --json
+python -X utf8 -m layerweave.tool.builtin.developer.skills.cli SKILL.zip --layer text --json
+python -X utf8 -m layerweave.tool.builtin.developer.skills.cli SKILL.zip --scenario --json
 ```
 
 - --layer text 安装到 tool/skills/layers/text/技能目录。
@@ -24,7 +24,7 @@ python -m layerweave.tool.builtin.developer.skills.cli SKILL.zip --scenario --js
 默认名称取包含 SKILL.md 的目录名；根目录平铺的包使用 ZIP 文件名去掉扩展名。需要其他安装名称时：
 
 ```sh
-python -m layerweave.tool.builtin.developer.skills.cli SKILL.zip --layer audio --name audio-helper --json
+python -X utf8 -m layerweave.tool.builtin.developer.skills.cli SKILL.zip --layer audio --name audio-helper --json
 ```
 
 --name 只改变安装目录名，SKILL.md 的原文和内部名称保持不变。
@@ -32,7 +32,7 @@ python -m layerweave.tool.builtin.developer.skills.cli SKILL.zip --layer audio -
 若有多个独立技能，工具返回 error.candidates 中的包内目录，不自动选择：
 
 ```sh
-python -m layerweave.tool.builtin.developer.skills.cli BUNDLE.zip --layer audio --source-dir bundle/audio-skill --json
+python -X utf8 -m layerweave.tool.builtin.developer.skills.cli BUNDLE.zip --layer audio --source-dir bundle/audio-skill --json
 ```
 
 只复制选中技能目录内的内容，外层 README 和其他技能不会一起安装。技能目录内的 scripts、references、assets 及其他文件原样保留。若最外层已有 SKILL.md，其下引用资料里的其他 SKILL.md 默认作为包内内容保留。

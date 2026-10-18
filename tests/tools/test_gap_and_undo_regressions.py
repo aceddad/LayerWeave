@@ -1,4 +1,4 @@
-"""Claude 反馈回归：明确范围、跨界 split/keep、顶层字段撤销。"""
+"""范围编辑回归：明确范围、跨界 split/keep、顶层字段撤销。"""
 
 import json
 from pathlib import Path

@@ -74,18 +74,29 @@ def main():
 COMMANDS = [{'name': 'find_gaps',
   'summary': '查询直属层在指定区间内的空档，可按最小可容纳长度筛选',
   'entrypoint': 'layerweave.tool.builtin.usage.query.free_ranges:find_gaps',
-  'cli': 'python -m layerweave.tool.builtin.usage.query.free_ranges',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.query.free_ranges',
   'read_only': True,
   'context': ['database', 'project_id'],
-  'parameters': {'layer_id': {'type': 'integer', 'required': True, 'description': '只查询此层直属对象，不包含子层'},
-                 'begin': {'type': 'number', 'required': True, 'description': '查询区间起点，包含'},
-                 'end': {'type': 'number', 'required': True, 'description': '查询区间终点，不包含；不得早于 begin'},
-                 'min_length': {'type': 'number', 'default': 0, 'description': '最小可容纳长度，非负；0 返回全部正长度空档'}},
   'returns': 'project_id、layer_id、scope、count、gaps；每段含 begin/end/length/begin_inclusive，终点始终不包含。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.query.free_ranges DATABASE 1 4 0 20 --min-length 3 --json'}],
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.query.free_ranges DATABASE 1 4 0 20 --min-length '
+                       '3 --json',
+                'arguments': {'layer_id': 4, 'begin': 0, 'end': 20}}],
   'notes': ['合并相交或首尾相接的占用，空层返回整个查询区间。数值不换算、不落点、不加载配置或正文。',
             '瞬间对象占用一个点，其后的空档 begin_inclusive=false；不猜测 epsilon。开起点的空档不能容纳等于其长度的对象。',
-            '位置不是有限数值或 begin>end 时明确指出对象，查询失败，不将无法判断的区域报告为空闲。']}]
+            '位置不是有限数值或 begin>end 时明确指出对象，查询失败，不将无法判断的区域报告为空闲。'],
+  'input_schema': {'type': 'object',
+                   'properties': {'database': {'type': 'string', 'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
+                                  'project_id': {'type': 'integer', 'description': '明确的项目编号'},
+                                  'layer_id': {'type': 'integer', 'description': '只查询此层直属对象，不包含子层'},
+                                  'begin': {'type': 'number', 'description': '查询区间起点，包含'},
+                                  'end': {'type': 'number', 'description': '查询区间终点，不包含；不得早于 begin'},
+                                  'min_length': {'type': 'number',
+                                                 'default': 0,
+                                                 'description': '最小可容纳长度，非负；0 返回全部正长度空档'}},
+                   'additionalProperties': False,
+                   'required': ['begin', 'database', 'end', 'layer_id', 'project_id']},
+  'mcp': {'route': 'query', 'group': 'query', 'database': 'connection', 'paths': []},
+  'cli_only': ['json']}]
 
 
 if __name__ == "__main__":

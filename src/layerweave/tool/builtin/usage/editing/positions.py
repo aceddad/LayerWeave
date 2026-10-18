@@ -1,67 +1,10 @@
 """通用位置工具：只计算 begin/end，事务、实际写入与诊断复用核心。"""
 
-from math import isfinite
+from ._records import _number, _position, _duration, _layer, _objects, _tail
 
 from layerweave.support.api import DEFAULT_CHECKER
 from ._plan import dispatch, execute_in_session
 from layerweave.support.api import PositionMath, decimal_value
-
-
-def _number(value, label):
-    if type(value) not in {int, float} or not isfinite(value):
-        raise ValueError(f"{label} 必须是可计算的有限数值")
-    return value
-
-
-def _position(record, field):
-    return _number(record[field], f"对象 ({record['project_id']}, {record['id']}) 的 {field}")
-
-
-def _duration(record):
-    return decimal_value(_position(record, "end")) - decimal_value(_position(record, "begin"))
-
-
-def _layer(read, project_id, layer_id):
-    if layer_id is None:
-        raise ValueError("需要明确的 layer_id")
-    record = read("layer", project_id=project_id, id=layer_id)
-    if record is None:
-        raise KeyError(f"层 ({project_id}, {layer_id}) 不存在")
-    return record
-
-
-def _objects(read, project_id, object_ids=None, layer_id=None):
-    """显式选择编号，或指定整层；顺序保留，重复编号只处理一次。"""
-    if layer_id is not None:
-        layer_id = _layer(read, project_id, layer_id)["id"]
-    if object_ids is None:
-        if layer_id is None:
-            raise ValueError("请指定 object_ids 或 layer_id")
-        return read("object", project_id=project_id, filters={"layer": layer_id})
-    if isinstance(object_ids, (str, bytes)):
-        raise TypeError("object_ids 需要编号序列，不能传入单个字符串")
-    records = {}
-    for id in dict.fromkeys(object_ids):
-        if id is None:
-            raise ValueError("对象选择需要明确的编号")
-        record = read("object", project_id=project_id, id=id)
-        if record is None:
-            raise KeyError(f"对象 ({project_id}, {id}) 不存在")
-        if layer_id is not None and record["layer"] != layer_id:
-            raise ValueError(f"对象 {id} 不属于指定层 {layer_id}")
-        records.setdefault(record["id"], record)
-    return list(records.values())
-
-
-def _tail(read, project_id, layer_id, *, after_id=None, empty_start=0):
-    if after_id is not None:
-        record = _objects(read, project_id, [after_id], layer_id)[0]
-        return _position(record, "end")
-    _layer(read, project_id, layer_id)
-    records = read("object", project_id=project_id, filters={"layer": layer_id})
-    if not records:
-        return _number(empty_start, "空层起点")
-    return max(_position(record, "end") for record in records)
 
 
 def _update(project_id, record, begin, end):
@@ -207,65 +150,110 @@ def main():
     return run_cli(parser, execute, operation_output=True)
 
 
-
 # 命令目录和 --help 共用的只读接口说明。
 COMMANDS = [{'name': 'arrange_objects',
   'summary': '按指定顺序连续排列对象，保留各自时长',
   'entrypoint': 'layerweave.tool.builtin.usage.editing.positions:arrange_objects',
   'session_entrypoint': 'layerweave.tool.builtin.usage.editing.positions:arrange_objects_in_session',
-  'cli': 'python -m layerweave.tool.builtin.usage.editing.positions',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.editing.positions',
   'read_only': False,
   'context': ['database', 'project_id'],
-  'parameters': {'layer_id': {'type': 'integer', 'description': '同一层的编号', 'required': True},
-                 'object_ids': {'type': 'array', 'description': '明确选择的对象编号列表，重复编号只处理一次'},
-                 'start': {'type': 'number', 'description': '轴上的数值位置，不换算单位'}},
   'returns': '标准操作结果、operation_id、data/results 和提交后 checks；可按操作编号撤销。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.editing.positions DATABASE 1 arrange 4 --ids 8 12 --start 0'}]},
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.editing.positions DATABASE 1 arrange 4 --ids 8 12 '
+                       '--start 0',
+                'arguments': {'layer_id': 4, 'start': 0}}],
+  'input_schema': {'type': 'object',
+                   'properties': {'database': {'type': 'string', 'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
+                                  'project_id': {'type': 'integer', 'description': '明确的项目编号'},
+                                  'layer_id': {'type': 'integer', 'description': '同一层的编号'},
+                                  'object_ids': {'type': ['array', 'null'],
+                                                 'description': '明确选择的对象编号列表，重复编号只处理一次',
+                                                 'items': {'type': 'integer'}},
+                                  'start': {'type': ['number', 'null'], 'description': '轴上的数值位置，不换算单位'}},
+                   'additionalProperties': False,
+                   'required': ['database', 'layer_id', 'project_id']},
+  'mcp': {'route': 'edit', 'group': 'editing', 'database': 'connection', 'paths': []},
+  'cli_mapping': {'object_ids': ['ids']},
+  'cli_only': ['command', 'text']},
  {'name': 'shift_objects',
   'summary': '选择对象/直属层/子树，按起点下限筛选后整体平移',
   'entrypoint': 'layerweave.tool.builtin.usage.editing.timeline:shift_objects',
   'session_entrypoint': 'layerweave.tool.builtin.usage.editing.timeline:shift_objects_in_session',
-  'cli': 'python -m layerweave.tool.builtin.usage.editing.positions',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.editing.positions',
   'read_only': False,
   'context': ['database', 'project_id'],
-  'parameters': {'object_ids': {'type': 'array', 'description': '明确选择的对象编号列表，重复编号只处理一次'},
-                 'layer_id': {'type': 'integer', 'description': '该项目内的层编号，仅直属对象'},
-                 'layer_ids': {'type': 'array', 'description': '子树起始层编号列表，包含全部后代；空列表为空选择'},
-                 'offset': {'type': 'number', 'description': '正值后移，负值前移', 'required': True},
-                 'from_position': {'type': 'number', 'description': '筛选 begin >= 此数值，不是区间相交'},
-                 'config_root': {'type': 'string', 'description': '检查或配置查询采用的配置根目录；省略使用项目 configs'}},
   'returns': '标准操作结果、operation_id、data/results 和提交后 checks；可按操作编号撤销。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.editing.positions DATABASE 1 shift --layer-ids 4 '
-                       '--from-position 30 --offset 2'}],
-  'notes': ['重叠按层配置在提交后报告；批量平移不保证插入时段为空。']},
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.editing.positions DATABASE 1 shift --layer-ids 4 '
+                       '--from-position 30 --offset 2',
+                'arguments': {'object_ids': [8], 'offset': 2}}],
+  'notes': ['重叠按层配置在提交后报告；批量平移不保证插入时段为空。'],
+  'input_schema': {'type': 'object',
+                   'properties': {'database': {'type': 'string', 'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
+                                  'project_id': {'type': 'integer', 'description': '明确的项目编号'},
+                                  'object_ids': {'type': ['array', 'null'],
+                                                 'description': '明确选择的对象编号列表，重复编号只处理一次',
+                                                 'items': {'type': 'integer'}},
+                                  'layer_id': {'type': ['integer', 'null'], 'description': '该项目内的层编号，仅直属对象'},
+                                  'layer_ids': {'type': ['array', 'null'],
+                                                'description': '子树起始层编号列表，包含全部后代；空列表为空选择',
+                                                'items': {'type': 'integer'}},
+                                  'offset': {'type': 'number', 'description': '正值后移，负值前移'},
+                                  'from_position': {'type': ['number', 'null'],
+                                                    'description': '筛选 begin >= 此数值，不是区间相交'},
+                                  'config_root': {'type': 'string',
+                                                  'description': '检查或配置查询采用的配置根目录；省略使用项目 configs'}},
+                   'additionalProperties': False,
+                   'required': ['database', 'offset', 'project_id']},
+  'mcp': {'route': 'edit', 'group': 'editing', 'database': 'connection', 'paths': ['config_root']},
+  'cli_mapping': {'object_ids': ['ids']},
+  'cli_only': ['command', 'text']},
  {'name': 'align_objects',
   'summary': '按起点或终点对齐选中对象，保留各自时长',
   'entrypoint': 'layerweave.tool.builtin.usage.editing.positions:align_objects',
   'session_entrypoint': 'layerweave.tool.builtin.usage.editing.positions:align_objects_in_session',
-  'cli': 'python -m layerweave.tool.builtin.usage.editing.positions',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.editing.positions',
   'read_only': False,
   'context': ['database', 'project_id'],
-  'parameters': {'object_ids': {'type': 'array', 'description': '明确选择的对象编号列表，重复编号只处理一次'},
-                 'layer_id': {'type': 'integer', 'description': '该项目内的层编号，仅直属对象'},
-                 'position': {'type': 'number', 'description': '对齐位置', 'required': True},
-                 'edge': {'type': 'string',
-                          'description': '对齐端点',
-                          'default': 'begin',
-                          'choices': ['begin', 'end']}},
   'returns': '标准操作结果、operation_id、data/results 和提交后 checks；可按操作编号撤销。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.editing.positions DATABASE 1 align --ids 8 12 --position 10 '
-                       '--edge begin'}]},
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.editing.positions DATABASE 1 align --ids 8 12 '
+                       '--position 10 --edge begin',
+                'arguments': {'object_ids': [8], 'position': 0, 'edge': 'begin'}}],
+  'input_schema': {'type': 'object',
+                   'properties': {'database': {'type': 'string', 'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
+                                  'project_id': {'type': 'integer', 'description': '明确的项目编号'},
+                                  'object_ids': {'type': ['array', 'null'],
+                                                 'description': '明确选择的对象编号列表，重复编号只处理一次',
+                                                 'items': {'type': 'integer'}},
+                                  'layer_id': {'type': ['integer', 'null'], 'description': '该项目内的层编号，仅直属对象'},
+                                  'position': {'type': 'number', 'description': '对齐位置'},
+                                  'edge': {'type': 'string',
+                                           'description': '对齐端点',
+                                           'default': 'begin',
+                                           'enum': ['begin', 'end']}},
+                   'additionalProperties': False,
+                   'required': ['database', 'position', 'project_id']},
+  'mcp': {'route': 'edit', 'group': 'editing', 'database': 'connection', 'paths': []},
+  'cli_mapping': {'object_ids': ['ids']},
+  'cli_only': ['command', 'text']},
  {'name': 'set_duration',
   'summary': '保持起点，修改对象时长',
   'entrypoint': 'layerweave.tool.builtin.usage.editing.positions:set_duration',
   'session_entrypoint': 'layerweave.tool.builtin.usage.editing.positions:set_duration_in_session',
-  'cli': 'python -m layerweave.tool.builtin.usage.editing.positions',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.editing.positions',
   'read_only': False,
   'context': ['database', 'project_id'],
-  'parameters': {'object_id': {'type': 'integer', 'description': '对象编号', 'required': True},
-                 'duration': {'type': 'number', 'description': '新的时长', 'required': True}},
   'returns': '标准操作结果、operation_id、data/results 和提交后 checks；可按操作编号撤销。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.editing.positions DATABASE 1 duration 8 3'}]}]
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.editing.positions DATABASE 1 duration 8 3',
+                'arguments': {'object_id': 8, 'duration': 2}}],
+  'input_schema': {'type': 'object',
+                   'properties': {'database': {'type': 'string', 'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
+                                  'project_id': {'type': 'integer', 'description': '明确的项目编号'},
+                                  'object_id': {'type': 'integer', 'description': '对象编号'},
+                                  'duration': {'type': 'number', 'description': '新的时长'}},
+                   'additionalProperties': False,
+                   'required': ['database', 'duration', 'object_id', 'project_id']},
+  'mcp': {'route': 'edit', 'group': 'editing', 'database': 'connection', 'paths': []},
+  'cli_only': ['command', 'text']}]
 
 
 if __name__ == "__main__":

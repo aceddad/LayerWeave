@@ -1,4 +1,4 @@
-"""在 src 目录运行：python -B examples/text.py。
+"""在 src 目录运行：python -X utf8 -B examples/text.py。
 
 示例直接使用 Python 类，尚不加载配置或执行配置中的检查。
 """

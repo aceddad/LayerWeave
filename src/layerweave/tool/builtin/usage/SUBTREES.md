@@ -42,7 +42,7 @@ if copied["ok"]:
 - 不存在的起始层报告失败。旧库父链环仍可读取、删除；复制或恢复成环结构会在提交前失败并回滚本批，不自动修复。
 
 ```sh
-python -m layerweave.tool.builtin.usage.editing.subtrees DATABASE PROJECT_ID copy LAYER_ID --name "歌词修改版" --json
+python -X utf8 -m layerweave.tool.builtin.usage.editing.subtrees DATABASE PROJECT_ID copy LAYER_ID --name "歌词修改版" --json
 ```
 
 跨项目操作见[搬移子树](EDITING.md#跨项目复制或剪切子树)；当前同项目复制入口不能另选父层。
@@ -67,7 +67,7 @@ deleted = delete_subtree(connection, project_id, layer_id)
 - 不存在的起始层报告失败，不扩大删除范围；已有环可以作为整批范围删除。
 
 ```sh
-python -m layerweave.tool.builtin.usage.editing.subtrees DATABASE PROJECT_ID delete LAYER_ID --json
+python -X utf8 -m layerweave.tool.builtin.usage.editing.subtrees DATABASE PROJECT_ID delete LAYER_ID --json
 ```
 
 ## 结果、撤销与选项
@@ -85,4 +85,4 @@ if deleted["ok"] and deleted["applied"]:
 - 配置损坏不阻止复制原始记录，提交后报告问题；config_root 只选择检查配置，不复制配置文件。
 - 默认文字输出列出数量、编号映射与逐条诊断；--json 返回完整结果。操作失败退出码为 1，已提交但有诊断仍为 0。--name 仅用于 copy。
 
-完整内存示例：`python examples/subtrees.py`。操作反馈字段见 [CRUD 协议](CRUD.md)。
+完整内存示例：`python -X utf8 examples/subtrees.py`。操作反馈字段见 [CRUD 协议](CRUD.md)。

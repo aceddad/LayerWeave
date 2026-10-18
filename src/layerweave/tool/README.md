@@ -11,10 +11,10 @@ builtin 存放 LayerWeave 自身的内部工具，skills 存放供层原型 `too
 先查询目标层的支持说明，按 tools 中的 when 选择技能，再打开 route 指向的 SKILL.md：
 
 ```sh
-python -m layerweave.tool.builtin.shared.help.config_help layers text image audio movie active
+python -X utf8 -m layerweave.tool.builtin.shared.help.config_help layers text image audio movie active
 ```
 
-SKILL.md 说明该技能需要的输入、依赖、输出及局限。脚本、参考资料、模板随技能放置；Python/Node/ffmpeg 等依赖由调用环境按需准备，安装 LayerWeave 或解压技能 ZIP 不会自动安装它们。技能中的 Remotion Studio 是外部制作工具，LayerWeave 本身仍是无视图版本。
+SKILL.md 说明该技能需要的输入、依赖、输出及局限。脚本、参考资料、模板随技能放置；Python/Node/ffmpeg 等依赖由调用环境按需准备，安装 LayerWeave 或解压技能 ZIP 不会自动安装它们。技能中的 Remotion Studio 是外部制作工具，不是 LayerWeave 的视图；LayerWeave 自己的只读视图见 [builtin/view](https://gitee.com/emotion1354414/layer-weave/blob/visualization/src/layerweave/tool/builtin/view/README.md)。
 
 | 使用方式 | 如何找到文件 |
 |---|---|
@@ -25,7 +25,7 @@ SKILL.md 说明该技能需要的输入、依赖、输出及局限。脚本、�
 例如，定位安装后的生视频技能入口：
 
 ```sh
-python -c "from layerweave.support.paths import SKILLS_ROOT; print(SKILLS_ROOT / 'layers/movie/video-generate/SKILL.md')"
+python -X utf8 -c "from layerweave.support.paths import SKILLS_ROOT; print(SKILLS_ROOT / 'layers/movie/video-generate/SKILL.md')"
 ```
 
 这是 AI 的文件定位步骤；层配置读取器仍只展示 route，不自动解析或执行它。配置引用 config_ref 继续相对于 configs 根目录，与技能 route 分开。
@@ -38,7 +38,7 @@ src/layerweave/tool/
     usage/                          records/query/editing/history/undo/validation/text
     developer/                      database/skills/keys/versions
     shared/help/                    命令与封装帮助
-    view/                           未来视图，当前仅说明
+    view/                           视图网页与视图工具（截图、取帧、排版、批注、正在看哪儿），自带批注层
   skills/
     layers/                         按层原型归类的常规技能
       text/
@@ -59,8 +59,8 @@ src/layerweave/tool/
 这里保存随软件分发的技能材料。下载的 ZIP 通过[安装工具](builtin/developer/SKILLS.md)默认放入当前工作目录的 tool/skills；需要加入本仓库自带区时，从项目根额外指定 --skills-root src/layerweave/tool/skills。安装后运行：
 
 ```sh
-python -m layerweave.tool.builtin.developer.skills.cli SKILL.zip --layer text --json
-python -m layerweave.tool.builtin.developer.skills.cli SKILL.zip --scenario --json
+python -X utf8 -m layerweave.tool.builtin.developer.skills.cli SKILL.zip --layer text --json
+python -X utf8 -m layerweave.tool.builtin.developer.skills.cli SKILL.zip --scenario --json
 ```
 
 工具返回实际 route，保留包内文件和已有同名目录；技能内容由 AI 按任务阅读，安装不会自动绑定。

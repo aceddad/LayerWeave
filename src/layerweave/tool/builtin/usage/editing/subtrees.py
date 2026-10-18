@@ -45,32 +45,50 @@ def main():
     return run_cli(parser, execute, formatter=format_subtree)
 
 
-
 # 命令目录和 --help 共用的只读接口说明。
 COMMANDS = [{'name': 'copy_subtree',
   'summary': '同项目同父层复制整棵子树并重映射内部关联',
   'entrypoint': 'layerweave.tool.builtin.usage.editing.tree_service:copy_subtree',
   'session_entrypoint': 'layerweave.tool.builtin.usage.editing.tree_service:copy_subtree_in_session',
-  'cli': 'python -m layerweave.tool.builtin.usage.editing.subtrees',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.editing.subtrees',
   'read_only': False,
   'context': ['database', 'project_id'],
-  'parameters': {'layer_id': {'type': 'integer', 'description': '起始层，包含全部后代', 'required': True},
-                 'name': {'type': 'string', 'description': '副本根层名字'},
-                 'config_root': {'type': 'string', 'description': '检查或配置查询采用的配置根目录；省略使用项目 configs'}},
   'returns': '标准操作结果、operation_id、data/results 和提交后 checks；可按操作编号撤销。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.editing.subtrees DATABASE 1 copy 4 --name 副本 --json'}],
-  'notes': ['外部入向关联不复制，外部目标保持原引用。']},
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.editing.subtrees DATABASE 1 copy 4 --name 副本 '
+                       '--json',
+                'arguments': {'layer_id': 4}}],
+  'notes': ['外部入向关联不复制，外部目标保持原引用。'],
+  'input_schema': {'type': 'object',
+                   'properties': {'database': {'type': 'string', 'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
+                                  'project_id': {'type': 'integer', 'description': '明确的项目编号'},
+                                  'layer_id': {'type': 'integer', 'description': '起始层，包含全部后代'},
+                                  'name': {'type': ['string', 'null'], 'description': '副本根层名字'},
+                                  'config_root': {'type': 'string',
+                                                  'description': '检查或配置查询采用的配置根目录；省略使用项目 configs'}},
+                   'additionalProperties': False,
+                   'required': ['database', 'layer_id', 'project_id']},
+  'mcp': {'route': 'edit', 'group': 'editing', 'database': 'connection', 'paths': ['config_root']},
+  'cli_only': ['command', 'json']},
  {'name': 'delete_subtree',
   'summary': '删除子树、对象和其出向关联，保留外部入向引用',
   'entrypoint': 'layerweave.tool.builtin.usage.editing.tree_service:delete_subtree',
   'session_entrypoint': 'layerweave.tool.builtin.usage.editing.tree_service:delete_subtree_in_session',
-  'cli': 'python -m layerweave.tool.builtin.usage.editing.subtrees',
+  'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.editing.subtrees',
   'read_only': False,
   'context': ['database', 'project_id'],
-  'parameters': {'layer_id': {'type': 'integer', 'description': '起始层，包含全部后代', 'required': True},
-                 'config_root': {'type': 'string', 'description': '检查或配置查询采用的配置根目录；省略使用项目 configs'}},
   'returns': '标准操作结果、operation_id、data/results 和提交后 checks；可按操作编号撤销。',
-  'examples': [{'cli': 'python -m layerweave.tool.builtin.usage.editing.subtrees DATABASE 1 delete 4 --json'}]}]
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.usage.editing.subtrees DATABASE 1 delete 4 --json',
+                'arguments': {'layer_id': 4}}],
+  'input_schema': {'type': 'object',
+                   'properties': {'database': {'type': 'string', 'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
+                                  'project_id': {'type': 'integer', 'description': '明确的项目编号'},
+                                  'layer_id': {'type': 'integer', 'description': '起始层，包含全部后代'},
+                                  'config_root': {'type': 'string',
+                                                  'description': '检查或配置查询采用的配置根目录；省略使用项目 configs'}},
+                   'additionalProperties': False,
+                   'required': ['database', 'layer_id', 'project_id']},
+  'mcp': {'route': 'edit', 'group': 'editing', 'database': 'connection', 'paths': ['config_root']},
+  'cli_only': ['command', 'json']}]
 
 
 if __name__ == "__main__":

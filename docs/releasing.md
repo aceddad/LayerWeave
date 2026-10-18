@@ -27,6 +27,8 @@ python -X utf8 -m tests.packaging.check_sdist dist/layerweave-0.7.5.tar.gz
 
 wheel 只安装 layerweave 命名空间、运行所需配置/技能/网页资源、模块手册和许可文件；不安装 tests、examples、前端开发依赖或本地数据库。使用接口从实时 help 查询；需要完整仓库文档、示例和网页源码时取得 sdist 或仓库源码。
 
+本页的发行物来自 visualization。main 用作无视图的开发源码，核心、支撑与非视图工具同步，保留可编辑安装需要的最小元数据，不另行发布同名同版本的开发分支 wheel。视图、MCP 服务与发行构建在完整分支维护；两分支都使用 layerweave 导入名，开发环境按用途选择一份源码安装。
+
 sdist 包含 Python 源码、完整文档、示例、测试夹具、前端源码与锁文件，以及已经编译的网页。用户从 sdist 安装 Python 包无需先装 Node；修改网页再执行前端构建。验收会解包到临时目录重建 wheel，确认不依赖原工作区的 scratch、node_modules 或临时文件。
 
 技能允许携带支持脚本和素材；本地缓存、.env、密钥 JSON、日志和 SQLite 文件由打包排除规则过滤。验证同时检查归档内容；不能把 .gitignore 当成所有构建后端的资源过滤规则。

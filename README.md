@@ -16,7 +16,15 @@ LayerWeave 提供 Python API、命令行工具、可选 MCP 接入和本机网�
 
 ## 开始使用
 
-需要 Python 3.11+ 和 SQLite 3.35+。命令示例显式使用 `-X utf8`，让 AI 等程序通过 UTF-8 管道读取中文输出；也可在启动环境中设置 `PYTHONUTF8=1`，见[命令行编码](src/layerweave/tool/builtin/usage/README.md#命令行编码)。取得源码后，在自己的虚拟环境中运行：
+需要 Python 3.11+ 和 SQLite 3.35+。命令示例显式使用 `-X utf8`，让 AI 等程序通过 UTF-8 管道读取中文输出；也可在启动环境中设置 `PYTHONUTF8=1`，见[命令行编码](src/layerweave/tool/builtin/usage/README.md#命令行编码)。
+
+取得 wheel 安装包后，在自己的虚拟环境中运行（路径换成实际文件）：
+
+```sh
+python -X utf8 -m pip install ./layerweave-0.7.5-py3-none-any.whl
+```
+
+需要 MCP 时安装对应可选依赖并配置客户端，见[连接 MCP](src/layerweave/tool/builtin/shared/mcp/README.md)。也可以取得源码后安装并运行示例：
 
 ```sh
 python -X utf8 -m pip install -e .
@@ -42,7 +50,7 @@ python -X utf8 -m layerweave.tool.builtin.usage.query.project_overview DATABASE 
 python -X utf8 -m layerweave.tool.builtin.view.server DATABASE --project PROJECT_ID
 ```
 
-DATABASE 与 PROJECT_ID 换成实际值；网页地址由服务输出。使用视图不需要 Node，开发前端才需要构建环境。此分支包含视图；只需要非可视化能力时可使用 main 分支。
+DATABASE 与 PROJECT_ID 换成实际值；网页地址由服务输出。使用视图不需要 Node，开发前端才需要构建环境。当前包的 Python、CLI 和 MCP 可以直接使用，无需启动视图。main 是无视图开发源码分支，同步核心、支撑和非视图工具，供直接 Python/CLI 开发；视图、MCP 服务和发行封装在本 visualization 分支维护。
 
 查询可用工具，无需数据库：
 

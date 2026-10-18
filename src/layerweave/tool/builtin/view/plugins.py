@@ -253,7 +253,7 @@ COMMANDS = [{'name': 'view_plugin',
   'context': [],
   'returns': 'text；本机 plugins（完整 id/name、version、source、on、problem）；market 的 items；info 的 '
              'manifest/usage；安装状态与页面加载状态分开。',
-  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.view.plugins market', 'arguments': {'action': 'list'}},
+  'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.view.plugins market', 'arguments': {'action': 'market'}},
                {'cli': 'python -X utf8 -m layerweave.tool.builtin.view.plugins info layerweave.preview'},
                {'cli': 'python -X utf8 -m layerweave.tool.builtin.view.plugins install layerweave.preview'},
                {'cli': 'python -X utf8 -m layerweave.tool.builtin.view.plugins install --file preview-1.0.0.zip'},

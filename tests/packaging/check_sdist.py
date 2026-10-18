@@ -18,7 +18,7 @@ def check(archive):
             roots={PurePosixPath(m.name).parts[0] for m in members}
             assert len(roots)==1,roots
             names={PurePosixPath(m.name).relative_to(next(iter(roots))).as_posix() for m in members}
-            required={'LICENSE','THIRD_PARTY_NOTICES.md','README.md','pyproject.toml','MANIFEST.in',
+            required={'LICENSE','THIRD_PARTY_NOTICES.md','README.md','README.en.md','pyproject.toml','MANIFEST.in',
                 'src/layerweave/support/storage/schema.sql','frontend/view/package-lock.json',
                 'frontend/view/src/plugin/host.ts','frontend/view/tools/third-party-notices.mjs',
                 'tests/_support/mcpfixture.py','tests/fixtures/view-plugin/parts/label.js',

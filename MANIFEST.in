@@ -1,4 +1,4 @@
-include README.md AGENTS.md LICENSE THIRD_PARTY_NOTICES.md pyproject.toml
+include README.md README.en.md AGENTS.md LICENSE THIRD_PARTY_NOTICES.md pyproject.toml
 graft src/layerweave
 graft docs
 graft examples

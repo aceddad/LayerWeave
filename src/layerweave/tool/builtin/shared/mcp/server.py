@@ -1,5 +1,6 @@
 """官方 SDK 的标准工具服务；四个入口与声明产生的 direct 共用同一运行时。"""
 import base64
+from copy import deepcopy
 from functools import partial
 import json
 
@@ -9,22 +10,29 @@ from .runtime import Runtime, Outcome, REQUEST_ID
 
 
 PAGE_LIMIT_DESCRIPTION = '本次结果的回复每页项数，不控制查询数量；命令有 limit 时填 arguments.limit。续取只传 cursor，沿用首次预算。'
+ROOT_COMBINATORS = frozenset(('oneOf', 'anyOf', 'allOf', 'not', 'if', 'then', 'else'))
+
+
+def _advertised_schema(schema):
+    """客户端兼容说明；只省略根级组合/条件，嵌套定义和服务端完整规则保持。"""
+    return {key:deepcopy(value) for key,value in schema.items() if key not in ROOT_COMBINATORS}
 
 
 def _schemas():
     query={'type':'object','properties':{
-        'command':{'type':'string','description':'help 返回的完整命令身份'},
+        'command':{'type':'string','minLength':1,'pattern':r'\S','description':'发起查询时填写 help 返回的命令身份；与 cursor 二选一，不能同时提供'},
         'arguments':{'type':'object','description':'动作的 JSON 参数；先按需查 help'},
-        'cursor':{'type':'string','description':'more.cursor：续取本次结果，不重做操作；业务 next_cursor 应放在原命令的翻页参数中'},
+        'cursor':{'type':'string','minLength':1,'pattern':r'\S','description':'续页时只填 more.cursor，与 command 二选一；不重做操作，沿用首次预算。业务 next_cursor 放在原命令参数中'},
         'limit':{'type':'integer','minimum':1,'description':PAGE_LIMIT_DESCRIPTION},'max_chars':{'type':'integer','minimum':256,'description':'本次回复 JSON 字符预算；不改变命令查询范围'},
         'full':{'type':'boolean','default':False,'description':'完整返回本次已查到的结果，绕过回复分页预算；不扩大业务查询范围'}},'additionalProperties':False,
         'oneOf':[{'required':['command'],'not':{'required':['cursor']}},
                  {'required':['cursor'],'not':{'required':['command']}}]}
     write={**query,'properties':{k:v for k,v in query['properties'].items() if k!='cursor'},'required':['command']}
     write.pop('oneOf',None)
+    write['properties']['command']={'type':'string','minLength':1,'pattern':r'\S','description':'help 返回的完整命令身份'}
     help_schema={'type':'object','properties':{
         'topic':{'type':'string','enum':['commands','configs','skills','plugins','context'],'default':'commands'},
-        'names':{'type':'array','items':{'type':'string'}},'search':{'type':'string'},'group':{'type':'string'},
+        'names':{'type':'array','items':{'type':'string'}},'search':{'type':'string','description':'按空白分词，任一词命中即可；完整短语优先，其次按命中词数排序'},'group':{'type':'string'},
         'audience':{'enum':['usage','developer'],'default':'usage'},
         'view':{'enum':['overview','layers','objects','combined']},'config_root':{'type':'string'},
         'resource':{'type':'string'},'root':{'type':'string'},
@@ -50,13 +58,13 @@ def create_server(config=None):
         'layerweave_admin':'初始化库、安装、修改配置或明确保存文件。具体动作按需查 help；展示此入口不等于已获客户端授权。'}
     tools=[]
     for name in sorted(BASE_NAMES):
-        tools.append(types.Tool(name=name,description=descriptions[name],inputSchema=schemas[name],
+        tools.append(types.Tool(name=name,description=descriptions[name],inputSchema=_advertised_schema(schemas[name]),
             annotations=types.ToolAnnotations(readOnlyHint=name in ('layerweave_help','layerweave_query'),
                                                destructiveHint=name in ('layerweave_edit','layerweave_admin'),openWorldHint=True)))
     for name,binding in sorted(runtime.catalog.direct.items()):
         schema=runtime.schema(binding)
         schemas[name]=schema
-        tools.append(types.Tool(name=name,description=binding.summary,inputSchema=schema,
+        tools.append(types.Tool(name=name,description=binding.summary,inputSchema=_advertised_schema(schema),
             annotations=types.ToolAnnotations(readOnlyHint=binding.routes()==['query'],
                                                destructiveHint=binding.routes()!=['query'],openWorldHint=binding.options.get('open_world',True))))
 
@@ -77,7 +85,7 @@ def create_server(config=None):
             except Exception as error:
                 return Outcome({'error':error_detail(error)},True)
         if name in BASE_NAMES:
-            if name=='layerweave_query' and arguments.get('cursor'):
+            if name=='layerweave_query' and 'cursor' in arguments:
                 return runtime.continue_result(arguments['cursor'])
             return runtime.invoke(name.removeprefix('layerweave_'),arguments['command'],arguments.get('arguments'),
                 **{k:arguments[k] for k in ('limit','max_chars','full') if k in arguments})
@@ -96,6 +104,13 @@ def create_server(config=None):
         if error is not None:
             detail={'code':'request_schema','field':'.'.join(map(str,error.absolute_path)) or 'arguments',
                     'rule':error.validator,'message':'请求不符合该入口的参数结构，请按 field 和 rule 修正。'}
+            if params.name=='layerweave_query' and error.validator=='oneOf' and not error.absolute_path:
+                detail.update(fields=['command','cursor'],message=(
+                    'command 与 cursor 不能同时提供：新查询传 command，续页只传 cursor。'
+                    if 'command' in (params.arguments or {}) and 'cursor' in (params.arguments or {})
+                    else '请提供 command 或 cursor：新查询传 command，续页只传 cursor。'))
+            if params.name in BASE_NAMES and error.validator in ('minLength','pattern') and detail['field'] in ('command','cursor'):
+                detail['message']=f"{detail['field']} 不能为空或只含空白。"
             if error.validator=='required':
                 detail['missing']=[key for key in error.validator_value if key not in error.instance]
             if error.validator=='additionalProperties':

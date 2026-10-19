@@ -112,6 +112,7 @@
   "common.layerId": "层 {value1}",
   "common.orphanLayers": "未归属的层",
   "time.seconds": "{value1} 秒",
+  "time.secondUnit": "秒",
   "time.justNow": "刚刚",
   "time.minutesAgo": "{value1} 分钟前",
   "time.hoursAgo": "{value1} 小时前",

@@ -13,6 +13,30 @@ from layerweave.support.api import read_record, register_tables, transaction
 @unittest.skipUnless(HAS_MCP, '安装 layerweave[mcp] 运行协议验收')
 class MCPTrialTests(MCPFixture, unittest.TestCase):
 
+    def test_multiword_search_finds_commands_and_keeps_scope(self):
+        for search,target in [('init database','initialize_database'),('初始化 数据库','initialize_database'),
+                              ('模板 导入','import_project'),('  INIT\tdatabase  ','initialize_database')]:
+            result=self.runtime.help(search=search)
+            self.assertEqual(result['items'][0]['id'],'layerweave.'+target,result)
+        filtered=self.runtime.help(group='exchange',search='模板 导入')['items']
+        self.assertTrue(filtered)
+        self.assertTrue(all(item['group']=='exchange' for item in filtered))
+        self.assertEqual(self.runtime.help(search=' \t\u3000'),self.runtime.help())
+        self.assertEqual(self.runtime.help(search='unmatchedxyz')['items'],[])
+
+    def test_search_ranks_phrase_then_distinct_words_then_declared_order(self):
+        source=self.root/'search_metadata.py'
+        entries=[{'name':name,'summary':summary,'help_order':order,'entrypoint':'unimported:run','read_only':True,
+                  'input_schema':{'type':'object'},'mcp':{'route':'query'}}
+                 for name,summary,order in [('exact','alpha beta',10),('reverse','beta alpha',0),
+                                            ('alpha','alpha alone',-2),('beta','beta alone',-1),('absent','gamma',-3)]]
+        source.write_text('raise RuntimeError("metadata only")\nCOMMANDS = '+repr(entries),encoding='utf-8')
+        runtime=self.runtime_with(include_builtin=False,sources=[{'namespace':'search','path':str(source)}])
+        self.assertEqual([i['id'] for i in runtime.help(search='alpha beta')['items']],
+                         ['search.exact','search.reverse','search.alpha','search.beta'])
+        self.assertEqual([i['id'] for i in runtime.help(search='alpha alpha beta')['items']],
+                         ['search.reverse','search.exact','search.alpha','search.beta'])
+
     def test_first_use_discovers_overview_and_updates_from_help(self):
         overview = self.runtime.help()
         group = next(g for g in overview['groups'] if g['group'] == 'query')

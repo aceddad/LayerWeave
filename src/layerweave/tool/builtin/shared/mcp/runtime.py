@@ -120,11 +120,20 @@ class Runtime:
         bindings = [b for b in self.catalog.bindings.values() if (topic!='skills' or b.material)]
         if group:
             bindings=[b for b in bindings if b.group==group]
-        if search:
-            phrase=search.casefold()
-            bindings=[b for b in bindings if phrase in ' '.join((b.id,b.summary,*b.command.get('aliases',[]),*b.keywords)).casefold()]
-        bindings.sort(key=lambda b:b.sort_key)
-        if group or search or topic=='skills':
+        words=list(dict.fromkeys((search or '').casefold().split()))
+        if words:
+            phrase=' '.join((search or '').casefold().split())
+            ranked=[]
+            for binding in bindings:
+                text=' '.join(' '.join((binding.id,binding.summary,*binding.command.get('aliases',[]),*binding.keywords)).casefold().split())
+                hits=sum(word in text for word in words)
+                if hits:
+                    ranked.append((phrase in text,hits,binding))
+            ranked.sort(key=lambda item:(-int(item[0]),-item[1],item[2].sort_key))
+            bindings=[item[2] for item in ranked]
+        else:
+            bindings.sort(key=lambda b:b.sort_key)
+        if group or words or topic=='skills':
             return {'view':'matches','items':[self.catalog.summary(b) for b in bindings], 'issues':self.catalog.issues}
         groups=[]
         for name in sorted({b.group for b in bindings}):

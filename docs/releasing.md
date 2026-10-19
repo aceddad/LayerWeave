@@ -16,9 +16,9 @@ python -X utf8 -m pip install -e ".[mcp,dev]"
 
 ```sh
 python -X utf8 -m build --sdist --wheel --outdir dist
-python -X utf8 -m tests.packaging.check_wheel dist/layerweave-0.7.5-py3-none-any.whl
-python -X utf8 -m tests.packaging.check_mcp_wheel dist/layerweave-0.7.5-py3-none-any.whl
-python -X utf8 -m tests.packaging.check_sdist dist/layerweave-0.7.5.tar.gz
+python -X utf8 -m tests.packaging.check_wheel dist/layerweave-0.7.6-py3-none-any.whl
+python -X utf8 -m tests.packaging.check_mcp_wheel dist/layerweave-0.7.6-py3-none-any.whl
+python -X utf8 -m tests.packaging.check_sdist dist/layerweave-0.7.6.tar.gz
 ```
 
 上述步骤只在本地构建和验收，不上传包仓库。上传位置、版本标签和正式发行说明应在实际发布时明确选择。

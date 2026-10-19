@@ -65,6 +65,7 @@ export interface BoardLayout {
     e: number;
     pps: number;
     unit: string;
+    precision: number;
     tracksWidth: number;
     width: number;
     height: number;

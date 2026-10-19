@@ -23,7 +23,7 @@ export interface SectionLayout {
   row: number[]; index: number; segments: Segment[]; tracks: TrackLayout[]; strip: boolean; height: number; top: number;
 }
 export interface BoardLayout {
-  board: Board; key: number; a: number; e: number; pps: number; unit: string;
+  board: Board; key: number; a: number; e: number; pps: number; unit: string; precision: number;
   tracksWidth: number; width: number; height: number; sections: SectionLayout[];
 }
 
@@ -254,7 +254,9 @@ export class Model {
       top += border + height;
     });
     if (!sections.length) return null;
-    return {board: b, key: keyOf(b), a, e, pps, unit: this.unitOfRoot(keyOf(b)), tracksWidth,
+    // 共享尺子按画板内最细的根轴刻度显示；根自己的写入精度保持不变。
+    const precision = Math.min(...rootsOf(b).map((root) => this.precisionOf(root) ?? 1e-6));
+    return {board: b, key: keyOf(b), a, e, pps, unit: this.unitOfRoot(keyOf(b)), precision, tracksWidth,
             width: NAMES + tracksWidth + 2, height: top + 2, sections};
   }
 

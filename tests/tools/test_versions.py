@@ -66,7 +66,7 @@ class VersionTests(unittest.TestCase):
         self.assertEqual(len(rows), 16)
         self.assertTrue(all(row["status"] == "online" and row["version"] for row in rows))
         self.assertEqual(next(row for row in rows if row["name"] == "layerweave.foundation")["version"], "0.5.3")
-        self.assertEqual(next(row for row in rows if row["name"] == "layerweave.view")["version"], "0.29.6")
+        self.assertEqual(next(row for row in rows if row["name"] == "layerweave.view")["version"], "0.29.7")
         self.assertEqual(sum(row["kind"] == "tool" for row in rows), 15)
         self.assertEqual(sum(row["kind"] == "foundation" for row in rows), 1)
         self.assertEqual(len(list(BUILTIN_ROOT.rglob("component.toml"))), 15)

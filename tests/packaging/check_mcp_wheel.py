@@ -41,6 +41,9 @@ runpy.run_module('layerweave.tool.builtin.shared.mcp',run_name='__main__')
                 cwd=work,env={**os.environ,'PYTHONPATH':''})
             async with Client(transport,mode=mode) as client:
                 listing=await client.list_tools()
+                for tool in listing.tools:
+                    assert not {'oneOf','anyOf','allOf','not','if','then','else'} & tool.input_schema.keys(), tool.name
+                assert 'layerweave_query' in {t.name for t in listing.tools}
                 assert 'layerweave_project_overview' in {t.name for t in listing.tools}
                 reply=next(t for t in listing.tools if t.name=='layerweave_view_reply')
                 assert 'author' in reply.input_schema['required']

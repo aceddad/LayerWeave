@@ -11,7 +11,7 @@ python -X utf8 -m pip install -e ".[mcp]"
 python -X utf8 -m layerweave.tool.builtin.shared.mcp --config mcp.json
 ```
 
-安装后也可运行 `layerweave-mcp --config mcp.json`。本地 wheel 可用 `python -X utf8 -m pip install "路径/layerweave-0.7.5-py3-none-any.whl[mcp]"`。基础 Python/CLI 不需要 MCP SDK；本服务使用官方 MCP Python SDK 2.3 系列兼容接口。
+安装后也可运行 `layerweave-mcp --config mcp.json`。本地 wheel 可用 `python -X utf8 -m pip install "路径/layerweave-0.7.6-py3-none-any.whl[mcp]"`。基础 Python/CLI 不需要 MCP SDK；本服务使用官方 MCP Python SDK 2.3 系列兼容接口。
 
 `layerweave-mcp --list` 和 `--help` 输出普通文本；中文 Windows 上经管道调用时，推荐 `python -X utf8 -m layerweave.tool.builtin.shared.mcp --list`，或给脚本入口设置 `PYTHONUTF8=1`，见[命令行编码](../../usage/README.md#命令行编码)。这不改变正常 MCP 协议的编码处理。
 
@@ -47,7 +47,7 @@ MCP 客户端配置示意，解释器与文件使用实际绝对路径：
 安装 [uv](https://docs.astral.sh/uv/getting-started/installation/) 后，可直接从已下载的 wheel 启动 MCP，无需手工安装 Python 或激活环境：
 
 ```powershell
-uvx --python 3.11 --from "./layerweave-0.7.5-py3-none-any.whl[mcp]" layerweave-mcp --config ./mcp.json
+uvx --python 3.11 --from "./layerweave-0.7.6-py3-none-any.whl[mcp]" layerweave-mcp --config ./mcp.json
 ```
 
 uvx 按指定来源准备隔离环境；缺少所需 Python 时，uv 默认自动下载。首次准备需要联网，此后可复用缓存。该命令持续运行 stdio 服务，应由 MCP 客户端管理；不是网页启动器。安装与解释器策略见 [uv 工具说明](https://docs.astral.sh/uv/guides/tools/)和 [Python 管理](https://docs.astral.sh/uv/concepts/python-versions/)。
@@ -59,7 +59,7 @@ uvx 按指定来源准备隔离环境；缺少所需 Python 时，uv 默认自�
   "mcpServers": {
     "layerweave": {
       "command": "C:/Users/YOU/.local/bin/uvx.exe",
-      "args": ["--python", "3.11", "--from", "D:/packages/layerweave-0.7.5-py3-none-any.whl[mcp]", "layerweave-mcp", "--config", "D:/my-project/mcp.json"],
+      "args": ["--python", "3.11", "--from", "D:/packages/layerweave-0.7.6-py3-none-any.whl[mcp]", "layerweave-mcp", "--config", "D:/my-project/mcp.json"],
       "env": {"PYTHONUTF8": "1"}
     }
   }
@@ -71,6 +71,12 @@ uvx 按指定来源准备隔离环境；缺少所需 Python 时，uv 默认自�
 ## 发现与调用
 
 总览的 common 是声明推荐的入口，不是使用次数统计。查看项目优先展示 project_overview；搜索“概览／总览”可以找到它，搜索“修改／更新”可以找到 dispatch。关键词不自动成为调用别名。详情显示工具声明的多个示例，编号与路径换成实际值。
+
+search 按空白拆词并忽略大小写，任一词命中即可返回；完整短语优先，其次按命中的不同词数排序，同分沿用原有推荐顺序。可搜索“init database”“初始化 数据库”“模板 导入”。只含空白视为未提供搜索；group/topic 的范围仍然生效，不做语义推断。
+
+layerweave_query 发起新查询时提供 command 与 arguments，续取已有结果时只提供 cursor；command 与 cursor 二选一。两个都提供、都未提供或值为空白时，在执行前返回清楚的 request_schema 错误。续取继续使用首次查询的回复预算，业务 next_cursor 的用法保持不变。
+
+最终 tools/list 的对外 Schema 省略根级 oneOf/anyOf/allOf/not/if/then/else，以兼容会过滤这些工具的客户端；服务端仍用同一来源的完整 Schema 校验，help 详情也保留完整定义。字段内部的组合规则保持。扩展工具宜把可传字段声明在根 properties 并提供有效示例，便于客户端显示；复杂业务规则由完整定义负责。这属于 MCP 适配，不修改底层配置或数据约定。
 
 dispatch 的单项请求结构直接在 Schema 展示，每条 layer/object 或有项目归属的工具表请求自行填写 project_id；启动默认项目不会补入 request。创建 project 不需要 project_id。update 只修改传入字段，information 等 JSON 字段整体替换。
 

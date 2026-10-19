@@ -4,6 +4,9 @@ import type {Translate, Locale} from '../i18n/types';
 export const isSec = (unit?: string | null) =>
   ['秒', 's', 'sec', 'secs', 'second', 'seconds'].includes(String(unit || '').trim().toLowerCase());
 
+// 已知单位按界面语言显示，自定义单位与存储内容保持原样。
+export const displayUnit = (unit: string, tr: Translate = defaultTranslate) => isSec(unit) ? tr('time.secondUnit') : unit;
+
 export function fmt(t: number | null | undefined, unit = ''): string {
   if (t == null || !isFinite(t)) return '—';
   if (!isSec(unit)) return `${+(+t).toFixed(3)}${unit ? ' ' + unit : ''}`;
@@ -26,12 +29,18 @@ const SEC_STEPS = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 15, 30, 60, 120
 const NUM_STEPS = [0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000, 1000000].flatMap((m) => [m, 2 * m, 5 * m]);
 
 // 尺子上的刻度：屏幕上相邻两格至少 70 像素
-export function ticks(a: number, e: number, pps: number, zoom: number, unit: string): {t: number; x: number; label: string}[] {
+export function ticks(a: number, e: number, pps: number, zoom: number, unit: string, precision = 1e-6): {t: number; x: number; label: string}[] {
   const steps = isSec(unit) ? SEC_STEPS : NUM_STEPS;
-  const step = steps.find((s) => s * pps * zoom >= 70) ?? steps[steps.length - 1];
+  const preferred = steps.find((s) => s * pps * zoom >= 70) ?? steps[steps.length - 1];
+  const ratio = preferred / precision;
+  const ceilTick = (value: number) => Math.ceil(value - Number.EPSILON * Math.max(1, Math.abs(value)) * 4);
+  const count = Math.max(1, ceilTick(ratio));
+  const [coefficient, exponent = '0'] = precision.toString().split('e');
+  const decimals = Math.min(100, Math.max(0, (coefficient.split('.')[1]?.length ?? 0) - Number(exponent)));
+  const step = +(count * precision).toFixed(decimals);
   const out = [];
-  for (let i = Math.ceil(a / step); i * step <= e + step; i++) {
-    const t = +(i * step).toFixed(6);
+  for (let i = ceilTick(a / step); i * step <= e + step; i++) {
+    const t = +(i * step).toFixed(decimals);
     out.push({t, x: (t - a) * pps, label: isSec(unit) ? fmt(t, unit) : String(t)});
   }
   return out;

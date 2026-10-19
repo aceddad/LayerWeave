@@ -38,8 +38,10 @@ class LanguageBrowserTests(unittest.TestCase):
             database=initialize_database(root/'project.sqlite3')
             with closing(open_database(database)) as c, transaction(c) as w:
                 project=w.create('project',{'name':'中文项目'})['id']
-                layer=w.create('layer',{'type':'text','config_ref':'layers/text.toml','name':'用户层','axis':{'unit':'秒'}},project_id=project)['id']
+                layer=w.create('layer',{'type':'text','config_ref':'layers/text.toml','name':'用户层','axis':{'unit':'second','precision':.001}},project_id=project)['id']
                 w.create('object',{'config_ref':'objects/text.toml','layer':layer,'begin':0,'end':2,'information':{'text':'不可翻译的正文'}},project_id=project)
+                ordered=w.create('layer',{'type':'text','config_ref':'layers/text.toml','name':'参考资料','axis':{'unit':'序号','precision':1}},project_id=project)['id']
+                w.create('object',{'config_ref':'objects/text.toml','layer':ordered,'begin':1,'end':3,'information':{'text':'按序号排列'}},project_id=project)
             add_note(database,project,'用户批注',author='中文署名')
             with closing(open_database(database)) as c: before=list(c.iterdump())
             folder=root/'demo';folder.mkdir()
@@ -64,8 +66,17 @@ class LanguageBrowserTests(unittest.TestCase):
                 tab=DevTools(page['webSocketDebuggerUrl'],timeout=45);tab.call('Page.enable')
                 tab.call('Page.navigate',url=url+f'?project={project}&side=notes&lang=zh&tree=1')
                 self.wait(tab,"document.querySelector('.compose textarea') && window.factories===1")
+                self.wait(tab,f"document.querySelector('.board[data-key=\"{ordered}\"] .tick')")
+                for selector in ('.unit', '.corner'):
+                    self.assertEqual(_ev(tab,f"document.querySelector('.board[data-key=\"{layer}\"] {selector}').textContent"),'秒')
+                labels=_ev(tab,f"[...document.querySelectorAll('.board[data-key=\"{ordered}\"] .tick')].map(el=>el.textContent)")
+                self.assertGreater(len(labels),1)
+                self.assertTrue(all(float(label).is_integer() for label in labels),labels)
                 _ev(tab,"(()=>{window.documentMarker=123;const el=document.querySelector('.compose textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(el,'未提交草稿');el.dispatchEvent(new Event('input',{bubbles:true}));return true;})()")
                 self.switch(tab,'en')
+                for selector in ('.unit', '.corner'):
+                    self.assertEqual(_ev(tab,f"document.querySelector('.board[data-key=\"{layer}\"] {selector}').textContent"),'s')
+                self.assertEqual(_ev(tab,f"document.querySelector('.board[data-key=\"{ordered}\"] .unit').textContent"),'序号')
                 self.wait(tab,"document.querySelector('.compose textarea').placeholder.includes('Write a note')")
                 self.assertEqual(_ev(tab,"document.querySelector('.compose textarea').value"),'未提交草稿')
                 self.assertIn('中文署名',_ev(tab,'document.body.textContent'))

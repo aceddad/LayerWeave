@@ -112,6 +112,7 @@
   "common.layerId": "Layer {value1}",
   "common.orphanLayers": "Unassigned layers",
   "time.seconds": "{value1} s",
+  "time.secondUnit": "s",
   "time.justNow": "Just now",
   "time.minutesAgo": "{value1} min ago",
   "time.hoursAgo": "{value1} h ago",

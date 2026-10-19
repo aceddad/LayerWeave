@@ -13,7 +13,7 @@ import {externalLabels} from '../model/labels';
 import type {BoardLayout, FoldInfo, FoldMark, SectionLayout} from '../model/model';
 import {RECORD, VIEWER} from '../params';
 import {LANE, NAMES, PAD, keyOf, rootsOf} from '../model/model';
-import {fmt, ticks} from '../model/units';
+import {displayUnit, fmt, ticks} from '../model/units';
 import {activeBoard, getState, handleKeysOf, hotOf, setState, useMarks, useModel, useNotes, useStore} from '../store';
 import {report} from '../sync';
 import type {Board} from '../types';
@@ -39,7 +39,7 @@ function Sticky({target, x, width, layout}: {target: RefObject<HTMLDivElement | 
 function Ruler({board, layout}: {board: Board; layout: BoardLayout}) {
   useI18n();
   const bucket = useFlowStore((s) => Math.round(Math.log(s.transform[2]) * 5));   // 缩放变化够大才重排刻度
-  const marks = useMemo(() => ticks(layout.a, layout.e, layout.pps, Math.exp(bucket / 5), layout.unit), [layout, bucket]);
+  const marks = useMemo(() => ticks(layout.a, layout.e, layout.pps, Math.exp(bucket / 5), layout.unit, layout.precision), [layout, bucket]);
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
     e.stopPropagation();
@@ -75,7 +75,7 @@ function Gaps({gaps, a, pps, decimals, unit}: {gaps: {from: number; to: number}[
     const w = (to - from) * pps, label = fmtLength(to - from, decimals), screen = w * zoom;
     if (screen < 6) return null;
     return <div key={from} className="gap" style={{left: (from - a) * pps, width: w}}
-                title={tr("board.gap", {value1: label, value2: unit ? ' ' + unit : '', value3: fmt(from, unit), value4: fmt(to, unit)})}>
+                title={tr("board.gap", {value1: label, value2: unit ? ' ' + displayUnit(unit, tr) : '', value3: fmt(from, unit), value4: fmt(to, unit)})}>
       {screen >= label.length * 6.5 + 18 && <span>{label}</span>}
     </div>;
   })}</>;
@@ -268,14 +268,14 @@ export const BoardNode = memo(function BoardNode({id, data, positionAbsoluteX}: 
       <Sticky target={rootRef} x={positionAbsoluteX} width={layout.width} layout={layout} />
       <div className="bhead">
         <div className="stick">
-          <span className="grip">⠿</span><b>{title}</b><span className="unit">{unit || tr("common.noUnit")}</span>
+          <span className="grip">⠿</span><b>{title}</b><span className="unit">{displayUnit(unit, tr) || tr("common.noUnit")}</span>
           {folded > 0 && <span className="foldchip" title={tr("board.foldedTracksHint")}>{tr("board.collapsedTracks", {count: folded})}</span>}
           <button className="nodrag" title={tr("board.timeZoomOut")} onClick={() => timeZoom(key, 1 / 1.6)}>−</button>
           <button className="nodrag" title={tr("board.fitTimeHint")} onClick={() => timeZoom(key, null)}>{tr("board.fitTime")}</button>
           <button className="nodrag" title={tr("board.timeZoomIn")} onClick={() => timeZoom(key, 1.6)}>＋</button>
         </div>
       </div>
-      <div className="rrow"><div className="corner stick">{unit}</div><Ruler board={board} layout={layout} /></div>
+      <div className="rrow"><div className="corner stick">{displayUnit(unit, tr)}</div><Ruler board={board} layout={layout} /></div>
       {layout.sections.map((sec) => <Section key={sec.index} boardKey={key} layout={layout} sec={sec} />)}
       {isActive && playhead != null && <div className="playhead" style={{left: NAMES + (playhead - a) * pps}} />}
       {sel && <div className="selband" style={{left: NAMES + (sel.begin - a) * pps, width: Math.max(2, (sel.end - sel.begin) * pps)}} />}

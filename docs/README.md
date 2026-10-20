@@ -7,7 +7,8 @@
 - [使用入口](../src/layerweave/tool/builtin/usage/README.md)：从任务选择工具，按需查询命令与配置 help。
 - [JSON 导入导出](../src/layerweave/tool/builtin/usage/exchange/README.md)：批量写回、复制和场景模板。
 - [技能与外部服务](../src/layerweave/tool/README.md)：查找技能、连接信息与输出目录。
-- [完整示例](examples.md)：可运行的 Python 示例。
+- [Python 示例](examples.md)：可运行的接口调用示例。
+- [场景演示](../examples/showcases/README.md)：完整使用案例的存放位置与组织方式，目前尚未收录完成的案例。
 
 ## 开发自己的扩展
 

@@ -9,7 +9,7 @@ import unittest
 from urllib.request import urlopen
 from contextlib import closing
 
-from layerweave.support.api import initialize_database, open_database, transaction
+from layerweave.support.api import initialize_database, open_database, transaction, read_record
 from layerweave.tool.builtin.view.bench import _ev, _png
 from layerweave.tool.builtin.view.layout import save_layout, layout_path
 from layerweave.tool.builtin.view.server import make_server
@@ -37,7 +37,8 @@ class ViewInteractionTests(unittest.TestCase):
             state = root / "state"
             save_layout(database, project, [{"rows": [[a]], "x": 80, "y": 120, "pps": 10},
                                             {"rows": [[b]], "x": 500, "y": 400, "pps": 10}], root=state)
-            original = layout_path(database, state).read_bytes()
+            with closing(open_database(database)) as connection:
+                original = {kind: read_record(connection, kind, project_id=project) for kind in ("view_layout", "view_layout_member")}
             server, url = make_server(database, state_root=state, record_state=False)
             threading.Thread(target=server.serve_forever, daemon=True).start()
             profile = root / "browser"
@@ -144,7 +145,9 @@ class ViewInteractionTests(unittest.TestCase):
                 press(x, y); move(x, y, tx, ty); release(tx, ty)
                 self.wait(tab, "document.querySelectorAll('.board').length===1")
                 self.assertEqual(_ev(tab, "document.querySelectorAll('.obj').length"), 2)
-                self.assertEqual(layout_path(database, state).read_bytes(), original)
+                with closing(open_database(database)) as connection:
+                    self.assertEqual({kind: read_record(connection, kind, project_id=project) for kind in original}, original)
+                self.assertFalse(layout_path(database, state).exists())
             finally:
                 if control:
                     try: control.call("Browser.close")

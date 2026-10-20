@@ -4,6 +4,8 @@ import type {ReactFlowInstance} from '@xyflow/react';
 import {NAMES} from './model/model';
 import {keyOf} from './model/model';
 import {sizeOf} from './model/layoutOps';
+import {setScale} from './model/boardStyle';
+import {saveLayout} from './sync';
 import {CAPTURE, params} from './params';
 import {activeBoard, getState, modelOf, notesOf, setState} from './store';
 import type {Board} from './types';
@@ -141,9 +143,11 @@ export function timeZoom(key: number, factor: number | null, clientX?: number) {
   if (!model || !b) return;
   const rect = paneRect(), cx = clientX ?? rect.left + rect.width / 2;
   const t = xToTime(b, toFlow(cx, 0).x), old = model.pps(b);
-  const nb: Board = {...b, pps: factor == null ? null : Math.max(1e-6, old * factor)};
+  const [a, e] = model.extent(b);
+  const nb = setScale(b, factor == null ? Math.max(400, rect.width - NAMES - 90) / Math.max(1e-6, e - a) : Math.max(1e-6, old * factor));
   delete nb.tempPps;
   setState({boards: s.boards.map((x) => (x === b ? nb : x)), autoFit: false});
+  saveLayout(300);
   if (factor != null) {
     const {x, y, zoom} = viewport();
     const nowX = rect.left + x + ((b.x ?? 0) + TRACKS_X + (t - model.extent(b)[0]) * old * factor) * zoom;

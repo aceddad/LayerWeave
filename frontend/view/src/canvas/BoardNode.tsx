@@ -1,6 +1,6 @@
 import {tr, useI18n} from '../i18n';
 // 画板：React Flow 的一个自定义节点。里面是这块画板的时间轴：标题、尺子、一行行轨道，播放头、圈出的一段、拼接提示。
-// 拖动只能抓标题（dragHandle = .bhead）；尺子上拖是圈一段；Alt+滚轮缩放这块画板的时间。
+// 抓标题移动画板，边框句柄调整显示宽高；尺子上拖是圈一段；Alt+滚轮改变横向比例。
 import {Handle, Position, useStore as useFlowStore, useUpdateNodeInternals} from '@xyflow/react';
 import type {Node, NodeProps} from '@xyflow/react';
 import {memo, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
@@ -12,13 +12,14 @@ import {decimalsOf, fmtLength} from '../model/gaps';
 import {externalLabels} from '../model/labels';
 import type {BoardLayout, FoldInfo, FoldMark, SectionLayout} from '../model/model';
 import {RECORD, VIEWER} from '../params';
-import {LANE, NAMES, PAD, keyOf, rootsOf} from '../model/model';
+import {NAMES, PAD, keyOf, rootsOf} from '../model/model';
 import {displayUnit, fmt, ticks} from '../model/units';
 import {activeBoard, getState, handleKeysOf, hotOf, setState, useMarks, useModel, useNotes, useStore} from '../store';
 import {report} from '../sync';
 import type {Board} from '../types';
 import {ObjectBlock} from './ObjectBlock';
 import {MediaTrack} from './TrackMedia';
+import {BoardSizing, RowHeightControl} from './BoardSizing';
 
 export type BoardNodeType = Node<{key: number}, 'board'>;
 
@@ -198,7 +199,7 @@ const Section = memo(function Section({boardKey, layout, sec}: {boardKey: number
             {many && <button className="split nodrag" title={tr("board.detachSegmentHint")} onClick={() => splitRoot(s.root)}>{tr("board.detach")}</button>}
           </span>)}
         </div>}
-        {sec.tracks.map(({track, height, items, gaps, fold, other}) => (fold
+        {sec.tracks.map(({track, height, laneHeight, items, gaps, fold, other}) => (fold
           ? <div key={track.key} className="track folded" style={{height}}>
               <FoldBar fold={fold} notes={notesIn(fold)} layers={track.parts.map((p) => p.layer.id)} />
             </div>
@@ -209,7 +210,7 @@ const Section = memo(function Section({boardKey, layout, sec}: {boardKey: number
               mark={marks.changed.get(it.o.id)} notes={notes?.index.get(`object:${it.o.id}`)} external={external.get(it.o.id)} />)}
             {track.parts.flatMap(({layer, seg}) => (marks.ghosts.get(layer.id) ?? []).map((g) => (
               <div key={`g${g.id}`} className={`ghost ${g.action}`} data-ghost={g.id}
-                   style={{left: (g.begin + seg.offset - a) * pps, width: Math.max(6, (g.end - g.begin) * pps), top: PAD, height: LANE - 4}}
+                   style={{left: (g.begin + seg.offset - a) * pps, width: Math.max(6, (g.end - g.begin) * pps), top: PAD, height: laneHeight - 4}}
                    title={tr("board.ghost", {value1: g.id, value2: g.label, value3: g.action === 'delete' ? tr("changes.beforeDelete") : tr("changes.beforeMove"), value4: fmt(g.begin, unit), value5: fmt(g.end, unit)})}>
                 <span>{g.action === 'delete' ? tr("changes.beforeDelete") : tr("changes.beforeMove")} #{g.id} {g.label}</span>
               </div>)))}
@@ -263,6 +264,8 @@ export const BoardNode = memo(function BoardNode({id, data, positionAbsoluteX}: 
   const dropHere = drop;
   const dropSec = dropHere ? layout.sections.find((s) => s.index === dropHere.rowIndex) : undefined;
   return (
+    <>
+    <BoardSizing board={board} layout={layout} model={model} active={isActive} />
     <div ref={rootRef} className={`board${isActive ? ' active' : ''}${dropHere ? (dropHere.ok ? ' canmerge' : ' nomerge') : ''}`}
          data-key={key} style={{width: layout.width, height: layout.height}}>
       <Sticky target={rootRef} x={positionAbsoluteX} width={layout.width} layout={layout} />
@@ -273,6 +276,7 @@ export const BoardNode = memo(function BoardNode({id, data, positionAbsoluteX}: 
           <button className="nodrag" title={tr("board.timeZoomOut")} onClick={() => timeZoom(key, 1 / 1.6)}>−</button>
           <button className="nodrag" title={tr("board.fitTimeHint")} onClick={() => timeZoom(key, null)}>{tr("board.fitTime")}</button>
           <button className="nodrag" title={tr("board.timeZoomIn")} onClick={() => timeZoom(key, 1.6)}>＋</button>
+          <RowHeightControl board={board} layout={layout} model={model} />
         </div>
       </div>
       <div className="rrow"><div className="corner stick">{displayUnit(unit, tr)}</div><Ruler board={board} layout={layout} /></div>
@@ -284,5 +288,6 @@ export const BoardNode = memo(function BoardNode({id, data, positionAbsoluteX}: 
         ? <div className="dropmark v" style={{left: NAMES + (dropHere.at! - a) * pps, top: dropSec.top, height: dropSec.height}}>{dropHere.side === 'left' ? tr("board.joinBefore") : tr("board.joinAfter")}</div>
         : <div className="dropmark" style={{top: dropSec.top + (dropHere.side === 'below' ? dropSec.height : 0)}} />)}
     </div>
+    </>
   );
 });

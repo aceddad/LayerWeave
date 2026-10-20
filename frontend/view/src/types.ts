@@ -91,17 +91,19 @@ export interface ProjectSummary {
 }
 
 // 画板：rows 里每一行是左右接续的根；不同行上下拼、同时
+export interface RootStyle { pps: number | null; lane_height: number | null }
 export interface Board {
   rows: number[][];
   x: number | null;
   y: number | null;
   pps: number | null;
+  styles?: Record<number, RootStyle>;
   tempPps?: number;   // 截图、外部链接临时放大一段时用，不保存
 }
 
 export interface Layout {
   boards: Board[];
-  serial: number;
+  serial: number | string;
 }
 
 export interface ChangeRecord {

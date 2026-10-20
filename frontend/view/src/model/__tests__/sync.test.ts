@@ -4,7 +4,7 @@ import type {ProjectPage} from '../../types';
 
 const settings = vi.hoisted(() => ({record: false}));
 vi.mock('../../params', () => ({CAPTURE: false, get RECORD() { return settings.record; }, VIEWER: 'user', numParam: () => null, params: new URLSearchParams()}));
-vi.mock('../../camera', () => ({visibleBoards: () => [], visibleRange: () => null}));
+vi.mock('../../camera', () => ({visibleBoards: () => [], visibleRange: () => null, viewport: () => ({x: 0, y: 0, zoom: 1})}));
 vi.mock('../../plugin/registry', () => ({refreshPlugins: vi.fn()}));
 vi.mock('../../api', () => ({api: {snapshot: vi.fn(), delta: vi.fn(), layout: vi.fn(), version: vi.fn(),
   note: vi.fn(), fold: vi.fn(), changes: vi.fn(), walk: vi.fn(), state: vi.fn(), saveLayout: vi.fn()}}));
@@ -36,6 +36,51 @@ async function setup() {
   const sync = await import('../../sync'), store = await import('../../store');
   return {api, sync, store};
 }
+
+describe('共享布局写入', () => {
+  it('首次自动摆放只更新前端，不悄悄写项目数据库', async () => {
+    vi.useFakeTimers(); settings.record = true;
+    const {api, sync} = await setup();
+    vi.mocked(api.layout).mockResolvedValue({boards: [{rows: [[1]], x: null, y: null, pps: null}], serial: '0:0'});
+    await sync.loadProject(1);
+    await vi.runOnlyPendingTimersAsync();
+    expect(api.saveLayout).not.toHaveBeenCalled();
+  });
+  it('连续尺寸修改按顺序提交，各请求保留自己的偏好快照', async () => {
+    settings.record = true;
+    const {api, sync, store} = await setup(); await sync.loadProject(1);
+    const first = deferred<{boards: never[]; serial: string}>();
+    vi.mocked(api.saveLayout).mockImplementationOnce(() => first.promise);
+    const current = store.getState().boards[0];
+    store.setState({boards: [{...current, styles: {1: {pps: 20, lane_height: 96}}}]});
+    const one = sync.saveLayoutNow(); await flush();
+    store.setState({boards: [{...current, styles: {1: {pps: 20, lane_height: 180}}}]});
+    const two = sync.saveLayoutNow(); await flush();
+    expect(api.saveLayout).toHaveBeenCalledTimes(1);
+    first.resolve({boards: [], serial: '1:0'});
+    await one; await two;
+    expect(api.saveLayout).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(api.saveLayout).mock.calls.map((call) => call[1][0].styles?.[1].lane_height)).toEqual([96, 180]);
+  });
+  it('切换项目会取消前一个项目尚未开始的延迟布局保存', async () => {
+    vi.useFakeTimers(); settings.record = true;
+    const {api, sync} = await setup(); await sync.loadProject(1);
+    sync.saveLayout(300);
+    await sync.loadProject(2);
+    await vi.advanceTimersByTimeAsync(350);
+    expect(api.saveLayout).not.toHaveBeenCalled();
+  });
+  it('保存失败后通过下一轮读取恢复数据库中的布局', async () => {
+    settings.record = true;
+    const {api, sync, store} = await setup(); await sync.loadProject(1);
+    store.setState({boards: [{...store.getState().boards[0], pps: 100}]});
+    vi.mocked(api.saveLayout).mockRejectedValueOnce(new Error('readonly database'));
+    await sync.saveLayoutNow();
+    expect(store.getState().serial).toBe('reload');
+    await sync.poll();
+    expect(store.getState().boards[0].pps).toBe(20);
+  });
+});
 
 describe('真实同步编排的请求竞态', () => {
   it('切换项目后旧快照不能回写，快照请求按序完成', async () => {

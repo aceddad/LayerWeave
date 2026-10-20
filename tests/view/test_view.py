@@ -846,7 +846,8 @@ class ViewTests(unittest.TestCase):
         from layerweave.tool.builtin.view.fold import KIND, TABLE
         from layerweave.tool.builtin.view.notes.reads import READ_KIND, READ_TABLE
         from layerweave.tool.builtin.view.tables import check_tables, tables
-        self.assertEqual({t["kind"]: t["state"] for t in check_tables(self.database)["tables"]}, {KIND: "absent", READ_KIND: "absent"})
+        self.assertEqual({t["kind"]: t["state"] for t in check_tables(self.database)["tables"]},
+                         {KIND: "absent", READ_KIND: "absent", "view_layout": "absent", "view_layout_member": "absent"})
         old = {kind: {k: v for k, v in spec.items() if k not in ("logical_references", "exchange")} for kind, spec in {**TABLE, **READ_TABLE}.items()}
         with closing(open_database(self.database)) as c:
             register_tables(c, old)
@@ -854,7 +855,8 @@ class ViewTests(unittest.TestCase):
                                                                 project_id=self.project))["ok"])
         checked = check_tables(self.database)
         self.assertEqual({t["kind"]: (t["state"], t["differs"]) for t in checked["tables"]},
-                         {KIND: ("stale", ["logical_references"]), READ_KIND: ("stale", ["logical_references", "exchange"])})
+                         {KIND: ("stale", ["logical_references"]), READ_KIND: ("stale", ["logical_references", "exchange"]),
+                          "view_layout": ("absent", []), "view_layout_member": ("absent", [])})
         self.assertIn("--upgrade", tables(self.database)["text"])
         with closing(open_database(self.database)) as c:
             before = c.execute("SELECT COUNT(*) FROM changes").fetchone()[0]

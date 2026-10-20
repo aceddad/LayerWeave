@@ -1,4 +1,11 @@
 {
+  "board.rowHeight": "对象行高",
+  "board.rowHeightHint": "调整对象行高；也可拖动选中画板的边框改变宽高",
+  "board.customRowHeight": "自定义 {height}px",
+  "board.compactRows": "紧凑 · 40px",
+  "board.normalRows": "标准 · 96px",
+  "board.readingRows": "阅读 · 180px",
+  "board.imageRows": "大图 · 320px",
   "navigation.layerHidden": "这一层现在不在画布上：在折叠的层下面，或者被\"只看勾选的\"滤掉了",
   "navigation.deleted": "目标已删除",
   "navigation.otherProject": "这条批注指向别的项目",

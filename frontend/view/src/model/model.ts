@@ -4,8 +4,10 @@ import type {Translate, Locale} from '../i18n/types';
 // 全是纯计算，不碰页面；画板的尺寸由数据直接算出来，排版（拼接、拆出、吸附）不需要量页面。
 import type {Board, Layer, Obj, ProjectData, Root} from '../types';
 import {trackGaps} from './gaps';
+import defaults from '../../../../src/layerweave/tool/builtin/view/layout-defaults.json';
+import {rootStyle} from './boardStyle';
 
-export const NAMES = 200, HEAD = 34, RULER = 26, ROW = 46, LANE = 40, PAD = 3, GAP = 48, STRIP = 24, FOLD = 26;
+export const {NAMES, HEAD, RULER, ROW, LANE, MIN_LANE, PAD, GAP, STRIP, FOLD, AUTO_TRACK_WIDTH} = defaults;
 
 export interface Segment { root: number; offset: number; begin: number; end: number }
 export interface Part { layer: Layer; seg: Segment }
@@ -13,12 +15,12 @@ export interface Track {
   key: string; parent: string | null; name: string; type: string; tips: string; depth: number;
   parts: Part[]; hasChildren: boolean;
 }
-export interface Item { o: Obj; layer: Layer; offset: number; begin: number; end: number; lane: number }
+export interface Item { o: Obj; layer: Layer; offset: number; begin: number; end: number; lane: number; laneHeight?: number }
 // 折叠：人和 AI 各有一份。自己这边折叠的轨道收起它和下面所有的层（fold）；对方折叠的照常画，只标出来（other）
 export interface FoldMark { by: string; tips: string }
 // layers：收起的全部层编号；below：下面收起了几条轨道；objects：一共几个对象
 export interface FoldInfo extends FoldMark { layers: number[]; below: number; objects: number }
-export interface TrackLayout { track: Track; height: number; items: Item[]; gaps: {from: number; to: number}[]; fold: FoldInfo | null; other: FoldMark | null }
+export interface TrackLayout { track: Track; height: number; laneHeight: number; items: Item[]; gaps: {from: number; to: number}[]; fold: FoldInfo | null; other: FoldMark | null }
 export interface SectionLayout {
   row: number[]; index: number; segments: Segment[]; tracks: TrackLayout[]; strip: boolean; height: number; top: number;
 }
@@ -132,7 +134,7 @@ export class Model {
     if (b.tempPps) return b.tempPps;
     if (b.pps) return b.pps;
     const [a, e] = this.extent(b);
-    return Math.max(400, this.opts.canvasWidth - NAMES - 90) / Math.max(1e-6, e - a);
+    return AUTO_TRACK_WIDTH / Math.max(1e-6, e - a);
   }
 
   boardHidden(b: Board) {
@@ -209,20 +211,21 @@ export class Model {
     return this.rowTracks(row).filter((x) => (t.key === '' ? x.key !== '' : x.key.startsWith(t.key + '/')));
   }
 
-  trackLayout(track: Track, row: number[]): TrackLayout {
+  trackLayout(track: Track, row: number[], board?: Board): TrackLayout {
     const mine = this.foldOf(track), other = this.otherFoldOf(track);
     if (mine != null) {
       const under = this.below(track, row), all = [track, ...under].flatMap((t) => t.parts.map((p) => p.layer));
-      return {track, height: FOLD, items: [], gaps: [], other,
+      return {track, height: FOLD, laneHeight: 0, items: [], gaps: [], other,
               fold: {...mine, layers: all.map((l) => l.id), below: under.length, objects: all.reduce((n, l) => n + l.objects.length, 0)}};
     }
     const raw = track.parts.flatMap(({layer, seg}) => layer.objects.map((o) => ({o, layer, offset: seg.offset, begin: o.begin + seg.offset, end: o.end + seg.offset})))
       .sort((p, q) => p.begin - q.begin || p.end - q.end || p.o.id - q.o.id);
     const ln = lanes(raw);
-    const items = raw.map((it, i) => ({...it, lane: ln[i]}));
+    const laneHeight = Math.max(MIN_LANE, (board ? rootStyle(board, track.parts[0].seg.root).lane_height : null) ?? LANE);
+    const items = raw.map((it, i) => ({...it, lane: ln[i], laneHeight}));
     const n = Math.max(1, ...ln.map((k) => k + 1));
     const gaps = trackGaps(items, (this.precisionOf(row[0]) ?? 1e-6) / 2);
-    return {track, height: Math.max(ROW, n * LANE + PAD * 2), items, gaps, fold: null, other};
+    return {track, height: n * laneHeight + PAD * 2, laneHeight, items, gaps, fold: null, other};
   }
 
   // 画板的完整布局；返回 null 表示这块画板现在不画（收起的层、全被过滤掉）。
@@ -230,7 +233,7 @@ export class Model {
   // 拖画板时位置每一帧都变，原来每一帧都重算一遍，几百个格子拿到新的 item 全部重画（拖画板一卡一卡，2026-10-14 量的）。
   // 缓存里的 board 是第一次算时的那份，位置可能已经旧了：要位置去读画板本身
   boardLayout(b: Board): BoardLayout | null {
-    const key = `${b.rows.map((r) => r.join(',')).join('|')}@${this.pps(b)}`;
+    const key = `${b.rows.map((r) => r.join(',')).join('|')}@${this.pps(b)}@${rootsOf(b).map((r) => rootStyle(b, r).lane_height ?? LANE).join(',')}`;
     if (!this.layoutCache.has(key)) {
       if (this.layoutCache.size > 64) this.layoutCache.clear();   // Alt+滚轮缩放时间时每一档都是新的像素比，别一直攒着
       this.layoutCache.set(key, this.computeLayout(b));
@@ -245,7 +248,7 @@ export class Model {
     const sections: SectionLayout[] = [];
     let top = HEAD + RULER;
     b.rows.forEach((row, index) => {
-      const tracks = this.visibleTracks(row).map((t) => this.trackLayout(t, row));
+      const tracks = this.visibleTracks(row).map((t) => this.trackLayout(t, row, b));
       if (!tracks.length) return;
       const segments = this.segments(row), strip = segments.length > 1;
       const border = sections.length ? 2 : 0;

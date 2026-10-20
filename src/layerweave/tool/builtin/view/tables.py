@@ -1,6 +1,6 @@
-"""视图自己的表（折叠 view_layer、已读 view_note）在库里登记的声明：查是不是现在这份，旧的就显式升级。
+"""视图表（折叠、已读、共享布局与组合成员）的声明：检查现有表，旧声明显式升级。
 
-这两张表第一次折叠、第一次标已读时才建，建的时候用的就是当时的声明。0.21.0 起声明多了逻辑引用（JSON 交换复制项目时，
+折叠和已读表第一次使用时才建，布局表第一次编辑时才建。0.21.0 起声明多了逻辑引用（JSON 交换复制项目时，
 折叠跟着层换号，已读不带过去，见 fold.py、notes/reads.py）。旧库里的表还是老声明，要显式登记一次，复制才按新规矩走：
 不等下一次折叠才顺带升级（可能先导出了），也不在普通读取里偷偷写库。登记只改表的声明，不改数据、编号和改动日志。
 库里还没有的表不建：等第一次用到时按现在的声明建。
@@ -18,9 +18,10 @@ from layerweave.support.api import open_database, register_tables, table_specs
 from .data import open_readonly
 from .fold import TABLE
 from .notes.reads import READ_TABLE
+from .layout_store import TABLES as LAYOUT_TABLES
 
-DECLARED = {**TABLE, **READ_TABLE}
-NAMES = {"view_layer": "折叠", "view_note": "已读"}
+DECLARED = {**TABLE, **READ_TABLE, **LAYOUT_TABLES}
+NAMES = {"view_layer": "折叠", "view_note": "已读", "view_layout": "画板位置与尺寸", "view_layout_member": "画板组合成员"}
 META = ("logical_references", "exchange")   # 0.21.0 加的元信息：旧库里缺的就是这些
 
 

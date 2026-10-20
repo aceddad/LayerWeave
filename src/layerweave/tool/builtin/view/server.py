@@ -1,4 +1,4 @@
-"""本机视图服务：读取项目，并通过工具入口管理批注、折叠和已读状态。
+"""本机视图服务：读取项目，并通过工具入口管理批注、折叠、已读和共享布局。
 只监听 127.0.0.1；普通查询使用只读连接，写入通过现有工具的写会话。
 
 python -X utf8 -m layerweave.tool.builtin.view.server DATABASE [--port 8765] [--project ID]
@@ -237,8 +237,8 @@ class ViewHandler(SimpleHTTPRequestHandler):
         if kind == "layout":
             with closing(open_readonly(self.database)) as connection:
                 roots = project_roots(connection, project_id)
-            boards = save_layout(self.database, project_id, reconcile(roots, payload.get("boards")), self.state_root)
-            return {"boards": boards, "serial": layout_serial(self.database, self.state_root)}
+            result = save_layout(self.database, project_id, reconcile(roots, payload.get("boards")), self.state_root, with_result=True)
+            return {**result, "serial": layout_serial(self.database, self.state_root)}
         return write_state(self.database, payload, self.state_root)
 
     def write_note(self, project_id, payload):

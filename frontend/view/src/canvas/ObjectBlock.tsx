@@ -29,6 +29,7 @@ interface Props {
 export const ObjectBlock = memo(function ObjectBlock({item, a, pps, unit, project, frames, mark, notes, external}: Props) {
   useI18n();
   const o = item.o, k = kindOf(o), instant = o.end <= o.begin;
+  const laneHeight = item.laneHeight ?? LANE;
   const selected = useStore((s) => s.selected === o.id);
   const hot = useStore((s) => hotOf(s).has(`object:${o.id}`));
   const handles = useStore((s) => handleKeysOf(s).has(`object:${o.id}`));   // 这一刻有关系线连到它：才挂连接点
@@ -37,11 +38,11 @@ export const ObjectBlock = memo(function ObjectBlock({item, a, pps, unit, projec
   // 画得多细：按镜头停下来时格子在屏幕上的高度分三档（缩放过程中不换，停下来才一起换）。0 只画色块，1 用 160 宽的缩略图，2 用 320 宽的
   const ref = useRef<HTMLDivElement>(null);
   const shared = SHARED_MEDIA && !missing && !!(o.media?.url && (k === 'image' || k === 'audio' || (k === 'video' && frames)));
-  const detail = useLegacyDetail(w, !shared);
+  const detail = useLegacyDetail(w, laneHeight - 4, !shared);
   const media = useMemo<MediaSpec | null>(() => shared ? {
     o, layer: item.layer, kind: k, project, frames, unit,
-    rect: {x: left, y: PAD + item.lane * LANE, w, h: LANE - 4}, last: lastAt(o, isSec(unit)),
-  } : null, [shared, o, item.layer, item.lane, k, project, frames, unit, left, w]);
+    rect: {x: left, y: PAD + item.lane * laneHeight, w, h: laneHeight - 4}, last: lastAt(o, isSec(unit)),
+  } : null, [shared, o, item.layer, item.lane, laneHeight, k, project, frames, unit, left, w]);
   useSharedMedia(media, ref);
   let inner = null;
   if (shared) {
@@ -55,12 +56,12 @@ export const ObjectBlock = memo(function ObjectBlock({item, a, pps, unit, projec
   }
   const board = item.offset ? tr("object.boardSpan", {value1: fmt(item.begin, unit), value2: fmt(item.end, unit)}) : '';
   const title = tr("object.summary", {value1: o.id, value2: o.name || '', value3: o.type, value4: fmt(o.begin, unit), value5: fmt(o.end, unit), value6: board, value7: missing ? tr("media.missingLine") + o.media!.source : ''});
-  const classes = ['obj', k, instant && 'instant', missing && 'missing', selected && 'sel', hot && 'hot', mark && `chg chg-${mark.action}`].filter(Boolean).join(' ');
+  const classes = ['obj', k, laneHeight >= 80 && 'expanded', instant && 'instant', missing && 'missing', selected && 'sel', hot && 'hot', mark && `chg chg-${mark.action}`].filter(Boolean).join(' ');
   return (
     <div ref={ref} className={classes} data-id={o.id} title={title}
-         style={{left, width: w, top: PAD + item.lane * LANE, height: LANE - 4}}>
+         style={{left, width: w, top: PAD + item.lane * laneHeight, height: laneHeight - 4}}>
       {inner}
-      <span className="lab">{o.text ?? o.name ?? o.type}</span>
+      <span className="lab">{k === 'text' && laneHeight >= 80 && o.name && <strong className="obj-title">{o.name}</strong>}{o.text ?? o.name ?? o.type}</span>
       {mark && <i className="chg-n" title={tr("object.changed", {value1: mark.n === 1 ? tr("changes.latest") : tr("changes.nthLatest", {value1: mark.n}), value2: mark.action === 'create' ? tr("changes.created") : tr("changes.updated")})}>{mark.n}</i>}
       {notes && notes.length > 0 && <i className="note-n" title={notes.map(({top, replies}) => tr("object.noteSummary", {value1: top.id, value2: top.text, value3: replies.length ? tr("notes.repliesParen", {value1: replies.length}) : ''})).join('\n')}>💬{notes.length}</i>}
       {external && external.length > 0 && <i className="ext" title={external.join('\n')}>↗ {external.length}</i>}
@@ -70,7 +71,7 @@ export const ObjectBlock = memo(function ObjectBlock({item, a, pps, unit, projec
   );
 });
 
-function useLegacyDetail(width: number, needed: boolean) {
+function useLegacyDetail(width: number, height: number, needed: boolean) {
   // 共享模式的选择结果固定，不因缩放触发 React 重渲染；原生视频仍沿用原来的档位。
-  return useStore((s) => needed ? detailAt(s.settledZoom, width, LANE - 4, CAPTURE) : 2);
+  return useStore((s) => needed ? detailAt(s.settledZoom, width, height, CAPTURE) : 2);
 }

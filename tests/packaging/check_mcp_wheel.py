@@ -59,6 +59,19 @@ runpy.run_module('layerweave.tool.builtin.shared.mcp',run_name='__main__')
                 result=await client.call_tool('layerweave_project_overview',{'database':mode+'.db','project_id':project_id})
                 assert not result.is_error,result.structured_content
                 assert result.structured_content['result']['project']['name']=='wheel MCP'
+                layer=await client.call_tool('layerweave_edit',{'command':'dispatch','arguments':{
+                    'database':mode+'.db','request':{'action':'create','kind':'layer','project_id':project_id,
+                        'data':{'name':'Layout','config_ref':'layers/text.toml','axis':{'unit':'序号','precision':1}}}}})
+                assert not layer.is_error,layer.structured_content
+                layer_id=layer.structured_content['result']['id']
+                layout=await client.call_tool('layerweave_edit',{'command':'view_layout','arguments':{
+                    'database':mode+'.db','project_id':project_id,'action':'resize','root':layer_id,'width':900,'lane_height':180}})
+                assert not layout.is_error,layout.structured_content
+                assert layout.structured_content['result']['boards'][0]['width']==900
+                layout_read=await client.call_tool('layerweave_query',{'command':'view_layout','arguments':{
+                    'database':mode+'.db','project_id':project_id,'action':'show'}})
+                assert not layout_read.is_error,layout_read.structured_content
+                assert layout_read.structured_content['result']['boards'][0]['height']==248
                 compact=await client.call_tool('layerweave_query',{'command':'export_project','arguments':{
                     'database':mode+'.db','project_id':project_id,'compact':True}})
                 assert not compact.is_error,compact.structured_content
@@ -79,7 +92,7 @@ runpy.run_module('layerweave.tool.builtin.shared.mcp',run_name='__main__')
                 page=last.structured_content
                 assert len(page['result']['items'])==1 and not page['more']['has_more']
                 assert page['result']['next_cursor'] is not None and not page['more']['business_cursor_pending']
-                print('ordinary wheel stdio '+mode+': tools, JSON, compact, help, author, annotations and both pagination cursors passed')
+                print('ordinary wheel stdio '+mode+': tools, shared layout query/edit, JSON, compact, help, author, annotations and both pagination cursors passed')
         asyncio.run(exercise('auto'))
         asyncio.run(exercise('legacy'))
 

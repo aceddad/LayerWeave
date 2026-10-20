@@ -1,6 +1,6 @@
 import type { Translate } from '../i18n/types';
 import type { Board, Layer, Obj, ProjectData, Root } from '../types';
-export declare const NAMES = 200, HEAD = 34, RULER = 26, ROW = 46, LANE = 40, PAD = 3, GAP = 48, STRIP = 24, FOLD = 26;
+export declare const NAMES: number, HEAD: number, RULER: number, ROW: number, LANE: number, MIN_LANE: number, PAD: number, GAP: number, STRIP: number, FOLD: number, AUTO_TRACK_WIDTH: number;
 export interface Segment {
     root: number;
     offset: number;
@@ -28,6 +28,7 @@ export interface Item {
     begin: number;
     end: number;
     lane: number;
+    laneHeight?: number;
 }
 export interface FoldMark {
     by: string;
@@ -41,6 +42,7 @@ export interface FoldInfo extends FoldMark {
 export interface TrackLayout {
     track: Track;
     height: number;
+    laneHeight: number;
     items: Item[];
     gaps: {
         from: number;
@@ -114,7 +116,7 @@ export declare class Model {
     otherFoldOf(t: Track): FoldMark | null;
     visibleTracks(row: number[]): Track[];
     below(t: Track, row: number[]): Track[];
-    trackLayout(track: Track, row: number[]): TrackLayout;
+    trackLayout(track: Track, row: number[], board?: Board): TrackLayout;
     boardLayout(b: Board): BoardLayout | null;
     private layoutCache;
     private computeLayout;

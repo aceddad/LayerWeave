@@ -105,16 +105,21 @@ export interface ProjectSummary {
     name: string;
     tips: string;
 }
+export interface RootStyle {
+    pps: number | null;
+    lane_height: number | null;
+}
 export interface Board {
     rows: number[][];
     x: number | null;
     y: number | null;
     pps: number | null;
+    styles?: Record<number, RootStyle>;
     tempPps?: number;
 }
 export interface Layout {
     boards: Board[];
-    serial: number;
+    serial: number | string;
 }
 export interface ChangeRecord {
     name?: string;

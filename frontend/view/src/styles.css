@@ -154,6 +154,12 @@ select { background: var(--panel); padding: 3px 6px; }
 .obj .ends img, .obj .ends canvas { position: static; width: 64px; height: 100%; object-fit: cover; opacity: .9; }
 .obj .lab { position: absolute; left: 4px; right: 4px; bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 2px rgba(0, 0, 0, .8); }
 .obj.text .lab { text-shadow: none; top: 3px; bottom: auto; white-space: normal; max-height: 100%; }
+.obj.text.expanded .lab { top: 8px; left: 9px; right: 9px; bottom: 8px; font-size: 14px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+.obj.text.expanded:not(.missing) { background: var(--panel); color: var(--text); border-top: 3px solid var(--text-c); }
+.obj.text.expanded .obj-title { color: var(--text-c); }
+.obj-title { display: block; margin-bottom: 5px; font-size: 13px; line-height: 1.4; }
+.react-flow__node-board > .react-flow__resize-control { z-index: 8; }
+.bhead select { max-width: 110px; font-size: 12px; padding: 0 4px; height: 23px; }
 .obj.instant { border-radius: 2px; overflow: visible; }
 .obj.instant .lab { left: 10px; right: auto; bottom: 50%; transform: translateY(50%); color: var(--text); }
 .obj .ext { position: absolute; right: 2px; bottom: 2px; font-style: normal; font-size: 10px; line-height: 14px; padding: 0 4px; border-radius: 7px; background: #4fb3ff; color: #0b1020; }

@@ -1,0 +1,251 @@
+{
+  "data": {
+    "project": {
+      "id": 1,
+      "name": "geometry",
+      "tips": ""
+    },
+    "roots": [
+      {
+        "id": 1,
+        "name": "A",
+        "axis": {
+          "unit": "序号",
+          "precision": 1
+        },
+        "unit": "序号",
+        "key": "序号",
+        "extent": [
+          0,
+          10
+        ]
+      },
+      {
+        "id": 10,
+        "name": "B",
+        "axis": {
+          "unit": "序号",
+          "precision": 1
+        },
+        "unit": "序号",
+        "key": "序号",
+        "extent": [
+          0,
+          5
+        ]
+      }
+    ],
+    "layers": [
+      {
+        "id": 1,
+        "name": "A",
+        "root": 1,
+        "father": null,
+        "type": "text",
+        "tips": "",
+        "hidden": false,
+        "objects": []
+      },
+      {
+        "id": 2,
+        "name": "字幕",
+        "root": 1,
+        "father": 1,
+        "type": "text",
+        "tips": "",
+        "hidden": false,
+        "objects": [
+          {
+            "id": 3,
+            "name": "O3",
+            "type": "text",
+            "begin": 0,
+            "end": 4,
+            "tips": "",
+            "text": "text",
+            "media": null,
+            "information": {
+              "text": "text"
+            }
+          },
+          {
+            "id": 4,
+            "name": "O4",
+            "type": "text",
+            "begin": 3,
+            "end": 8,
+            "tips": "",
+            "text": "text",
+            "media": null,
+            "information": {
+              "text": "text"
+            }
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "name": "B",
+        "root": 10,
+        "father": null,
+        "type": "text",
+        "tips": "",
+        "hidden": false,
+        "objects": []
+      },
+      {
+        "id": 11,
+        "name": "字幕",
+        "root": 10,
+        "father": 10,
+        "type": "text",
+        "tips": "",
+        "hidden": false,
+        "objects": [
+          {
+            "id": 12,
+            "name": "O12",
+            "type": "text",
+            "begin": 0,
+            "end": 5,
+            "tips": "",
+            "text": "text",
+            "media": null,
+            "information": {
+              "text": "text"
+            }
+          }
+        ]
+      }
+    ],
+    "binds": []
+  },
+  "cases": [
+    {
+      "name": "horizontal left style",
+      "rows": [
+        [
+          1,
+          10
+        ]
+      ],
+      "pps": 10,
+      "styles": {
+        "1": {
+          "pps": 10,
+          "lane_height": 100
+        },
+        "10": {
+          "pps": 20,
+          "lane_height": 200
+        }
+      },
+      "folds": [],
+      "expected": {
+        "width": 392,
+        "height": 398
+      }
+    },
+    {
+      "name": "vertical distinct heights",
+      "rows": [
+        [
+          1
+        ],
+        [
+          10
+        ]
+      ],
+      "pps": 10,
+      "styles": {
+        "1": {
+          "pps": 10,
+          "lane_height": 100
+        },
+        "10": {
+          "pps": 20,
+          "lane_height": 200
+        }
+      },
+      "folds": [],
+      "expected": {
+        "width": 342,
+        "height": 788
+      }
+    },
+    {
+      "name": "left origin changes",
+      "rows": [
+        [
+          10,
+          1
+        ]
+      ],
+      "pps": 20,
+      "styles": {
+        "1": {
+          "pps": 10,
+          "lane_height": 100
+        },
+        "10": {
+          "pps": 20,
+          "lane_height": 200
+        }
+      },
+      "folds": [],
+      "expected": {
+        "width": 542,
+        "height": 698
+      }
+    },
+    {
+      "name": "folded merged track",
+      "rows": [
+        [
+          1,
+          10
+        ]
+      ],
+      "pps": 10,
+      "styles": {
+        "1": {
+          "pps": 10,
+          "lane_height": 100
+        },
+        "10": {
+          "pps": 20,
+          "lane_height": 200
+        }
+      },
+      "folds": [
+        {
+          "layer": 2,
+          "user": "reader",
+          "user_tips": "",
+          "ai": "",
+          "ai_tips": ""
+        }
+      ],
+      "expected": {
+        "width": 392,
+        "height": 218
+      }
+    },
+    {
+      "name": "headless automatic width",
+      "rows": [
+        [
+          1,
+          10
+        ]
+      ],
+      "pps": null,
+      "styles": {},
+      "folds": [],
+      "expected": {
+        "width": 1242,
+        "height": 218
+      }
+    }
+  ]
+}

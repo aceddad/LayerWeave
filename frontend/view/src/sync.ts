@@ -2,8 +2,9 @@ import type {UiMessage} from './i18n/types';
 import {ui, tr, useI18n, currentLocale} from './i18n';
 // 和服务同步：读项目和排版、每 2 秒看有没有变化、保存排版、报告"正在看哪儿"、写批注
 import {api} from './api';
-import {visibleBoards, visibleRange} from './camera';
+import {visibleBoards, visibleRange, viewport} from './camera';
 import {afterResize, placeAuto, separate, sizeOf} from './model/layoutOps';
+import {rememberStyles} from './model/boardStyle';
 import {adoptOrphans, keyOf, rootsOf} from './model/model';
 import type {Note} from './model/notes';
 import {withFolds, withNoteStatus, withRead} from './model/optimistic';
@@ -135,9 +136,10 @@ function applyLayout(layout: Layout, heights: Map<number, number> | null = null)
   if (s.data?.roots.some((r) => r.id === 0)) boards = [...boards, {rows: [[0]], x: null, y: null, pps: null}];
   const model = modelOf(s)!;
   const placed = placeAuto(boards, model);
-  const flowed = reflow(placed.boards, heights, model);
+  const flowed = heights ? reflow(placed.boards, heights, model) : placed;
   setState({boards: flowed.boards, serial: layout.serial});
-  if (placed.changed || flowed.changed) saveLayout();
+  // Reading or initial placement must not silently create shared layout records.
+  report();
 }
 
 // 高度变了的画板（从上往下）：正下方的画板跟着推开或收拢；还压在一起的（页面没开着时 AI 折叠、展开了）往下挪开
@@ -147,7 +149,7 @@ function reflow(boards: Board[], heights: Map<number, number> | null, model: Mod
     const b = boards.find((x) => keyOf(x) === key)!, old = heights?.get(key), now = sizeOf(model, b).h;
     if (old != null && now && old !== now) { boards = afterResize(boards, key, old, model); changed = true; }
   }
-  const apart = separate(boards, model);
+  const apart = changed ? separate(boards, model) : {boards, changed: false};
   return {boards: apart.boards, changed: changed || apart.changed};
 }
 
@@ -218,20 +220,33 @@ let saveTimer: ReturnType<typeof setTimeout> | undefined;
 export function saveLayout(delay = 0) {
   if (!RECORD) return;
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(saveLayoutNow, delay);
+  const selection = gate.selection();
+  saveTimer = setTimeout(() => { if (gate.sameSelection(selection)) void saveLayoutNow(); }, delay);
 }
+
+let layoutWrites: Promise<void> = Promise.resolve();
 
 // 马上存，存完才返回（折叠先挪了画板，要在重读排版之前存好，不然重读回来的是挪之前的位置）
 export async function saveLayoutNow() {
   const project = getState().project;
   if (!RECORD || project == null) return;
   clearTimeout(saveTimer);
-  const boards = getState().boards.filter((b) => rootsOf(b).every((r) => r > 0)).map(({rows, x, y, pps}) => ({rows, x, y, pps: pps ?? null}));
+  const boards = getState().boards.filter((b) => rootsOf(b).every((r) => r > 0)).map((b) => {
+    const {rows, x, y, pps, styles} = rememberStyles(b);
+    return {rows: rows.map((r) => [...r]), x, y, pps: pps ?? null, styles};
+  });
   const selection = gate.selection();
-  try {
-    const res = await api.saveLayout(project, boards);
-    if (res.serial != null && gate.sameSelection(selection)) setState({serial: res.serial});
-  } catch { /* 服务停了：下次轮询会显示断开 */ }
+  const finish = gate.beginWrite(project);
+  const task = layoutWrites.catch(() => {}).then(async () => {
+    try {
+      const res = await api.saveLayout(project, boards);
+      if (res.serial != null && gate.sameSelection(selection)) setState({serial: res.serial});
+    } catch (error) {
+      if (gate.sameSelection(selection)) { setState({serial: 'reload'}); toast((error as Error).message); }
+    } finally { finish(); }
+  });
+  layoutWrites = task;
+  return task;
 }
 
 // 圈出的一段落在哪个根上：画板第一行在起点处的那一段，换成那个根自己的时间
@@ -264,6 +279,11 @@ export function report() {
       selected: sel ? {id: sel.id, layer: sel.layer.id, name: sel.name} : undefined,
       selection: selectionInfo() ?? undefined,
       boards: canvas ? shown.map(rootsOf) : undefined,
+      geometry: canvas ? shown.map((b) => {
+        const l = model.boardLayout(b)!;
+        return {roots: rootsOf(b), x: b.x, y: b.y, width: l.width, height: l.height};
+      }) : undefined,
+      viewport: canvas ? viewport() : undefined,
       layers: (canvas ? shown : s.boards).flatMap((b) => b.rows.flatMap((row) => model.visibleTracks(row).filter((t) => model.foldOf(t) == null)
         .flatMap((t) => t.parts.map((p) => p.layer.id)))),
       folded: [...model.own.keys()].filter((id) => model.layer(id)),

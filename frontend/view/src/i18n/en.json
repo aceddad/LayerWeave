@@ -1,4 +1,11 @@
 {
+  "board.rowHeight": "Object row height",
+  "board.rowHeightHint": "Change object row height, or drag the active board's resize handles",
+  "board.customRowHeight": "Custom {height}px",
+  "board.compactRows": "Compact · 40px",
+  "board.normalRows": "Standard · 96px",
+  "board.readingRows": "Reading · 180px",
+  "board.imageRows": "Images · 320px",
   "navigation.layerHidden": "This layer is not on the canvas: it is inside a collapsed layer or excluded by the layer filter.",
   "navigation.deleted": "The target has been deleted.",
   "navigation.otherProject": "This note points to another project.",

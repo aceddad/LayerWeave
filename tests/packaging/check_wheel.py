@@ -51,6 +51,7 @@ def check(wheel):
         resources += list((package / "tool/builtin/view").glob("*.md"))
         resources += [p for p in (package / "tool/builtin/view/sdk").rglob("*") if p.is_file()]
         resources += list((package / "tool/builtin/view/locales").glob("*.json"))
+        resources.append(package / "tool/builtin/view/layout-defaults.json")
         resources += list(package.rglob('*.md'))
         resources += [p for p in (package / "tool/builtin/view/web").rglob("*") if p.is_file()]
         resources = sorted({p for p in resources if not local_only(p.relative_to(package).as_posix())})
@@ -88,6 +89,20 @@ assert str(layerweave.__file__).startswith({str(installed)!r}), layerweave.__fil
 assert {str(ROOT)!r} not in sys.path
 from importlib.metadata import version
 assert layerweave.__version__ == version('layerweave')
+from layerweave.tool.builtin.view.layout import arrange
+from layerweave.support.api import initialize_database, open_database, transaction
+from tempfile import TemporaryDirectory
+from pathlib import Path
+from contextlib import closing
+with TemporaryDirectory() as folder:
+    database = initialize_database(Path(folder) / 'layout.sqlite3')
+    with closing(open_database(database)) as connection, transaction(connection) as write:
+        project = write.create('project', dict(name='installed layout'))['id']
+        layer = write.create('layer', dict(type='text', config_ref='layers/text.toml', axis=dict(unit='序号', precision=1)), project_id=project)['id']
+    result = arrange(database, project, 'resize', root=layer, width=900, lane_height=180)
+    assert result['operation_id'] and result['boards'][0]['width'] == 900, result
+    assert arrange(database, project)['boards'][0]['height'] == 248
+print('shared layout resource and headless resize passed')
 '''
         run = subprocess.run([sys.executable, "-X", "utf8", "-B", "-S", "-c", bootstrap + SMOKE + origin],
                              cwd=host, env=env, capture_output=True, text=True, encoding="utf-8", timeout=45)

@@ -19,7 +19,7 @@ export interface State {
   project: number | null;
   data: ProjectData | null;
   boards: Board[];
-  serial: number | null;
+  serial: number | string | null;
   version: number | null;
   cursor: number | null;                                  // 只有完整页应用成功才前移
   frames: boolean;

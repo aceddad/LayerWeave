@@ -11,7 +11,7 @@ python -X utf8 -m pip install -e ".[mcp]"
 python -X utf8 -m layerweave.tool.builtin.shared.mcp --config mcp.json
 ```
 
-安装后也可运行 `layerweave-mcp --config mcp.json`。本地 wheel 可用 `python -X utf8 -m pip install "路径/layerweave-0.7.6-py3-none-any.whl[mcp]"`。基础 Python/CLI 不需要 MCP SDK；本服务使用官方 MCP Python SDK 2.3 系列兼容接口。
+安装后也可运行 `layerweave-mcp --config mcp.json`。本地 wheel 可用 `python -X utf8 -m pip install "路径/layerweave-0.7.7-py3-none-any.whl[mcp]"`。基础 Python/CLI 不需要 MCP SDK；本服务使用官方 MCP Python SDK 2.3 系列兼容接口。
 
 源码可编辑安装会准备构建依赖，网络或旧 setuptools 问题见[源码安装排查](../../../../../../docs/developer-conventions.md#可编辑安装与构建依赖)。现成 wheel 避免构建 LayerWeave 本身，但 mcp extra 的运行依赖仍可能需要下载。FFmpeg 由使用者选装，不包含在 wheel 或 mcp extra 中；需要抽帧等媒体能力时，按[选装说明](../../view/GUIDE.md#选装-ffmpeg)提供 PATH 或在客户端的服务项 env 中设置 FFMPEG，随后重启服务。
 
@@ -49,7 +49,7 @@ MCP 客户端配置示意，解释器与文件使用实际绝对路径：
 安装 [uv](https://docs.astral.sh/uv/getting-started/installation/) 后，可直接从已下载的 wheel 启动 MCP，无需手工安装 Python 或激活环境：
 
 ```powershell
-uvx --python 3.11 --from "./layerweave-0.7.6-py3-none-any.whl[mcp]" layerweave-mcp --config ./mcp.json
+uvx --python 3.11 --from "./layerweave-0.7.7-py3-none-any.whl[mcp]" layerweave-mcp --config ./mcp.json
 ```
 
 uvx 按指定来源准备隔离环境；缺少所需 Python 时，uv 默认自动下载。首次准备需要联网，此后可复用缓存。该命令持续运行 stdio 服务，应由 MCP 客户端管理；不是网页启动器。安装与解释器策略见 [uv 工具说明](https://docs.astral.sh/uv/guides/tools/)和 [Python 管理](https://docs.astral.sh/uv/concepts/python-versions/)。
@@ -61,7 +61,7 @@ uvx 按指定来源准备隔离环境；缺少所需 Python 时，uv 默认自�
   "mcpServers": {
     "layerweave": {
       "command": "C:/Users/YOU/.local/bin/uvx.exe",
-      "args": ["--python", "3.11", "--from", "D:/packages/layerweave-0.7.6-py3-none-any.whl[mcp]", "layerweave-mcp", "--config", "D:/my-project/mcp.json"],
+      "args": ["--python", "3.11", "--from", "D:/packages/layerweave-0.7.7-py3-none-any.whl[mcp]", "layerweave-mcp", "--config", "D:/my-project/mcp.json"],
       "env": {"PYTHONUTF8": "1"}
     }
   }
@@ -141,6 +141,8 @@ direct 是暴露方式，不保证客户端置顶，不改变权限。客户端�
 默认项目只补到声明允许的位置：import_project 保留文档的项目/新建语义，dispatch 保留 request 中的显式项目。结果 context 给出实际路径和范围。config_ref、技能 route 和 information 内的资源字符串不统一改写。
 
 ## 技能与视图
+
+view_layout 的 show 经 query，返回画板世界坐标、实际宽高和组合成员；merge/split/move/resize/place/reset/migrate 经 edit，保存到项目中的视图工具表，并返回 operation_id。resize 调整显示尺寸，place 在另一画板旁放置并避让，业务位置不变。view_state.geometry 则给出用户当前窗口筛选后的实际边界与镜头；参数与示例继续查命令 help。
 
 MCP 新建批注与回复要求非空 author，专用 view_reply 和通用 view_note 的 add/reply 使用同一检查。作者与 waiting 使用同一标签，例如先查 waiting="Claude"，再以 author="Claude" 回复；不自动推断身份，不自动标已读或已处理。Python/CLI 仍可保存未署名内容。
 

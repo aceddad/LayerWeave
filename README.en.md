@@ -12,7 +12,7 @@ LayerWeave provides a Python API, command-line tools, MCP integration, and a loc
 - Append, arrange, split, shift, copy, and transfer objects. Import and export batches as JSON.
 - Store data and change history in SQLite, with undo and redo by operation.
 - Extend the system with Python classes, TOML definitions, and tool-owned tables. Add or remove complete tool packages.
-- Inspect projects on a canvas and collaborate with AI through annotations. Install the assets, cuts, and preview plugins separately.
+- Inspect projects on a canvas, resize boards, and collaborate with AI through annotations. Shared layouts support project copying and undo. Install the assets, cuts, and preview plugins separately.
 
 The interface supports Chinese and English; user content is left unchanged. Media objects store resource references. Skills or the caller perform media generation and processing.
 
@@ -22,11 +22,11 @@ The initial supported platform is Windows. The code requires Python 3.11+ and SQ
 
 ### Install the complete package
 
-Obtain `layerweave-0.7.6-py3-none-any.whl` and place it in your chosen working directory. After installing uv, run these commands in PowerShell from that directory:
+Obtain `layerweave-0.7.7-py3-none-any.whl` and place it in your chosen working directory. After installing uv, run these commands in PowerShell from that directory:
 
 ```powershell
 uv venv --python 3.11 .venv
-uv pip install --python .venv/Scripts/python.exe "./layerweave-0.7.6-py3-none-any.whl[mcp]"
+uv pip install --python .venv/Scripts/python.exe "./layerweave-0.7.7-py3-none-any.whl[mcp]"
 ```
 
 By default, uv downloads a suitable Python version if one is missing. Initial setup and dependency downloads require internet access. You do not need to activate the environment; subsequent commands use its interpreter directly. [How uv manages Python](https://docs.astral.sh/uv/concepts/python-versions/)
@@ -35,7 +35,7 @@ If Python is already installed and you prefer pip, use:
 
 ```powershell
 python -X utf8 -m venv .venv
-.venv/Scripts/python.exe -X utf8 -m pip install "./layerweave-0.7.6-py3-none-any.whl[mcp]"
+.venv/Scripts/python.exe -X utf8 -m pip install "./layerweave-0.7.7-py3-none-any.whl[mcp]"
 ```
 
 `[mcp]` adds the optional dependencies for AI integration. Omit it for Python/CLI-only use. Installing the package does not install the official view plugins. These commands use a local wheel and do not assume that this version is available on PyPI.
@@ -85,7 +85,7 @@ Replace the interpreter and configuration paths with your actual locations. Wher
 For MCP-only use, uvx can prepare the environment and start the service in one command:
 
 ```powershell
-uvx --python 3.11 --from "./layerweave-0.7.6-py3-none-any.whl[mcp]" layerweave-mcp --config ./mcp.json
+uvx --python 3.11 --from "./layerweave-0.7.7-py3-none-any.whl[mcp]" layerweave-mcp --config ./mcp.json
 ```
 
 This runs a persistent stdio service, normally managed by an MCP client; it does not open the web view. Use absolute paths in a client's uvx configuration; the MCP guide includes an example. Once the package has a published download URL, that URL can also identify its source without adding a separate business API.

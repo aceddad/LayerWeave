@@ -3,6 +3,7 @@
 import type {Board} from '../types';
 import {GAP, keyOf, rootsOf} from './model';
 import type {Model} from './model';
+import {rememberStyles, leaderStyle} from './boardStyle';
 
 export type Side = 'above' | 'below' | 'left' | 'right';
 interface Box { x: number; w: number }
@@ -11,7 +12,7 @@ export const sizeOf = (model: Model, b: Board) => {
   const l = model.boardLayout(b);
   return l ? {w: l.width, h: l.height} : {w: 0, h: 0};
 };
-const clone = (boards: Board[]) => boards.map((b) => ({...b, rows: b.rows.map((r) => [...r])}));
+const clone = (boards: Board[]): Board[] => boards.map((b) => ({...b, styles: b.styles ? Object.fromEntries(Object.entries(b.styles).map(([r, s]) => [r, {...s}])) : undefined, rows: b.rows.map((r) => [...r])}));
 const overlapX = (p: Box, q: Box) => p.x < q.x + q.w && q.x < p.x + p.w;
 
 // 没有位置的画板（第一次打开、AI 刚拆出来的）依次排在已有画板的下方
@@ -57,9 +58,11 @@ export function merge(boards: Board[], movingKey: number, targetKey: number, roo
   const out = clone(boards);
   const moving = out.find((b) => keyOf(b) === movingKey)!, target = out.find((b) => keyOf(b) === targetKey)!;
   const oldH = sizeOf(model, target).h;
+  target.styles = {...rememberStyles(target).styles, ...rememberStyles(moving).styles};
   const ri = target.rows.findIndex((r) => r.includes(rootId));
   if (side === 'above' || side === 'below') target.rows.splice(ri + (side === 'below' ? 1 : 0), 0, ...moving.rows);
   else { const row = target.rows[ri]; row.splice(row.indexOf(rootId) + (side === 'right' ? 1 : 0), 0, ...moving.rows[0]); }
+  target.pps = leaderStyle(target).pps;
   out.splice(out.indexOf(moving), 1);
   pushBelow(out, target, oldH, sizeOf(model, target).h - oldH, model);
   if (gap) closeGap(out, gap, model);
@@ -71,8 +74,12 @@ export function split(boards: Board[], rootId: number, model: Model): Board[] {
   const out = clone(boards);
   const b = out.find((x) => rootsOf(x).includes(rootId))!;
   const old = sizeOf(model, b), oldBottom = (b.y ?? 0) + old.h;
+  b.styles = rememberStyles(b).styles;
+  const style = b.styles![rootId];
+  delete b.styles![rootId];
   b.rows = b.rows.map((r) => r.filter((x) => x !== rootId)).filter((r) => r.length);
-  const nb: Board = {rows: [[rootId]], x: b.x, y: (b.y ?? 0) + sizeOf(model, b).h + GAP, pps: b.pps};
+  b.pps = leaderStyle(b).pps;
+  const nb: Board = {rows: [[rootId]], x: b.x, y: (b.y ?? 0) + sizeOf(model, b).h + GAP, pps: style.pps, styles: {[rootId]: style}};
   out.splice(out.indexOf(b) + 1, 0, nb);
   const delta = nb.y! + sizeOf(model, nb).h - oldBottom;
   if (delta > 0) for (const o of out) {

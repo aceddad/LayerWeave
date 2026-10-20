@@ -35,7 +35,7 @@ export const api = {
   delta: (id: number, after: number) => get<ProjectPage>(`/api/project/${id}/delta?after=${after}`),
   layout: (id: number) => get<Layout>(`/api/layout/${id}`),
   saveLayout: (id: number, boards: Board[]) => post<Layout & {recorded?: boolean}>(`/api/layout/${id}`, {boards}),
-  version: () => get<{version: number; layout: number; plugins?: number}>('/api/version'),
+  version: () => get<{version: number; layout: number | string; plugins?: number}>('/api/version'),
   changes: (id: number, limit: number) => get<ChangeOp[]>(`/api/changes/${id}?limit=${limit}`),
   at: (id: number, spans: string[]) => get<{text: string}>(`/api/at/${id}?lang=${currentLocale()}&${spans.map((s) => `span=${encodeURIComponent(s)}`).join('&')}`),
   walk: (id: number, from: string, direction: WalkDirection, depth: number) =>

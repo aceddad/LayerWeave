@@ -12,7 +12,8 @@ from pathlib import Path
 import tempfile
 
 FIELDS = {"lang": str, "project": int, "view": str, "board": dict, "range": list, "playhead": (int, float), "playhead_at": list,
-          "selected": dict, "selection": dict, "boards": list, "layers": list, "folded": list}
+          "selected": dict, "selection": dict, "boards": list, "layers": list, "folded": list,
+          "geometry": list, "viewport": dict}
 
 
 def state_path(database, root=None):
@@ -72,6 +73,8 @@ def describe(state):
                      + "（写批注时用 --to layer:根编号 --span 起点 终点）")
     if state.get("boards"):
         lines.append("屏幕上的画板（按根层编号）：" + "；".join("、".join(str(r) for r in roots) for roots in state["boards"]))
+    for box in state.get("geometry") or []:
+        lines.append(f"画板 {box.get('roots')}：位置 ({box.get('x')}, {box.get('y')})，大小 {box.get('width')} × {box.get('height')}（画布坐标）")
     if state.get("layers"):
         lines.append("可见的层：" + ", ".join(str(i) for i in state["layers"]))
     if state.get("folded"):
@@ -85,7 +88,7 @@ COMMANDS = [{'name': 'view_state',
   'cli': 'python -X utf8 -m layerweave.tool.builtin.view.state',
   'read_only': True,
   'context': ['database'],
-  'returns': '状态字典（含 age_seconds，表示多少秒前更新）；视图从未打开过时为 None。',
+  'returns': '状态字典（含 age_seconds）；geometry 是当前可见画板的实际世界坐标和宽高，viewport 是镜头平移与缩放；视图从未打开过时为 None。',
   'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.view.state DATABASE --json'}],
   'notes': ['用户说「这里」「这段」时先读它；age_seconds 很大说明用户可能已经离开视图。',
             'range 和 playhead 用当前画板（board）的单位；不同画板的单位可能不同。',

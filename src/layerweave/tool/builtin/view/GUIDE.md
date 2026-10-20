@@ -15,6 +15,18 @@ DATABASE 替换为实际数据库路径，PROJECT_ID 替换为已存在项目编
 一张可以拖动、缩放的画布。每个根层连同它的子树是一块**画板**，画板里是这个根的时间轴：层按父子顺序排成轨道；对象是轴上的色块。同一层里互相重叠的对象会分成上下几行。两个对象之间空着的地方画一条标尺 `|— 3.000 —|`，写出空了多长，位数按这个根的轴精度（精度 0.001 写三位小数，按帧的写整数）；太窄放不下数字时只画两头的竖线，第一个对象之前、最后一个之后不画。图片显示缩略图，视频片段够宽时左边是第一帧、右边是最后一帧（窄的只显示开头），音频显示波形，文字直接显示；文件不存在的对象用斜纹标出。配置里 `display.default_visible = false` 的层（比如批注层）默认不进画布。
 尺子刻度使用轴精度的整数倍：精度为 1 的序号轴不会因放大而出现 1.2 之类的刻度。组合画板使用参与根层中最细的精度；未声明精度时按基础默认值 1e-6 处理。各根自己的精度和对象位置不会被修改。已知秒单位（如 second、seconds、s、秒）在中文界面显示“秒”，英文显示“s”；自定义单位保留原文，数据库中的单位值不变。
 
+### 尺寸与共享排版
+
+选中画板后，拖动边框或角上的句柄调整宽高；标题栏的“对象行高”可快速选择紧凑、标准、阅读或大图。拉宽改变每个轴单位的显示宽度，拉高增加对象的显示行高。文字在更大的格子内换行，较高的文字格显示标题与正文；对象 begin/end、层归属和轴单位保持原值。重叠对象仍按实际需要分成多行。
+
+同一块画板共用横向比例。合并时最上方、最左端的根提供横向比例；未设明确比例时，按当前组合范围计算默认宽度。左右接续的同名轨道采用最左侧来源的行高。上下排布保留各根行高。合并本身保留成员偏好，拆出恢复；对整个组合执行尺寸调整，则会明确调整组合内各根的尺寸偏好。
+
+首次显示的默认内容跨度宽 1000 个画布像素，便于网页与无界面工具计算相同边界；“适应”按钮按当前窗口设置横向比例。镜头缩放与这些画布尺寸分开。普通位置移动允许叠放，现有吸附与内容变高后的避让继续生效。
+
+位置、尺寸和组合保存在项目库的视图工具表中，编辑经过统一写入入口，有操作日志，可用现有撤销工具恢复。拖动过程中不逐帧写库，松手时保存一次。首次打开、自动预览和截图不把默认排版写入数据库。JSON 交换导出包含这些工具表时，可以把布局随项目带走。
+
+旧本机 layout.json 仍可读取。第一次编辑或显式执行 `view_layout migrate` 时保存当前布局到库，保留旧文件；库里已有布局时优先读库，不用本机旧文件覆盖其他人的共享布局。
+
 ### 目录
 
 （画布左边，可以收起，记在本机）：项目的层按 根 → 层 → 子层 列出来，画面外的、折叠起来的也在。每行写层名、类型、对象数（有子层时写"自己的 / 连同下面的"）、谁折叠的、💬 几楼批注没处理（指着这一层、它的对象或下面的层）。
@@ -76,7 +88,7 @@ DATABASE 替换为实际数据库路径，PROJECT_ID 替换为已存在项目编
 （选装 layerweave.assets；地址使用 `view=layerweave.assets`）：按种类列出项目里所有的对象，像资源管理器一样用网格显示图片、视频封面、音频波形和文字；可以按类型筛选，点一下回到画布上的对应位置。分页：一页 60 张（可以换 30、120），对象再多也只排一页的；截图拍第几页用 `--param page=3`。一览由选装插件 layerweave.assets 提供。
 - 每两秒轮询业务变化和排版变化；正在写入或拖动时延后应用，结束后从原游标继续。
 
-画板的拼接、拆分、位置和时间缩放存在本机用户目录 `~/.layerweave/view/<数据库路径的散列>.layout.json`，不写进业务库。
+画板排版写入项目库；镜头、当前选择、语言与插件清单继续保存在本机。旧 `~/.layerweave/view/<数据库路径的散列>.layout.json` 作为迁移来源保留。
 
 文件路径：`information.source` 是绝对路径就直接用，是相对路径就相对于数据库文件所在的目录；网址不经本机服务提供。服务只提供数据库里引用过、而且确实存在的文件，支持 Range 请求，所以视频可以拖动进度。
 
@@ -115,7 +127,7 @@ $env:FFMPEG = 'D:/tools/ffmpeg/bin/ffmpeg.exe'
 | `view_walk` | 从对象、层或批注出发沿关联展开；控制方向、深度与数量 |
 | `view_note` | 查询、创建、回复、改指向、已读与处理批注 |
 | `view_fold` | 查询或改变人和 AI 两边的折叠状态 |
-| `view_layout` | 查看排版、上下拼接、左右接续、拆分、移动或重置画板 |
+| `view_layout` | 读取画板位置和实际宽高，调整尺寸、邻接放置、拼接、拆分、移动、重置或迁移旧布局 |
 | `view_screenshot` | 拍当前画布、指定范围、批注目标或已安装插件的页面 |
 | `view_frame` | 从视频对象提取一帧；需要 FFmpeg |
 | `view_plugin` | 查询、安装、更新和管理选装插件，见[插件说明](PLUGINS.md) |
@@ -155,4 +167,17 @@ python -X utf8 -m layerweave.tool.builtin.view.screenshot DATABASE 1 output.png 
 - 用户圈选区间后，用 `view_state.selection` 取得根与根内起止；可用 `view_note add --to layer:编号 --span 起点 终点` 附注。
 - 修改圈选内容：取得根与起止 → [交换工具](../usage/exchange/README.md)按子树和区间导出，并带 `--include-baseline` → 修改 JSON → apply。更新原对象保持编号和批注关联，修改后用 `view_at` 或截图复查。
 - 截图使用临时浏览器配置，不记录视图状态，不修改排版、批注和折叠。可用 `--browser` 或环境变量 `LAYERWEAVE_BROWSER` 指定 Chrome、Edge 或 Chromium。
-- 排版与“正在看哪儿”保存在本机用户目录；批注、折叠和已读记录通过统一写入入口保存到数据库。结构见[开发说明](DEVELOPMENT.md)。
+- 排版、批注、折叠和已读记录通过统一写入入口保存到项目数据库；“正在看哪儿”和窗口偏好留在本机。结构见[开发说明](DEVELOPMENT.md)。
+
+### AI 调整尺寸和位置
+
+先查询 `view_layout show --json`，用返回的 roots 中的根层编号操作，board 是展示序号。结果给出世界坐标 x/y、width/height 和尺寸偏好；automatic=true 表示坐标是自动摆放预览。默认 viewer=user 按用户折叠计算完整布局，可用 --viewer ai 查看 AI 的折叠结果。实际窗口若筛选了层，`view_state.geometry` 给出当前可见画板的真实显示边界，`viewport` 给出镜头；它是带 age_seconds 的最近状态。
+
+```sh
+python -X utf8 -m layerweave.tool.builtin.view.layout DATABASE PROJECT_ID show --json
+python -X utf8 -m layerweave.tool.builtin.view.layout DATABASE PROJECT_ID resize ROOT_ID --width 1800 --lane-height 180
+python -X utf8 -m layerweave.tool.builtin.view.layout DATABASE PROJECT_ID place ROOT_ID --to OTHER_ROOT_ID --side right --gap 48
+python -X utf8 -m layerweave.tool.builtin.view.layout DATABASE PROJECT_ID migrate
+```
+
+编号替换为查询返回值。width/height 调整整块画板的目标尺寸；pps/lane_height 分别直接设置横向比例和对象行高。同一方向只需一种参数。place 是邻接放置并避让，允许不同单位画板并排；merge 才是按同一轴合并，仍要求单位相容。move 接受明确 x/y，允许有意叠放。有实际变化时返回 operation_id，相同值不产生新日志；MCP 中 show 经 query，其他这些动作经 edit。

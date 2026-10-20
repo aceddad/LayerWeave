@@ -154,9 +154,9 @@ select { background: var(--panel); padding: 3px 6px; }
 .obj .ends img, .obj .ends canvas { position: static; width: 64px; height: 100%; object-fit: cover; opacity: .9; }
 .obj .lab { position: absolute; left: 4px; right: 4px; bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 2px rgba(0, 0, 0, .8); }
 .obj.text .lab { text-shadow: none; top: 3px; bottom: auto; white-space: normal; max-height: 100%; }
-.obj.text.expanded .lab { top: 8px; left: 9px; right: 9px; bottom: 8px; font-size: 14px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
-.obj.text.expanded:not(.missing) { background: var(--panel); color: var(--text); border-top: 3px solid var(--text-c); }
-.obj.text.expanded .obj-title { color: var(--text-c); }
+.obj.reading .lab { top: 8px; left: 9px; right: 9px; bottom: 8px; font-size: 14px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+.obj.reading:not(.missing) { background: var(--panel); color: var(--text); border-top: 3px solid var(--text-c); }
+.obj.reading .obj-title { color: var(--text-c); }
 .obj-title { display: block; margin-bottom: 5px; font-size: 13px; line-height: 1.4; }
 .react-flow__node-board > .react-flow__resize-control { z-index: 8; }
 .bhead select { max-width: 110px; font-size: 12px; padding: 0 4px; height: 23px; }

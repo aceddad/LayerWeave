@@ -30,6 +30,8 @@ export const ObjectBlock = memo(function ObjectBlock({item, a, pps, unit, projec
   useI18n();
   const o = item.o, k = kindOf(o), instant = o.end <= o.begin;
   const laneHeight = item.laneHeight ?? LANE;
+  // A document source remains a file/link, while its supplied body can be read on the board.
+  const reading = laneHeight >= 80 && (k === 'text' || (k === 'file' && o.text != null));
   const selected = useStore((s) => s.selected === o.id);
   const hot = useStore((s) => hotOf(s).has(`object:${o.id}`));
   const handles = useStore((s) => handleKeysOf(s).has(`object:${o.id}`));   // 这一刻有关系线连到它：才挂连接点
@@ -56,12 +58,12 @@ export const ObjectBlock = memo(function ObjectBlock({item, a, pps, unit, projec
   }
   const board = item.offset ? tr("object.boardSpan", {value1: fmt(item.begin, unit), value2: fmt(item.end, unit)}) : '';
   const title = tr("object.summary", {value1: o.id, value2: o.name || '', value3: o.type, value4: fmt(o.begin, unit), value5: fmt(o.end, unit), value6: board, value7: missing ? tr("media.missingLine") + o.media!.source : ''});
-  const classes = ['obj', k, laneHeight >= 80 && 'expanded', instant && 'instant', missing && 'missing', selected && 'sel', hot && 'hot', mark && `chg chg-${mark.action}`].filter(Boolean).join(' ');
+  const classes = ['obj', k, laneHeight >= 80 && 'expanded', reading && 'reading', instant && 'instant', missing && 'missing', selected && 'sel', hot && 'hot', mark && `chg chg-${mark.action}`].filter(Boolean).join(' ');
   return (
     <div ref={ref} className={classes} data-id={o.id} title={title}
          style={{left, width: w, top: PAD + item.lane * laneHeight, height: laneHeight - 4}}>
       {inner}
-      <span className="lab">{k === 'text' && laneHeight >= 80 && o.name && <strong className="obj-title">{o.name}</strong>}{o.text ?? o.name ?? o.type}</span>
+      <span className="lab">{reading && o.name && <strong className="obj-title">{o.name}</strong>}{o.text ?? o.name ?? o.type}</span>
       {mark && <i className="chg-n" title={tr("object.changed", {value1: mark.n === 1 ? tr("changes.latest") : tr("changes.nthLatest", {value1: mark.n}), value2: mark.action === 'create' ? tr("changes.created") : tr("changes.updated")})}>{mark.n}</i>}
       {notes && notes.length > 0 && <i className="note-n" title={notes.map(({top, replies}) => tr("object.noteSummary", {value1: top.id, value2: top.text, value3: replies.length ? tr("notes.repliesParen", {value1: replies.length}) : ''})).join('\n')}>💬{notes.length}</i>}
       {external && external.length > 0 && <i className="ext" title={external.join('\n')}>↗ {external.length}</i>}

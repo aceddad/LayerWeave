@@ -30,13 +30,14 @@ class LayoutBrowserTests(unittest.TestCase):
     def test_resize_persists_once_reloads_and_follows_ai_update(self):
         with tempfile.TemporaryDirectory(prefix="lw-layout-ui-", ignore_cleanup_errors=True) as folder:
             base=Path(folder)
+            (base/"article.md").write_text("正文的来源文件。", encoding="utf-8")
             database=initialize_database(base/"project.sqlite3")
             with closing(open_database(database)) as c, transaction(c) as w:
                 project=w.create("project",{"name":"layout"})["id"]
                 layer=w.create("layer",{"name":"阅读","type":"text","config_ref":"layers/text.toml",
                     "axis":{"unit":"序号","precision":1}},project_id=project)["id"]
                 obj=w.create("object",{"name":"第一段","layer":layer,"begin":0,"end":10,"config_ref":"objects/text.toml",
-                    "information":{"text":"一段可以换行阅读的正文。"*30}},project_id=project)["id"]
+                    "information":{"text":"一段可以换行阅读的正文。"*30, "source":"article.md"}},project_id=project)["id"]
             save_layout(database,project,[{"rows":[[layer]],"x":30,"y":40,"pps":40}])
             server,url=make_server(database,state_root=base/"state",record_state=True)
             threading.Thread(target=server.serve_forever,daemon=True).start()
@@ -58,6 +59,9 @@ class LayoutBrowserTests(unittest.TestCase):
                 self.wait(tab,"document.querySelector('.bhead select') && document.querySelector('.react-flow__resize-control.handle')")
                 _ev(tab,"(()=>{const s=document.querySelector('.bhead select');s.value='180';s.dispatchEvent(new Event('change',{bubbles:true}));return true;})()")
                 self.wait(tab,"parseFloat(document.querySelector('.obj').style.height)>170")
+                self.assertEqual(_ev(tab, "getComputedStyle(document.querySelector('.obj .lab')).whiteSpace"),
+                                 "pre-wrap", "Text with a file source must remain readable when expanded")
+                self.assertIn("第一段", _ev(tab, "document.querySelector('.obj .lab').textContent"))
                 deadline=time.time()+10
                 while time.time()<deadline:
                     result=arrange(database,project)["boards"][0]

@@ -15,6 +15,7 @@ RECOMMENDED = [
     {"id": "layerweave.assets", "label": "一览", "description": "按种类分页查看图片、视频、音频和文字。"},
     {"id": "layerweave.preview", "label": "预览", "description": "按时间取帧，分页检查视频和动态图像。"},
     {"id": "layerweave.cuts", "label": "接缝", "description": "并排检查前后相接的画面，沿接缝跳转。"},
+    {"id": "layerweave.web", "label": "网页", "description": "查看网址、HTML 源码和本地 HTML 文件。"},
 ]
 LEGACY = {"cuts": False, "assets": True, "preview": False}
 _thread_lock = threading.RLock()

@@ -1,5 +1,5 @@
 name = "layerweave.view"
 kind = "tool"
-version = "0.30.1"
+version = "0.31.0"
 description = "视图：画布上的时间轴画板、批注层、截图与“正在看哪儿”，网页源码在仓库 frontend/view"
-changes = "带普通文件来源的文字对象在拉高后也展开正文与标题，保留来源链接及媒体分类；图像、视频和音频仍按媒体展示。"
+changes = "提供插件本地 HTML 相对资源预览接口 openDocument，并推荐独立选装的网页插件；文件预览不写项目库，沿用 host.api 3。"

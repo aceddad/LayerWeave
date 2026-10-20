@@ -427,5 +427,9 @@
   "error.length": "Content-Length must be a non-negative integer",
   "error.requestObject": "The request body must be a JSON object",
   "error.targets": "targets must be an array of JSON objects",
-  "error.spanObject": "span must be an object containing begin/end, or null"
+  "error.spanObject": "span must be an object containing begin/end, or null",
+  "document.fileRequired": "Provide a local HTML file path.",
+  "document.htmlOnly": "Choose a .html or .htm file. Use a URL for a running web application.",
+  "document.fileMissing": "HTML file not found: {value1}",
+  "document.root": "The resource directory must exist and contain the selected HTML file."
 }

@@ -24,6 +24,7 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 }
 
 export const api = {
+  openDocument: (file: string, root?: string) => post<{url: string; name: string}>('/api/documents', {file, root}),
   capabilities: () => get<{frames: boolean}>('/api/capabilities'),
   plugins: () => get<PluginList>('/api/plugins'),
   // 插件清单：加链接（target 是路径或默认文件夹里的名字）、去掉、开、关；和 view_plugin 命令改同一份

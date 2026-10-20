@@ -120,7 +120,7 @@ test_namespace.py 验证宿主同名模块不会干扰公开导入、保存和�
 
 ```sh
 python -X utf8 -m pip wheel --no-deps --wheel-dir scratch/namespace-dist .
-python -X utf8 -m tests.packaging.check_wheel scratch/namespace-dist/layerweave-0.7.7-py3-none-any.whl
+python -X utf8 -m tests.packaging.check_wheel scratch/namespace-dist/layerweave-0.7.8-py3-none-any.whl
 ```
 
 check_wheel.py 将 wheel 用 pip 安装到临时目标，以禁用 site 的独立进程验证；源码目录不参与导入。它检查只有 layerweave 顶层包、同名模块冲突、默认配置、数据库 schema 和技能正文/脚本。临时目录自动清理，不写用户数据库。

@@ -68,6 +68,8 @@
 
 请求正文须为 JSON 对象。JSON 语法、根类型和预期参数错误返回 HTTP 400 与 error/ui；来源不符返回 403，超过现有限制的正文返回 413。批注、折叠、排版、状态与插件请求使用同一错误返回路径。截图服务对有效请求继续返回 recorded=false，不执行写入。
 
+`POST /api/documents` 是只读文件预览的准备入口，接收 `{file, root?}`，返回 `{url, name}`。相对路径基于数据库目录；`documents.py` 为显式选取的 HTML 资源目录登记随机临时路由，`GET /documents/<token>/<相对路径>` 只提供该目录内的文件。它不写数据库或状态文件，因此 record=0 时也能准备预览。HTML 使用 CSP sandbox，资源允许隔离来源读取；项目 API 不开放跨源读取。插件通过新增的 `host.openDocument` 调用，仍为 host.api 3。
+
 ## 网页源码
 
 网页源码在仓库的 `frontend/view/`（不放进 `src/`，免得 `node_modules` 混进 Python 包和测试扫描）：React + TypeScript，画布用 React Flow（`@xyflow/react`，平移缩放、节点拖动、连线、小地图），状态用 zustand，Vite 编译。

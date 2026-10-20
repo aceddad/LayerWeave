@@ -90,7 +90,13 @@ DATABASE 替换为实际数据库路径，PROJECT_ID 替换为已存在项目编
 
 画板排版写入项目库；镜头、当前选择、语言与插件清单继续保存在本机。旧 `~/.layerweave/view/<数据库路径的散列>.layout.json` 作为迁移来源保留。
 
-文件路径：`information.source` 是绝对路径就直接用，是相对路径就相对于数据库文件所在的目录；网址不经本机服务提供。服务只提供数据库里引用过、而且确实存在的文件，支持 Range 请求，所以视频可以拖动进度。
+媒体路径：`information.source` 是绝对路径就直接用，是相对路径就相对于数据库文件所在的目录；网址不经媒体接口提供。媒体入口只提供数据库里引用过、而且确实存在的文件，支持 Range 请求，所以视频可以拖动进度。
+
+### 网页
+
+（选装 layerweave.web，需要视图 0.31.0+）：在独立页面打开网址、HTML 源码或本地 HTML 文件。地址使用 `view=layerweave.web`；来源参数为 `url`、`html`、`file`、`object` 四选一。截图示例：`--view layerweave.web --param file=reports/index.html`。
+
+本地 HTML 相对路径以数据库目录为基准，默认同时提供 HTML 所在目录中的相对资源；可用 `resource_root` 指定共同目录。文件预览只登记进程内临时资源，不写项目库。Vite 等应用先启动服务，再传其网址。外站可能禁止嵌入，窗口加载事件不保证外站内容可用；页面一直提供外部浏览器入口。详细用法通过 `view_plugin info layerweave.web` 查询。
 
 ## 选装 FFmpeg
 

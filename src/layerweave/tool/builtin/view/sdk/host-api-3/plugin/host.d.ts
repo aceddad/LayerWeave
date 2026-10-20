@@ -34,6 +34,10 @@ export interface PluginHost {
     startWalk(ref: string): void;
     toast(text: string): void;
     markReady(): void;
+    openDocument(file: string, root?: string): Promise<{
+        url: string;
+        name: string;
+    }>;
     addStyle(css: string): void;
     numParam(name: string): number | null;
     components: {

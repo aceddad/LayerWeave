@@ -1,8 +1,9 @@
 // 视图插件的接口：插件是一个编译好的 ES 模块，默认导出一个函数 (host) => ViewPlugin。
 // 视图管一份本机插件清单（view/plugins.py；view_plugin 命令和顶栏「插件」小窗改它），页面按清单用 import() 载入（plugin/registry.ts）。
 // 插件只拿到这里给的东西：React（和视图共用一份，插件不要自己打包）、读项目的钩子、几个动作、画图的小部件和工具函数。
-// 写入照旧只有视图自己的两种（批注、折叠）；插件不碰数据库。改这里就是改插件接口：只加不改，改了要在 TOOL_TYPES.md 写明
+// 插件不直接写数据库；本地 HTML 读取通过宿主提供的临时资源入口。新增接口同步协议与 SDK。
 import * as React from 'react';
+import {api} from '../api';
 import {useShallow} from 'zustand/react/shallow';
 import {selectObject, startWalk} from '../actions';
 import {Frame, Img, Thumb} from '../canvas/Media';
@@ -43,6 +44,7 @@ export interface PluginHost {
   startWalk(ref: string): void;            // 侧栏"沿读"从这里开始（"object:16"）
   toast(text: string): void;
   markReady(): void;
+  openDocument(file: string, root?: string): Promise<{url: string; name: string}>; // view 0.31.0，相对路径基于数据库目录
   addStyle(css: string): void;             // 插件自己的样式；插件关掉、去掉时跟着拿掉
   numParam(name: string): number | null;   // 地址参数（截图、复制链接用的那些）
   // Waveform、Pager（分页）和 util 里的 mediaUrl、pageSlice 是 0.25.0 加的（只加不改）
@@ -82,7 +84,7 @@ export function makeHost(styles: HTMLStyleElement[] = [], localizations: Localiz
       const s = useStore(useShallow((st) => ({boards: st.boards, project: st.project, frames: st.frames, playhead: st.playhead, selected: st.selected, picked: st.picked})));
       return {model, ...s};
     },
-    selectObject: (id) => selectObject(id), startWalk, toast: (text) => toast(text), markReady,
+    selectObject: (id) => selectObject(id), startWalk, toast: (text) => toast(text), markReady, openDocument: api.openDocument,
     addStyle: (css) => { const el = document.createElement('style'); el.textContent = css; document.head.appendChild(el); styles.push(el); },
     numParam,
     components: {Img, Thumb, Frame, Waveform, Pager},

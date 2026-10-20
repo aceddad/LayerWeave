@@ -41,7 +41,7 @@ class ViewPluginTests(unittest.TestCase):
     def test_zero_plugins_and_no_write_on_read(self):
         result = plugin(root=self.root)
         self.assertEqual(result["plugins"], [])
-        self.assertEqual(len(result["recommended"]), 3)
+        self.assertEqual(len(result["recommended"]), 4)
         self.assertFalse(self.root.exists())
 
     def test_sdk_snapshot_matches_runtime(self):

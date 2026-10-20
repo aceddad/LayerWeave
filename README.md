@@ -12,7 +12,7 @@ LayerWeave 提供 Python API、命令行工具、MCP 接入和本机网页视图
 - 接续、排列、分割、平移、复制与搬移对象，通过 JSON 批量导入导出。
 - 用 SQLite 保存数据和修改历史，按操作撤销与重做。
 - 用 Python 类、TOML 和工具自有表扩展，按完整工具包增减能力。
-- 在画布上查看项目、调整画板宽高、添加批注并与 AI 协作；共享排版可随项目复制和撤销，一览、接缝和预览插件独立选装。
+- 在画布上查看项目、调整画板宽高、添加批注并与 AI 协作；共享排版可随项目复制和撤销，一览、接缝、预览和网页插件独立选装。
 
 界面支持中文与英文，用户内容保持原文。媒体对象保存资源引用，生成和处理媒体由技能或调用方完成。
 
@@ -22,11 +22,11 @@ LayerWeave 提供 Python API、命令行工具、MCP 接入和本机网页视图
 
 ### 安装完整包
 
-先取得本版本的 `layerweave-0.7.7-py3-none-any.whl`，放在选定的工作目录。安装 uv 后，在该目录的 PowerShell 中执行：
+先取得本版本的 `layerweave-0.7.8-py3-none-any.whl`，放在选定的工作目录。安装 uv 后，在该目录的 PowerShell 中执行：
 
 ```powershell
 uv venv --python 3.11 .venv
-uv pip install --python .venv/Scripts/python.exe "./layerweave-0.7.7-py3-none-any.whl[mcp]"
+uv pip install --python .venv/Scripts/python.exe "./layerweave-0.7.8-py3-none-any.whl[mcp]"
 ```
 
 缺少合适的 Python 时，uv 默认会自动下载。首次准备环境和依赖需要联网；无需激活虚拟环境，后续直接使用其中的解释器。[uv 的 Python 管理说明](https://docs.astral.sh/uv/concepts/python-versions/)
@@ -35,7 +35,7 @@ uv pip install --python .venv/Scripts/python.exe "./layerweave-0.7.7-py3-none-an
 
 ```powershell
 python -X utf8 -m venv .venv
-.venv/Scripts/python.exe -X utf8 -m pip install "./layerweave-0.7.7-py3-none-any.whl[mcp]"
+.venv/Scripts/python.exe -X utf8 -m pip install "./layerweave-0.7.8-py3-none-any.whl[mcp]"
 ```
 
 `[mcp]` 安装 AI 接入需要的可选依赖；只用 Python/CLI 时可以去掉。安装不会自动装入官方视图插件。这里使用本地 wheel，不假定同名版本已经发布到 PyPI。
@@ -85,7 +85,7 @@ wheel 已构建好，安装 LayerWeave 本身不需要 setuptools；`[mcp]` 的�
 只接 MCP 时，也可让 uvx 一条命令准备环境并启动服务：
 
 ```powershell
-uvx --python 3.11 --from "./layerweave-0.7.7-py3-none-any.whl[mcp]" layerweave-mcp --config ./mcp.json
+uvx --python 3.11 --from "./layerweave-0.7.8-py3-none-any.whl[mcp]" layerweave-mcp --config ./mcp.json
 ```
 
 这条命令会持续运行 stdio 服务，通常由 MCP 客户端托管；它不是启动网页的命令。客户端中的 uvx 配置使用绝对路径，完整例子见 MCP 说明。安装包放到正式下载地址后，也可通过 URL 指定来源，无需另写一套业务接口。

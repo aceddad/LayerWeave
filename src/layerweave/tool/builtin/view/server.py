@@ -27,6 +27,7 @@ from .walk import walk_from
 from .note import add_note, remove_note, retarget_note, set_read, update_note
 from .state import read_state, write_state
 from .incremental import project_snapshot, project_delta
+from .documents import DocumentMounts
 
 WEB_ROOT = Path(__file__).with_name("web")
 FRAMES = {}   # 抽出来的视频帧缓存：(文件, 修改时间, 秒) → JPEG
@@ -70,6 +71,9 @@ class ViewHandler(SimpleHTTPRequestHandler):
             if url.path == "/api/projects":
                 with closing(open_readonly(self.database)) as connection:
                     return self.send_json(list_projects(connection))
+            if match := re.fullmatch(r"/documents/([A-Za-z0-9_-]+)/(.+)", url.path):
+                path = self.server.documents.resolve(match[1], unquote(match[2]))
+                return self.send_file(path, document=True) if path else self.send_json(error_payload(ViewError("error.file")), HTTPStatus.NOT_FOUND)
             if match := re.fullmatch(r"/api/project/(\d+)", url.path):
                 with closing(open_readonly(self.database)) as connection:
                     data = project_view(connection, self.database, int(match[1]))
@@ -182,7 +186,7 @@ class ViewHandler(SimpleHTTPRequestHandler):
         match = re.fullmatch(r"/api/(layout|notes|folds)/(\d+)", path)
         if match:
             kind, project_id = match[1], int(match[2])
-        elif path in ("/api/state", "/api/plugins"):
+        elif path in ("/api/state", "/api/plugins", "/api/documents"):
             kind, project_id = path.rsplit("/", 1)[1], None
         else:
             return self.send_json(error_payload(ViewError("error.route")), HTTPStatus.NOT_FOUND)
@@ -210,6 +214,13 @@ class ViewHandler(SimpleHTTPRequestHandler):
             return self.send_json(error_payload(ViewError("error.json")), HTTPStatus.BAD_REQUEST)
         if not isinstance(payload, dict):
             return self.send_json(error_payload(ViewError("error.requestObject")), HTTPStatus.BAD_REQUEST)
+        # Opening a document only creates a process-local resource route.
+        # record=0 screenshots can use it without writing project or local state.
+        if kind == "documents":
+            try:
+                return self.send_json(self.server.documents.open(payload.get("file"), payload.get("root")))
+            except (ValueError, TypeError, OSError) as error:
+                return self.send_json(error_payload(error), HTTPStatus.BAD_REQUEST)
         if not self.record_state:
             return self.send_json({"recorded": False})
         try:
@@ -268,7 +279,7 @@ class ViewHandler(SimpleHTTPRequestHandler):
             return set_read(self.database, project_id, int(payload["note"]), payload.get("reader") or "", read=action == "read")
         raise ViewError("error.action", {"action": action})
 
-    def send_file(self, path):
+    def send_file(self, path, *, document=False):
         size = path.stat().st_size
         ctype = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
         start, end = 0, size - 1
@@ -289,6 +300,12 @@ class ViewHandler(SimpleHTTPRequestHandler):
         else:
             self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", ctype)
+        if document:
+            # Opaque-origin frames can import their own modules, fonts and JSON.
+            # The host's project API does not receive these headers.
+            self.send_header("Access-Control-Allow-Origin", "*")
+            if ctype == "text/html":
+                self.send_header("Content-Security-Policy", "sandbox allow-scripts allow-forms allow-popups allow-downloads")
         self.send_header("Accept-Ranges", "bytes")
         self.send_header("Content-Length", str(end - start + 1))
         self.end_headers()
@@ -331,6 +348,7 @@ def make_server(database, *, port=0, state_root=None, record_state=True, web_roo
                       web_root=Path(web_root) if web_root else None)
     server = ViewServer(("127.0.0.1", port), handler)
     server.watcher = watcher
+    server.documents = DocumentMounts(database.parent)
     return server, f"http://127.0.0.1:{server.server_address[1]}/"
 
 
@@ -342,7 +360,7 @@ COMMANDS = [{'name': 'view_server',
   'context': ['database'],
   'returns': '持续运行的本机网页服务；打印访问地址。',
   'examples': [{'cli': 'python -X utf8 -m layerweave.tool.builtin.view.server DATABASE --project 1'}],
-  'notes': ['只监听 127.0.0.1；查看项目使用只读连接，批注、折叠和已读状态经工具入口写入；文件只提供数据库引用过且存在的本地文件。', '相对路径的文件相对于数据库文件所在目录解析。'],
+  'notes': ['只监听 127.0.0.1；查看项目使用只读连接，视图写入经工具入口执行。媒体按数据库引用提供；本地 HTML 按显式选取的文件及资源目录临时提供，不写数据库。', '相对路径的文件相对于数据库文件所在目录解析。'],
   'input_schema': {'type': 'object',
                    'properties': {'database': {'type': 'string', 'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
                                   'port': {'type': 'integer',

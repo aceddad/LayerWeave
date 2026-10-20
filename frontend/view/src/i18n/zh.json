@@ -427,5 +427,9 @@
   "error.length": "Content-Length 必须是非负整数",
   "error.requestObject": "请求正文必须是 JSON 对象",
   "error.targets": "targets 必须是由 JSON 对象组成的数组",
-  "error.spanObject": "span 必须是包含 begin/end 的对象或 null"
+  "error.spanObject": "span 必须是包含 begin/end 的对象或 null",
+  "document.fileRequired": "请提供本地 HTML 文件路径。",
+  "document.htmlOnly": "本地页面需为 .html 或 .htm；运行中的网页应用请使用网址。",
+  "document.fileMissing": "HTML 文件不存在：{value1}",
+  "document.root": "资源目录必须存在，并包含所选 HTML 文件。"
 }

@@ -1,0 +1,1269 @@
+{
+  "format_version": 1,
+  "name": "雾灯留给谁 · 原创互动故事",
+  "project": {
+    "op": "add",
+    "data": {
+      "name": "雾灯留给谁",
+      "tips": "从 S01 起读。7 场景、11 动作、2 状态、3 结局。用 bind 阅读分支；条件由读者解释。先读 R00。"
+    }
+  },
+  "items": [
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "scenes",
+      "data": {
+        "name": "01 场景",
+        "config_ref": "layers/text.toml",
+        "axis": {
+          "unit": "序号",
+          "precision": 1
+        },
+        "tips": "阅读入口 S01；分支根据关系，不按相邻编号。"
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "s01",
+          "data": {
+            "name": "S01｜熄灯前的堤岸",
+            "config_ref": "objects/text.toml",
+            "information": {
+              "text": "雨从海面横着扫过来。你抱着一只装工具的铁盒，站在明天就要停用的白礁灯塔下。最后一班补给船“白鹭”还没回来；新航标已经接管外海，旧塔只剩一晚的燃料。\n守塔人岑伯在门内咳嗽：“他们说海图够用了。可人有时候不是走在图上的。”你在雾里听见三声短笛，随后一切安静。墙上的退休通知被雨水泡成半透明，露出后面旧航道的墨线。\n右边是存着航海日志的档案小屋，左边是岑伯的值守屋。你决定先去一处问清楚，再上塔。\n阅读起点：每次重读把状态记为 tide_code=false、brass_key=false。选择只沿“可选动作”关联前进，资料关联不是路线。",
+              "role": "scene",
+              "story_code": "S01"
+            },
+            "begin": 1,
+            "end": 2
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "s02",
+          "data": {
+            "name": "S02｜被盐浸过的日志",
+            "config_ref": "objects/text.toml",
+            "information": {
+              "text": "小屋的窗框漏着风。你翻开最后一册航海日志，纸页的盐粒落在桌上。二十年前的灯塔照片里，一名年轻船长站在岑伯身旁；照片背后写着“别让回家的人只看见岸”。\n书页边缘有一行小字：“三短笛，请开背海窗；两长一短，应在内湾。外海新标看不见礁后的小船。”这是一套旧式定位暗码，三声短笛意味着白鹭正躲在内湾的礁影里。\n页角还写着“背海的检修窗与手摇信号灯，钥匙由守塔人保管”。你可以抄下暗码去找岑伯，也可以带着它先上塔。\n进入这里只是读到线索；完成 A03 或 A04 的“抄下”动作，才将 tide_code 记为 true。",
+              "role": "scene",
+              "story_code": "S02"
+            },
+            "begin": 2,
+            "end": 3
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "s03",
+          "data": {
+            "name": "S03｜守塔人的值守屋",
+            "config_ref": "objects/text.toml",
+            "information": {
+              "text": "岑伯把热水推过来，杯底压着一张没有寄出的退休合照。“白鹭上有个学徒，是我孙女阿澄。她非说要陪这座塔值完最后一班。”他没有再说下去，只把窗帘拉开一条缝。\n海上没有光。他从衣领里取下黄铜钥匙，放到你的工具盒上：“这是检修窗的钥匙。窗后那盏手摇灯还亮得起来，照不到外海，倒照得见礁背。你若知道该往哪里照，就替我开一次。”\n塔身传来链条轻轻敲墙的声音。你还有机会决定，旧塔最后一晚该把光留给谁。\n完成 A05 的“接过”动作后取得钥匙；岑伯不知道今晚的定位暗码，不能在此取得 tide_code。",
+              "role": "scene",
+              "story_code": "S03"
+            },
+            "begin": 3,
+            "end": 4
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "s04",
+          "data": {
+            "name": "S04｜旋梯口的两扇门",
+            "config_ref": "objects/text.toml",
+            "information": {
+              "text": "你的鞋在铁梯上敲出空响。通往档案小屋的侧廊和通往值守屋的木梯，在这里汇成同一个平台。再往上是常规灯室；背海一侧有一扇上锁的检修门，门边的传声筒已经断了线。\n检修门的铜牌写着：“内湾信号：先定位，后开窗。”只有钥匙，能开门却不知道朝哪里发信号；只有暗码，知道船在哪里却转不动锁。你摸了摸衣袋，核对自己带来的两样东西。\n如果暗码与钥匙齐全，可以试着从背海窗联系白鹭。否则，常规灯室仍然开放。走上常规灯室也是一种主动选择，即使两样东西都在手里。\n汇合不补发物品、不重置状态。",
+              "role": "scene",
+              "story_code": "S04"
+            },
+            "begin": 4,
+            "end": 5
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "s05",
+          "data": {
+            "name": "S05｜背海的检修窗",
+            "config_ref": "objects/text.toml",
+            "information": {
+              "text": "黄铜钥匙转了半圈，锁舌退开。你推开窗，雨水立刻灌进袖口。内湾像一块没有磨亮的黑玻璃，只有礁石的轮廓偶尔被浪花勾出来。\n你照日志里的暗码摇亮信号灯：两长，一短。雾里迟疑片刻，亮起三次微小的白光。那不是星，是有人举起了船上的手灯。你再回应一次，白光向内湾的平台移动了些。\n“白鹭收到。”风把一个年轻的声音送来。你没有听清后半句，但已经知道该把绳索带往哪里。\n此场景只能从 A06 进入；两件状态不消耗。",
+              "role": "scene",
+              "story_code": "S05"
+            },
+            "begin": 5,
+            "end": 6
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "s06",
+          "data": {
+            "name": "S06｜只照向外海的灯室",
+            "config_ref": "objects/text.toml",
+            "information": {
+              "text": "常规灯室的玻璃被擦得很干净。新航标在外海有规律地闪动，旧塔的镜片则停在面向大航道的位置。你试着转动支架，锈死的齿轮纹丝不动。\n剩下的燃料足够维持这一夜；点亮它，外海的船会看见这座塔最后一次履职，礁影里的白鹭却依然看不见。另一侧，一只雾钟的拉绳垂到脚边。熄着灯守住钟声，也许能让内湾的小船辨清岸线，但船需要等到天亮。\n你不是在“正确答案”和“错误答案”之间选择。你是在有限的时间里，决定自己愿意怎样留下。\n这里不再通往检修窗。选择 A10 或 A11 后抵达结局；两种行动都不需要物品。",
+              "role": "scene",
+              "story_code": "S06"
+            },
+            "begin": 6,
+            "end": 7
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "s07",
+          "data": {
+            "name": "S07｜潮水边的接船台",
+            "config_ref": "objects/text.toml",
+            "information": {
+              "text": "你抱着绳索下到接船台。手摇灯留在窗边，由赶来的岑伯照着暗码接力。白鹭的船首终于从雾里钻出来，像一封被海水揉皱的信。\n阿澄站在船头，先把学徒的工具包抛过来，再抛出缆绳。“船机没坏，”她喊，“只是新图上没有画那块暗礁，我们不敢走。”你接住绳头，感觉它在掌心里沉下去。\n平台的灯罩里落满死去的小飞虫。你忽然明白，今晚并没有哪一道光能够照遍所有方向；但光可以从一个人手里，交到另一个人手里。\n沿 A09 系好缆绳，结束这条路线。",
+              "role": "scene",
+              "story_code": "S07"
+            },
+            "begin": 7,
+            "end": 8
+          }
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "choices",
+      "data": {
+        "name": "02 选择与条件",
+        "config_ref": "layers/text.toml",
+        "axis": {
+          "unit": "序号",
+          "precision": 1
+        },
+        "tips": "阅读条件，再沿“进入场景/进入结局”关系。"
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "a01",
+          "data": {
+            "name": "A01｜去档案小屋翻日志",
+            "config_ref": "objects/text.toml",
+            "information": {
+              "text": "动作：去档案小屋翻日志\n条件：无。\n结果：进入 S02；暂不改变状态。\n状态变化：无；保留已有状态。\n解释方式：由读者按 paths.md 记录；LayerWeave 不自动判断、禁用选项或保存游戏进度。",
+              "role": "choice",
+              "story_code": "A01",
+              "requires": {},
+              "effects": {}
+            },
+            "begin": 1,
+            "end": 2
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "a02",
+          "data": {
+            "name": "A02｜先去值守屋找岑伯",
+            "config_ref": "objects/text.toml",
+            "information": {
+              "text": "动作：先去值守屋找岑伯\n条件：无。\n结果：进入 S03；暂不改变状态。\n状态变化：无；保留已有状态。\n解释方式：由读者按 paths.md 记录；LayerWeave 不自动判断、禁用选项或保存游戏进度。",
+              "role": "choice",
+              "story_code": "A02",
+              "requires": {},
+              "effects": {}
+            },
+            "begin": 2,
+            "end": 3
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "a03",
+          "data": {
+            "name": "A03｜抄下暗码，再去找守塔人",
+            "config_ref": "objects/text.toml",
+            "information": {
+              "text": "动作：抄下暗码，再去找守塔人\n条件：无。\n结果：记下潮汐暗码，进入 S03。\n状态变化：tide_code=true；其余状态保留。\n解释方式：由读者按 paths.md 记录；LayerWeave 不自动判断、禁用选项或保存游戏进度。",
+              "role": "choice",
+              "story_code": "A03",
+              "requires": {},
+              "effects": {
+                "tide_code": true
+              }
+            },
+            "begin": 3,
+            "end": 4
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "a04",
+          "data": {
+            "name": "A04｜抄下暗码，直接上塔",
+            "config_ref": "objects/text.toml",
+            "information": {
+              "text": "动作：抄下暗码，直接上塔\n条件：无。\n结果：记下潮汐暗码，直接抵达 S04。\n状态变化：tide_code=true；其余状态保留。\n解释方式：由读者按 paths.md 记录；LayerWeave 不自动判断、禁用选项或保存游戏进度。",
+              "role": "choice",
+              "story_code": "A04",
+              "requires": {},
+              "effects": {
+                "tide_code": true
+              }
+            },
+            "begin": 4,
+            "end": 5
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "a05",
+          "data": {
+            "name": "A05｜接过钥匙，走向旋梯",
+            "config_ref": "objects/text.toml",
+            "information": {
+              "text": "动作：接过钥匙，走向旋梯\n条件：无。\n结果：取得黄铜钥匙，进入 S04；不会补发暗码。\n状态变化：brass_key=true；其余状态保留。\n解释方式：由读者按 paths.md 记录；LayerWeave 不自动判断、禁用选项或保存游戏进度。",
+              "role": "choice",
+              "story_code": "A05",
+              "requires": {},
+              "effects": {
+                "brass_key": true
+              }
+            },
+            "begin": 5,
+            "end": 6
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "a06",
+          "data": {
+            "name": "A06｜凭暗码和钥匙打开检修窗",
+            "config_ref": "objects/text.toml",
+            "information": {
+              "text": "动作：凭暗码和钥匙打开检修窗\n条件：tide_code=true 且 brass_key=true。\n结果：开门并定位内湾，进入 S05；两件物品均不消耗。\n状态变化：无；保留已有状态。\n解释方式：由读者按 paths.md 记录；LayerWeave 不自动判断、禁用选项或保存游戏进度。",
+              "role": "choice",
+              "story_code": "A06",
+              "requires": {
+                "tide_code": true,
+                "brass_key": true
+              },
+              "effects": {}
+            },
+            "begin": 6,
+            "end": 7
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "a07",
+          "data": {
+            "name": "A07｜登上常规灯室",
+            "config_ref": "objects/text.toml",
+            "information": {
+              "text": "动作：登上常规灯室\n条件：无；有两件物品也可以选。\n结果：进入 S06；此路线不再返回检修窗。\n状态变化：无；保留已有状态。\n解释方式：由读者按 paths.md 记录；LayerWeave 不自动判断、禁用选项或保存游戏进度。",
+              "role": "choice",
+              "story_code": "A07",
+              "requires": {},
+              "effects": {}
+            },
+            "begin": 7,
+            "end": 8
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "a08",
+          "data": {
+            "name": "A08｜回应白鹭，带绳索下接船台",
+            "config_ref": "objects/text.toml",
+            "information": {
+              "text": "动作：回应白鹭，带绳索下接船台\n条件：无额外条件；S05 已由 A06 保证两件物品齐全。\n结果：照暗码回应后进入 S07。\n状态变化：无；保留已有状态。\n解释方式：由读者按 paths.md 记录；LayerWeave 不自动判断、禁用选项或保存游戏进度。",
+              "role": "choice",
+              "story_code": "A08",
+              "requires": {},
+              "effects": {}
+            },
+            "begin": 8,
+            "end": 9
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "a09",
+          "data": {
+            "name": "A09｜接住缆绳，让船靠岸",
+            "config_ref": "objects/text.toml",
+            "information": {
+              "text": "动作：接住缆绳，让船靠岸\n条件：无额外条件；必须已经抵达 S07。\n结果：白鹭靠岸，进入 E01。\n状态变化：无；保留已有状态。\n解释方式：由读者按 paths.md 记录；LayerWeave 不自动判断、禁用选项或保存游戏进度。",
+              "role": "choice",
+              "story_code": "A09",
+              "requires": {},
+              "effects": {}
+            },
+            "begin": 9,
+            "end": 10
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "a10",
+          "data": {
+            "name": "A10｜点亮外海航道的旧灯",
+            "config_ref": "objects/text.toml",
+            "information": {
+              "text": "动作：点亮外海航道的旧灯\n条件：无。\n结果：点亮常规灯，进入 E02。\n状态变化：无；保留已有状态。\n解释方式：由读者按 paths.md 记录；LayerWeave 不自动判断、禁用选项或保存游戏进度。",
+              "role": "choice",
+              "story_code": "A10",
+              "requires": {},
+              "effects": {}
+            },
+            "begin": 10,
+            "end": 11
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "a11",
+          "data": {
+            "name": "A11｜留下来，为内湾摇一夜雾钟",
+            "config_ref": "objects/text.toml",
+            "information": {
+              "text": "动作：留下来，为内湾摇一夜雾钟\n条件：无。\n结果：保持主灯熄灭，以雾钟伴船等待天亮，进入 E03。\n状态变化：无；保留已有状态。\n解释方式：由读者按 paths.md 记录；LayerWeave 不自动判断、禁用选项或保存游戏进度。",
+              "role": "choice",
+              "story_code": "A11",
+              "requires": {},
+              "effects": {}
+            },
+            "begin": 11,
+            "end": 12
+          }
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "reference",
+      "data": {
+        "name": "03 人物与线索",
+        "config_ref": "layers/text.toml",
+        "axis": {
+          "unit": "序号",
+          "precision": 1
+        },
+        "tips": "资料关系不改变剧情位置或状态。"
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "rules",
+          "data": {
+            "name": "R00｜阅读约定与两项状态",
+            "config_ref": "objects/text.toml",
+            "information": {
+              "text": "原创短篇《雾灯留给谁》，约 10–15 分钟一条路线。你是一名协助旧灯塔退役的维护员。\n只记录两项布尔状态：tide_code（潮汐暗码）与 brass_key（黄铜钥匙）。起点均为 false；仅选择 A03/A04、A05 时取得。物品不消耗。重读一条路线需自行归零。\n场景正文 → “可选动作”关联 → 动作正文 → “进入场景/进入结局”关联，是实际阅读顺序。资料关联供核对，不当作可行走的出口。\n序号和对象名中的编号用于排布与检索，不是数据库 ID，也不代表自动前往相邻场景。所有剧情分支、汇合由 bind 表达，层的 father 只组织目录。\ninformation.requires/effects 是本案例的说明数据，仅供读者或外部验证脚本解释；不是引擎规则。现有画布不会替读者锁定选项、管理物品或存档。",
+              "role": "guide"
+            },
+            "begin": 1,
+            "end": 2
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "code",
+          "data": {
+            "name": "R01｜线索：潮汐暗码",
+            "config_ref": "objects/text.toml",
+            "information": {
+              "text": "用途：识别白鹭在内湾礁影中的位置，并用手摇灯回应。三短笛是请求；两长一短是内湾回应。\n展示位置：S02 被盐浸过的日志。取得动作：A03 或 A04；tide_code=false → true。仅查看资料条目不算取得。\n使用门槛：A06 同时要求 tide_code=true 与 brass_key=true。去 S03 不会丢失已记住的暗码。",
+              "role": "reference"
+            },
+            "begin": 2,
+            "end": 3
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "key",
+          "data": {
+            "name": "R02｜物品：黄铜钥匙",
+            "config_ref": "objects/text.toml",
+            "information": {
+              "text": "用途：开启背海检修门；钥匙本身不能告诉你船在哪里。\n展示位置：S03 守塔人的值守屋。取得动作：A05；brass_key=false → true。仅查看本资料不会取得。\n使用门槛：A06 同时需要这把钥匙与潮汐暗码；使用后不消耗。",
+              "role": "reference"
+            },
+            "begin": 3,
+            "end": 4
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "keeper",
+          "data": {
+            "name": "R03｜人物：守塔人岑伯",
+            "config_ref": "objects/text.toml",
+            "information": {
+              "text": "旧塔的最后一任守塔人，阿澄的祖父。把钥匙交给维护员，代表他愿意让别人接手；他不掌握白鹭今晚使用的定位暗码。\n主要登场：S03；在 S05 与 S07 之间接力操作手摇灯。三个结局里他的退休计划都不会取消。",
+              "role": "reference"
+            },
+            "begin": 4,
+            "end": 5
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "sailor",
+          "data": {
+            "name": "R04｜人物：白鹭学徒阿澄",
+            "config_ref": "objects/text.toml",
+            "information": {
+              "text": "补给船白鹭上的学徒，岑伯的孙女。她尊重新海图，但知道看不见的暗礁需要谨慎。白鹭船机完好，雾散即可通航，因此三个结局都能合理抵达岸边。\nE01 当夜在信号与接船协作下归航；E02 等天亮由港口拖船带回；E03 听钟等雾散，自行沿岸返回。差别是时间、方式与人的回应，而非死亡奖惩。",
+              "role": "reference"
+            },
+            "begin": 5,
+            "end": 6
+          }
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "endings",
+      "data": {
+        "name": "04 结局",
+        "config_ref": "layers/text.toml",
+        "axis": {
+          "unit": "序号",
+          "precision": 1
+        },
+        "tips": "包含正文与达成条件；没有剧情出边。"
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "e01",
+          "data": {
+            "name": "E01｜归航：把光交到另一只手里",
+            "config_ref": "objects/text.toml",
+            "information": {
+              "text": "白鹭在午夜前靠稳了。阿澄跳上平台，第一句话是：“爷爷，明天教我修那盏手摇灯吧。”岑伯没有回答，只把黄铜钥匙放进她湿透的掌心。\n天亮时，旧塔仍按计划退役。有人拆下了常规灯的铭牌，却留下背海窗和接船台。你在交接簿上写：“地图漏下的地方，由来过的人补上。”\n达成：从 S04 通过 A06（暗码与钥匙同时为 true），再经 S05—A08—S07—A09。仅持有物品不会自动触发此结局。\n余味：退役的不是照顾人的办法；知识与工具都需要有人接手。",
+              "role": "ending",
+              "story_code": "E01"
+            },
+            "begin": 1,
+            "end": 2
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "e02",
+          "data": {
+            "name": "E02｜守职：最后一圈灯光",
+            "config_ref": "objects/text.toml",
+            "information": {
+              "text": "你点着了旧灯。镜片缓缓亮起，像一只终于肯睁开的眼。外海货轮响了一声长笛，向这座守了一生的塔告别。\n白鹭没有在夜里回来。天亮后，港口的拖船从内湾把它带回；没有人受伤，甲板上的人却冻了一夜。阿澄抬头望了一眼旧塔：“我们知道岸上有人，只是那道光没有照到我们。”\n你在最后一张值班表上签了名，又在空白处画了一扇背海的窗。\n达成：S04—A07—S06—A10；状态不限。暗码或钥匙单独持有、两件齐全，都不会阻止这次选择。\n余味：完成职责是真的，职责之外仍有人在等待也是真的。",
+              "role": "ending",
+              "story_code": "E02"
+            },
+            "begin": 2,
+            "end": 3
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "e03",
+          "data": {
+            "name": "E03｜守候：天亮前不离开",
+            "config_ref": "objects/text.toml",
+            "information": {
+              "text": "你没有点灯。雾钟每隔一阵响一次，声音沿着内湾低低滚过去。你不知道白鹭听见了多少，只知道每一次拉绳，自己的手都还能回应这片黑暗。\n天亮时，雾散了。白鹭依着岸线慢慢驶进来，阿澄把一件干外套递给你：“昨晚我们就靠钟声知道，岸没有走远。”岑伯把退休通知折成四折，垫在漏风的窗框下。\n旧塔的最后一夜没有照片。很多年后，你仍记得绳索的粗糙，和第一杯热茶冒起的水汽。\n达成：S04—A07—S06—A11；状态不限。等待是主动选择，不是系统判定失败后的自动结局。\n余味：有些帮助不能立刻解决问题，却能让人知道自己没有被留下。",
+              "role": "ending",
+              "story_code": "E03"
+            },
+            "begin": 3,
+            "end": 4
+          }
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "review-layer",
+      "data": {
+        "name": "05 路径与修改审阅",
+        "config_ref": "layers/text.toml",
+        "axis": {
+          "unit": "序号",
+          "precision": 1
+        },
+        "tips": "路径含剧透；P04 展示放宽条件后的叙事检查。"
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "p01",
+          "data": {
+            "name": "P01｜归航路径",
+            "config_ref": "objects/text.toml",
+            "information": {
+              "text": "S01 → A01 → S02 → A03〔tide_code=true〕→ S03 → A05〔brass_key=true〕→ S04 → A06〔核对两件均 true〕→ S05 → A08 → S07 → A09 → E01。\n初始状态 (false,false)，最终 (true,true)。这是唯一能进入检修窗的前缀；所有箭头对应“可选动作/进入场景/进入结局”的 bind。详见 paths.md 的逐步表。",
+              "role": "path"
+            },
+            "begin": 1,
+            "end": 2
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "p02",
+          "data": {
+            "name": "P02｜守职路径",
+            "config_ref": "objects/text.toml",
+            "information": {
+              "text": "S01 → A02 → S03 → A05〔brass_key=true〕→ S04 → A07 → S06 → A10 → E02。\n初始 (false,false)，旋梯口 (false,true)。没有暗码，A06 不可按故事条件选择；改走 A07 可合法结束。详见 paths.md。",
+              "role": "path"
+            },
+            "begin": 2,
+            "end": 3
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "p03",
+          "data": {
+            "name": "P03｜守候路径",
+            "config_ref": "objects/text.toml",
+            "information": {
+              "text": "S01 → A01 → S02 → A04〔tide_code=true〕→ S04 → A07 → S06 → A11 → E03。\n初始 (false,false)，旋梯口 (true,false)。没有钥匙，A06 不可按故事条件选择；改走 A07 可合法结束。详见 paths.md。",
+              "role": "path"
+            },
+            "begin": 3,
+            "end": 4
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "review",
+          "data": {
+            "name": "P04｜把 A06 改宽之后检查什么",
+            "config_ref": "objects/text.toml",
+            "information": {
+              "text": "只在临时副本，把 A06 的条件从“暗码与钥匙齐全”改为“只需钥匙”，同时把该对象 information.requires 改为 {\"brass_key\": true}；保留其他 information 字段与对象身份。\n检查 P01：仍能到 E01；P02 原路线：仍能到 E02；P03 原路线：仍能到 E03。\n额外走 P02 的前缀 S01—A02—S03—A05—S04，再尝试 A06：现在条件允许，但角色不知道内湾暗码，和 S05 的定位、回应正文冲突。这是必须被审阅发现的叙事缺口，不能仅以“关联可达”判合格。\n检查 P03 的前缀：无钥匙，A06 仍不满足；检查 S04 的三种可达状态：两件齐全、只有钥匙、只有暗码。\n比对 A06 的 ID、所属层及全部入/出关联未变。使用本次更新返回的 operation_id 撤销后，正文、requires 和关联都应回到原状态；新增的钥匙单独通行路线再次不合法。\n这次练习故意暴露问题；公开 project.json 保留原来严谨的双条件。",
+              "role": "review"
+            },
+            "begin": 4,
+            "end": 5
+          }
+        }
+      ]
+    }
+  ],
+  "records": [
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-001",
+      "data": {
+        "tips": "可选动作"
+      },
+      "refs": {
+        "source": {
+          "key": "s01"
+        },
+        "target": {
+          "key": "a01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-002",
+      "data": {
+        "tips": "进入场景"
+      },
+      "refs": {
+        "source": {
+          "key": "a01"
+        },
+        "target": {
+          "key": "s02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-003",
+      "data": {
+        "tips": "可选动作"
+      },
+      "refs": {
+        "source": {
+          "key": "s01"
+        },
+        "target": {
+          "key": "a02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-004",
+      "data": {
+        "tips": "进入场景"
+      },
+      "refs": {
+        "source": {
+          "key": "a02"
+        },
+        "target": {
+          "key": "s03"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-005",
+      "data": {
+        "tips": "可选动作"
+      },
+      "refs": {
+        "source": {
+          "key": "s02"
+        },
+        "target": {
+          "key": "a03"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-006",
+      "data": {
+        "tips": "进入场景"
+      },
+      "refs": {
+        "source": {
+          "key": "a03"
+        },
+        "target": {
+          "key": "s03"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-007",
+      "data": {
+        "tips": "可选动作"
+      },
+      "refs": {
+        "source": {
+          "key": "s02"
+        },
+        "target": {
+          "key": "a04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-008",
+      "data": {
+        "tips": "进入场景"
+      },
+      "refs": {
+        "source": {
+          "key": "a04"
+        },
+        "target": {
+          "key": "s04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-009",
+      "data": {
+        "tips": "可选动作"
+      },
+      "refs": {
+        "source": {
+          "key": "s03"
+        },
+        "target": {
+          "key": "a05"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-010",
+      "data": {
+        "tips": "进入场景"
+      },
+      "refs": {
+        "source": {
+          "key": "a05"
+        },
+        "target": {
+          "key": "s04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-011",
+      "data": {
+        "tips": "可选动作"
+      },
+      "refs": {
+        "source": {
+          "key": "s04"
+        },
+        "target": {
+          "key": "a06"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-012",
+      "data": {
+        "tips": "进入场景"
+      },
+      "refs": {
+        "source": {
+          "key": "a06"
+        },
+        "target": {
+          "key": "s05"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-013",
+      "data": {
+        "tips": "可选动作"
+      },
+      "refs": {
+        "source": {
+          "key": "s04"
+        },
+        "target": {
+          "key": "a07"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-014",
+      "data": {
+        "tips": "进入场景"
+      },
+      "refs": {
+        "source": {
+          "key": "a07"
+        },
+        "target": {
+          "key": "s06"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-015",
+      "data": {
+        "tips": "可选动作"
+      },
+      "refs": {
+        "source": {
+          "key": "s05"
+        },
+        "target": {
+          "key": "a08"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-016",
+      "data": {
+        "tips": "进入场景"
+      },
+      "refs": {
+        "source": {
+          "key": "a08"
+        },
+        "target": {
+          "key": "s07"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-017",
+      "data": {
+        "tips": "可选动作"
+      },
+      "refs": {
+        "source": {
+          "key": "s07"
+        },
+        "target": {
+          "key": "a09"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-018",
+      "data": {
+        "tips": "进入结局"
+      },
+      "refs": {
+        "source": {
+          "key": "a09"
+        },
+        "target": {
+          "key": "e01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-019",
+      "data": {
+        "tips": "可选动作"
+      },
+      "refs": {
+        "source": {
+          "key": "s06"
+        },
+        "target": {
+          "key": "a10"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-020",
+      "data": {
+        "tips": "进入结局"
+      },
+      "refs": {
+        "source": {
+          "key": "a10"
+        },
+        "target": {
+          "key": "e02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-021",
+      "data": {
+        "tips": "可选动作"
+      },
+      "refs": {
+        "source": {
+          "key": "s06"
+        },
+        "target": {
+          "key": "a11"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-022",
+      "data": {
+        "tips": "进入结局"
+      },
+      "refs": {
+        "source": {
+          "key": "a11"
+        },
+        "target": {
+          "key": "e03"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-023",
+      "data": {
+        "tips": "取得线索"
+      },
+      "refs": {
+        "source": {
+          "key": "a03"
+        },
+        "target": {
+          "key": "code"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-024",
+      "data": {
+        "tips": "取得线索"
+      },
+      "refs": {
+        "source": {
+          "key": "a04"
+        },
+        "target": {
+          "key": "code"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-025",
+      "data": {
+        "tips": "取得物品"
+      },
+      "refs": {
+        "source": {
+          "key": "a05"
+        },
+        "target": {
+          "key": "key"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-026",
+      "data": {
+        "tips": "条件依据：需要潮汐暗码"
+      },
+      "refs": {
+        "source": {
+          "key": "a06"
+        },
+        "target": {
+          "key": "code"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-027",
+      "data": {
+        "tips": "条件依据：需要黄铜钥匙"
+      },
+      "refs": {
+        "source": {
+          "key": "a06"
+        },
+        "target": {
+          "key": "key"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-028",
+      "data": {
+        "tips": "线索出现位置"
+      },
+      "refs": {
+        "source": {
+          "key": "code"
+        },
+        "target": {
+          "key": "s02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-029",
+      "data": {
+        "tips": "物品出现位置"
+      },
+      "refs": {
+        "source": {
+          "key": "key"
+        },
+        "target": {
+          "key": "s03"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-030",
+      "data": {
+        "tips": "人物登场"
+      },
+      "refs": {
+        "source": {
+          "key": "keeper"
+        },
+        "target": {
+          "key": "s03"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-031",
+      "data": {
+        "tips": "人物登场"
+      },
+      "refs": {
+        "source": {
+          "key": "sailor"
+        },
+        "target": {
+          "key": "s07"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-032",
+      "data": {
+        "tips": "路径起点（说明）"
+      },
+      "refs": {
+        "source": {
+          "key": "p01"
+        },
+        "target": {
+          "key": "s01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-033",
+      "data": {
+        "tips": "路径终点（说明）"
+      },
+      "refs": {
+        "source": {
+          "key": "p01"
+        },
+        "target": {
+          "key": "e01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-034",
+      "data": {
+        "tips": "路径起点（说明）"
+      },
+      "refs": {
+        "source": {
+          "key": "p02"
+        },
+        "target": {
+          "key": "s01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-035",
+      "data": {
+        "tips": "路径终点（说明）"
+      },
+      "refs": {
+        "source": {
+          "key": "p02"
+        },
+        "target": {
+          "key": "e02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-036",
+      "data": {
+        "tips": "路径起点（说明）"
+      },
+      "refs": {
+        "source": {
+          "key": "p03"
+        },
+        "target": {
+          "key": "s01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-037",
+      "data": {
+        "tips": "路径终点（说明）"
+      },
+      "refs": {
+        "source": {
+          "key": "p03"
+        },
+        "target": {
+          "key": "e03"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-038",
+      "data": {
+        "tips": "修改对象（审阅）"
+      },
+      "refs": {
+        "source": {
+          "key": "review"
+        },
+        "target": {
+          "key": "a06"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-039",
+      "data": {
+        "tips": "检查汇合状态（审阅）"
+      },
+      "refs": {
+        "source": {
+          "key": "review"
+        },
+        "target": {
+          "key": "s04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-040",
+      "data": {
+        "tips": "需要重新走查"
+      },
+      "refs": {
+        "source": {
+          "key": "review"
+        },
+        "target": {
+          "key": "p01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-041",
+      "data": {
+        "tips": "需要重新走查"
+      },
+      "refs": {
+        "source": {
+          "key": "review"
+        },
+        "target": {
+          "key": "p02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-042",
+      "data": {
+        "tips": "需要重新走查"
+      },
+      "refs": {
+        "source": {
+          "key": "review"
+        },
+        "target": {
+          "key": "p03"
+        }
+      }
+    }
+  ]
+}

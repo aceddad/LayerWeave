@@ -1,0 +1,2392 @@
+{
+  "format_version": 1,
+  "name": "借一点晴天｜原创两页漫画",
+  "when": "可阅读、可查询、可编辑的漫画案例；素材随目录分发",
+  "preserve_positions": true,
+  "project": {
+    "op": "add",
+    "data": {
+      "name": "借一点晴天",
+      "tips": "两页八格。页码、全篇格序和资料条目各自明确；以标准 bind 关联剧情、对白、人物、画面、修订与审阅。所有新增身份由导入器发放。"
+    }
+  },
+  "items": [
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "pages",
+      "data": {
+        "name": "完整页面",
+        "config_ref": "layers/image.toml",
+        "tips": "页码 p 占 [p,p+1)。读整页图按左上、右上、左下、右下；入向关联列出该页分格。",
+        "axis": {
+          "unit": "页码",
+          "precision": 1
+        }
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "page-1",
+          "data": {
+            "name": "第1页｜误会藏在伞后",
+            "config_ref": "objects/image.toml",
+            "begin": 1,
+            "end": 2,
+            "information": {
+              "source": "assets/page-01.svg",
+              "page_number": 1,
+              "reading_order": "左上、右上、左下、右下",
+              "version": "current",
+              "production_status": "ready"
+            },
+            "tips": ""
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "page-2",
+          "data": {
+            "name": "第2页｜晴天可以一起借",
+            "config_ref": "objects/image.toml",
+            "begin": 2,
+            "end": 3,
+            "information": {
+              "source": "assets/page-02.svg",
+              "page_number": 2,
+              "reading_order": "左上、右上、左下、右下",
+              "version": "current",
+              "production_status": "ready"
+            },
+            "tips": ""
+          }
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "sequence",
+      "data": {
+        "name": "全篇分格",
+        "config_ref": "layers/text.toml",
+        "tips": "全篇 1–8 格，每格 [n,n+1)。第1页是1–4，第2页是5–8；子层共享格序轴，同格多句共享区间。",
+        "axis": {
+          "unit": "格序",
+          "precision": 1
+        }
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "panel-1",
+          "data": {
+            "name": "P1-1｜空了的挂钩",
+            "config_ref": "objects/text.toml",
+            "begin": 1,
+            "end": 2,
+            "information": {
+              "text": "动作：社区育苗室门口，小禾站在左侧，看向空挂钩；门外大雨。黄色外套、红发绳首次亮相。\n叙事作用：建立地点、人物与失物悬念",
+              "page_number": 1,
+              "panel_on_page": 1,
+              "global_panel_order": 1,
+              "role": "建立地点、人物与失物悬念"
+            },
+            "tips": "全篇格序 n 占 [n,n+1)；非秒、非数据库 ID。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "panel-2",
+          "data": {
+            "name": "P1-2｜借走的红伞",
+            "config_ref": "objects/text.toml",
+            "begin": 2,
+            "end": 3,
+            "information": {
+              "text": "动作：小禾从左追上，阿川在右侧握着红伞；他的身体挡住长凳上的苗盆，先不揭示借伞缘由。\n叙事作用：给出误会对象，暂藏动机",
+              "page_number": 1,
+              "panel_on_page": 2,
+              "global_panel_order": 2,
+              "role": "给出误会对象，暂藏动机"
+            },
+            "tips": "全篇格序 n 占 [n,n+1)；非秒、非数据库 ID。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "panel-3",
+          "data": {
+            "name": "P1-3｜没听完的话",
+            "config_ref": "objects/text.toml",
+            "begin": 3,
+            "end": 4,
+            "information": {
+              "text": "动作：小禾停下摊手，眉头微皱；阿川仍在右边，示意她看伞下。红伞没有离开长凳。\n叙事作用：放大需求冲突，为转场蓄势",
+              "page_number": 1,
+              "panel_on_page": 3,
+              "global_panel_order": 3,
+              "role": "放大需求冲突，为转场蓄势"
+            },
+            "tips": "全篇格序 n 占 [n,n+1)；非秒、非数据库 ID。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "panel-4",
+          "data": {
+            "name": "P1-4｜伞下的秘密",
+            "config_ref": "objects/text.toml",
+            "begin": 4,
+            "end": 5,
+            "information": {
+              "text": "动作：切到右侧长凳近景：红伞罩住两盆受雨倾斜的幼苗，阿川在画面右侧握伞杆。\n叙事作用：页尾揭示，改写读者判断",
+              "page_number": 1,
+              "panel_on_page": 4,
+              "global_panel_order": 4,
+              "role": "页尾揭示，改写读者判断"
+            },
+            "tips": "全篇格序 n 占 [n,n+1)；非秒、非数据库 ID。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "panel-5",
+          "data": {
+            "name": "P2-1｜把话说清楚",
+            "config_ref": "objects/text.toml",
+            "begin": 5,
+            "end": 6,
+            "information": {
+              "text": "动作：拉回中景，小禾在左、阿川在右；红伞仍在长凳上方、阿川同一只手握杆，两盆幼苗保持左右位置。\n叙事作用：承接揭示，双向解释和道歉",
+              "page_number": 2,
+              "panel_on_page": 1,
+              "global_panel_order": 5,
+              "role": "承接揭示，双向解释和道歉"
+            },
+            "tips": "全篇格序 n 占 [n,n+1)；非秒、非数据库 ID。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "panel-6",
+          "data": {
+            "name": "P2-2｜一起搬",
+            "config_ref": "objects/text.toml",
+            "begin": 6,
+            "end": 7,
+            "information": {
+              "text": "动作：小禾双手托起苗盘往左侧育苗室搬，阿川将红伞移到苗盘和小禾上方，跟着向左移动。\n叙事作用：用协作动作落实理解",
+              "page_number": 2,
+              "panel_on_page": 2,
+              "global_panel_order": 6,
+              "role": "用协作动作落实理解"
+            },
+            "tips": "全篇格序 n 占 [n,n+1)；非秒、非数据库 ID。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "panel-7",
+          "data": {
+            "name": "P2-3｜下一次的约定",
+            "config_ref": "objects/text.toml",
+            "begin": 7,
+            "end": 8,
+            "information": {
+              "text": "动作：两盆苗已搬进门边屋檐下的长凳；小禾在左、阿川在右，红伞收拢靠在右边。两人相视微笑。\n叙事作用：把和解变成未来的沟通约定",
+              "page_number": 2,
+              "panel_on_page": 3,
+              "global_panel_order": 7,
+              "role": "把和解变成未来的沟通约定"
+            },
+            "tips": "全篇格序 n 占 [n,n+1)；非秒、非数据库 ID。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "panel-8",
+          "data": {
+            "name": "P2-4｜借一点晴天",
+            "config_ref": "objects/text.toml",
+            "begin": 8,
+            "end": 9,
+            "information": {
+              "text": "动作：两盆苗留在屋檐下的长凳上；两人共撑红伞往画面左侧离开，故事停在共享遮蔽的动作上。\n叙事作用：回收红伞意象，结束关系弧线",
+              "page_number": 2,
+              "panel_on_page": 4,
+              "global_panel_order": 8,
+              "role": "回收红伞意象，结束关系弧线"
+            },
+            "tips": "全篇格序 n 占 [n,n+1)；非秒、非数据库 ID。"
+          }
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "current-art",
+          "data": {
+            "name": "当前分格画面",
+            "config_ref": "layers/image.toml",
+            "tips": ""
+          },
+          "children": [
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "art-1",
+              "data": {
+                "name": "画面01｜当前稿",
+                "config_ref": "objects/image.toml",
+                "begin": 1,
+                "end": 2,
+                "information": {
+                  "source": "assets/panel-01.svg",
+                  "version": "current",
+                  "production_status": "ready"
+                },
+                "tips": ""
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "art-2",
+              "data": {
+                "name": "画面02｜当前稿",
+                "config_ref": "objects/image.toml",
+                "begin": 2,
+                "end": 3,
+                "information": {
+                  "source": "assets/panel-02.svg",
+                  "version": "current",
+                  "production_status": "ready"
+                },
+                "tips": ""
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "art-3",
+              "data": {
+                "name": "画面03｜当前稿",
+                "config_ref": "objects/image.toml",
+                "begin": 3,
+                "end": 4,
+                "information": {
+                  "source": "assets/panel-03.svg",
+                  "version": "current",
+                  "production_status": "ready"
+                },
+                "tips": ""
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "art-4",
+              "data": {
+                "name": "画面04｜当前稿",
+                "config_ref": "objects/image.toml",
+                "begin": 4,
+                "end": 5,
+                "information": {
+                  "source": "assets/panel-04.svg",
+                  "version": "current",
+                  "production_status": "ready"
+                },
+                "tips": ""
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "art-5",
+              "data": {
+                "name": "画面05｜当前稿",
+                "config_ref": "objects/image.toml",
+                "begin": 5,
+                "end": 6,
+                "information": {
+                  "source": "assets/panel-05.svg",
+                  "version": "current",
+                  "production_status": "ready"
+                },
+                "tips": ""
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "art-6",
+              "data": {
+                "name": "画面06｜当前稿",
+                "config_ref": "objects/image.toml",
+                "begin": 6,
+                "end": 7,
+                "information": {
+                  "source": "assets/panel-06.svg",
+                  "version": "current",
+                  "production_status": "ready"
+                },
+                "tips": ""
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "art-7",
+              "data": {
+                "name": "画面07｜当前稿",
+                "config_ref": "objects/image.toml",
+                "begin": 7,
+                "end": 8,
+                "information": {
+                  "source": "assets/panel-07.svg",
+                  "version": "current",
+                  "production_status": "ready"
+                },
+                "tips": ""
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "art-8",
+              "data": {
+                "name": "画面08｜当前稿",
+                "config_ref": "objects/image.toml",
+                "begin": 8,
+                "end": 9,
+                "information": {
+                  "source": "assets/panel-08.svg",
+                  "version": "current",
+                  "production_status": "ready"
+                },
+                "tips": ""
+              }
+            }
+          ]
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "dialogue",
+          "data": {
+            "name": "实际对白",
+            "config_ref": "layers/text.toml",
+            "tips": ""
+          },
+          "children": [
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "line-1-1",
+              "data": {
+                "name": "对白01-1｜小禾",
+                "config_ref": "objects/text.toml",
+                "begin": 1,
+                "end": 2,
+                "information": {
+                  "text": "雨这么大……我的红伞呢？",
+                  "speaker": "小禾",
+                  "reading_order": 1,
+                  "version": "current"
+                },
+                "tips": "同格多句共享格区间，按 reading_order 排序；旁白也作为可关联的文字记录。"
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "line-2-1",
+              "data": {
+                "name": "对白02-1｜小禾",
+                "config_ref": "objects/text.toml",
+                "begin": 2,
+                "end": 3,
+                "information": {
+                  "text": "阿川，你拿了我的伞？",
+                  "speaker": "小禾",
+                  "reading_order": 1,
+                  "version": "current"
+                },
+                "tips": "同格多句共享格区间，按 reading_order 排序；旁白也作为可关联的文字记录。"
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "line-2-2",
+              "data": {
+                "name": "对白02-2｜阿川",
+                "config_ref": "objects/text.toml",
+                "begin": 2,
+                "end": 3,
+                "information": {
+                  "text": "我先借一下！",
+                  "speaker": "阿川",
+                  "reading_order": 2,
+                  "version": "current"
+                },
+                "tips": "同格多句共享格区间，按 reading_order 排序；旁白也作为可关联的文字记录。"
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "line-3-1",
+              "data": {
+                "name": "对白03-1｜小禾",
+                "config_ref": "objects/text.toml",
+                "begin": 3,
+                "end": 4,
+                "information": {
+                  "text": "可是，我也要出门呀。",
+                  "speaker": "小禾",
+                  "reading_order": 1,
+                  "version": "current"
+                },
+                "tips": "同格多句共享格区间，按 reading_order 排序；旁白也作为可关联的文字记录。"
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "line-3-2",
+              "data": {
+                "name": "对白03-2｜阿川",
+                "config_ref": "objects/text.toml",
+                "begin": 3,
+                "end": 4,
+                "information": {
+                  "text": "等一下，你看——",
+                  "speaker": "阿川",
+                  "reading_order": 2,
+                  "version": "current"
+                },
+                "tips": "同格多句共享格区间，按 reading_order 排序；旁白也作为可关联的文字记录。"
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "line-4-1",
+              "data": {
+                "name": "对白04-1｜阿川",
+                "config_ref": "objects/text.toml",
+                "begin": 4,
+                "end": 5,
+                "information": {
+                  "text": "它们快被雨打倒了。",
+                  "speaker": "阿川",
+                  "reading_order": 1,
+                  "version": "current"
+                },
+                "tips": "同格多句共享格区间，按 reading_order 排序；旁白也作为可关联的文字记录。"
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "line-4-2",
+              "data": {
+                "name": "对白04-2｜旁白",
+                "config_ref": "objects/text.toml",
+                "begin": 4,
+                "end": 5,
+                "information": {
+                  "text": "原来，伞下还有两个小家伙。",
+                  "speaker": "旁白",
+                  "reading_order": 2,
+                  "version": "current"
+                },
+                "tips": "同格多句共享格区间，按 reading_order 排序；旁白也作为可关联的文字记录。"
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "line-5-1",
+              "data": {
+                "name": "对白05-1｜阿川",
+                "config_ref": "objects/text.toml",
+                "begin": 5,
+                "end": 6,
+                "information": {
+                  "text": "对不起，刚才没来得及问。",
+                  "speaker": "阿川",
+                  "reading_order": 1,
+                  "version": "current"
+                },
+                "tips": "同格多句共享格区间，按 reading_order 排序；旁白也作为可关联的文字记录。"
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "line-5-2",
+              "data": {
+                "name": "对白05-2｜小禾",
+                "config_ref": "objects/text.toml",
+                "begin": 5,
+                "end": 6,
+                "information": {
+                  "text": "原来你在护着小苗。",
+                  "speaker": "小禾",
+                  "reading_order": 2,
+                  "version": "current"
+                },
+                "tips": "同格多句共享格区间，按 reading_order 排序；旁白也作为可关联的文字记录。"
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "line-6-1",
+              "data": {
+                "name": "对白06-1｜小禾",
+                "config_ref": "objects/text.toml",
+                "begin": 6,
+                "end": 7,
+                "information": {
+                  "text": "我来搬，你撑稳。",
+                  "speaker": "小禾",
+                  "reading_order": 1,
+                  "version": "current"
+                },
+                "tips": "同格多句共享格区间，按 reading_order 排序；旁白也作为可关联的文字记录。"
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "line-6-2",
+              "data": {
+                "name": "对白06-2｜阿川",
+                "config_ref": "objects/text.toml",
+                "begin": 6,
+                "end": 7,
+                "information": {
+                  "text": "好，慢慢来。",
+                  "speaker": "阿川",
+                  "reading_order": 2,
+                  "version": "current"
+                },
+                "tips": "同格多句共享格区间，按 reading_order 排序；旁白也作为可关联的文字记录。"
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "line-7-1",
+              "data": {
+                "name": "对白07-1｜小禾",
+                "config_ref": "objects/text.toml",
+                "begin": 7,
+                "end": 8,
+                "information": {
+                  "text": "下次先喊我，我们一起搬。",
+                  "speaker": "小禾",
+                  "reading_order": 1,
+                  "version": "current"
+                },
+                "tips": "同格多句共享格区间，按 reading_order 排序；旁白也作为可关联的文字记录。"
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "line-7-2",
+              "data": {
+                "name": "对白07-2｜阿川",
+                "config_ref": "objects/text.toml",
+                "begin": 7,
+                "end": 8,
+                "information": {
+                  "text": "一定。",
+                  "speaker": "阿川",
+                  "reading_order": 2,
+                  "version": "current"
+                },
+                "tips": "同格多句共享格区间，按 reading_order 排序；旁白也作为可关联的文字记录。"
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "line-8-1",
+              "data": {
+                "name": "对白08-1｜小禾",
+                "config_ref": "objects/text.toml",
+                "begin": 8,
+                "end": 9,
+                "information": {
+                  "text": "走吧，晴天借给它们。",
+                  "speaker": "小禾",
+                  "reading_order": 1,
+                  "version": "current"
+                },
+                "tips": "同格多句共享格区间，按 reading_order 排序；旁白也作为可关联的文字记录。"
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "line-8-2",
+              "data": {
+                "name": "对白08-2｜阿川",
+                "config_ref": "objects/text.toml",
+                "begin": 8,
+                "end": 9,
+                "information": {
+                  "text": "伞，我们一起用。",
+                  "speaker": "阿川",
+                  "reading_order": 2,
+                  "version": "current"
+                },
+                "tips": "同格多句共享格区间，按 reading_order 排序；旁白也作为可关联的文字记录。"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "settings",
+      "data": {
+        "name": "剧情、人物与审阅",
+        "config_ref": "layers/text.toml",
+        "tips": "独立资料序号，不是页码或格序。审阅为普通文字对象，通过标准 bind 链接两格；普通版也可查询。",
+        "axis": {
+          "unit": "条目",
+          "precision": 1
+        }
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "story",
+          "data": {
+            "name": "故事梗概｜借一点晴天",
+            "config_ref": "objects/text.toml",
+            "begin": 1,
+            "end": 2,
+            "information": {
+              "text": "大雨中，小禾发现红伞不见了。她追上借伞的阿川，以为自己的出门需求被忽略。伞下两盆快被打倒的幼苗让误会翻转。阿川为没先询问道歉，小禾加入搬苗；两人约定下次先沟通，最后共撑红伞出门。主题：好意值得说明，理解可以变成共同行动。"
+            },
+            "tips": ""
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "character-he",
+          "data": {
+            "name": "人物｜小禾",
+            "config_ref": "objects/text.toml",
+            "begin": 2,
+            "end": 3,
+            "information": {
+              "text": "黄色外套、深色马尾、红发绳；主人公。红伞的所有者，急着出门。先误会后主动帮忙。服装、发绳与发型全篇固定。"
+            },
+            "tips": ""
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "character-chuan",
+          "data": {
+            "name": "人物｜阿川",
+            "config_ref": "objects/text.toml",
+            "begin": 3,
+            "end": 4,
+            "information": {
+              "text": "青绿色外套、短发、圆角眼镜；小禾的邻居。为保护幼苗借伞，承认没有先询问。第4、5格握杆手及幼苗左右关系保持一致。"
+            },
+            "tips": ""
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "setting",
+          "data": {
+            "name": "场景｜社区育苗室门外",
+            "config_ref": "objects/text.toml",
+            "begin": 4,
+            "end": 5,
+            "information": {
+              "text": "单一地点：左侧是挂有育苗室牌子的门，右侧是室外长凳。两盆幼苗起初在右边的雨中；第6格搬向左侧门口，第7格已到门边屋檐下。红伞作为视觉锚点贯穿八格。第4格为近景，第5格拉远，人物没有交换位置。"
+            },
+            "tips": ""
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "revision",
+          "data": {
+            "name": "修订理由｜从许可到协作",
+            "config_ref": "objects/text.toml",
+            "begin": 5,
+            "end": 6,
+            "information": {
+              "text": "旧句：算了，这次原谅你。\n当前采用：下次先喊我，我们一起搬。\n理由：旧句延续单方面评判，削弱第6格已建立的合作；新句承认需要先沟通，同时给出下次共同解决问题的办法。第7格人物和位置不变，只替换小禾气泡文字。当前画面07及第二页均使用新句。",
+              "adopted_version": "current"
+            },
+            "tips": ""
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "review",
+          "data": {
+            "name": "审阅｜第4格→第5格的伞与幼苗",
+            "config_ref": "objects/text.toml",
+            "begin": 6,
+            "end": 7,
+            "information": {
+              "text": "请对照 P1-4「伞下的秘密」与 P2-1「把话说清楚」：阿川握伞的手是否延续？红伞是否仍遮住长凳上的两盆苗？镜头从近景拉远，小禾仍从左侧看入，阿川在伞右侧，以画面左侧的手臂握杆，没有越轴换位。先沿两条关联跳到两格，再开当前画面判断；本意见保留待读者审阅。",
+              "status": "open",
+              "author": "案例编辑"
+            },
+            "tips": ""
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "layout-task",
+          "data": {
+            "name": "制作说明｜改对白后重新排版",
+            "config_ref": "objects/text.toml",
+            "begin": 7,
+            "end": 8,
+            "information": {
+              "text": "SVG 和整页图是制作时的静态快照。修改对白07-1后，沿「对白→分格→页面」可定位第二页；应把画面07和第二页标为 needs_relayout，再编辑对应 SVG 并重新生成整页。数据库撤销不会撤销已经改写的外部图片文件。"
+            },
+            "tips": ""
+          }
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "drafts",
+      "data": {
+        "name": "候选与旧稿",
+        "config_ref": "layers/text.toml",
+        "tips": "旧稿保留在第7格同坐标，明确未采用；不会自动从视图隐藏。",
+        "axis": {
+          "unit": "格序",
+          "precision": 1
+        }
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "draft-line",
+          "data": {
+            "name": "对白07-1｜旧稿未采用",
+            "config_ref": "objects/text.toml",
+            "begin": 7,
+            "end": 8,
+            "information": {
+              "text": "算了，这次原谅你。",
+              "speaker": "小禾",
+              "version": "draft",
+              "adopted": false
+            },
+            "tips": ""
+          }
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "draft-images",
+          "data": {
+            "name": "候选画面",
+            "config_ref": "layers/image.toml",
+            "tips": ""
+          },
+          "children": [
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "draft-art",
+              "data": {
+                "name": "画面07｜旧稿未采用",
+                "config_ref": "objects/image.toml",
+                "begin": 7,
+                "end": 8,
+                "information": {
+                  "source": "assets/panel-07-draft.svg",
+                  "version": "draft",
+                  "adopted": false
+                },
+                "tips": ""
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "records": [
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-001",
+      "data": {
+        "tips": "属于第1页，第1格；整页需随当前格修改而重新排版"
+      },
+      "refs": {
+        "source": {
+          "key": "panel-1"
+        },
+        "target": {
+          "key": "page-1"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-002",
+      "data": {
+        "tips": "当前采用的分格画面；SVG 内对白是排版快照"
+      },
+      "refs": {
+        "source": {
+          "key": "panel-1"
+        },
+        "target": {
+          "key": "art-1"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-003",
+      "data": {
+        "tips": "此素材已嵌入该整页图；修改后须重新制作整页"
+      },
+      "refs": {
+        "source": {
+          "key": "art-1"
+        },
+        "target": {
+          "key": "page-1"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-004",
+      "data": {
+        "tips": "对白所在分格"
+      },
+      "refs": {
+        "source": {
+          "key": "line-1-1"
+        },
+        "target": {
+          "key": "panel-1"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-005",
+      "data": {
+        "tips": "该句已经排入此当前画面；文本更新不会自动改写 SVG"
+      },
+      "refs": {
+        "source": {
+          "key": "line-1-1"
+        },
+        "target": {
+          "key": "art-1"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-006",
+      "data": {
+        "tips": "说话人设定"
+      },
+      "refs": {
+        "source": {
+          "key": "line-1-1"
+        },
+        "target": {
+          "key": "character-he"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-007",
+      "data": {
+        "tips": "下一格；按全篇格序阅读"
+      },
+      "refs": {
+        "source": {
+          "key": "panel-1"
+        },
+        "target": {
+          "key": "panel-2"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-008",
+      "data": {
+        "tips": "人物左右关系及场景依据"
+      },
+      "refs": {
+        "source": {
+          "key": "panel-1"
+        },
+        "target": {
+          "key": "setting"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-009",
+      "data": {
+        "tips": "属于第1页，第2格；整页需随当前格修改而重新排版"
+      },
+      "refs": {
+        "source": {
+          "key": "panel-2"
+        },
+        "target": {
+          "key": "page-1"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-010",
+      "data": {
+        "tips": "当前采用的分格画面；SVG 内对白是排版快照"
+      },
+      "refs": {
+        "source": {
+          "key": "panel-2"
+        },
+        "target": {
+          "key": "art-2"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-011",
+      "data": {
+        "tips": "此素材已嵌入该整页图；修改后须重新制作整页"
+      },
+      "refs": {
+        "source": {
+          "key": "art-2"
+        },
+        "target": {
+          "key": "page-1"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-012",
+      "data": {
+        "tips": "对白所在分格"
+      },
+      "refs": {
+        "source": {
+          "key": "line-2-1"
+        },
+        "target": {
+          "key": "panel-2"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-013",
+      "data": {
+        "tips": "该句已经排入此当前画面；文本更新不会自动改写 SVG"
+      },
+      "refs": {
+        "source": {
+          "key": "line-2-1"
+        },
+        "target": {
+          "key": "art-2"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-014",
+      "data": {
+        "tips": "说话人设定"
+      },
+      "refs": {
+        "source": {
+          "key": "line-2-1"
+        },
+        "target": {
+          "key": "character-he"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-015",
+      "data": {
+        "tips": "对白所在分格"
+      },
+      "refs": {
+        "source": {
+          "key": "line-2-2"
+        },
+        "target": {
+          "key": "panel-2"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-016",
+      "data": {
+        "tips": "该句已经排入此当前画面；文本更新不会自动改写 SVG"
+      },
+      "refs": {
+        "source": {
+          "key": "line-2-2"
+        },
+        "target": {
+          "key": "art-2"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-017",
+      "data": {
+        "tips": "说话人设定"
+      },
+      "refs": {
+        "source": {
+          "key": "line-2-2"
+        },
+        "target": {
+          "key": "character-chuan"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-018",
+      "data": {
+        "tips": "下一格；按全篇格序阅读"
+      },
+      "refs": {
+        "source": {
+          "key": "panel-2"
+        },
+        "target": {
+          "key": "panel-3"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-019",
+      "data": {
+        "tips": "人物左右关系及场景依据"
+      },
+      "refs": {
+        "source": {
+          "key": "panel-2"
+        },
+        "target": {
+          "key": "setting"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-020",
+      "data": {
+        "tips": "属于第1页，第3格；整页需随当前格修改而重新排版"
+      },
+      "refs": {
+        "source": {
+          "key": "panel-3"
+        },
+        "target": {
+          "key": "page-1"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-021",
+      "data": {
+        "tips": "当前采用的分格画面；SVG 内对白是排版快照"
+      },
+      "refs": {
+        "source": {
+          "key": "panel-3"
+        },
+        "target": {
+          "key": "art-3"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-022",
+      "data": {
+        "tips": "此素材已嵌入该整页图；修改后须重新制作整页"
+      },
+      "refs": {
+        "source": {
+          "key": "art-3"
+        },
+        "target": {
+          "key": "page-1"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-023",
+      "data": {
+        "tips": "对白所在分格"
+      },
+      "refs": {
+        "source": {
+          "key": "line-3-1"
+        },
+        "target": {
+          "key": "panel-3"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-024",
+      "data": {
+        "tips": "该句已经排入此当前画面；文本更新不会自动改写 SVG"
+      },
+      "refs": {
+        "source": {
+          "key": "line-3-1"
+        },
+        "target": {
+          "key": "art-3"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-025",
+      "data": {
+        "tips": "说话人设定"
+      },
+      "refs": {
+        "source": {
+          "key": "line-3-1"
+        },
+        "target": {
+          "key": "character-he"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-026",
+      "data": {
+        "tips": "对白所在分格"
+      },
+      "refs": {
+        "source": {
+          "key": "line-3-2"
+        },
+        "target": {
+          "key": "panel-3"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-027",
+      "data": {
+        "tips": "该句已经排入此当前画面；文本更新不会自动改写 SVG"
+      },
+      "refs": {
+        "source": {
+          "key": "line-3-2"
+        },
+        "target": {
+          "key": "art-3"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-028",
+      "data": {
+        "tips": "说话人设定"
+      },
+      "refs": {
+        "source": {
+          "key": "line-3-2"
+        },
+        "target": {
+          "key": "character-chuan"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-029",
+      "data": {
+        "tips": "下一格；按全篇格序阅读"
+      },
+      "refs": {
+        "source": {
+          "key": "panel-3"
+        },
+        "target": {
+          "key": "panel-4"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-030",
+      "data": {
+        "tips": "人物左右关系及场景依据"
+      },
+      "refs": {
+        "source": {
+          "key": "panel-3"
+        },
+        "target": {
+          "key": "setting"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-031",
+      "data": {
+        "tips": "属于第1页，第4格；整页需随当前格修改而重新排版"
+      },
+      "refs": {
+        "source": {
+          "key": "panel-4"
+        },
+        "target": {
+          "key": "page-1"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-032",
+      "data": {
+        "tips": "当前采用的分格画面；SVG 内对白是排版快照"
+      },
+      "refs": {
+        "source": {
+          "key": "panel-4"
+        },
+        "target": {
+          "key": "art-4"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-033",
+      "data": {
+        "tips": "此素材已嵌入该整页图；修改后须重新制作整页"
+      },
+      "refs": {
+        "source": {
+          "key": "art-4"
+        },
+        "target": {
+          "key": "page-1"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-034",
+      "data": {
+        "tips": "对白所在分格"
+      },
+      "refs": {
+        "source": {
+          "key": "line-4-1"
+        },
+        "target": {
+          "key": "panel-4"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-035",
+      "data": {
+        "tips": "该句已经排入此当前画面；文本更新不会自动改写 SVG"
+      },
+      "refs": {
+        "source": {
+          "key": "line-4-1"
+        },
+        "target": {
+          "key": "art-4"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-036",
+      "data": {
+        "tips": "说话人设定"
+      },
+      "refs": {
+        "source": {
+          "key": "line-4-1"
+        },
+        "target": {
+          "key": "character-chuan"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-037",
+      "data": {
+        "tips": "对白所在分格"
+      },
+      "refs": {
+        "source": {
+          "key": "line-4-2"
+        },
+        "target": {
+          "key": "panel-4"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-038",
+      "data": {
+        "tips": "该句已经排入此当前画面；文本更新不会自动改写 SVG"
+      },
+      "refs": {
+        "source": {
+          "key": "line-4-2"
+        },
+        "target": {
+          "key": "art-4"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-039",
+      "data": {
+        "tips": "下一格；按全篇格序阅读"
+      },
+      "refs": {
+        "source": {
+          "key": "panel-4"
+        },
+        "target": {
+          "key": "panel-5"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-040",
+      "data": {
+        "tips": "人物左右关系及场景依据"
+      },
+      "refs": {
+        "source": {
+          "key": "panel-4"
+        },
+        "target": {
+          "key": "setting"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-041",
+      "data": {
+        "tips": "属于第2页，第1格；整页需随当前格修改而重新排版"
+      },
+      "refs": {
+        "source": {
+          "key": "panel-5"
+        },
+        "target": {
+          "key": "page-2"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-042",
+      "data": {
+        "tips": "当前采用的分格画面；SVG 内对白是排版快照"
+      },
+      "refs": {
+        "source": {
+          "key": "panel-5"
+        },
+        "target": {
+          "key": "art-5"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-043",
+      "data": {
+        "tips": "此素材已嵌入该整页图；修改后须重新制作整页"
+      },
+      "refs": {
+        "source": {
+          "key": "art-5"
+        },
+        "target": {
+          "key": "page-2"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-044",
+      "data": {
+        "tips": "对白所在分格"
+      },
+      "refs": {
+        "source": {
+          "key": "line-5-1"
+        },
+        "target": {
+          "key": "panel-5"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-045",
+      "data": {
+        "tips": "该句已经排入此当前画面；文本更新不会自动改写 SVG"
+      },
+      "refs": {
+        "source": {
+          "key": "line-5-1"
+        },
+        "target": {
+          "key": "art-5"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-046",
+      "data": {
+        "tips": "说话人设定"
+      },
+      "refs": {
+        "source": {
+          "key": "line-5-1"
+        },
+        "target": {
+          "key": "character-chuan"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-047",
+      "data": {
+        "tips": "对白所在分格"
+      },
+      "refs": {
+        "source": {
+          "key": "line-5-2"
+        },
+        "target": {
+          "key": "panel-5"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-048",
+      "data": {
+        "tips": "该句已经排入此当前画面；文本更新不会自动改写 SVG"
+      },
+      "refs": {
+        "source": {
+          "key": "line-5-2"
+        },
+        "target": {
+          "key": "art-5"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-049",
+      "data": {
+        "tips": "说话人设定"
+      },
+      "refs": {
+        "source": {
+          "key": "line-5-2"
+        },
+        "target": {
+          "key": "character-he"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-050",
+      "data": {
+        "tips": "下一格；按全篇格序阅读"
+      },
+      "refs": {
+        "source": {
+          "key": "panel-5"
+        },
+        "target": {
+          "key": "panel-6"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-051",
+      "data": {
+        "tips": "人物左右关系及场景依据"
+      },
+      "refs": {
+        "source": {
+          "key": "panel-5"
+        },
+        "target": {
+          "key": "setting"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-052",
+      "data": {
+        "tips": "属于第2页，第2格；整页需随当前格修改而重新排版"
+      },
+      "refs": {
+        "source": {
+          "key": "panel-6"
+        },
+        "target": {
+          "key": "page-2"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-053",
+      "data": {
+        "tips": "当前采用的分格画面；SVG 内对白是排版快照"
+      },
+      "refs": {
+        "source": {
+          "key": "panel-6"
+        },
+        "target": {
+          "key": "art-6"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-054",
+      "data": {
+        "tips": "此素材已嵌入该整页图；修改后须重新制作整页"
+      },
+      "refs": {
+        "source": {
+          "key": "art-6"
+        },
+        "target": {
+          "key": "page-2"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-055",
+      "data": {
+        "tips": "对白所在分格"
+      },
+      "refs": {
+        "source": {
+          "key": "line-6-1"
+        },
+        "target": {
+          "key": "panel-6"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-056",
+      "data": {
+        "tips": "该句已经排入此当前画面；文本更新不会自动改写 SVG"
+      },
+      "refs": {
+        "source": {
+          "key": "line-6-1"
+        },
+        "target": {
+          "key": "art-6"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-057",
+      "data": {
+        "tips": "说话人设定"
+      },
+      "refs": {
+        "source": {
+          "key": "line-6-1"
+        },
+        "target": {
+          "key": "character-he"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-058",
+      "data": {
+        "tips": "对白所在分格"
+      },
+      "refs": {
+        "source": {
+          "key": "line-6-2"
+        },
+        "target": {
+          "key": "panel-6"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-059",
+      "data": {
+        "tips": "该句已经排入此当前画面；文本更新不会自动改写 SVG"
+      },
+      "refs": {
+        "source": {
+          "key": "line-6-2"
+        },
+        "target": {
+          "key": "art-6"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-060",
+      "data": {
+        "tips": "说话人设定"
+      },
+      "refs": {
+        "source": {
+          "key": "line-6-2"
+        },
+        "target": {
+          "key": "character-chuan"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-061",
+      "data": {
+        "tips": "下一格；按全篇格序阅读"
+      },
+      "refs": {
+        "source": {
+          "key": "panel-6"
+        },
+        "target": {
+          "key": "panel-7"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-062",
+      "data": {
+        "tips": "人物左右关系及场景依据"
+      },
+      "refs": {
+        "source": {
+          "key": "panel-6"
+        },
+        "target": {
+          "key": "setting"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-063",
+      "data": {
+        "tips": "属于第2页，第3格；整页需随当前格修改而重新排版"
+      },
+      "refs": {
+        "source": {
+          "key": "panel-7"
+        },
+        "target": {
+          "key": "page-2"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-064",
+      "data": {
+        "tips": "当前采用的分格画面；SVG 内对白是排版快照"
+      },
+      "refs": {
+        "source": {
+          "key": "panel-7"
+        },
+        "target": {
+          "key": "art-7"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-065",
+      "data": {
+        "tips": "此素材已嵌入该整页图；修改后须重新制作整页"
+      },
+      "refs": {
+        "source": {
+          "key": "art-7"
+        },
+        "target": {
+          "key": "page-2"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-066",
+      "data": {
+        "tips": "对白所在分格"
+      },
+      "refs": {
+        "source": {
+          "key": "line-7-1"
+        },
+        "target": {
+          "key": "panel-7"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-067",
+      "data": {
+        "tips": "该句已经排入此当前画面；文本更新不会自动改写 SVG"
+      },
+      "refs": {
+        "source": {
+          "key": "line-7-1"
+        },
+        "target": {
+          "key": "art-7"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-068",
+      "data": {
+        "tips": "说话人设定"
+      },
+      "refs": {
+        "source": {
+          "key": "line-7-1"
+        },
+        "target": {
+          "key": "character-he"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-069",
+      "data": {
+        "tips": "对白所在分格"
+      },
+      "refs": {
+        "source": {
+          "key": "line-7-2"
+        },
+        "target": {
+          "key": "panel-7"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-070",
+      "data": {
+        "tips": "该句已经排入此当前画面；文本更新不会自动改写 SVG"
+      },
+      "refs": {
+        "source": {
+          "key": "line-7-2"
+        },
+        "target": {
+          "key": "art-7"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-071",
+      "data": {
+        "tips": "说话人设定"
+      },
+      "refs": {
+        "source": {
+          "key": "line-7-2"
+        },
+        "target": {
+          "key": "character-chuan"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-072",
+      "data": {
+        "tips": "下一格；按全篇格序阅读"
+      },
+      "refs": {
+        "source": {
+          "key": "panel-7"
+        },
+        "target": {
+          "key": "panel-8"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-073",
+      "data": {
+        "tips": "人物左右关系及场景依据"
+      },
+      "refs": {
+        "source": {
+          "key": "panel-7"
+        },
+        "target": {
+          "key": "setting"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-074",
+      "data": {
+        "tips": "属于第2页，第4格；整页需随当前格修改而重新排版"
+      },
+      "refs": {
+        "source": {
+          "key": "panel-8"
+        },
+        "target": {
+          "key": "page-2"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-075",
+      "data": {
+        "tips": "当前采用的分格画面；SVG 内对白是排版快照"
+      },
+      "refs": {
+        "source": {
+          "key": "panel-8"
+        },
+        "target": {
+          "key": "art-8"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-076",
+      "data": {
+        "tips": "此素材已嵌入该整页图；修改后须重新制作整页"
+      },
+      "refs": {
+        "source": {
+          "key": "art-8"
+        },
+        "target": {
+          "key": "page-2"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-077",
+      "data": {
+        "tips": "对白所在分格"
+      },
+      "refs": {
+        "source": {
+          "key": "line-8-1"
+        },
+        "target": {
+          "key": "panel-8"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-078",
+      "data": {
+        "tips": "该句已经排入此当前画面；文本更新不会自动改写 SVG"
+      },
+      "refs": {
+        "source": {
+          "key": "line-8-1"
+        },
+        "target": {
+          "key": "art-8"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-079",
+      "data": {
+        "tips": "说话人设定"
+      },
+      "refs": {
+        "source": {
+          "key": "line-8-1"
+        },
+        "target": {
+          "key": "character-he"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-080",
+      "data": {
+        "tips": "对白所在分格"
+      },
+      "refs": {
+        "source": {
+          "key": "line-8-2"
+        },
+        "target": {
+          "key": "panel-8"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-081",
+      "data": {
+        "tips": "该句已经排入此当前画面；文本更新不会自动改写 SVG"
+      },
+      "refs": {
+        "source": {
+          "key": "line-8-2"
+        },
+        "target": {
+          "key": "art-8"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-082",
+      "data": {
+        "tips": "说话人设定"
+      },
+      "refs": {
+        "source": {
+          "key": "line-8-2"
+        },
+        "target": {
+          "key": "character-chuan"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-083",
+      "data": {
+        "tips": "人物左右关系及场景依据"
+      },
+      "refs": {
+        "source": {
+          "key": "panel-8"
+        },
+        "target": {
+          "key": "setting"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-084",
+      "data": {
+        "tips": "候选旧稿，未采用；当前稿见画面07｜当前稿"
+      },
+      "refs": {
+        "source": {
+          "key": "panel-7"
+        },
+        "target": {
+          "key": "draft-art"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-085",
+      "data": {
+        "tips": "同一分格的旧对白，仅用于对照"
+      },
+      "refs": {
+        "source": {
+          "key": "draft-line"
+        },
+        "target": {
+          "key": "panel-7"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-086",
+      "data": {
+        "tips": "旧气泡的实际画面"
+      },
+      "refs": {
+        "source": {
+          "key": "draft-line"
+        },
+        "target": {
+          "key": "draft-art"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-087",
+      "data": {
+        "tips": "修订对照及当前采用范围"
+      },
+      "refs": {
+        "source": {
+          "key": "revision"
+        },
+        "target": {
+          "key": "draft-line"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-088",
+      "data": {
+        "tips": "修订对照及当前采用范围"
+      },
+      "refs": {
+        "source": {
+          "key": "revision"
+        },
+        "target": {
+          "key": "draft-art"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-089",
+      "data": {
+        "tips": "修订对照及当前采用范围"
+      },
+      "refs": {
+        "source": {
+          "key": "revision"
+        },
+        "target": {
+          "key": "line-7-1"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-090",
+      "data": {
+        "tips": "修订对照及当前采用范围"
+      },
+      "refs": {
+        "source": {
+          "key": "revision"
+        },
+        "target": {
+          "key": "art-7"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-091",
+      "data": {
+        "tips": "修订对照及当前采用范围"
+      },
+      "refs": {
+        "source": {
+          "key": "revision"
+        },
+        "target": {
+          "key": "page-2"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-092",
+      "data": {
+        "tips": "跨页衔接的前格：近景揭示伞下幼苗"
+      },
+      "refs": {
+        "source": {
+          "key": "review"
+        },
+        "target": {
+          "key": "panel-4"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-093",
+      "data": {
+        "tips": "跨页衔接的后格：拉远后保持位置与握伞动作"
+      },
+      "refs": {
+        "source": {
+          "key": "review"
+        },
+        "target": {
+          "key": "panel-5"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-094",
+      "data": {
+        "tips": "修改练习及需重新制作的对象"
+      },
+      "refs": {
+        "source": {
+          "key": "layout-task"
+        },
+        "target": {
+          "key": "line-7-1"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-095",
+      "data": {
+        "tips": "修改练习及需重新制作的对象"
+      },
+      "refs": {
+        "source": {
+          "key": "layout-task"
+        },
+        "target": {
+          "key": "art-7"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-096",
+      "data": {
+        "tips": "修改练习及需重新制作的对象"
+      },
+      "refs": {
+        "source": {
+          "key": "layout-task"
+        },
+        "target": {
+          "key": "page-2"
+        }
+      }
+    }
+  ]
+}

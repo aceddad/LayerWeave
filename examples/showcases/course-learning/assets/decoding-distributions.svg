@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800" role="img" aria-labelledby="title desc"><title id="title">温度与top-k：两个实验都从原分布出发</title><desc id="desc">原分布0.5/0.3/0.2；温度0.5归一化后25/38、9/38、4/38；独立top-k=2后0.625/0.375/0。</desc>
+<style>text{font-family:"Microsoft YaHei","Noto Sans CJK SC",sans-serif;fill:#17243c}.title{font-size:34px;font-weight:700}.sub{font-size:20px;fill:#56647a}.body{font-size:23px}.small{font-size:19px}.bold{font-weight:700}</style>
+<rect width="1280" height="800" fill="#f5f7fc"/>
+<text x="48" y="60" class="title">温度与 top-k：改变的是选择分布</text>
+<text x="48" y="100" class="sub">E3 · 原创教学设定 · 两个独立实验，不串联处理</text>
+<rect x="48" y="150" width="384" height="440" rx="16" fill="white"/>
+<text x="70" y="192" class="body bold">原分布</text>
+<rect x="90" y="325.000" width="66" height="180.000" rx="6" fill="#6655d8"/>
+<text x="86" y="304.0" class="small">0.5000</text>
+<text x="112" y="538" class="body bold">A</text>
+<rect x="199" y="397.000" width="66" height="108.000" rx="6" fill="#00806c"/>
+<text x="195" y="376.0" class="small">0.3000</text>
+<text x="221" y="538" class="body bold">B</text>
+<rect x="308" y="433.000" width="66" height="72.000" rx="6" fill="#df8b22"/>
+<text x="304" y="412.0" class="small">0.2000</text>
+<text x="330" y="538" class="body bold">C</text>
+<line x1="70" y1="505" x2="410" y2="505" stroke="#d6dce8"/>
+<text x="70" y="575" class="small">A + B + C = 1</text>
+<rect x="448" y="150" width="384" height="440" rx="16" fill="white"/>
+<text x="470" y="192" class="body bold">仅温度 T = 0.5</text>
+<rect x="490" y="268.158" width="66" height="236.842" rx="6" fill="#6655d8"/>
+<text x="486" y="247.15789473684208" class="small">25/38</text>
+<text x="512" y="538" class="body bold">A</text>
+<rect x="599" y="419.737" width="66" height="85.263" rx="6" fill="#00806c"/>
+<text x="595" y="398.7368421052632" class="small">9/38</text>
+<text x="621" y="538" class="body bold">B</text>
+<rect x="708" y="467.105" width="66" height="37.895" rx="6" fill="#df8b22"/>
+<text x="704" y="446.10526315789474" class="small">4/38</text>
+<text x="730" y="538" class="body bold">C</text>
+<line x1="470" y1="505" x2="810" y2="505" stroke="#d6dce8"/>
+<text x="470" y="575" class="small">平方和 = 0.38</text>
+<rect x="848" y="150" width="384" height="440" rx="16" fill="white"/>
+<text x="870" y="192" class="body bold">仅 top-k = 2</text>
+<rect x="890" y="280.000" width="66" height="225.000" rx="6" fill="#6655d8"/>
+<text x="886" y="259.0" class="small">0.6250</text>
+<text x="912" y="538" class="body bold">A</text>
+<rect x="999" y="370.000" width="66" height="135.000" rx="6" fill="#00806c"/>
+<text x="995" y="349.0" class="small">0.3750</text>
+<text x="1021" y="538" class="body bold">B</text>
+<rect x="1108" y="505.000" width="66" height="0.000" rx="6" fill="#df8b22"/>
+<text x="1104" y="484" class="small">0</text>
+<text x="1130" y="538" class="body bold">C</text>
+<line x1="870" y1="505" x2="1210" y2="505" stroke="#d6dce8"/>
+<text x="870" y="575" class="small">保留质量 = 0.8</text>
+<text x="62" y="642" class="body">温度：先平方，再除以 0.38 → C 仍保留，概率约 0.1053。</text>
+<text x="62" y="688" class="body">top-k：保留 A/B，再除以 0.8 → C 的概率变成 0。</text>
+<text x="62" y="735" class="small">三个面板使用同一纵向比例；每个完整分布都归一化为 1。</text>
+<text x="62" y="772" class="small">概率高低描述续写选择，不能单独作为事实正确率。</text>
+</svg>

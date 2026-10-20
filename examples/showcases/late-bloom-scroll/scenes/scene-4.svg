@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2400 1400" width="2400" height="1400">
+  <!-- 第四幕 冬夜·大花与星 / lead -->
+  <defs>
+    <linearGradient id="s4-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2B3A55"/>
+      <stop offset="0.55" stop-color="#3E5A7A"/>
+      <stop offset="1" stop-color="#F2E8D5"/>
+    </linearGradient>
+    <radialGradient id="s4-glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#F2C57C" stop-opacity="0.85"/>
+      <stop offset="0.55" stop-color="#F2C57C" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#F2C57C" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="s4-petal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F7E7C6"/>
+      <stop offset="0.6" stop-color="#F2C57C"/>
+      <stop offset="1" stop-color="#D9A45C"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="2400" height="1400" fill="url(#s4-sky)"/>
+  <rect x="0" y="1100" width="2400" height="300" fill="#F2E8D5"/>
+
+  <!-- 星 -->
+  <g fill="#F7F1E3">
+    <circle cx="180" cy="180" r="3"><animate attributeName="opacity" values="0.25;1;0.25" dur="8s" begin="0s" repeatCount="indefinite"/></circle>
+    <circle cx="320" cy="320" r="2"><animate attributeName="opacity" values="0.2;0.9;0.2" dur="7s" begin="1s" repeatCount="indefinite"/></circle>
+    <circle cx="470" cy="150" r="2.5"><animate attributeName="opacity" values="0.3;1;0.3" dur="9s" begin="2s" repeatCount="indefinite"/></circle>
+    <circle cx="640" cy="260" r="2"><animate attributeName="opacity" values="0.2;0.8;0.2" dur="6s" begin="0.5s" repeatCount="indefinite"/></circle>
+    <circle cx="820" cy="120" r="3"><animate attributeName="opacity" values="0.25;1;0.25" dur="8s" begin="1.5s" repeatCount="indefinite"/></circle>
+    <circle cx="980" cy="300" r="2"><animate attributeName="opacity" values="0.2;0.9;0.2" dur="7.5s" begin="3s" repeatCount="indefinite"/></circle>
+    <circle cx="1160" cy="170" r="2.5"><animate attributeName="opacity" values="0.3;1;0.3" dur="8.5s" begin="0.8s" repeatCount="indefinite"/></circle>
+    <circle cx="1340" cy="260" r="2"><animate attributeName="opacity" values="0.2;0.8;0.2" dur="6.5s" begin="2.4s" repeatCount="indefinite"/></circle>
+    <circle cx="1520" cy="140" r="3"><animate attributeName="opacity" values="0.25;1;0.25" dur="9s" begin="1.2s" repeatCount="indefinite"/></circle>
+    <circle cx="1700" cy="300" r="2"><animate attributeName="opacity" values="0.2;0.9;0.2" dur="7s" begin="3.2s" repeatCount="indefinite"/></circle>
+    <circle cx="1880" cy="180" r="2.5"><animate attributeName="opacity" values="0.3;1;0.3" dur="8s" begin="0.4s" repeatCount="indefinite"/></circle>
+    <circle cx="2060" cy="280" r="2"><animate attributeName="opacity" values="0.2;0.8;0.2" dur="6.8s" begin="2.8s" repeatCount="indefinite"/></circle>
+    <circle cx="2240" cy="160" r="3"><animate attributeName="opacity" values="0.25;1;0.25" dur="8.8s" begin="1.8s" repeatCount="indefinite"/></circle>
+  </g>
+
+  <!-- 大花的光晕 -->
+  <circle cx="1200" cy="760" r="420" fill="url(#s4-glow)">
+    <animate attributeName="r" values="380;460;380" dur="8s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.7;1;0.7" dur="8s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- 花茎 -->
+  <path d="M1200 1100 C 1190 980, 1210 880, 1200 760" fill="none" stroke="#4E7FA8" stroke-width="8" stroke-linecap="round"/>
+
+  <!-- 大花：12 片花瓣，缓慢打开 -->
+  <g transform="translate(1200 760)">
+    <g>
+      <animateTransform attributeName="transform" type="scale" values="0.28;0.5;0.92;1;0.28" keyTimes="0;0.35;0.62;0.9;1"
+        dur="8s" repeatCount="indefinite" calcMode="spline"
+        keySplines="0.4 0 0.6 1;0.4 0 0.6 1;0.4 0 0.6 1;0.4 0 0.6 1"/>
+      <g fill="url(#s4-petal)" opacity="0.92">
+        <ellipse cx="0" cy="-210" rx="72" ry="195" transform="rotate(0)"/>
+        <ellipse cx="0" cy="-210" rx="72" ry="195" transform="rotate(30)"/>
+        <ellipse cx="0" cy="-210" rx="72" ry="195" transform="rotate(60)"/>
+        <ellipse cx="0" cy="-210" rx="72" ry="195" transform="rotate(90)"/>
+        <ellipse cx="0" cy="-210" rx="72" ry="195" transform="rotate(120)"/>
+        <ellipse cx="0" cy="-210" rx="72" ry="195" transform="rotate(150)"/>
+        <ellipse cx="0" cy="-210" rx="72" ry="195" transform="rotate(180)"/>
+        <ellipse cx="0" cy="-210" rx="72" ry="195" transform="rotate(210)"/>
+        <ellipse cx="0" cy="-210" rx="72" ry="195" transform="rotate(240)"/>
+        <ellipse cx="0" cy="-210" rx="72" ry="195" transform="rotate(270)"/>
+        <ellipse cx="0" cy="-210" rx="72" ry="195" transform="rotate(300)"/>
+        <ellipse cx="0" cy="-210" rx="72" ry="195" transform="rotate(330)"/>
+      </g>
+      <circle cx="0" cy="0" r="96" fill="#F2C57C"/>
+      <circle cx="0" cy="0" r="58" fill="#F7E7C6"/>
+    </g>
+  </g>
+
+  <!-- 贯穿全卷的蓝线 -->
+  <path d="M0 900 C 600 860, 1800 940, 2400 900" fill="none" stroke="#6FA8DC" stroke-width="6" stroke-linecap="round"/>
+</svg>

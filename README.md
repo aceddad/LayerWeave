@@ -28,6 +28,10 @@ python -X utf8 -m venv .venv
 
 源码安装还需要 setuptools>=77.0.3 和 wheel。pip 默认在临时构建环境中准备它们，即使当前环境已有 setuptools，也可能联网下载。若卡在 Installing build dependencies，先看[源码安装排查](docs/developer-conventions.md#可编辑安装与构建依赖)；只有提前装好构建依赖后，才适合关闭构建隔离。
 
+## 用案例理解内核
+
+[十二个场景案例](examples/showcases/README.md)随源码提供，首次建议读[文章解析](examples/showcases/article-reading/README.md)。完成上面的 uv 安装后，设置 `$casePython = (Resolve-Path .venv/Scripts/python.exe).Path`，按案例说明导入和查询。main 可完成基础数据操作；画布及晚开的花案例的视图批注类型使用完整版本。手书与 H3 为无视频阅读版，完整制作素材不进入公开源码。
+
 ## 按需查看接口
 
 ```powershell

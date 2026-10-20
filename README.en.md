@@ -28,6 +28,10 @@ Editable installation makes layerweave importable from other working directories
 
 Source installation also needs setuptools>=77.0.3 and wheel. By default, pip prepares them in an isolated build environment and may download them even if setuptools is installed in the current environment. If installation stalls at Installing build dependencies, see [source installation troubleshooting (Chinese)](docs/developer-conventions.md#可编辑安装与构建依赖). Disable build isolation only after installing the required build dependencies.
 
+## Learn through examples
+
+The source includes [twelve cases](examples/showcases/README.md); start with [article reading](examples/showcases/article-reading/README.md). After the uv setup above, set `$casePython = (Resolve-Path .venv/Scripts/python.exe).Path` and follow the case instructions. Main supports ordinary data operations; the canvas and the native annotations in the collaborative scroll case require the complete version. The hand-drawn MV and H3 cases are video-free reading editions. Full production media stays outside the public sources. Case content and detailed guides are in Chinese.
+
 ## Discover interfaces on demand
 
 ```powershell

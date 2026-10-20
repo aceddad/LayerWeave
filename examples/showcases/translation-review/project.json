@@ -1,0 +1,2334 @@
+{
+  "format_version": 1,
+  "name": "留下那声咔哒｜翻译与校对",
+  "when": "完整原创书信、多版本对照、非一对一句段对应、术语追踪与合理候选取舍。",
+  "preserve_positions": true,
+  "project": {
+    "op": "add",
+    "data": {
+      "name": "留下那声咔哒｜翻译与校对",
+      "tips": "原创虚构英文书信，Codex 于 2026-10-20 为本案例生成；人物与事件均虚构，无外部引文。当前推荐阅读“修订译文（推荐）”，初译完整保留。正文均为六个自然段；原文8条、初译8条、修订9条，其中一个英文句子拆为两个中文句子。每根有独立条目轴，位置不是数据库ID，也不表示不同根同一位置自然对应。对应、修改理由、术语与候选均通过有说明的bind表达。正文source路径相对数据库目录；正文已完整保存在information.text中。"
+    }
+  },
+  "items": [
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "root-en",
+      "data": {
+        "name": "英文原文｜Leave the Click",
+        "config_ref": "layers/text.toml",
+        "axis": {
+          "unit": "原文条目",
+          "precision": 1
+        },
+        "tips": "原创；按本根位置阅读。P03A/P03B 与 P06A/P06B 各属同一自然段。称呼与署名包含在首末条目。"
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "en-p01",
+          "data": {
+            "name": "EN-P01｜窗边的收音机",
+            "config_ref": "objects/text.toml",
+            "begin": 1,
+            "end": 2,
+            "information": {
+              "text": "Dear Maya,\n\nI found Father's radio behind the winter blankets yesterday, wrapped in the towel with the blue border. You asked me to send photographs before I cleared the house, but this seemed to deserve a letter. In a photograph it would look like an ordinary wooden box, one corner darkened by a cup that nobody admitted leaving there. You would not see the small delay between turning the tuning knob and hearing a voice. That pause was part of our evenings. Father used it to pull out a chair, and Mother used it to ask whether anyone wanted more tea.",
+              "paragraph": 1,
+              "segment": "p01",
+              "version": "original",
+              "language": "en",
+              "source": "assets/source-en.md"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "en-p02",
+          "data": {
+            "name": "EN-P02｜抽屉里的维修手册",
+            "config_ref": "objects/text.toml",
+            "begin": 2,
+            "end": 3,
+            "information": {
+              "text": "The radio came with a service manual, which I found in the bottom drawer beneath a bundle of old receipts. Father had written dates in the margins and drawn a careful circle around one screw. I used to think these marks were instructions for making things last forever. Now they look more like a record of his willingness to begin again. He could spend an entire Saturday tracing a fault, then accept an imperfect result without disappointment. Even after a repair, a little static remained between the stations. He never called that failure; he simply turned the volume down.",
+              "paragraph": 2,
+              "segment": "p02",
+              "version": "original",
+              "language": "en",
+              "source": "assets/source-en.md"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "en-p03a",
+          "data": {
+            "name": "EN-P03A｜咔哒声带回厨房",
+            "config_ref": "objects/text.toml",
+            "begin": 3,
+            "end": 4,
+            "information": {
+              "text": "When I turned the tuning knob this morning, the familiar click brought back not a station but the narrow kitchen, where you stood on a chair to reach the shelf and I pretended I was tall enough already.",
+              "paragraph": 3,
+              "segment": "p03a",
+              "version": "original",
+              "language": "en",
+              "source": "assets/source-en.md"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "en-p03b",
+          "data": {
+            "name": "EN-P03B｜记忆的边界",
+            "config_ref": "objects/text.toml",
+            "begin": 4,
+            "end": 5,
+            "information": {
+              "text": "I remembered your sleeve brushing the bread, the wet windows, and the way we lowered our voices when the weather report began. I cannot remember the forecast itself. Perhaps memory is less interested in keeping information than in keeping company. The click lasted only a moment, but for that moment I did not feel as though I was sorting the house alone.",
+              "paragraph": 3,
+              "segment": "p03b",
+              "version": "original",
+              "language": "en",
+              "source": "assets/source-en.md"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "en-p04",
+          "data": {
+            "name": "EN-P04｜修到能安全使用",
+            "config_ref": "objects/text.toml",
+            "begin": 5,
+            "end": 6,
+            "information": {
+              "text": "I took the radio to the repair shop near the bridge. The woman at the counter asked whether I wanted it to look new. She could replace the cloth over the speaker and polish away the pale ring on the wood. I heard myself say, \"Make it safe, but leave the click.\" She smiled and wrote that on the job card without asking me to explain. I left the service manual with her too. There are practical reasons to keep old notes, even when the person who made them can no longer answer questions. Not every mark is damage, and not every improvement is a kindness.",
+              "paragraph": 4,
+              "segment": "p04",
+              "version": "original",
+              "language": "en",
+              "source": "assets/source-en.md"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "en-p05",
+          "data": {
+            "name": "EN-P05｜送出与留下",
+            "config_ref": "objects/text.toml",
+            "begin": 6,
+            "end": 7,
+            "information": {
+              "text": "Before you worry, I am not turning the house into a museum. I gave the cracked bowls to the neighbour who grows herbs, and I let the delivery driver take the table we both disliked. Keeping everything would make it difficult to live here; keeping nothing would make leaving seem easier than it is. The radio is small enough to stand by my window. I want to hear unfamiliar voices through it, along with the static, and let new evenings gather around the old ones. An object can carry a memory without being asked to carry our whole past.",
+              "paragraph": 5,
+              "segment": "p05",
+              "version": "original",
+              "language": "en",
+              "source": "assets/source-en.md"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "en-p06a",
+          "data": {
+            "name": "EN-P06A｜给下次来访留位置",
+            "config_ref": "objects/text.toml",
+            "begin": 7,
+            "end": 8,
+            "information": {
+              "text": "When you visit next month, bring the cassette you recorded at the seaside, if you can find it. I know the radio cannot play it. We can borrow a player and listen to the two machines in turn, giving each its own place on the table. You can turn the tuning knob while I make tea. We may disagree about which station Father preferred; we always did. I do not need the radio to settle that question. I only want something we can sit beside while we tell our different versions, and a little silence when neither of us has anything more to say.",
+              "paragraph": 6,
+              "segment": "p06a",
+              "version": "original",
+              "language": "en",
+              "source": "assets/source-en.md"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "en-p06b",
+          "data": {
+            "name": "EN-P06B｜寂静里的位置",
+            "config_ref": "objects/text.toml",
+            "begin": 8,
+            "end": 9,
+            "information": {
+              "text": "There is still room in that silence for us.\n\nWith love,\nDaniel",
+              "paragraph": 6,
+              "segment": "p06b",
+              "version": "original",
+              "language": "en",
+              "source": "assets/source-en.md"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "root-draft",
+      "data": {
+        "name": "中文初译（保留比较）",
+        "config_ref": "layers/text.toml",
+        "axis": {
+          "unit": "初译条目",
+          "precision": 1
+        },
+        "tips": "完整初译，含待修正用词与可接受的另一种表达；不作为当前推荐阅读稿。"
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "draft-p01",
+          "data": {
+            "name": "DRAFT-P01｜窗边的收音机",
+            "config_ref": "objects/text.toml",
+            "begin": 1,
+            "end": 2,
+            "information": {
+              "text": "亲爱的玛雅：\n\n昨天我在冬天的毯子后面找到了父亲的收音机，外面裹着那条蓝边毛巾。你让我在清空房子之前发些照片，但这件东西似乎值得写一封信。在照片里，它看上去就是一个普通木盒，一角被一只谁也不承认放过的杯子染深了颜色。你看不到转动调台旋钮与听到人声之间那短短的延迟。那段停顿是我们夜晚的一部分。父亲用它拉开椅子，母亲用它问有没有人还想喝茶。",
+              "paragraph": 1,
+              "segment": "p01",
+              "version": "initial",
+              "language": "zh-Hans",
+              "source": "assets/translation-zh-initial.md"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "draft-p02",
+          "data": {
+            "name": "DRAFT-P02｜抽屉里的维修手册",
+            "config_ref": "objects/text.toml",
+            "begin": 2,
+            "end": 3,
+            "information": {
+              "text": "收音机附有一本服务手册，我在最底层抽屉的一捆旧收据下面找到了它。父亲在页边写了日期，又仔细地在一颗螺丝旁画了个圈。我以前以为，这些标记是在教人怎样让东西永远用下去。现在看来，它们更像是他愿意重新开始的记录。他可以花整整一个星期六查找故障，然后接受一个不完美的结果，并不失望。即使修过以后，电台之间仍有一点静电。他从不把这叫作失败，只是把音量调低。",
+              "paragraph": 2,
+              "segment": "p02",
+              "version": "initial",
+              "language": "zh-Hans",
+              "source": "assets/translation-zh-initial.md"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "draft-p03a",
+          "data": {
+            "name": "DRAFT-P03A｜咔哒声带回厨房",
+            "config_ref": "objects/text.toml",
+            "begin": 3,
+            "end": 4,
+            "information": {
+              "text": "今天早上转动调谐旋钮时，熟悉的咔嗒声带回来的不是一个电台，而是那间狭窄的厨房，你站在椅子上够架子，而我假装自己已经足够高了。",
+              "paragraph": 3,
+              "segment": "p03a",
+              "version": "initial",
+              "language": "zh-Hans",
+              "source": "assets/translation-zh-initial.md"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "draft-p03b",
+          "data": {
+            "name": "DRAFT-P03B｜记忆的边界",
+            "config_ref": "objects/text.toml",
+            "begin": 4,
+            "end": 5,
+            "information": {
+              "text": "我记得你的袖子擦过面包，潮湿的窗玻璃，以及天气预报开始时我们压低声音的样子。我不记得预报本身了。也许记忆对保存信息的兴趣不如对保存陪伴的兴趣。那声咔嗒只持续了一瞬间，但就在那一瞬间，我不觉得自己像是在独自整理房子。",
+              "paragraph": 3,
+              "segment": "p03b",
+              "version": "initial",
+              "language": "zh-Hans",
+              "source": "assets/translation-zh-initial.md"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "draft-p04",
+          "data": {
+            "name": "DRAFT-P04｜修到能安全使用",
+            "config_ref": "objects/text.toml",
+            "begin": 5,
+            "end": 6,
+            "information": {
+              "text": "我把收音机送到桥边的修理店。柜台后的女士问我，是否想让它看上去像新的一样。她可以更换扬声器上的布，磨掉木头上浅色的圆环。我听见自己说：“让它安全，但留下咔嗒声。”她笑了，没有让我解释，就把这句话写在维修单上。我也把服务手册留给了她。保留旧笔记有实际的理由，即使写下它们的人已经不能再回答问题。并非每一道痕迹都是损坏，也并非每一次改善都是好意。",
+              "paragraph": 4,
+              "segment": "p04",
+              "version": "initial",
+              "language": "zh-Hans",
+              "source": "assets/translation-zh-initial.md"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "draft-p05",
+          "data": {
+            "name": "DRAFT-P05｜送出与留下",
+            "config_ref": "objects/text.toml",
+            "begin": 6,
+            "end": 7,
+            "information": {
+              "text": "在你开始担心之前，我并没有把房子变成博物馆。我把开裂的碗送给种香草的邻居，也让送货司机拿走了那张我们都不喜欢的桌子。保留一切会让人难以在这里生活；什么都不留，又会让离开显得比实际更容易。收音机足够小，可以放在我的窗边。我想通过它听到陌生的声音，连同那些静电，让新的夜晚聚集在旧的夜晚周围。一件物品可以承载一段记忆，而不必被要求承载我们的全部过去。",
+              "paragraph": 5,
+              "segment": "p05",
+              "version": "initial",
+              "language": "zh-Hans",
+              "source": "assets/translation-zh-initial.md"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "draft-p06a",
+          "data": {
+            "name": "DRAFT-P06A｜给下次来访留位置",
+            "config_ref": "objects/text.toml",
+            "begin": 7,
+            "end": 8,
+            "information": {
+              "text": "下个月你来时，如果找得到，就带上你在海边录的那盘磁带。我知道收音机不能播放它。我们可以借一台播放机，轮流听这两台机器，让它们各自在桌上占一个位置。你可以在我泡茶时转动调台旋钮。我们可能会对父亲更喜欢哪个电台意见不一；我们一直都是这样。我不需要收音机来解决那个问题。我只想要一件我们讲述各自版本时可以坐在旁边的东西，以及当我们谁都没什么可说时的一点寂静。",
+              "paragraph": 6,
+              "segment": "p06a",
+              "version": "initial",
+              "language": "zh-Hans",
+              "source": "assets/translation-zh-initial.md"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "draft-p06b",
+          "data": {
+            "name": "DRAFT-P06B｜寂静里的位置",
+            "config_ref": "objects/text.toml",
+            "begin": 8,
+            "end": 9,
+            "information": {
+              "text": "那片寂静里，仍然有我们的空间。\n\n爱你的，\n丹尼尔",
+              "paragraph": 6,
+              "segment": "p06b",
+              "version": "initial",
+              "language": "zh-Hans",
+              "source": "assets/translation-zh-initial.md"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "root-rev",
+      "data": {
+        "name": "修订译文（推荐）",
+        "config_ref": "layers/text.toml",
+        "axis": {
+          "unit": "修订条目",
+          "precision": 1
+        },
+        "tips": "当前推荐全文。P03A1/P03A2/P03B 合为第三自然段；独立位置不等于原文位置。段内其他润色随上下文阅读，重点理由见R01–R06。"
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "rev-p01",
+          "data": {
+            "name": "REV-P01｜窗边的收音机",
+            "config_ref": "objects/text.toml",
+            "begin": 1,
+            "end": 2,
+            "information": {
+              "text": "亲爱的玛雅：\n\n昨天，我在冬天盖的毯子后面找到了父亲的收音机，还裹着那条蓝边毛巾。你让我收拾这所房子前先拍些照片发给你，可我觉得，为它值得写封信。照片里，它不过是个普通的木盒子，一角被杯子洇得颜色发深，却没人承认把杯子搁在那里。转动调谐旋钮后，要等一小会儿才有人声传来；这一点，照片拍不出来。那片刻的停顿，也是我们夜晚的一部分。父亲趁这工夫拉开椅子，母亲则问一声，谁还要添茶。",
+              "paragraph": 1,
+              "segment": "p01",
+              "version": "recommended",
+              "language": "zh-Hans",
+              "source": "assets/translation-zh.md"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "rev-p02",
+          "data": {
+            "name": "REV-P02｜抽屉里的维修手册",
+            "config_ref": "objects/text.toml",
+            "begin": 2,
+            "end": 3,
+            "information": {
+              "text": "收音机附带的维修手册，就在最底层抽屉里，压在一捆旧收据下面。父亲在页边记下日期，还仔仔细细地圈出了一颗螺丝。我曾以为，那些标记是在教人怎样让东西永远用下去。如今再看，倒更像是在记下他一次次愿意从头再来的心意。他能花上一整个星期六排查故障，修得不尽如人意，也不沮丧。即使修好了，两个电台之间还是会有一点杂音。他从不说那是失败，只把音量调低些。",
+              "paragraph": 2,
+              "segment": "p02",
+              "version": "recommended",
+              "language": "zh-Hans",
+              "source": "assets/translation-zh.md"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "rev-p03a1",
+          "data": {
+            "name": "REV-P03A1｜先听见咔哒声",
+            "config_ref": "objects/text.toml",
+            "begin": 3,
+            "end": 4,
+            "information": {
+              "text": "今早，我转动调谐旋钮，听见了熟悉的咔哒声。",
+              "paragraph": 3,
+              "segment": "p03a1",
+              "version": "recommended",
+              "language": "zh-Hans",
+              "source": "assets/translation-zh.md"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "rev-p03a2",
+          "data": {
+            "name": "REV-P03A2｜再回到厨房",
+            "config_ref": "objects/text.toml",
+            "begin": 4,
+            "end": 5,
+            "information": {
+              "text": "那声音带回来的不是某个电台，而是那间狭窄的厨房：你站在椅子上够架子，我则装作自己已经长得够高了。",
+              "paragraph": 3,
+              "segment": "p03a2",
+              "version": "recommended",
+              "language": "zh-Hans",
+              "source": "assets/translation-zh.md"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "rev-p03b",
+          "data": {
+            "name": "REV-P03B｜记忆的边界",
+            "config_ref": "objects/text.toml",
+            "begin": 5,
+            "end": 6,
+            "information": {
+              "text": "我记得你的袖口擦过面包，窗玻璃湿漉漉的，还有天气预报一响起，我们便压低了声音。预报说了什么，我却记不得了。也许记忆更想留住的不是消息，而是身边有人相伴的感觉。那声咔哒转瞬即逝，可就在那一瞬，我觉得自己并不是一个人在收拾这所房子。",
+              "paragraph": 3,
+              "segment": "p03b",
+              "version": "recommended",
+              "language": "zh-Hans",
+              "source": "assets/translation-zh.md"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "rev-p04",
+          "data": {
+            "name": "REV-P04｜修到能安全使用",
+            "config_ref": "objects/text.toml",
+            "begin": 6,
+            "end": 7,
+            "information": {
+              "text": "我把收音机送去了桥边的修理店。柜台后的女士问，要不要把它修得跟新的一样。她可以换掉扬声器外面的布，把木头上那圈浅浅的水印磨掉。我听见自己说：“修到能安全使用就好，不过，把那声咔哒留下。”她笑了笑，没问缘由，就把这句话写在维修单上。我也把维修手册留给了她。旧笔记留着，总有用得上的时候，哪怕写下它们的人已经无法回答问题。不是每一道痕迹都算损坏，也不是每一种改进都算体贴。",
+              "paragraph": 4,
+              "segment": "p04",
+              "version": "recommended",
+              "language": "zh-Hans",
+              "source": "assets/translation-zh.md"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "rev-p05",
+          "data": {
+            "name": "REV-P05｜送出与留下",
+            "config_ref": "objects/text.toml",
+            "begin": 7,
+            "end": 8,
+            "information": {
+              "text": "先别担心，我没有要把这所房子变成博物馆。我把裂了口的碗送给了种香草的邻居，也让送货的司机搬走了那张咱俩都不喜欢的桌子。什么都留着，日子就不好过了；什么都不留，又会让离开显得比实际容易。收音机小小的，正好能摆在我的窗边。我想听它传来陌生的人声，夹着杂音，让新的夜晚围着旧日的夜晚慢慢积攒。一件东西可以留住一段记忆，不必替我们背负全部的过去。",
+              "paragraph": 5,
+              "segment": "p05",
+              "version": "recommended",
+              "language": "zh-Hans",
+              "source": "assets/translation-zh.md"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "rev-p06a",
+          "data": {
+            "name": "REV-P06A｜给下次来访留位置",
+            "config_ref": "objects/text.toml",
+            "begin": 8,
+            "end": 9,
+            "information": {
+              "text": "下个月你来，要是找得到，就带上你在海边录的那盘磁带。我知道收音机放不了磁带。我们可以借台播放机，轮流听这两台机器，让它们在桌上各有各的位置。我泡茶，你来转动调谐旋钮。说起父亲最爱听哪个台，我们大概还是各执一词；从前就总是这样。我不指望这台收音机替我们分出对错。我只是想，讲起各自记得的往事时，我们身边能有这么一件东西；等到谁都没什么可说了，也能安静一会儿。",
+              "paragraph": 6,
+              "segment": "p06a",
+              "version": "recommended",
+              "language": "zh-Hans",
+              "source": "assets/translation-zh.md"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "rev-p06b",
+          "data": {
+            "name": "REV-P06B｜寂静里的位置",
+            "config_ref": "objects/text.toml",
+            "begin": 9,
+            "end": 10,
+            "information": {
+              "text": "那片寂静里，还有我们的位置。\n\n爱你的，\n丹尼尔",
+              "paragraph": 6,
+              "segment": "p06b",
+              "version": "recommended",
+              "language": "zh-Hans",
+              "source": "assets/translation-zh.md"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "root-terms",
+      "data": {
+        "name": "术语与用词约定",
+        "config_ref": "layers/text.toml",
+        "axis": {
+          "unit": "术语条目",
+          "precision": 1
+        },
+        "tips": "从术语沿出向“用词例证”关系看全部明确词例。初译错误与合理变体均保留。约定不是自动检查规则。"
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "t01",
+          "data": {
+            "name": "T01｜radio → 收音机",
+            "config_ref": "objects/text.toml",
+            "begin": 1,
+            "end": 2,
+            "information": {
+              "text": "器物本名统一为“收音机”；代词可按中文行文使用“它”。正文例证覆盖三份版本中所有明确出现 radio／收音机 的条目，不把指代它的每个代词另行列为词例。",
+              "term_en": "radio",
+              "preferred_zh": "收音机",
+              "initial_variants": [
+                "收音机"
+              ],
+              "occurrence_count": 15
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "t02",
+          "data": {
+            "name": "T02｜tuning knob → 调谐旋钮",
+            "config_ref": "objects/text.toml",
+            "begin": 2,
+            "end": 3,
+            "information": {
+              "text": "推荐“调谐旋钮”，指用来选择电台的旋转部件。初译的“调台旋钮”可以理解，统一用词是编辑选择；不换成显示刻度的“刻度盘”。",
+              "term_en": "tuning knob",
+              "preferred_zh": "调谐旋钮",
+              "initial_variants": [
+                "调台旋钮",
+                "调谐旋钮"
+              ],
+              "occurrence_count": 9
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "t03",
+          "data": {
+            "name": "T03｜static → 杂音",
+            "config_ref": "objects/text.toml",
+            "begin": 3,
+            "end": 4,
+            "information": {
+              "text": "本文指电台之间的收听噪声，推荐“杂音”。初译“静电”在这里不合语境。修改一处时沿本条检查另一段，不能只做一次词替换。",
+              "term_en": "static",
+              "preferred_zh": "杂音",
+              "initial_variants": [
+                "静电",
+                "杂音"
+              ],
+              "occurrence_count": 6
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "t04",
+          "data": {
+            "name": "T04｜service manual → 维修手册",
+            "config_ref": "objects/text.toml",
+            "begin": 4,
+            "end": 5,
+            "information": {
+              "text": "结合故障、螺丝和修理店，指维修资料。推荐“维修手册”；初译“服务手册”未明确用途。不要泛化为面向普通用户的“使用说明书”。",
+              "term_en": "service manual",
+              "preferred_zh": "维修手册",
+              "initial_variants": [
+                "服务手册",
+                "维修手册"
+              ],
+              "occurrence_count": 6
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "t05",
+          "data": {
+            "name": "T05｜click → 咔哒声",
+            "config_ref": "objects/text.toml",
+            "begin": 5,
+            "end": 6,
+            "information": {
+              "text": "机械短声的用字统一取“咔哒”；“咔嗒”也可成立。根据句子需要写“咔哒声”或“那声咔哒”。正文出现位置全部链接；中文题名“留下那声咔哒”也是需要人工同步的出版文字，不属于正文词例对象。",
+              "term_en": "click",
+              "preferred_zh": "咔哒声",
+              "initial_variants": [
+                "咔嗒",
+                "咔哒"
+              ],
+              "occurrence_count": 9
+            }
+          }
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "root-review",
+      "data": {
+        "name": "修改理由",
+        "config_ref": "layers/text.toml",
+        "axis": {
+          "unit": "理由条目",
+          "precision": 1
+        },
+        "tips": "使用普通文字对象承载评议，基础CLI也能完整阅读；不依赖可视化批注表。"
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "r01",
+          "data": {
+            "name": "R01｜static 的语义",
+            "config_ref": "objects/text.toml",
+            "begin": 1,
+            "end": 2,
+            "information": {
+              "text": "原文两处 static 均指收音机调台时的噪声。初译 P02、P05 写作“静电”，会让读者理解成电荷现象；修订为“杂音”。这是语义纠正，不表示所有语境的 static 都应译成“杂音”。两段应一并核对。",
+              "category": "语义"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "r02",
+          "data": {
+            "name": "R02｜旋钮与手册的术语统一",
+            "config_ref": "objects/text.toml",
+            "begin": 2,
+            "end": 3,
+            "information": {
+              "text": "tuning knob：初译 P01、P06A 为“调台旋钮”，P03A 为“调谐旋钮”；这些说法都能指向调台部件。本稿统一用“调谐旋钮”，保留器物的具体触感。service manual：初译 P02、P04 为“服务手册”，结合排查故障和螺丝标记，修订为“维修手册”。前一项是用词约定，后一项是语境释义纠正。",
+              "category": "术语一致性"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "r03",
+          "data": {
+            "name": "R03｜一句拆成两句",
+            "config_ref": "objects/text.toml",
+            "begin": 3,
+            "end": 4,
+            "information": {
+              "text": "EN-P03A 是一个完整英文句子，DRAFT-P03A 也保留为一个长句。修订拆成 REV-P03A1“今早……咔哒声。”和 REV-P03A2“那声音……够高了。”，先让声音落地，再进入回忆。第二句用“那声音”承接，保留 brought back 的触发关系；厨房、你站椅子、我逞高三个信息都在第二句。两条各自关联同一原文和同一初译，并仍归入正文第三自然段。",
+              "category": "句段切分"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "r04",
+          "data": {
+            "name": "R04｜修理请求的语气",
+            "config_ref": "objects/text.toml",
+            "begin": 4,
+            "end": 5,
+            "information": {
+              "text": "原文 Make it safe, but leave the click. 是对修理者简短、具体的请求。初译“让它安全，但留下咔嗒声”不够像当面说话。修订“修到能安全使用就好，不过，把那声咔哒留下”，补出上下文已给出的修理动作与使用情境，“就好”表达不求翻新的愿望。这是口语节奏与语境显化，并未添加新的维修技术要求。",
+              "category": "语气"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "r05",
+          "data": {
+            "name": "R05｜末句的两种合理表达",
+            "config_ref": "objects/text.toml",
+            "begin": 5,
+            "end": 6,
+            "information": {
+              "text": "There is still room in that silence for us. 可译为 A“那片寂静里，还有我们的位置。”或 B“那片寂静，还容得下我们。”两者均合理。A 把 room 译作“位置”，呼应本段桌上各有位置的两台机器，语气安静；B 更突出寂静容纳人的力量，情感稍浓。当前采用 A；B 保留为候选，不标为错译。初译“仍然有我们的空间”意义基本成立，修订为了书信语感与前后呼应。",
+              "category": "候选取舍"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "r06",
+          "data": {
+            "name": "R06｜咔嗒与咔哒的选择",
+            "config_ref": "objects/text.toml",
+            "begin": 6,
+            "end": 7,
+            "information": {
+              "text": "初译各处统一写“咔嗒”，修订统一写“咔哒”。两种拟声写法都能表达这里的短促机械声，本案例选“咔哒”以匹配中文题名与较柔和的叙述声调。这是编辑约定，不是对“咔嗒”的普遍纠错。P03A、P03B、P04 以及题名需一起留意；翻译内容的真实对象链接见 T05。",
+              "category": "用字约定"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "root-alternatives",
+      "data": {
+        "name": "候选表达",
+        "config_ref": "layers/text.toml",
+        "axis": {
+          "unit": "候选条目",
+          "precision": 1
+        },
+        "tips": "A已采用，B合理且保留；候选不属于正文全文，不应混入文本汇集。"
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "candidate-a",
+          "data": {
+            "name": "A｜还有我们的位置（采用）",
+            "config_ref": "objects/text.toml",
+            "begin": 1,
+            "end": 2,
+            "information": {
+              "text": "那片寂静里，还有我们的位置。",
+              "status": "selected",
+              "rationale": "呼应桌上各有位置的两台机器；语气克制。"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "candidate-b",
+          "data": {
+            "name": "B｜还容得下我们（保留）",
+            "config_ref": "objects/text.toml",
+            "begin": 2,
+            "end": 3,
+            "information": {
+              "text": "那片寂静，还容得下我们。",
+              "status": "valid-alternative",
+              "rationale": "突出寂静对人的容纳感；更有抒情色彩，也是合理译法。"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "records": [
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-001",
+      "data": {
+        "tips": "初译依据｜完整初译；保留供比较，不是当前推荐稿。"
+      },
+      "refs": {
+        "source": {
+          "key": "draft-p01"
+        },
+        "target": {
+          "key": "en-p01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-002",
+      "data": {
+        "tips": "初译依据｜完整初译；保留供比较，不是当前推荐稿。"
+      },
+      "refs": {
+        "source": {
+          "key": "draft-p02"
+        },
+        "target": {
+          "key": "en-p02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-003",
+      "data": {
+        "tips": "初译依据｜完整初译；保留供比较，不是当前推荐稿。"
+      },
+      "refs": {
+        "source": {
+          "key": "draft-p03a"
+        },
+        "target": {
+          "key": "en-p03a"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-004",
+      "data": {
+        "tips": "初译依据｜完整初译；保留供比较，不是当前推荐稿。"
+      },
+      "refs": {
+        "source": {
+          "key": "draft-p03b"
+        },
+        "target": {
+          "key": "en-p03b"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-005",
+      "data": {
+        "tips": "初译依据｜完整初译；保留供比较，不是当前推荐稿。"
+      },
+      "refs": {
+        "source": {
+          "key": "draft-p04"
+        },
+        "target": {
+          "key": "en-p04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-006",
+      "data": {
+        "tips": "初译依据｜完整初译；保留供比较，不是当前推荐稿。"
+      },
+      "refs": {
+        "source": {
+          "key": "draft-p05"
+        },
+        "target": {
+          "key": "en-p05"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-007",
+      "data": {
+        "tips": "初译依据｜完整初译；保留供比较，不是当前推荐稿。"
+      },
+      "refs": {
+        "source": {
+          "key": "draft-p06a"
+        },
+        "target": {
+          "key": "en-p06a"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-008",
+      "data": {
+        "tips": "初译依据｜完整初译；保留供比较，不是当前推荐稿。"
+      },
+      "refs": {
+        "source": {
+          "key": "draft-p06b"
+        },
+        "target": {
+          "key": "en-p06b"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-009",
+      "data": {
+        "tips": "译文对应｜对应同段原文；段内润色不要求词序相同。"
+      },
+      "refs": {
+        "source": {
+          "key": "rev-p01"
+        },
+        "target": {
+          "key": "en-p01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-010",
+      "data": {
+        "tips": "修订自｜保留初译身份与全文，以便比较修改。"
+      },
+      "refs": {
+        "source": {
+          "key": "rev-p01"
+        },
+        "target": {
+          "key": "draft-p01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-011",
+      "data": {
+        "tips": "译文对应｜对应同段原文；段内润色不要求词序相同。"
+      },
+      "refs": {
+        "source": {
+          "key": "rev-p02"
+        },
+        "target": {
+          "key": "en-p02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-012",
+      "data": {
+        "tips": "修订自｜保留初译身份与全文，以便比较修改。"
+      },
+      "refs": {
+        "source": {
+          "key": "rev-p02"
+        },
+        "target": {
+          "key": "draft-p02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-013",
+      "data": {
+        "tips": "译文对应｜一个英文句子的第一部分；与 REV-P03A2 合读。"
+      },
+      "refs": {
+        "source": {
+          "key": "rev-p03a1"
+        },
+        "target": {
+          "key": "en-p03a"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-014",
+      "data": {
+        "tips": "修订自｜保留初译身份与全文，以便比较修改。"
+      },
+      "refs": {
+        "source": {
+          "key": "rev-p03a1"
+        },
+        "target": {
+          "key": "draft-p03a"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-015",
+      "data": {
+        "tips": "译文对应｜同一个英文句子的第二部分；与 REV-P03A1 合读。"
+      },
+      "refs": {
+        "source": {
+          "key": "rev-p03a2"
+        },
+        "target": {
+          "key": "en-p03a"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-016",
+      "data": {
+        "tips": "修订自｜保留初译身份与全文，以便比较修改。"
+      },
+      "refs": {
+        "source": {
+          "key": "rev-p03a2"
+        },
+        "target": {
+          "key": "draft-p03a"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-017",
+      "data": {
+        "tips": "译文对应｜对应同段原文；段内润色不要求词序相同。"
+      },
+      "refs": {
+        "source": {
+          "key": "rev-p03b"
+        },
+        "target": {
+          "key": "en-p03b"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-018",
+      "data": {
+        "tips": "修订自｜保留初译身份与全文，以便比较修改。"
+      },
+      "refs": {
+        "source": {
+          "key": "rev-p03b"
+        },
+        "target": {
+          "key": "draft-p03b"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-019",
+      "data": {
+        "tips": "译文对应｜对应同段原文；段内润色不要求词序相同。"
+      },
+      "refs": {
+        "source": {
+          "key": "rev-p04"
+        },
+        "target": {
+          "key": "en-p04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-020",
+      "data": {
+        "tips": "修订自｜保留初译身份与全文，以便比较修改。"
+      },
+      "refs": {
+        "source": {
+          "key": "rev-p04"
+        },
+        "target": {
+          "key": "draft-p04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-021",
+      "data": {
+        "tips": "译文对应｜对应同段原文；段内润色不要求词序相同。"
+      },
+      "refs": {
+        "source": {
+          "key": "rev-p05"
+        },
+        "target": {
+          "key": "en-p05"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-022",
+      "data": {
+        "tips": "修订自｜保留初译身份与全文，以便比较修改。"
+      },
+      "refs": {
+        "source": {
+          "key": "rev-p05"
+        },
+        "target": {
+          "key": "draft-p05"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-023",
+      "data": {
+        "tips": "译文对应｜对应同段原文；段内润色不要求词序相同。"
+      },
+      "refs": {
+        "source": {
+          "key": "rev-p06a"
+        },
+        "target": {
+          "key": "en-p06a"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-024",
+      "data": {
+        "tips": "修订自｜保留初译身份与全文，以便比较修改。"
+      },
+      "refs": {
+        "source": {
+          "key": "rev-p06a"
+        },
+        "target": {
+          "key": "draft-p06a"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-025",
+      "data": {
+        "tips": "译文对应｜对应同段原文；段内润色不要求词序相同。"
+      },
+      "refs": {
+        "source": {
+          "key": "rev-p06b"
+        },
+        "target": {
+          "key": "en-p06b"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-026",
+      "data": {
+        "tips": "修订自｜保留初译身份与全文，以便比较修改。"
+      },
+      "refs": {
+        "source": {
+          "key": "rev-p06b"
+        },
+        "target": {
+          "key": "draft-p06b"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-027",
+      "data": {
+        "tips": "修改理由｜R01｜static 的语义"
+      },
+      "refs": {
+        "source": {
+          "key": "rev-p02"
+        },
+        "target": {
+          "key": "r01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-028",
+      "data": {
+        "tips": "修改理由｜R01｜static 的语义"
+      },
+      "refs": {
+        "source": {
+          "key": "rev-p05"
+        },
+        "target": {
+          "key": "r01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-029",
+      "data": {
+        "tips": "修改理由｜R02｜旋钮与手册的术语统一"
+      },
+      "refs": {
+        "source": {
+          "key": "rev-p01"
+        },
+        "target": {
+          "key": "r02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-030",
+      "data": {
+        "tips": "修改理由｜R02｜旋钮与手册的术语统一"
+      },
+      "refs": {
+        "source": {
+          "key": "rev-p02"
+        },
+        "target": {
+          "key": "r02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-031",
+      "data": {
+        "tips": "修改理由｜R02｜旋钮与手册的术语统一"
+      },
+      "refs": {
+        "source": {
+          "key": "rev-p03a1"
+        },
+        "target": {
+          "key": "r02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-032",
+      "data": {
+        "tips": "修改理由｜R02｜旋钮与手册的术语统一"
+      },
+      "refs": {
+        "source": {
+          "key": "rev-p04"
+        },
+        "target": {
+          "key": "r02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-033",
+      "data": {
+        "tips": "修改理由｜R02｜旋钮与手册的术语统一"
+      },
+      "refs": {
+        "source": {
+          "key": "rev-p06a"
+        },
+        "target": {
+          "key": "r02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-034",
+      "data": {
+        "tips": "修改理由｜R03｜一句拆成两句"
+      },
+      "refs": {
+        "source": {
+          "key": "rev-p03a1"
+        },
+        "target": {
+          "key": "r03"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-035",
+      "data": {
+        "tips": "修改理由｜R03｜一句拆成两句"
+      },
+      "refs": {
+        "source": {
+          "key": "rev-p03a2"
+        },
+        "target": {
+          "key": "r03"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-036",
+      "data": {
+        "tips": "修改理由｜R04｜修理请求的语气"
+      },
+      "refs": {
+        "source": {
+          "key": "rev-p04"
+        },
+        "target": {
+          "key": "r04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-037",
+      "data": {
+        "tips": "修改理由｜R05｜末句的两种合理表达"
+      },
+      "refs": {
+        "source": {
+          "key": "rev-p06b"
+        },
+        "target": {
+          "key": "r05"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-038",
+      "data": {
+        "tips": "修改理由｜R06｜咔嗒与咔哒的选择"
+      },
+      "refs": {
+        "source": {
+          "key": "rev-p03a1"
+        },
+        "target": {
+          "key": "r06"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-039",
+      "data": {
+        "tips": "修改理由｜R06｜咔嗒与咔哒的选择"
+      },
+      "refs": {
+        "source": {
+          "key": "rev-p03b"
+        },
+        "target": {
+          "key": "r06"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-040",
+      "data": {
+        "tips": "修改理由｜R06｜咔嗒与咔哒的选择"
+      },
+      "refs": {
+        "source": {
+          "key": "rev-p04"
+        },
+        "target": {
+          "key": "r06"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-041",
+      "data": {
+        "tips": "候选依据｜末句 room 与 silence 的意象。"
+      },
+      "refs": {
+        "source": {
+          "key": "candidate-a"
+        },
+        "target": {
+          "key": "en-p06b"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-042",
+      "data": {
+        "tips": "候选比较｜查看当前实际采用的修订句。"
+      },
+      "refs": {
+        "source": {
+          "key": "candidate-a"
+        },
+        "target": {
+          "key": "rev-p06b"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-043",
+      "data": {
+        "tips": "保留候选｜两种合理表达的比较与取舍。"
+      },
+      "refs": {
+        "source": {
+          "key": "r05"
+        },
+        "target": {
+          "key": "candidate-a"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-044",
+      "data": {
+        "tips": "候选依据｜末句 room 与 silence 的意象。"
+      },
+      "refs": {
+        "source": {
+          "key": "candidate-b"
+        },
+        "target": {
+          "key": "en-p06b"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-045",
+      "data": {
+        "tips": "候选比较｜查看当前实际采用的修订句。"
+      },
+      "refs": {
+        "source": {
+          "key": "candidate-b"
+        },
+        "target": {
+          "key": "rev-p06b"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-046",
+      "data": {
+        "tips": "保留候选｜两种合理表达的比较与取舍。"
+      },
+      "refs": {
+        "source": {
+          "key": "r05"
+        },
+        "target": {
+          "key": "candidate-b"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-047",
+      "data": {
+        "tips": "用词例证｜正文实际出现：radio"
+      },
+      "refs": {
+        "source": {
+          "key": "t01"
+        },
+        "target": {
+          "key": "en-p01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-048",
+      "data": {
+        "tips": "用词例证｜正文实际出现：radio"
+      },
+      "refs": {
+        "source": {
+          "key": "t01"
+        },
+        "target": {
+          "key": "en-p02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-049",
+      "data": {
+        "tips": "用词例证｜正文实际出现：radio"
+      },
+      "refs": {
+        "source": {
+          "key": "t01"
+        },
+        "target": {
+          "key": "en-p04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-050",
+      "data": {
+        "tips": "用词例证｜正文实际出现：radio"
+      },
+      "refs": {
+        "source": {
+          "key": "t01"
+        },
+        "target": {
+          "key": "en-p05"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-051",
+      "data": {
+        "tips": "用词例证｜正文实际出现：radio"
+      },
+      "refs": {
+        "source": {
+          "key": "t01"
+        },
+        "target": {
+          "key": "en-p06a"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-052",
+      "data": {
+        "tips": "用词例证｜正文实际出现：收音机"
+      },
+      "refs": {
+        "source": {
+          "key": "t01"
+        },
+        "target": {
+          "key": "draft-p01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-053",
+      "data": {
+        "tips": "用词例证｜正文实际出现：收音机"
+      },
+      "refs": {
+        "source": {
+          "key": "t01"
+        },
+        "target": {
+          "key": "draft-p02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-054",
+      "data": {
+        "tips": "用词例证｜正文实际出现：收音机"
+      },
+      "refs": {
+        "source": {
+          "key": "t01"
+        },
+        "target": {
+          "key": "draft-p04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-055",
+      "data": {
+        "tips": "用词例证｜正文实际出现：收音机"
+      },
+      "refs": {
+        "source": {
+          "key": "t01"
+        },
+        "target": {
+          "key": "draft-p05"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-056",
+      "data": {
+        "tips": "用词例证｜正文实际出现：收音机"
+      },
+      "refs": {
+        "source": {
+          "key": "t01"
+        },
+        "target": {
+          "key": "draft-p06a"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-057",
+      "data": {
+        "tips": "用词例证｜正文实际出现：收音机"
+      },
+      "refs": {
+        "source": {
+          "key": "t01"
+        },
+        "target": {
+          "key": "rev-p01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-058",
+      "data": {
+        "tips": "用词例证｜正文实际出现：收音机"
+      },
+      "refs": {
+        "source": {
+          "key": "t01"
+        },
+        "target": {
+          "key": "rev-p02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-059",
+      "data": {
+        "tips": "用词例证｜正文实际出现：收音机"
+      },
+      "refs": {
+        "source": {
+          "key": "t01"
+        },
+        "target": {
+          "key": "rev-p04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-060",
+      "data": {
+        "tips": "用词例证｜正文实际出现：收音机"
+      },
+      "refs": {
+        "source": {
+          "key": "t01"
+        },
+        "target": {
+          "key": "rev-p05"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-061",
+      "data": {
+        "tips": "用词例证｜正文实际出现：收音机"
+      },
+      "refs": {
+        "source": {
+          "key": "t01"
+        },
+        "target": {
+          "key": "rev-p06a"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-062",
+      "data": {
+        "tips": "用词例证｜正文实际出现：tuning knob"
+      },
+      "refs": {
+        "source": {
+          "key": "t02"
+        },
+        "target": {
+          "key": "en-p01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-063",
+      "data": {
+        "tips": "用词例证｜正文实际出现：tuning knob"
+      },
+      "refs": {
+        "source": {
+          "key": "t02"
+        },
+        "target": {
+          "key": "en-p03a"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-064",
+      "data": {
+        "tips": "用词例证｜正文实际出现：tuning knob"
+      },
+      "refs": {
+        "source": {
+          "key": "t02"
+        },
+        "target": {
+          "key": "en-p06a"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-065",
+      "data": {
+        "tips": "用词例证｜正文实际出现：调台旋钮"
+      },
+      "refs": {
+        "source": {
+          "key": "t02"
+        },
+        "target": {
+          "key": "draft-p01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-066",
+      "data": {
+        "tips": "用词例证｜正文实际出现：调谐旋钮"
+      },
+      "refs": {
+        "source": {
+          "key": "t02"
+        },
+        "target": {
+          "key": "draft-p03a"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-067",
+      "data": {
+        "tips": "用词例证｜正文实际出现：调台旋钮"
+      },
+      "refs": {
+        "source": {
+          "key": "t02"
+        },
+        "target": {
+          "key": "draft-p06a"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-068",
+      "data": {
+        "tips": "用词例证｜正文实际出现：调谐旋钮"
+      },
+      "refs": {
+        "source": {
+          "key": "t02"
+        },
+        "target": {
+          "key": "rev-p01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-069",
+      "data": {
+        "tips": "用词例证｜正文实际出现：调谐旋钮"
+      },
+      "refs": {
+        "source": {
+          "key": "t02"
+        },
+        "target": {
+          "key": "rev-p03a1"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-070",
+      "data": {
+        "tips": "用词例证｜正文实际出现：调谐旋钮"
+      },
+      "refs": {
+        "source": {
+          "key": "t02"
+        },
+        "target": {
+          "key": "rev-p06a"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-071",
+      "data": {
+        "tips": "用词例证｜正文实际出现：static"
+      },
+      "refs": {
+        "source": {
+          "key": "t03"
+        },
+        "target": {
+          "key": "en-p02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-072",
+      "data": {
+        "tips": "用词例证｜正文实际出现：static"
+      },
+      "refs": {
+        "source": {
+          "key": "t03"
+        },
+        "target": {
+          "key": "en-p05"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-073",
+      "data": {
+        "tips": "用词例证｜正文实际出现：静电"
+      },
+      "refs": {
+        "source": {
+          "key": "t03"
+        },
+        "target": {
+          "key": "draft-p02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-074",
+      "data": {
+        "tips": "用词例证｜正文实际出现：静电"
+      },
+      "refs": {
+        "source": {
+          "key": "t03"
+        },
+        "target": {
+          "key": "draft-p05"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-075",
+      "data": {
+        "tips": "用词例证｜正文实际出现：杂音"
+      },
+      "refs": {
+        "source": {
+          "key": "t03"
+        },
+        "target": {
+          "key": "rev-p02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-076",
+      "data": {
+        "tips": "用词例证｜正文实际出现：杂音"
+      },
+      "refs": {
+        "source": {
+          "key": "t03"
+        },
+        "target": {
+          "key": "rev-p05"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-077",
+      "data": {
+        "tips": "用词例证｜正文实际出现：service manual"
+      },
+      "refs": {
+        "source": {
+          "key": "t04"
+        },
+        "target": {
+          "key": "en-p02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-078",
+      "data": {
+        "tips": "用词例证｜正文实际出现：service manual"
+      },
+      "refs": {
+        "source": {
+          "key": "t04"
+        },
+        "target": {
+          "key": "en-p04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-079",
+      "data": {
+        "tips": "用词例证｜正文实际出现：服务手册"
+      },
+      "refs": {
+        "source": {
+          "key": "t04"
+        },
+        "target": {
+          "key": "draft-p02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-080",
+      "data": {
+        "tips": "用词例证｜正文实际出现：服务手册"
+      },
+      "refs": {
+        "source": {
+          "key": "t04"
+        },
+        "target": {
+          "key": "draft-p04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-081",
+      "data": {
+        "tips": "用词例证｜正文实际出现：维修手册"
+      },
+      "refs": {
+        "source": {
+          "key": "t04"
+        },
+        "target": {
+          "key": "rev-p02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-082",
+      "data": {
+        "tips": "用词例证｜正文实际出现：维修手册"
+      },
+      "refs": {
+        "source": {
+          "key": "t04"
+        },
+        "target": {
+          "key": "rev-p04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-083",
+      "data": {
+        "tips": "用词例证｜正文实际出现：click"
+      },
+      "refs": {
+        "source": {
+          "key": "t05"
+        },
+        "target": {
+          "key": "en-p03a"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-084",
+      "data": {
+        "tips": "用词例证｜正文实际出现：click"
+      },
+      "refs": {
+        "source": {
+          "key": "t05"
+        },
+        "target": {
+          "key": "en-p03b"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-085",
+      "data": {
+        "tips": "用词例证｜正文实际出现：click"
+      },
+      "refs": {
+        "source": {
+          "key": "t05"
+        },
+        "target": {
+          "key": "en-p04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-086",
+      "data": {
+        "tips": "用词例证｜正文实际出现：咔嗒"
+      },
+      "refs": {
+        "source": {
+          "key": "t05"
+        },
+        "target": {
+          "key": "draft-p03a"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-087",
+      "data": {
+        "tips": "用词例证｜正文实际出现：咔嗒"
+      },
+      "refs": {
+        "source": {
+          "key": "t05"
+        },
+        "target": {
+          "key": "draft-p03b"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-088",
+      "data": {
+        "tips": "用词例证｜正文实际出现：咔嗒"
+      },
+      "refs": {
+        "source": {
+          "key": "t05"
+        },
+        "target": {
+          "key": "draft-p04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-089",
+      "data": {
+        "tips": "用词例证｜正文实际出现：咔哒"
+      },
+      "refs": {
+        "source": {
+          "key": "t05"
+        },
+        "target": {
+          "key": "rev-p03a1"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-090",
+      "data": {
+        "tips": "用词例证｜正文实际出现：咔哒"
+      },
+      "refs": {
+        "source": {
+          "key": "t05"
+        },
+        "target": {
+          "key": "rev-p03b"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-091",
+      "data": {
+        "tips": "用词例证｜正文实际出现：咔哒"
+      },
+      "refs": {
+        "source": {
+          "key": "t05"
+        },
+        "target": {
+          "key": "rev-p04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-092",
+      "data": {
+        "tips": "用词约定｜从修改理由继续查看全部正文词例。"
+      },
+      "refs": {
+        "source": {
+          "key": "r01"
+        },
+        "target": {
+          "key": "t03"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-093",
+      "data": {
+        "tips": "用词约定｜从修改理由继续查看全部正文词例。"
+      },
+      "refs": {
+        "source": {
+          "key": "r02"
+        },
+        "target": {
+          "key": "t02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-094",
+      "data": {
+        "tips": "用词约定｜从修改理由继续查看全部正文词例。"
+      },
+      "refs": {
+        "source": {
+          "key": "r02"
+        },
+        "target": {
+          "key": "t04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-095",
+      "data": {
+        "tips": "用词约定｜从修改理由继续查看全部正文词例。"
+      },
+      "refs": {
+        "source": {
+          "key": "r06"
+        },
+        "target": {
+          "key": "t05"
+        }
+      }
+    }
+  ]
+}

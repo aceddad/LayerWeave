@@ -1,0 +1,3331 @@
+{
+  "format_version": 1,
+  "name": "同看红外，为何还要三台望远镜？",
+  "when": "比较 Webb、Euclid、SPHEREx 的公开设计与观测方式，保留证据、条件和待确认项。",
+  "preserve_positions": true,
+  "project": {
+    "op": "add",
+    "data": {
+      "name": "同看红外，为何还要三台望远镜？",
+      "tips": "调查截止 2026-10-20（Asia/Hong_Kong）。先读 K00，再沿出向关联读主张→证据→来源；反向可查更新影响。全为原创文字概括，无外部媒体依赖。列表序号不是数据库 ID。"
+    }
+  },
+  "items": [
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "questions",
+      "data": {
+        "name": "01 调查问题与对象",
+        "config_ref": "layers/text.toml",
+        "tips": "范围、五个问题和三个对象；问题用入向关联找到回答。",
+        "axis": {
+          "unit": "序号",
+          "precision": 1
+        }
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "M00",
+          "data": {
+            "name": "M00｜范围与判定规则",
+            "config_ref": "objects/text.toml",
+            "begin": 1,
+            "end": 2,
+            "information": {
+              "text": "调查：Webb、Euclid、SPHEREx 同看红外，是否功能重复？截止 2026-10-20（香港时间）。只比较公开设计、仪器方式和概览能支持的判断；不做预算效益、实时运行健康或同条件灵敏度排名。2026-10-20 实际联网查阅八份官方/任务团队资料。计划、文档所述能力、研究者推断、未确认项分别标识。",
+              "code": "M00",
+              "category": "method",
+              "status": "scope",
+              "as_of": "2026-10-20"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "Q1",
+          "data": {
+            "name": "Q1｜要回答什么问题？",
+            "config_ref": "objects/text.toml",
+            "begin": 2,
+            "end": 3,
+            "information": {
+              "text": "比较主要研究目标和研究尺度，不把科学目标写成已经发现的结果。",
+              "code": "Q1",
+              "category": "question",
+              "status": "scope",
+              "as_of": "2026-10-20"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "Q2",
+          "data": {
+            "name": "Q2｜看哪些波长？",
+            "config_ref": "objects/text.toml",
+            "begin": 3,
+            "end": 4,
+            "information": {
+              "text": "区分整机、仪器和具体观测模式；μm 为微米，1 μm = 1000 nm。",
+              "code": "Q2",
+              "category": "question",
+              "status": "scope",
+              "as_of": "2026-10-20"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "Q3",
+          "data": {
+            "name": "Q3｜怎样覆盖天空？",
+            "config_ref": "objects/text.toml",
+            "begin": 4,
+            "end": 5,
+            "information": {
+              "text": "区分定向观测、单次视场、累计巡天区域；不能直接混算面积。",
+              "code": "Q3",
+              "category": "question",
+              "status": "scope",
+              "as_of": "2026-10-20"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "Q4",
+          "data": {
+            "name": "Q4｜怎样取得光谱？",
+            "config_ref": "objects/text.toml",
+            "begin": 5,
+            "end": 6,
+            "information": {
+              "text": "比较多种光谱模式、滤镜/棱栅切换和扫描累积；颜色数不是能力总分。",
+              "code": "Q4",
+              "category": "question",
+              "status": "scope",
+              "as_of": "2026-10-20"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "Q5",
+          "data": {
+            "name": "Q5｜哪些判断仍需要条件？",
+            "config_ref": "objects/text.toml",
+            "begin": 6,
+            "end": 7,
+            "information": {
+              "text": "区分设计覆盖、不同天区深度和实测数据；注明资料的时间口径。",
+              "code": "Q5",
+              "category": "question",
+              "status": "scope",
+              "as_of": "2026-10-20"
+            }
+          }
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "subjects",
+          "data": {
+            "name": "研究对象",
+            "config_ref": "layers/text.toml",
+            "tips": "对象身份由导入发放，O 代码只是可读标签。"
+          },
+          "children": [
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "OW",
+              "data": {
+                "name": "OW｜Webb／韦布",
+                "config_ref": "objects/text.toml",
+                "begin": 1,
+                "end": 2,
+                "information": {
+                  "text": "James Webb Space Telescope。以下简称 Webb。",
+                  "code": "OW",
+                  "category": "subject",
+                  "status": "scope",
+                  "as_of": "2026-10-20"
+                }
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "OE",
+              "data": {
+                "name": "OE｜Euclid／欧几里得",
+                "config_ref": "objects/text.toml",
+                "begin": 2,
+                "end": 3,
+                "information": {
+                  "text": "ESA Euclid。以下简称 Euclid。",
+                  "code": "OE",
+                  "category": "subject",
+                  "status": "scope",
+                  "as_of": "2026-10-20"
+                }
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "OS",
+              "data": {
+                "name": "OS｜SPHEREx",
+                "config_ref": "objects/text.toml",
+                "begin": 3,
+                "end": 4,
+                "information": {
+                  "text": "Spectro-Photometer for the History of the Universe, Epoch of Reionization and Ices Explorer。",
+                  "code": "OS",
+                  "category": "subject",
+                  "status": "scope",
+                  "as_of": "2026-10-20"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "sources",
+      "data": {
+        "name": "02 来源目录",
+        "config_ref": "layers/text.toml",
+        "tips": "八份来源按序排列；URL、查阅日期、相关章节与时间限定均保存在正文及 information。",
+        "axis": {
+          "unit": "序号",
+          "precision": 1
+        }
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "S01",
+          "data": {
+            "name": "S01｜Webb’s Scientific Instruments",
+            "config_ref": "objects/text.toml",
+            "begin": 1,
+            "end": 2,
+            "information": {
+              "text": "NASA Science｜Webb’s Scientific Instruments\nhttps://science.nasa.gov/mission/webb/science-overview/science-explainers/webbs-scientific-instruments/\n查阅：2026-10-20\n位置：Overview; Spectroscopy Modes; Wavelength Range; Field of View; Resolution; MIRI; NIRSpec\n适用边界：网页标注 Page Last Updated: 2025-09-10。模式与波段概览；同页探测器段落与波段段落的上限也不同。\n用途：仪器与模式决定实际覆盖和分辨率；不能用整机范围代表每次曝光。",
+              "code": "S01",
+              "category": "source",
+              "status": "reviewed",
+              "as_of": "2026-10-20",
+              "title": "Webb’s Scientific Instruments",
+              "publisher": "NASA Science",
+              "url": "https://science.nasa.gov/mission/webb/science-overview/science-explainers/webbs-scientific-instruments/",
+              "accessed_on": "2026-10-20",
+              "locator": "Overview; Spectroscopy Modes; Wavelength Range; Field of View; Resolution; MIRI; NIRSpec",
+              "temporal_note": "网页标注 Page Last Updated: 2025-09-10。模式与波段概览；同页探测器段落与波段段落的上限也不同。",
+              "usage": "仪器与模式决定实际覆盖和分辨率；不能用整机范围代表每次曝光。"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "S02",
+          "data": {
+            "name": "S02｜Telescope Overview",
+            "config_ref": "objects/text.toml",
+            "begin": 2,
+            "end": 3,
+            "information": {
+              "text": "NASA Science｜Telescope Overview\nhttps://science.nasa.gov/mission/webb/science-overview/science-explainers/telescope-overview/\n查阅：2026-10-20\n位置：Primary Mirror Basics: Webb vs. Hubble（Wavelength Range 行）; Webb’s Wavelength Range, Sensitivity, and Resolution\n适用边界：公开概览；本案例不据导航栏新闻日期推定正文更新日期。\n用途：保留该页的 0.6–28.8 μm，与 S01 的 0.6–27.9 μm 对照；不擅自统一。",
+              "code": "S02",
+              "category": "source",
+              "status": "reviewed",
+              "as_of": "2026-10-20",
+              "title": "Telescope Overview",
+              "publisher": "NASA Science",
+              "url": "https://science.nasa.gov/mission/webb/science-overview/science-explainers/telescope-overview/",
+              "accessed_on": "2026-10-20",
+              "locator": "Primary Mirror Basics: Webb vs. Hubble（Wavelength Range 行）; Webb’s Wavelength Range, Sensitivity, and Resolution",
+              "temporal_note": "公开概览；本案例不据导航栏新闻日期推定正文更新日期。",
+              "usage": "保留该页的 0.6–28.8 μm，与 S01 的 0.6–27.9 μm 对照；不擅自统一。"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "S03",
+          "data": {
+            "name": "S03｜Euclid overview",
+            "config_ref": "objects/text.toml",
+            "begin": 3,
+            "end": 4,
+            "information": {
+              "text": "ESA｜Euclid overview\nhttps://www.esa.int/Science_Exploration/Space_Science/Euclid_overview\n查阅：2026-10-20\n位置：Mission objectives; Lifetime; Euclid mission facts\n适用边界：同时含设计目标与已开始常规观测的说明；六年是名义任务期。未标明整体正文修订日期。\n用途：用于暗宇宙目标及大范围巡天计划；不能证明截止日已经完成全部覆盖。",
+              "code": "S03",
+              "category": "source",
+              "status": "reviewed",
+              "as_of": "2026-10-20",
+              "title": "Euclid overview",
+              "publisher": "ESA",
+              "url": "https://www.esa.int/Science_Exploration/Space_Science/Euclid_overview",
+              "accessed_on": "2026-10-20",
+              "locator": "Mission objectives; Lifetime; Euclid mission facts",
+              "temporal_note": "同时含设计目标与已开始常规观测的说明；六年是名义任务期。未标明整体正文修订日期。",
+              "usage": "用于暗宇宙目标及大范围巡天计划；不能证明截止日已经完成全部覆盖。"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "S04",
+          "data": {
+            "name": "S04｜Euclid’s instruments",
+            "config_ref": "objects/text.toml",
+            "begin": 4,
+            "end": 5,
+            "information": {
+              "text": "ESA｜Euclid’s instruments\nhttps://www.esa.int/Science_Exploration/Space_Science/Euclid/Euclid_s_instruments\n查阅：2026-10-20\n位置：The VISible instrument (VIS); Near-Infrared Spectrometer and Photometer (NISP)\n适用边界：仪器概览；本案例不采用其中随时间可能失效的“最大/最好”宣传表述。\n用途：提取 VIS/NISP 波段、VIS 单次视场和 NISP 测光/光谱两种方式。",
+              "code": "S04",
+              "category": "source",
+              "status": "reviewed",
+              "as_of": "2026-10-20",
+              "title": "Euclid’s instruments",
+              "publisher": "ESA",
+              "url": "https://www.esa.int/Science_Exploration/Space_Science/Euclid/Euclid_s_instruments",
+              "accessed_on": "2026-10-20",
+              "locator": "The VISible instrument (VIS); Near-Infrared Spectrometer and Photometer (NISP)",
+              "temporal_note": "仪器概览；本案例不采用其中随时间可能失效的“最大/最好”宣传表述。",
+              "usage": "提取 VIS/NISP 波段、VIS 单次视场和 NISP 测光/光谱两种方式。"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "S05",
+          "data": {
+            "name": "S05｜Survey",
+            "config_ref": "objects/text.toml",
+            "begin": 5,
+            "end": 6,
+            "information": {
+              "text": "SPHEREx / Caltech｜Survey\nhttps://spherex.caltech.edu/page/survey\n查阅：2026-10-20\n位置：开头两段; Fig 1、Fig 2 图注; 第 135–148 行附近的扫描说明; Building an All-Sky Survey with SPHEREx\n适用边界：页面仍以未来时描述名义 25 个月扫描；灵敏度曲线明确属于预测，未包含源混淆。\n用途：用于四轮全天巡天设计、深场区别、逐次曝光累积光谱和预测的限定条件。",
+              "code": "S05",
+              "category": "source",
+              "status": "reviewed",
+              "as_of": "2026-10-20",
+              "title": "Survey",
+              "publisher": "SPHEREx / Caltech",
+              "url": "https://spherex.caltech.edu/page/survey",
+              "accessed_on": "2026-10-20",
+              "locator": "开头两段; Fig 1、Fig 2 图注; 第 135–148 行附近的扫描说明; Building an All-Sky Survey with SPHEREx",
+              "temporal_note": "页面仍以未来时描述名义 25 个月扫描；灵敏度曲线明确属于预测，未包含源混淆。",
+              "usage": "用于四轮全天巡天设计、深场区别、逐次曝光累积光谱和预测的限定条件。"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "S06",
+          "data": {
+            "name": "S06｜Spacecraft — SPHEREx Press Kit",
+            "config_ref": "objects/text.toml",
+            "begin": 6,
+            "end": 7,
+            "information": {
+              "text": "NASA / JPL-Caltech｜Spacecraft — SPHEREx Press Kit\nhttps://www.jpl.nasa.gov/press-kits/spherex/mission-overview/spacecraft/\n查阅：2026-10-20\n位置：Telescope and Detectors（six filters / 17 color bands 段落）\n适用边界：发射前新闻资料包的设计说明；只作仪器原理证据，不作当前执行进度。\n用途：核对 6 片渐变滤光片、每片 17 个颜色通道，共 102 通道的含义。",
+              "code": "S06",
+              "category": "source",
+              "status": "reviewed",
+              "as_of": "2026-10-20",
+              "title": "Spacecraft — SPHEREx Press Kit",
+              "publisher": "NASA / JPL-Caltech",
+              "url": "https://www.jpl.nasa.gov/press-kits/spherex/mission-overview/spacecraft/",
+              "accessed_on": "2026-10-20",
+              "locator": "Telescope and Detectors（six filters / 17 color bands 段落）",
+              "temporal_note": "发射前新闻资料包的设计说明；只作仪器原理证据，不作当前执行进度。",
+              "usage": "核对 6 片渐变滤光片、每片 17 个颜色通道，共 102 通道的含义。"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "S07",
+          "data": {
+            "name": "S07｜Science — SPHEREx Press Kit",
+            "config_ref": "objects/text.toml",
+            "begin": 7,
+            "end": 8,
+            "information": {
+              "text": "NASA / JPL-Caltech｜Science — SPHEREx Press Kit\nhttps://www.jpl.nasa.gov/press-kits/spherex/mission-overview/science/\n查阅：2026-10-20\n位置：Science Goals and Objectives; Survey Telescopes vs. Targeted Telescopes\n适用边界：前瞻性科学目标说明；不把计划写成已经获得的科学发现。\n用途：用于 SPHEREx 三项科学目标，以及巡天与定向观测互补的解释。",
+              "code": "S07",
+              "category": "source",
+              "status": "reviewed",
+              "as_of": "2026-10-20",
+              "title": "Science — SPHEREx Press Kit",
+              "publisher": "NASA / JPL-Caltech",
+              "url": "https://www.jpl.nasa.gov/press-kits/spherex/mission-overview/science/",
+              "accessed_on": "2026-10-20",
+              "locator": "Science Goals and Objectives; Survey Telescopes vs. Targeted Telescopes",
+              "temporal_note": "前瞻性科学目标说明；不把计划写成已经获得的科学发现。",
+              "usage": "用于 SPHEREx 三项科学目标，以及巡天与定向观测互补的解释。"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "S08",
+          "data": {
+            "name": "S08｜SPHEREx Data Explorer at IRSA: Overview",
+            "config_ref": "objects/text.toml",
+            "begin": 8,
+            "end": 9,
+            "information": {
+              "text": "NASA/IPAC IRSA｜SPHEREx Data Explorer at IRSA: Overview\nhttps://irsa.ipac.caltech.edu/onlinehelp/spherex/spherex/overview.html\n查阅：2026-10-20\n位置：Documentation; Terminology, Hints, and Tips → Telescope & Data Terminology\n适用边界：QR2 说明自带截至 2025-10-16 的时间，不能把这句话当成 2026-10-20 的最新发布清单。\n用途：核对 0.75–5 μm、同目标波段非一次到齐，以及版本日期的适用边界。",
+              "code": "S08",
+              "category": "source",
+              "status": "reviewed",
+              "as_of": "2026-10-20",
+              "title": "SPHEREx Data Explorer at IRSA: Overview",
+              "publisher": "NASA/IPAC IRSA",
+              "url": "https://irsa.ipac.caltech.edu/onlinehelp/spherex/spherex/overview.html",
+              "accessed_on": "2026-10-20",
+              "locator": "Documentation; Terminology, Hints, and Tips → Telescope & Data Terminology",
+              "temporal_note": "QR2 说明自带截至 2025-10-16 的时间，不能把这句话当成 2026-10-20 的最新发布清单。",
+              "usage": "核对 0.75–5 μm、同目标波段非一次到齐，以及版本日期的适用边界。"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "claims",
+      "data": {
+        "name": "03 可核实主张",
+        "config_ref": "layers/text.toml",
+        "tips": "各对象子层的第 n 条回答 Qn；所有主张有独立证据对象。文档事实不等于完成度实测。",
+        "axis": {
+          "unit": "序号",
+          "precision": 1
+        }
+      },
+      "children": [
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "webb",
+          "data": {
+            "name": "Webb 的主张",
+            "config_ref": "layers/text.toml",
+            "tips": "位置 1–5 对应 Q1–Q5，沿出向关联到证据。"
+          },
+          "children": [
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "CW1",
+              "data": {
+                "name": "CW1｜Webb：定向细查",
+                "config_ref": "objects/text.toml",
+                "begin": 1,
+                "end": 2,
+                "information": {
+                  "text": "Webb 被官方归为定向望远镜，适合细查选定对象。",
+                  "code": "CW1",
+                  "category": "claim",
+                  "status": "documented",
+                  "as_of": "2026-10-20",
+                  "question_code": "Q1",
+                  "subject_code": "OW"
+                }
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "CW2",
+              "data": {
+                "name": "CW2｜Webb：波长上限有不同表述",
+                "config_ref": "objects/text.toml",
+                "begin": 2,
+                "end": 3,
+                "information": {
+                  "text": "S01 写 0.6–27.9 μm，S02 写 0.6–28.8 μm；两者均延伸到中红外。",
+                  "code": "CW2",
+                  "category": "claim",
+                  "status": "source_discrepancy",
+                  "as_of": "2026-10-20",
+                  "question_code": "Q2",
+                  "subject_code": "OW"
+                }
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "CW3",
+              "data": {
+                "name": "CW3｜Webb：视场依仪器与模式变化",
+                "config_ref": "objects/text.toml",
+                "begin": 3,
+                "end": 4,
+                "information": {
+                  "text": "Webb 的单次视场没有一个适用于全部仪器和模式的数值。",
+                  "code": "CW3",
+                  "category": "claim",
+                  "status": "documented",
+                  "as_of": "2026-10-20",
+                  "question_code": "Q3",
+                  "subject_code": "OW"
+                }
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "CW4",
+              "data": {
+                "name": "CW4｜Webb：光谱有多种模式",
+                "config_ref": "objects/text.toml",
+                "begin": 4,
+                "end": 5,
+                "information": {
+                  "text": "Webb 具备狭缝、多目标、无缝及积分视场等光谱方式。",
+                  "code": "CW4",
+                  "category": "claim",
+                  "status": "documented",
+                  "as_of": "2026-10-20",
+                  "question_code": "Q4",
+                  "subject_code": "OW"
+                }
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "CW5",
+              "data": {
+                "name": "CW5｜Webb：不能以波段宽度决定清晰度",
+                "config_ref": "objects/text.toml",
+                "begin": 5,
+                "end": 6,
+                "information": {
+                  "text": "实际空间/光谱分辨率随波长、仪器和模式变化。",
+                  "code": "CW5",
+                  "category": "claim",
+                  "status": "conditional",
+                  "as_of": "2026-10-20",
+                  "question_code": "Q5",
+                  "subject_code": "OW"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "euclid",
+          "data": {
+            "name": "Euclid 的主张",
+            "config_ref": "layers/text.toml",
+            "tips": "位置 1–5 对应 Q1–Q5，沿出向关联到证据。"
+          },
+          "children": [
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "CE1",
+              "data": {
+                "name": "CE1｜Euclid：暗宇宙的大样本研究",
+                "config_ref": "objects/text.toml",
+                "begin": 1,
+                "end": 2,
+                "information": {
+                  "text": "Euclid 以宇宙膨胀和结构演化约束暗能量、暗物质等性质。",
+                  "code": "CE1",
+                  "category": "claim",
+                  "status": "documented",
+                  "as_of": "2026-10-20",
+                  "question_code": "Q1",
+                  "subject_code": "OE"
+                }
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "CE2",
+              "data": {
+                "name": "CE2｜Euclid：可见光加近红外",
+                "config_ref": "objects/text.toml",
+                "begin": 2,
+                "end": 3,
+                "information": {
+                  "text": "VIS 约 0.55–0.9 μm；NISP 的仪器概览范围约 0.9–2 μm。",
+                  "code": "CE2",
+                  "category": "claim",
+                  "status": "documented",
+                  "as_of": "2026-10-20",
+                  "question_code": "Q2",
+                  "subject_code": "OE"
+                }
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "CE3",
+              "data": {
+                "name": "CE3｜Euclid：广域巡天不是单张照片",
+                "config_ref": "objects/text.toml",
+                "begin": 3,
+                "end": 4,
+                "information": {
+                  "text": "目标覆盖天空超过三分之一；VIS 单次视场约 0.5 平方度。",
+                  "code": "CE3",
+                  "category": "claim",
+                  "status": "planned",
+                  "as_of": "2026-10-20",
+                  "question_code": "Q3",
+                  "subject_code": "OE"
+                }
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "CE4",
+              "data": {
+                "name": "CE4｜Euclid：三个测光波段不等于三色光谱",
+                "config_ref": "objects/text.toml",
+                "begin": 4,
+                "end": 5,
+                "information": {
+                  "text": "NISP 既可用 Y/J/H 滤镜测光，也可用 grism 分散光线测光谱。",
+                  "code": "CE4",
+                  "category": "claim",
+                  "status": "documented",
+                  "as_of": "2026-10-20",
+                  "question_code": "Q4",
+                  "subject_code": "OE"
+                }
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "CE5",
+              "data": {
+                "name": "CE5｜Euclid：六年是名义期限",
+                "config_ref": "objects/text.toml",
+                "begin": 5,
+                "end": 6,
+                "information": {
+                  "text": "S03 的六年为名义任务期；其大范围目标不是截止日的完工证明。",
+                  "code": "CE5",
+                  "category": "claim",
+                  "status": "conditional",
+                  "as_of": "2026-10-20",
+                  "question_code": "Q5",
+                  "subject_code": "OE"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "spherex",
+          "data": {
+            "name": "SPHEREx 的主张",
+            "config_ref": "layers/text.toml",
+            "tips": "位置 1–5 对应 Q1–Q5，沿出向关联到证据。"
+          },
+          "children": [
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "CS1",
+              "data": {
+                "name": "CS1｜SPHEREx：三类起源问题",
+                "config_ref": "objects/text.toml",
+                "begin": 1,
+                "end": 2,
+                "information": {
+                  "text": "任务目标包括暴胀、星系总辐射光和银河系水等冰态分子的调查。",
+                  "code": "CS1",
+                  "category": "claim",
+                  "status": "planned",
+                  "as_of": "2026-10-20",
+                  "question_code": "Q1",
+                  "subject_code": "OS"
+                }
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "CS2",
+              "data": {
+                "name": "CS2｜SPHEREx：0.75–5 μm",
+                "config_ref": "objects/text.toml",
+                "begin": 2,
+                "end": 3,
+                "information": {
+                  "text": "任务文档给出约 0.75–5 μm 的光谱覆盖。",
+                  "code": "CS2",
+                  "category": "claim",
+                  "status": "documented",
+                  "as_of": "2026-10-20",
+                  "question_code": "Q2",
+                  "subject_code": "OS"
+                }
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "CS3",
+              "data": {
+                "name": "CS3｜SPHEREx：四轮全天是扫描设计",
+                "config_ref": "objects/text.toml",
+                "begin": 3,
+                "end": 4,
+                "information": {
+                  "text": "名义 25 个月科学观测计划构成四轮全天覆盖，黄道两极有深场。",
+                  "code": "CS3",
+                  "category": "claim",
+                  "status": "planned",
+                  "as_of": "2026-10-20",
+                  "question_code": "Q3",
+                  "subject_code": "OS"
+                }
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "CS4",
+              "data": {
+                "name": "CS4｜SPHEREx：102 色靠多次指向累积",
+                "config_ref": "objects/text.toml",
+                "begin": 4,
+                "end": 5,
+                "information": {
+                  "text": "六片渐变滤光片共 102 通道；同一天区的完整光谱随扫描累积。",
+                  "code": "CS4",
+                  "category": "claim",
+                  "status": "documented",
+                  "as_of": "2026-10-20",
+                  "question_code": "Q4",
+                  "subject_code": "OS"
+                }
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "CS5",
+              "data": {
+                "name": "CS5｜SPHEREx：预测灵敏度有遗漏条件",
+                "config_ref": "objects/text.toml",
+                "begin": 5,
+                "end": 6,
+                "information": {
+                  "text": "S05 的预测曲线未计入天体源混淆；深场尤其需要考虑这一点。",
+                  "code": "CS5",
+                  "category": "claim",
+                  "status": "conditional",
+                  "as_of": "2026-10-20",
+                  "question_code": "Q5",
+                  "subject_code": "OS"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "evidence",
+      "data": {
+        "name": "04 证据摘记",
+        "config_ref": "layers/text.toml",
+        "tips": "原创简短概括；不复制整篇网页。证据→来源，主张→证据。",
+        "axis": {
+          "unit": "序号",
+          "precision": 1
+        }
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "E01",
+          "data": {
+            "name": "E01｜Webb：定向细查的依据",
+            "config_ref": "objects/text.toml",
+            "begin": 1,
+            "end": 2,
+            "information": {
+              "text": "S07 把 Webb 与巡天望远镜对照；S01 列出行星、恒星、星云和星系等对象。\n定位：S07 / Survey Telescopes vs. Targeted Telescopes；S01 / Overview",
+              "code": "E01",
+              "category": "evidence",
+              "status": "source_paraphrase",
+              "as_of": "2026-10-20",
+              "source_codes": [
+                "S07",
+                "S01"
+              ],
+              "locators": {
+                "S07": "Survey Telescopes vs. Targeted Telescopes",
+                "S01": "Overview"
+              }
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "E02",
+          "data": {
+            "name": "E02｜Webb：波长上限有不同表述的依据",
+            "config_ref": "objects/text.toml",
+            "begin": 2,
+            "end": 3,
+            "information": {
+              "text": "S01 的 Wavelength Range 与 S02 的范围表给出不同上限；S01 同页探测器段还写 28.8 μm。\n定位：S01 / Wavelength Range；Instrument Components / Detectors；S02 / Primary Mirror Basics 表 / Wavelength Range",
+              "code": "E02",
+              "category": "evidence",
+              "status": "source_paraphrase",
+              "as_of": "2026-10-20",
+              "source_codes": [
+                "S01",
+                "S02"
+              ],
+              "locators": {
+                "S01": "Wavelength Range；Instrument Components / Detectors",
+                "S02": "Primary Mirror Basics 表 / Wavelength Range"
+              }
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "E03",
+          "data": {
+            "name": "E03｜Webb：视场依仪器与模式变化的依据",
+            "config_ref": "objects/text.toml",
+            "begin": 3,
+            "end": 4,
+            "information": {
+              "text": "S01 说明视场的面积、形状、方向依仪器变化，部分模式也不同。\n定位：S01 / Field of View",
+              "code": "E03",
+              "category": "evidence",
+              "status": "source_paraphrase",
+              "as_of": "2026-10-20",
+              "source_codes": [
+                "S01"
+              ],
+              "locators": {
+                "S01": "Field of View"
+              }
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "E04",
+          "data": {
+            "name": "E04｜Webb：光谱有多种模式的依据",
+            "config_ref": "objects/text.toml",
+            "begin": 4,
+            "end": 5,
+            "information": {
+              "text": "S01 在 Spectroscopy Modes 列出这些方式及对应仪器。\n定位：S01 / Spectroscopy Modes",
+              "code": "E04",
+              "category": "evidence",
+              "status": "source_paraphrase",
+              "as_of": "2026-10-20",
+              "source_codes": [
+                "S01"
+              ],
+              "locators": {
+                "S01": "Spectroscopy Modes"
+              }
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "E05",
+          "data": {
+            "name": "E05｜Webb：不能以波段宽度决定清晰度的依据",
+            "config_ref": "objects/text.toml",
+            "begin": 5,
+            "end": 6,
+            "information": {
+              "text": "S01 的 Resolution 段明确给出这些依赖条件。\n定位：S01 / Resolution",
+              "code": "E05",
+              "category": "evidence",
+              "status": "source_paraphrase",
+              "as_of": "2026-10-20",
+              "source_codes": [
+                "S01"
+              ],
+              "locators": {
+                "S01": "Resolution"
+              }
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "E06",
+          "data": {
+            "name": "E06｜Euclid：暗宇宙的大样本研究的依据",
+            "config_ref": "objects/text.toml",
+            "begin": 6,
+            "end": 7,
+            "information": {
+              "text": "S03 的目标段从星系三维分布与演化推断暗宇宙性质。\n定位：S03 / Mission objectives",
+              "code": "E06",
+              "category": "evidence",
+              "status": "source_paraphrase",
+              "as_of": "2026-10-20",
+              "source_codes": [
+                "S03"
+              ],
+              "locators": {
+                "S03": "Mission objectives"
+              }
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "E07",
+          "data": {
+            "name": "E07｜Euclid：可见光加近红外的依据",
+            "config_ref": "objects/text.toml",
+            "begin": 7,
+            "end": 8,
+            "information": {
+              "text": "S04 分别列 550–900 nm 与 900–2000 nm；本例仅做单位换算。\n定位：S04 / VIS；NISP",
+              "code": "E07",
+              "category": "evidence",
+              "status": "source_paraphrase",
+              "as_of": "2026-10-20",
+              "source_codes": [
+                "S04"
+              ],
+              "locators": {
+                "S04": "VIS；NISP"
+              }
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "E08",
+          "data": {
+            "name": "E08｜Euclid：广域巡天不是单张照片的依据",
+            "config_ref": "objects/text.toml",
+            "begin": 8,
+            "end": 9,
+            "information": {
+              "text": "S03 给巡天目标范围，S04 给 VIS 单次成像视场，两者口径不同。\n定位：S03 / Mission objectives；Euclid mission facts；S04 / VIS 的 field-of-view 段",
+              "code": "E08",
+              "category": "evidence",
+              "status": "source_paraphrase",
+              "as_of": "2026-10-20",
+              "source_codes": [
+                "S03",
+                "S04"
+              ],
+              "locators": {
+                "S03": "Mission objectives；Euclid mission facts",
+                "S04": "VIS 的 field-of-view 段"
+              }
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "E09",
+          "data": {
+            "name": "E09｜Euclid：三个测光波段不等于三色光谱的依据",
+            "config_ref": "objects/text.toml",
+            "begin": 9,
+            "end": 10,
+            "information": {
+              "text": "S04 说明光线进入探测器前可经过 photometry filter 或 spectrometry grism。\n定位：S04 / NISP 最后一段",
+              "code": "E09",
+              "category": "evidence",
+              "status": "source_paraphrase",
+              "as_of": "2026-10-20",
+              "source_codes": [
+                "S04"
+              ],
+              "locators": {
+                "S04": "NISP 最后一段"
+              }
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "E10",
+          "data": {
+            "name": "E10｜Euclid：六年是名义期限的依据",
+            "config_ref": "objects/text.toml",
+            "begin": 10,
+            "end": 11,
+            "information": {
+              "text": "S03 的 Lifetime 明写 nominal；mission facts 对最终覆盖仍用未来表述。\n定位：S03 / Lifetime；Euclid mission facts",
+              "code": "E10",
+              "category": "evidence",
+              "status": "source_paraphrase",
+              "as_of": "2026-10-20",
+              "source_codes": [
+                "S03"
+              ],
+              "locators": {
+                "S03": "Lifetime；Euclid mission facts"
+              }
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "E11",
+          "data": {
+            "name": "E11｜SPHEREx：三类起源问题的依据",
+            "config_ref": "objects/text.toml",
+            "begin": 11,
+            "end": 12,
+            "information": {
+              "text": "S07 开头的三个目标分别对应宇宙、星系光及生命原料。\n定位：S07 / Science Goals and Objectives",
+              "code": "E11",
+              "category": "evidence",
+              "status": "source_paraphrase",
+              "as_of": "2026-10-20",
+              "source_codes": [
+                "S07"
+              ],
+              "locators": {
+                "S07": "Science Goals and Objectives"
+              }
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "E12",
+          "data": {
+            "name": "E12｜SPHEREx：0.75–5 μm的依据",
+            "config_ref": "objects/text.toml",
+            "begin": 12,
+            "end": 13,
+            "information": {
+              "text": "S05 开头和 S08 Documentation 的范围一致。\n定位：S05 / 开头第一段；S08 / Documentation",
+              "code": "E12",
+              "category": "evidence",
+              "status": "source_paraphrase",
+              "as_of": "2026-10-20",
+              "source_codes": [
+                "S05",
+                "S08"
+              ],
+              "locators": {
+                "S05": "开头第一段",
+                "S08": "Documentation"
+              }
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "E13",
+          "data": {
+            "name": "E13｜SPHEREx：四轮全天是扫描设计的依据",
+            "config_ref": "objects/text.toml",
+            "begin": 13,
+            "end": 14,
+            "information": {
+              "text": "S05 的扫描说明区分四次全天巡天与两极重复观测更多的深场。\n定位：S05 / 开头；扫描说明；Building an All-Sky Survey with SPHEREx",
+              "code": "E13",
+              "category": "evidence",
+              "status": "source_paraphrase",
+              "as_of": "2026-10-20",
+              "source_codes": [
+                "S05"
+              ],
+              "locators": {
+                "S05": "开头；扫描说明；Building an All-Sky Survey with SPHEREx"
+              }
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "E14",
+          "data": {
+            "name": "E14｜SPHEREx：102 色靠多次指向累积的依据",
+            "config_ref": "objects/text.toml",
+            "begin": 14,
+            "end": 15,
+            "information": {
+              "text": "S06 给出 6×17 通道；S08 说明同一目标的完整波长覆盖需逐渐积累。\n定位：S06 / Telescope and Detectors / six filters；S08 / Documentation；Bands 说明",
+              "code": "E14",
+              "category": "evidence",
+              "status": "source_paraphrase",
+              "as_of": "2026-10-20",
+              "source_codes": [
+                "S06",
+                "S08"
+              ],
+              "locators": {
+                "S06": "Telescope and Detectors / six filters",
+                "S08": "Documentation；Bands 说明"
+              }
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "E15",
+          "data": {
+            "name": "E15｜SPHEREx：预测灵敏度有遗漏条件的依据",
+            "config_ref": "objects/text.toml",
+            "begin": 15,
+            "end": 16,
+            "information": {
+              "text": "S05 Fig 1 图注明确排除混淆影响，Fig 2 又对长波段使用 R=40 重分箱。\n定位：S05 / Fig 1、Fig 2 图注",
+              "code": "E15",
+              "category": "evidence",
+              "status": "source_paraphrase",
+              "as_of": "2026-10-20",
+              "source_codes": [
+                "S05"
+              ],
+              "locators": {
+                "S05": "Fig 1、Fig 2 图注"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "conclusions",
+      "data": {
+        "name": "05 对照结论",
+        "config_ref": "layers/text.toml",
+        "tips": "K 为研究者的有据推断，不是来源原句；沿出向读主张与适用条件。",
+        "axis": {
+          "unit": "序号",
+          "precision": 1
+        }
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "K00",
+          "data": {
+            "name": "K00｜总判断：有重叠，但不等价",
+            "config_ref": "objects/text.toml",
+            "begin": 1,
+            "end": 2,
+            "information": {
+              "text": "三者在近红外有交集，却分别偏重定向细查、暗宇宙广域样本、全天光谱普查。现有证据支持科学能力互补，不能据此证明每项预算都最优，也不能断言所有项目互不重复。",
+              "code": "K00",
+              "category": "conclusion",
+              "status": "researcher_inference",
+              "as_of": "2026-10-20"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "K01",
+          "data": {
+            "name": "K01｜研究尺度：目标细节与总体统计",
+            "config_ref": "objects/text.toml",
+            "begin": 2,
+            "end": 3,
+            "information": {
+              "text": "研究选定对象细节时可考虑 Webb 的多种模式；研究宇宙结构大样本时 Euclid 更贴近该任务目标；做全天光谱统计时 SPHEREx 的设计更贴近问题。这是任务匹配，不是无条件优劣排名。",
+              "code": "K01",
+              "category": "conclusion",
+              "status": "researcher_inference",
+              "as_of": "2026-10-20"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "K02",
+          "data": {
+            "name": "K02｜波段：交集存在，中红外延伸有区别",
+            "config_ref": "objects/text.toml",
+            "begin": 3,
+            "end": 4,
+            "information": {
+              "text": "按这些概览，三者在近红外部分重合，Webb 延伸到更长的中红外。具体谱线是否可观测必须查模式；Webb 上限差异保留为 U1。",
+              "code": "K02",
+              "category": "conclusion",
+              "status": "researcher_inference",
+              "as_of": "2026-10-20"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "K03",
+          "data": {
+            "name": "K03｜覆盖：先分清单次视场与累计巡天",
+            "config_ref": "objects/text.toml",
+            "begin": 4,
+            "end": 5,
+            "information": {
+              "text": "Euclid 的广域目标、SPHEREx 的全天扫描与 Webb 按模式选区具有不同用途。不能把 VIS 单次面积、整项任务覆盖和深场深度混成一个指标。",
+              "code": "K03",
+              "category": "conclusion",
+              "status": "researcher_inference",
+              "as_of": "2026-10-20"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "K04",
+          "data": {
+            "name": "K04｜光谱：102 色不能直接战胜三个波段",
+            "config_ref": "objects/text.toml",
+            "begin": 5,
+            "end": 6,
+            "information": {
+              "text": "SPHEREx 的 102 通道、Euclid 的 Y/J/H 测光波段和 Webb 的多种光谱模式不是同一统计口径。NISP 本身也有光谱模式；对同一天区获取全光谱所需的扫描条件也不同。",
+              "code": "K04",
+              "category": "conclusion",
+              "status": "researcher_inference",
+              "as_of": "2026-10-20"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "K05",
+          "data": {
+            "name": "K05｜性能：设计说明不等于同条件实测",
+            "config_ref": "objects/text.toml",
+            "begin": 6,
+            "end": 7,
+            "information": {
+              "text": "现有资料足以区分工作方式，无法给出三者统一的最暗可见目标排名，也不能由名义任务期断言已完成巡天。预测曲线、模式差异与数据版本必须分别核查。",
+              "code": "K05",
+              "category": "conclusion",
+              "status": "researcher_inference",
+              "as_of": "2026-10-20"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "conditions",
+      "data": {
+        "name": "06 条件、差异与待确认",
+        "config_ref": "layers/text.toml",
+        "tips": "条件是比较规则；未知项说明还缺什么材料。",
+        "axis": {
+          "unit": "序号",
+          "precision": 1
+        }
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "P1",
+          "data": {
+            "name": "P1｜整机范围不等于观测模式",
+            "config_ref": "objects/text.toml",
+            "begin": 1,
+            "end": 2,
+            "information": {
+              "text": "波段总范围、探测器响应、滤镜和光谱模式必须分开。S01/S02 的数值差异原样保留；不要仅因同为官方就自行选一个。",
+              "code": "P1",
+              "category": "condition",
+              "status": "comparison_rule",
+              "as_of": "2026-10-20"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "P2",
+          "data": {
+            "name": "P2｜比较量必须同口径",
+            "config_ref": "objects/text.toml",
+            "begin": 2,
+            "end": 3,
+            "information": {
+              "text": "单次视场、累计覆盖、谱通道数、宽带滤镜数和角分辨率是不同量；本例不算“强几倍”。",
+              "code": "P2",
+              "category": "condition",
+              "status": "comparison_rule",
+              "as_of": "2026-10-20"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "P3",
+          "data": {
+            "name": "P3｜计划与实测、全天与深场分开",
+            "config_ref": "objects/text.toml",
+            "begin": 3,
+            "end": 4,
+            "information": {
+              "text": "S03/S05 的名义计划不作为完工率；S05 深场与全天的预测深度、源混淆和重分箱条件不同。",
+              "code": "P3",
+              "category": "condition",
+              "status": "comparison_rule",
+              "as_of": "2026-10-20"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "P4",
+          "data": {
+            "name": "P4｜查阅日不是数据版本日",
+            "config_ref": "objects/text.toml",
+            "begin": 4,
+            "end": 5,
+            "information": {
+              "text": "S08 的 QR2 注记明确截至 2025-10-16。本次读到该文字，不足以判定截止 2026-10-20 的最新发行或覆盖完成度。",
+              "code": "P4",
+              "category": "condition",
+              "status": "comparison_rule",
+              "as_of": "2026-10-20"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "U1",
+          "data": {
+            "name": "U1｜Webb 上限差异的原因尚未证实",
+            "config_ref": "objects/text.toml",
+            "begin": 5,
+            "end": 6,
+            "information": {
+              "text": "S01 的 27.9 与 S02 的 28.8 μm 为已核对的文字差异。尚未查明两页修订依据及它们是否分别指特定模式、标定边界或其他口径；不能自行解释为四舍五入。需要对应版本的仪器模式表和变更记录，才可定具体观测上限。",
+              "code": "U1",
+              "category": "unknown",
+              "status": "unresolved",
+              "as_of": "2026-10-20"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "U2",
+          "data": {
+            "name": "U2｜同一目标谁能测得最深尚不能排名",
+            "config_ref": "objects/text.toml",
+            "begin": 6,
+            "end": 7,
+            "information": {
+              "text": "缺少统一目标、波长、曝光时间、信噪阈值、角分辨率、背景与混淆条件下的实测或曝光时间计算。此调查不以口径、通道数或各自宣传曲线替代这些材料。",
+              "code": "U2",
+              "category": "unknown",
+              "status": "unresolved",
+              "as_of": "2026-10-20"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "U3",
+          "data": {
+            "name": "U3｜截止日的完整覆盖与最新发行未核验",
+            "config_ref": "objects/text.toml",
+            "begin": 7,
+            "end": 8,
+            "information": {
+              "text": "尚未逐一查询三项任务的最新发行公告、覆盖图与可下载产品。本例的名义覆盖不能当成现成数据；S08 的旧日期注记也不能作为当前最新版证明。需要发布版本、有效观测日期和覆盖/质量掩膜。",
+              "code": "U3",
+              "category": "unknown",
+              "status": "unresolved",
+              "as_of": "2026-10-20"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "records": [
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CW1-E01",
+      "data": {
+        "tips": "依据：该证据支持本条文档主张；条件见主张状态与条件层。"
+      },
+      "refs": {
+        "source": {
+          "key": "CW1"
+        },
+        "target": {
+          "key": "E01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CW1-Q1",
+      "data": {
+        "tips": "回答此调查问题。"
+      },
+      "refs": {
+        "source": {
+          "key": "CW1"
+        },
+        "target": {
+          "key": "Q1"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CW1-OW",
+      "data": {
+        "tips": "本主张所描述的研究对象。"
+      },
+      "refs": {
+        "source": {
+          "key": "CW1"
+        },
+        "target": {
+          "key": "OW"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-E01-S07",
+      "data": {
+        "tips": "证据来源，相关位置：Survey Telescopes vs. Targeted Telescopes"
+      },
+      "refs": {
+        "source": {
+          "key": "E01"
+        },
+        "target": {
+          "key": "S07"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-E01-S01",
+      "data": {
+        "tips": "证据来源，相关位置：Overview"
+      },
+      "refs": {
+        "source": {
+          "key": "E01"
+        },
+        "target": {
+          "key": "S01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CW2-E02",
+      "data": {
+        "tips": "依据：该证据支持本条文档主张；条件见主张状态与条件层。"
+      },
+      "refs": {
+        "source": {
+          "key": "CW2"
+        },
+        "target": {
+          "key": "E02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CW2-Q2",
+      "data": {
+        "tips": "回答此调查问题。"
+      },
+      "refs": {
+        "source": {
+          "key": "CW2"
+        },
+        "target": {
+          "key": "Q2"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CW2-OW",
+      "data": {
+        "tips": "本主张所描述的研究对象。"
+      },
+      "refs": {
+        "source": {
+          "key": "CW2"
+        },
+        "target": {
+          "key": "OW"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-E02-S01",
+      "data": {
+        "tips": "证据来源，相关位置：Wavelength Range；Instrument Components / Detectors"
+      },
+      "refs": {
+        "source": {
+          "key": "E02"
+        },
+        "target": {
+          "key": "S01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-E02-S02",
+      "data": {
+        "tips": "证据来源，相关位置：Primary Mirror Basics 表 / Wavelength Range"
+      },
+      "refs": {
+        "source": {
+          "key": "E02"
+        },
+        "target": {
+          "key": "S02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CW3-E03",
+      "data": {
+        "tips": "依据：该证据支持本条文档主张；条件见主张状态与条件层。"
+      },
+      "refs": {
+        "source": {
+          "key": "CW3"
+        },
+        "target": {
+          "key": "E03"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CW3-Q3",
+      "data": {
+        "tips": "回答此调查问题。"
+      },
+      "refs": {
+        "source": {
+          "key": "CW3"
+        },
+        "target": {
+          "key": "Q3"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CW3-OW",
+      "data": {
+        "tips": "本主张所描述的研究对象。"
+      },
+      "refs": {
+        "source": {
+          "key": "CW3"
+        },
+        "target": {
+          "key": "OW"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-E03-S01",
+      "data": {
+        "tips": "证据来源，相关位置：Field of View"
+      },
+      "refs": {
+        "source": {
+          "key": "E03"
+        },
+        "target": {
+          "key": "S01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CW4-E04",
+      "data": {
+        "tips": "依据：该证据支持本条文档主张；条件见主张状态与条件层。"
+      },
+      "refs": {
+        "source": {
+          "key": "CW4"
+        },
+        "target": {
+          "key": "E04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CW4-Q4",
+      "data": {
+        "tips": "回答此调查问题。"
+      },
+      "refs": {
+        "source": {
+          "key": "CW4"
+        },
+        "target": {
+          "key": "Q4"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CW4-OW",
+      "data": {
+        "tips": "本主张所描述的研究对象。"
+      },
+      "refs": {
+        "source": {
+          "key": "CW4"
+        },
+        "target": {
+          "key": "OW"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-E04-S01",
+      "data": {
+        "tips": "证据来源，相关位置：Spectroscopy Modes"
+      },
+      "refs": {
+        "source": {
+          "key": "E04"
+        },
+        "target": {
+          "key": "S01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CW5-E05",
+      "data": {
+        "tips": "依据：该证据支持本条文档主张；条件见主张状态与条件层。"
+      },
+      "refs": {
+        "source": {
+          "key": "CW5"
+        },
+        "target": {
+          "key": "E05"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CW5-Q5",
+      "data": {
+        "tips": "回答此调查问题。"
+      },
+      "refs": {
+        "source": {
+          "key": "CW5"
+        },
+        "target": {
+          "key": "Q5"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CW5-OW",
+      "data": {
+        "tips": "本主张所描述的研究对象。"
+      },
+      "refs": {
+        "source": {
+          "key": "CW5"
+        },
+        "target": {
+          "key": "OW"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-E05-S01",
+      "data": {
+        "tips": "证据来源，相关位置：Resolution"
+      },
+      "refs": {
+        "source": {
+          "key": "E05"
+        },
+        "target": {
+          "key": "S01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CE1-E06",
+      "data": {
+        "tips": "依据：该证据支持本条文档主张；条件见主张状态与条件层。"
+      },
+      "refs": {
+        "source": {
+          "key": "CE1"
+        },
+        "target": {
+          "key": "E06"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CE1-Q1",
+      "data": {
+        "tips": "回答此调查问题。"
+      },
+      "refs": {
+        "source": {
+          "key": "CE1"
+        },
+        "target": {
+          "key": "Q1"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CE1-OE",
+      "data": {
+        "tips": "本主张所描述的研究对象。"
+      },
+      "refs": {
+        "source": {
+          "key": "CE1"
+        },
+        "target": {
+          "key": "OE"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-E06-S03",
+      "data": {
+        "tips": "证据来源，相关位置：Mission objectives"
+      },
+      "refs": {
+        "source": {
+          "key": "E06"
+        },
+        "target": {
+          "key": "S03"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CE2-E07",
+      "data": {
+        "tips": "依据：该证据支持本条文档主张；条件见主张状态与条件层。"
+      },
+      "refs": {
+        "source": {
+          "key": "CE2"
+        },
+        "target": {
+          "key": "E07"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CE2-Q2",
+      "data": {
+        "tips": "回答此调查问题。"
+      },
+      "refs": {
+        "source": {
+          "key": "CE2"
+        },
+        "target": {
+          "key": "Q2"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CE2-OE",
+      "data": {
+        "tips": "本主张所描述的研究对象。"
+      },
+      "refs": {
+        "source": {
+          "key": "CE2"
+        },
+        "target": {
+          "key": "OE"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-E07-S04",
+      "data": {
+        "tips": "证据来源，相关位置：VIS；NISP"
+      },
+      "refs": {
+        "source": {
+          "key": "E07"
+        },
+        "target": {
+          "key": "S04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CE3-E08",
+      "data": {
+        "tips": "依据：该证据支持本条文档主张；条件见主张状态与条件层。"
+      },
+      "refs": {
+        "source": {
+          "key": "CE3"
+        },
+        "target": {
+          "key": "E08"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CE3-Q3",
+      "data": {
+        "tips": "回答此调查问题。"
+      },
+      "refs": {
+        "source": {
+          "key": "CE3"
+        },
+        "target": {
+          "key": "Q3"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CE3-OE",
+      "data": {
+        "tips": "本主张所描述的研究对象。"
+      },
+      "refs": {
+        "source": {
+          "key": "CE3"
+        },
+        "target": {
+          "key": "OE"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-E08-S03",
+      "data": {
+        "tips": "证据来源，相关位置：Mission objectives；Euclid mission facts"
+      },
+      "refs": {
+        "source": {
+          "key": "E08"
+        },
+        "target": {
+          "key": "S03"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-E08-S04",
+      "data": {
+        "tips": "证据来源，相关位置：VIS 的 field-of-view 段"
+      },
+      "refs": {
+        "source": {
+          "key": "E08"
+        },
+        "target": {
+          "key": "S04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CE4-E09",
+      "data": {
+        "tips": "依据：该证据支持本条文档主张；条件见主张状态与条件层。"
+      },
+      "refs": {
+        "source": {
+          "key": "CE4"
+        },
+        "target": {
+          "key": "E09"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CE4-Q4",
+      "data": {
+        "tips": "回答此调查问题。"
+      },
+      "refs": {
+        "source": {
+          "key": "CE4"
+        },
+        "target": {
+          "key": "Q4"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CE4-OE",
+      "data": {
+        "tips": "本主张所描述的研究对象。"
+      },
+      "refs": {
+        "source": {
+          "key": "CE4"
+        },
+        "target": {
+          "key": "OE"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-E09-S04",
+      "data": {
+        "tips": "证据来源，相关位置：NISP 最后一段"
+      },
+      "refs": {
+        "source": {
+          "key": "E09"
+        },
+        "target": {
+          "key": "S04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CE5-E10",
+      "data": {
+        "tips": "依据：该证据支持本条文档主张；条件见主张状态与条件层。"
+      },
+      "refs": {
+        "source": {
+          "key": "CE5"
+        },
+        "target": {
+          "key": "E10"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CE5-Q5",
+      "data": {
+        "tips": "回答此调查问题。"
+      },
+      "refs": {
+        "source": {
+          "key": "CE5"
+        },
+        "target": {
+          "key": "Q5"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CE5-OE",
+      "data": {
+        "tips": "本主张所描述的研究对象。"
+      },
+      "refs": {
+        "source": {
+          "key": "CE5"
+        },
+        "target": {
+          "key": "OE"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-E10-S03",
+      "data": {
+        "tips": "证据来源，相关位置：Lifetime；Euclid mission facts"
+      },
+      "refs": {
+        "source": {
+          "key": "E10"
+        },
+        "target": {
+          "key": "S03"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CS1-E11",
+      "data": {
+        "tips": "依据：该证据支持本条文档主张；条件见主张状态与条件层。"
+      },
+      "refs": {
+        "source": {
+          "key": "CS1"
+        },
+        "target": {
+          "key": "E11"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CS1-Q1",
+      "data": {
+        "tips": "回答此调查问题。"
+      },
+      "refs": {
+        "source": {
+          "key": "CS1"
+        },
+        "target": {
+          "key": "Q1"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CS1-OS",
+      "data": {
+        "tips": "本主张所描述的研究对象。"
+      },
+      "refs": {
+        "source": {
+          "key": "CS1"
+        },
+        "target": {
+          "key": "OS"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-E11-S07",
+      "data": {
+        "tips": "证据来源，相关位置：Science Goals and Objectives"
+      },
+      "refs": {
+        "source": {
+          "key": "E11"
+        },
+        "target": {
+          "key": "S07"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CS2-E12",
+      "data": {
+        "tips": "依据：该证据支持本条文档主张；条件见主张状态与条件层。"
+      },
+      "refs": {
+        "source": {
+          "key": "CS2"
+        },
+        "target": {
+          "key": "E12"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CS2-Q2",
+      "data": {
+        "tips": "回答此调查问题。"
+      },
+      "refs": {
+        "source": {
+          "key": "CS2"
+        },
+        "target": {
+          "key": "Q2"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CS2-OS",
+      "data": {
+        "tips": "本主张所描述的研究对象。"
+      },
+      "refs": {
+        "source": {
+          "key": "CS2"
+        },
+        "target": {
+          "key": "OS"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-E12-S05",
+      "data": {
+        "tips": "证据来源，相关位置：开头第一段"
+      },
+      "refs": {
+        "source": {
+          "key": "E12"
+        },
+        "target": {
+          "key": "S05"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-E12-S08",
+      "data": {
+        "tips": "证据来源，相关位置：Documentation"
+      },
+      "refs": {
+        "source": {
+          "key": "E12"
+        },
+        "target": {
+          "key": "S08"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CS3-E13",
+      "data": {
+        "tips": "依据：该证据支持本条文档主张；条件见主张状态与条件层。"
+      },
+      "refs": {
+        "source": {
+          "key": "CS3"
+        },
+        "target": {
+          "key": "E13"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CS3-Q3",
+      "data": {
+        "tips": "回答此调查问题。"
+      },
+      "refs": {
+        "source": {
+          "key": "CS3"
+        },
+        "target": {
+          "key": "Q3"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CS3-OS",
+      "data": {
+        "tips": "本主张所描述的研究对象。"
+      },
+      "refs": {
+        "source": {
+          "key": "CS3"
+        },
+        "target": {
+          "key": "OS"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-E13-S05",
+      "data": {
+        "tips": "证据来源，相关位置：开头；扫描说明；Building an All-Sky Survey with SPHEREx"
+      },
+      "refs": {
+        "source": {
+          "key": "E13"
+        },
+        "target": {
+          "key": "S05"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CS4-E14",
+      "data": {
+        "tips": "依据：该证据支持本条文档主张；条件见主张状态与条件层。"
+      },
+      "refs": {
+        "source": {
+          "key": "CS4"
+        },
+        "target": {
+          "key": "E14"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CS4-Q4",
+      "data": {
+        "tips": "回答此调查问题。"
+      },
+      "refs": {
+        "source": {
+          "key": "CS4"
+        },
+        "target": {
+          "key": "Q4"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CS4-OS",
+      "data": {
+        "tips": "本主张所描述的研究对象。"
+      },
+      "refs": {
+        "source": {
+          "key": "CS4"
+        },
+        "target": {
+          "key": "OS"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-E14-S06",
+      "data": {
+        "tips": "证据来源，相关位置：Telescope and Detectors / six filters"
+      },
+      "refs": {
+        "source": {
+          "key": "E14"
+        },
+        "target": {
+          "key": "S06"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-E14-S08",
+      "data": {
+        "tips": "证据来源，相关位置：Documentation；Bands 说明"
+      },
+      "refs": {
+        "source": {
+          "key": "E14"
+        },
+        "target": {
+          "key": "S08"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CS5-E15",
+      "data": {
+        "tips": "依据：该证据支持本条文档主张；条件见主张状态与条件层。"
+      },
+      "refs": {
+        "source": {
+          "key": "CS5"
+        },
+        "target": {
+          "key": "E15"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CS5-Q5",
+      "data": {
+        "tips": "回答此调查问题。"
+      },
+      "refs": {
+        "source": {
+          "key": "CS5"
+        },
+        "target": {
+          "key": "Q5"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-CS5-OS",
+      "data": {
+        "tips": "本主张所描述的研究对象。"
+      },
+      "refs": {
+        "source": {
+          "key": "CS5"
+        },
+        "target": {
+          "key": "OS"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-E15-S05",
+      "data": {
+        "tips": "证据来源，相关位置：Fig 1、Fig 2 图注"
+      },
+      "refs": {
+        "source": {
+          "key": "E15"
+        },
+        "target": {
+          "key": "S05"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K00-CW1",
+      "data": {
+        "tips": "推断依据：使用本条可追溯主张。"
+      },
+      "refs": {
+        "source": {
+          "key": "K00"
+        },
+        "target": {
+          "key": "CW1"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K00-CE1",
+      "data": {
+        "tips": "推断依据：使用本条可追溯主张。"
+      },
+      "refs": {
+        "source": {
+          "key": "K00"
+        },
+        "target": {
+          "key": "CE1"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K00-CS1",
+      "data": {
+        "tips": "推断依据：使用本条可追溯主张。"
+      },
+      "refs": {
+        "source": {
+          "key": "K00"
+        },
+        "target": {
+          "key": "CS1"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K00-CW2",
+      "data": {
+        "tips": "推断依据：使用本条可追溯主张。"
+      },
+      "refs": {
+        "source": {
+          "key": "K00"
+        },
+        "target": {
+          "key": "CW2"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K00-CE2",
+      "data": {
+        "tips": "推断依据：使用本条可追溯主张。"
+      },
+      "refs": {
+        "source": {
+          "key": "K00"
+        },
+        "target": {
+          "key": "CE2"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K00-CS2",
+      "data": {
+        "tips": "推断依据：使用本条可追溯主张。"
+      },
+      "refs": {
+        "source": {
+          "key": "K00"
+        },
+        "target": {
+          "key": "CS2"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K00-CE3",
+      "data": {
+        "tips": "推断依据：使用本条可追溯主张。"
+      },
+      "refs": {
+        "source": {
+          "key": "K00"
+        },
+        "target": {
+          "key": "CE3"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K00-CS3",
+      "data": {
+        "tips": "推断依据：使用本条可追溯主张。"
+      },
+      "refs": {
+        "source": {
+          "key": "K00"
+        },
+        "target": {
+          "key": "CS3"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K00-P1",
+      "data": {
+        "tips": "适用条件：阅读结论时必须一并考虑。"
+      },
+      "refs": {
+        "source": {
+          "key": "K00"
+        },
+        "target": {
+          "key": "P1"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K00-P2",
+      "data": {
+        "tips": "适用条件：阅读结论时必须一并考虑。"
+      },
+      "refs": {
+        "source": {
+          "key": "K00"
+        },
+        "target": {
+          "key": "P2"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K01-CW1",
+      "data": {
+        "tips": "推断依据：使用本条可追溯主张。"
+      },
+      "refs": {
+        "source": {
+          "key": "K01"
+        },
+        "target": {
+          "key": "CW1"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K01-CE1",
+      "data": {
+        "tips": "推断依据：使用本条可追溯主张。"
+      },
+      "refs": {
+        "source": {
+          "key": "K01"
+        },
+        "target": {
+          "key": "CE1"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K01-CS1",
+      "data": {
+        "tips": "推断依据：使用本条可追溯主张。"
+      },
+      "refs": {
+        "source": {
+          "key": "K01"
+        },
+        "target": {
+          "key": "CS1"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K01-P2",
+      "data": {
+        "tips": "适用条件：阅读结论时必须一并考虑。"
+      },
+      "refs": {
+        "source": {
+          "key": "K01"
+        },
+        "target": {
+          "key": "P2"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K02-CW2",
+      "data": {
+        "tips": "推断依据：使用本条可追溯主张。"
+      },
+      "refs": {
+        "source": {
+          "key": "K02"
+        },
+        "target": {
+          "key": "CW2"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K02-CE2",
+      "data": {
+        "tips": "推断依据：使用本条可追溯主张。"
+      },
+      "refs": {
+        "source": {
+          "key": "K02"
+        },
+        "target": {
+          "key": "CE2"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K02-CS2",
+      "data": {
+        "tips": "推断依据：使用本条可追溯主张。"
+      },
+      "refs": {
+        "source": {
+          "key": "K02"
+        },
+        "target": {
+          "key": "CS2"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K02-P1",
+      "data": {
+        "tips": "适用条件：阅读结论时必须一并考虑。"
+      },
+      "refs": {
+        "source": {
+          "key": "K02"
+        },
+        "target": {
+          "key": "P1"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K03-CW3",
+      "data": {
+        "tips": "推断依据：使用本条可追溯主张。"
+      },
+      "refs": {
+        "source": {
+          "key": "K03"
+        },
+        "target": {
+          "key": "CW3"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K03-CE3",
+      "data": {
+        "tips": "推断依据：使用本条可追溯主张。"
+      },
+      "refs": {
+        "source": {
+          "key": "K03"
+        },
+        "target": {
+          "key": "CE3"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K03-CS3",
+      "data": {
+        "tips": "推断依据：使用本条可追溯主张。"
+      },
+      "refs": {
+        "source": {
+          "key": "K03"
+        },
+        "target": {
+          "key": "CS3"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K03-P2",
+      "data": {
+        "tips": "适用条件：阅读结论时必须一并考虑。"
+      },
+      "refs": {
+        "source": {
+          "key": "K03"
+        },
+        "target": {
+          "key": "P2"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K03-P3",
+      "data": {
+        "tips": "适用条件：阅读结论时必须一并考虑。"
+      },
+      "refs": {
+        "source": {
+          "key": "K03"
+        },
+        "target": {
+          "key": "P3"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K04-CW4",
+      "data": {
+        "tips": "推断依据：使用本条可追溯主张。"
+      },
+      "refs": {
+        "source": {
+          "key": "K04"
+        },
+        "target": {
+          "key": "CW4"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K04-CE4",
+      "data": {
+        "tips": "推断依据：使用本条可追溯主张。"
+      },
+      "refs": {
+        "source": {
+          "key": "K04"
+        },
+        "target": {
+          "key": "CE4"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K04-CS4",
+      "data": {
+        "tips": "推断依据：使用本条可追溯主张。"
+      },
+      "refs": {
+        "source": {
+          "key": "K04"
+        },
+        "target": {
+          "key": "CS4"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K04-P1",
+      "data": {
+        "tips": "适用条件：阅读结论时必须一并考虑。"
+      },
+      "refs": {
+        "source": {
+          "key": "K04"
+        },
+        "target": {
+          "key": "P1"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K04-P2",
+      "data": {
+        "tips": "适用条件：阅读结论时必须一并考虑。"
+      },
+      "refs": {
+        "source": {
+          "key": "K04"
+        },
+        "target": {
+          "key": "P2"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K05-CW5",
+      "data": {
+        "tips": "推断依据：使用本条可追溯主张。"
+      },
+      "refs": {
+        "source": {
+          "key": "K05"
+        },
+        "target": {
+          "key": "CW5"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K05-CE5",
+      "data": {
+        "tips": "推断依据：使用本条可追溯主张。"
+      },
+      "refs": {
+        "source": {
+          "key": "K05"
+        },
+        "target": {
+          "key": "CE5"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K05-CS5",
+      "data": {
+        "tips": "推断依据：使用本条可追溯主张。"
+      },
+      "refs": {
+        "source": {
+          "key": "K05"
+        },
+        "target": {
+          "key": "CS5"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K05-P3",
+      "data": {
+        "tips": "适用条件：阅读结论时必须一并考虑。"
+      },
+      "refs": {
+        "source": {
+          "key": "K05"
+        },
+        "target": {
+          "key": "P3"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K05-P4",
+      "data": {
+        "tips": "适用条件：阅读结论时必须一并考虑。"
+      },
+      "refs": {
+        "source": {
+          "key": "K05"
+        },
+        "target": {
+          "key": "P4"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-P1-CW2",
+      "data": {
+        "tips": "此条件来自该主张的适用范围。"
+      },
+      "refs": {
+        "source": {
+          "key": "P1"
+        },
+        "target": {
+          "key": "CW2"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-P1-CE4",
+      "data": {
+        "tips": "此条件来自该主张的适用范围。"
+      },
+      "refs": {
+        "source": {
+          "key": "P1"
+        },
+        "target": {
+          "key": "CE4"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-P1-CS4",
+      "data": {
+        "tips": "此条件来自该主张的适用范围。"
+      },
+      "refs": {
+        "source": {
+          "key": "P1"
+        },
+        "target": {
+          "key": "CS4"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-P2-CW3",
+      "data": {
+        "tips": "此条件来自该主张的适用范围。"
+      },
+      "refs": {
+        "source": {
+          "key": "P2"
+        },
+        "target": {
+          "key": "CW3"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-P2-CE3",
+      "data": {
+        "tips": "此条件来自该主张的适用范围。"
+      },
+      "refs": {
+        "source": {
+          "key": "P2"
+        },
+        "target": {
+          "key": "CE3"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-P2-CW4",
+      "data": {
+        "tips": "此条件来自该主张的适用范围。"
+      },
+      "refs": {
+        "source": {
+          "key": "P2"
+        },
+        "target": {
+          "key": "CW4"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-P2-CE4",
+      "data": {
+        "tips": "此条件来自该主张的适用范围。"
+      },
+      "refs": {
+        "source": {
+          "key": "P2"
+        },
+        "target": {
+          "key": "CE4"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-P2-CS4",
+      "data": {
+        "tips": "此条件来自该主张的适用范围。"
+      },
+      "refs": {
+        "source": {
+          "key": "P2"
+        },
+        "target": {
+          "key": "CS4"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-P3-CE5",
+      "data": {
+        "tips": "此条件来自该主张的适用范围。"
+      },
+      "refs": {
+        "source": {
+          "key": "P3"
+        },
+        "target": {
+          "key": "CE5"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-P3-CS3",
+      "data": {
+        "tips": "此条件来自该主张的适用范围。"
+      },
+      "refs": {
+        "source": {
+          "key": "P3"
+        },
+        "target": {
+          "key": "CS3"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-P3-CS5",
+      "data": {
+        "tips": "此条件来自该主张的适用范围。"
+      },
+      "refs": {
+        "source": {
+          "key": "P3"
+        },
+        "target": {
+          "key": "CS5"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-P4-S08",
+      "data": {
+        "tips": "版本日期依据：Telescope & Data Terminology 中的 QR2 注记。"
+      },
+      "refs": {
+        "source": {
+          "key": "P4"
+        },
+        "target": {
+          "key": "S08"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-U1-CW2",
+      "data": {
+        "tips": "待确认问题由此主张或条件引出；不是反证。"
+      },
+      "refs": {
+        "source": {
+          "key": "U1"
+        },
+        "target": {
+          "key": "CW2"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-U2-CW5",
+      "data": {
+        "tips": "待确认问题由此主张或条件引出；不是反证。"
+      },
+      "refs": {
+        "source": {
+          "key": "U2"
+        },
+        "target": {
+          "key": "CW5"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-U2-CS5",
+      "data": {
+        "tips": "待确认问题由此主张或条件引出；不是反证。"
+      },
+      "refs": {
+        "source": {
+          "key": "U2"
+        },
+        "target": {
+          "key": "CS5"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-U3-CE5",
+      "data": {
+        "tips": "待确认问题由此主张或条件引出；不是反证。"
+      },
+      "refs": {
+        "source": {
+          "key": "U3"
+        },
+        "target": {
+          "key": "CE5"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-U3-CS3",
+      "data": {
+        "tips": "待确认问题由此主张或条件引出；不是反证。"
+      },
+      "refs": {
+        "source": {
+          "key": "U3"
+        },
+        "target": {
+          "key": "CS3"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-U3-P4",
+      "data": {
+        "tips": "待确认问题由此主张或条件引出；不是反证。"
+      },
+      "refs": {
+        "source": {
+          "key": "U3"
+        },
+        "target": {
+          "key": "P4"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K02-U1",
+      "data": {
+        "tips": "尚未确定：精确长波上限需进一步核对。"
+      },
+      "refs": {
+        "source": {
+          "key": "K02"
+        },
+        "target": {
+          "key": "U1"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K05-U2",
+      "data": {
+        "tips": "尚未确定：不提供同条件性能排名。"
+      },
+      "refs": {
+        "source": {
+          "key": "K05"
+        },
+        "target": {
+          "key": "U2"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "bind-K05-U3",
+      "data": {
+        "tips": "尚未确定：不提供当前数据完成度结论。"
+      },
+      "refs": {
+        "source": {
+          "key": "K05"
+        },
+        "target": {
+          "key": "U3"
+        }
+      }
+    }
+  ]
+}

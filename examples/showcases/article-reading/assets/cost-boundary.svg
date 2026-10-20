@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+<title id="title">成本比较的边界</title><desc id="desc">E04 是外部文章报告的局部数据；右栏是本文提出的测量要求，尚无数值。</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#53766e"/></marker></defs>
+<style>text{font-family:'Microsoft YaHei','Noto Sans CJK SC',sans-serif;fill:#183d39} .small{font-size:17px;fill:#4e6764} .body{font-size:21px} .label{font-size:16px;letter-spacing:1px;fill:#53766e} .head{font-size:25px;font-weight:700} .link{stroke:#53766e;stroke-width:2.5;fill:none;marker-end:url(#arrow)}</style>
+<rect width="1200" height="760" fill="#f5f3ec"/>
+<text x="52" y="53" class="label">LAYERWEAVE / ARTICLE READING · 02</text>
+<text x="52" y="111" font-size="36" font-weight="700">成本比较的边界</text>
+<text x="52" y="148" class="small">E04 是外部文章报告的局部数据；右栏是本文提出的测量要求，尚无数值。</text>
+<rect x="52" y="195" width="526" height="113" rx="14" fill="#e2eee6" stroke="#c4d4ce"/>
+<text x="76" y="232" class="head">E04 · 本次比较已经提供</text>
+<text x="76" y="269" class="body">发现项数量与 API 花费</text>
+<text x="76" y="355" class="body">GPT-6 Astra · Ultra</text><text x="76" y="383" class="small">142 项 / $109.06</text>
+<text x="76" y="425" class="body">GPT-6.1 Sol · Ultra</text><text x="76" y="453" class="small">131 项 / $15.12</text>
+<text x="76" y="495" class="body">GPT-6.1 Sol · Medium</text><text x="76" y="523" class="small">86 项 / $5.27</text>
+<rect x="622" y="195" width="526" height="113" rx="14" fill="#fff0de" stroke="#c4d4ce"/>
+<text x="646" y="232" class="head">P05 / D02 · 还想测量什么</text>
+<text x="646" y="269" class="body">人工核验 + 返工 + 后续结果</text>
+<text x="646" y="355" class="body">核验用时</text><text x="646" y="383" class="small">证据是否减少逐项调查？</text>
+<text x="646" y="425" class="body">返工与运行后损失</text><text x="646" y="453" class="small">便宜的提案是否带来额外工作？</text>
+<text x="646" y="495" class="body">同一观察窗口内的收益</text><text x="646" y="523" class="small">不同配置的候选是否同样有价值？</text>
+<rect x="52" y="582" width="1096" height="75" rx="14" fill="#183d39"/><text x="77" y="628" font-size="23" style="fill:#ffffff">C02：模型账单不能单独回答总成本；未报告的工时与损失不能当作零。</text>
+<line x1="52" y1="699" x2="1148" y2="699" stroke="#c4d4ce"/><text x="52" y="731" class="small">原创读者示意 · 编号是定位标签，不是数据库 ID · 详见 article.md 与项目关联</text></svg>

@@ -26,6 +26,8 @@ python -X utf8 -m venv .venv
 
 Editable installation makes layerweave importable from other working directories and exposes source changes immediately. pyproject.toml provides this local development entry point; main does not produce a separate end-user release package. The core and ordinary tools need only the standard library at runtime; dev dependencies support development checks. Examples use temporary data and do not modify real projects.
 
+Source installation also needs setuptools>=77.0.3 and wheel. By default, pip prepares them in an isolated build environment and may download them even if setuptools is installed in the current environment. If installation stalls at Installing build dependencies, see [source installation troubleshooting (Chinese)](docs/developer-conventions.md#可编辑安装与构建依赖). Disable build isolation only after installing the required build dependencies.
+
 ## Discover interfaces on demand
 
 ```powershell

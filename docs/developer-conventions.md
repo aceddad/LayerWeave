@@ -18,6 +18,23 @@ python -X utf8 -m venv .venv
 
 命令可以从其他工作目录运行。数据库、--data-file 等调用参数中的相对路径相对于调用目录；默认 TOML、内置工具与自带 skills 从 layerweave 包内定位；ZIP 安装默认写当前工作目录的 tool/skills，或由 --skills-root 指定。移动整个源码目录后重新执行可编辑安装。
 
+### 可编辑安装与构建依赖
+
+项目的 pyproject.toml 要求 setuptools>=77.0.3 和 wheel，用于构建及现代许可证元数据；它们不是核心的运行时依赖。pip 默认在临时隔离环境中准备构建依赖，所以当前虚拟环境已有 setuptools，也可能再次联网下载。详细机制见 [pip 构建说明](https://pip.pypa.io/en/stable/reference/build-system/)。
+
+若停在 Installing build dependencies，先查看下载源、代理和网络错误。可在原安装命令中加 -v 查看进度；超时不等于项目源码有错，也不要为迁就旧 setuptools 降低声明中的最低版本。
+
+网络可用或已有本地依赖来源时，可以先在目标虚拟环境准备构建依赖，再复用它们完成可编辑安装：
+
+```powershell
+.venv/Scripts/python.exe -X utf8 -m pip install "setuptools>=77.0.3" wheel
+.venv/Scripts/python.exe -X utf8 -m pip install --no-build-isolation -e .
+```
+
+第一步仍可能联网；离线时需事先备齐适用的依赖 wheel，再通过 pip 的 --no-index 和 --find-links 指定本地目录。--no-build-isolation 只关闭临时构建环境，不会补齐依赖，也不等于禁用网络。只更新当前环境的 setuptools 后继续使用默认隔离安装，仍可能触发下载。
+
+上面的最小安装不含可选 extra。开发验证按需使用本分支提供的 dev；完整分支接入 MCP 时增加 mcp，这些依赖也需提前准备或正常联网获取。普通使用者可安装完整分支的现成 wheel，避免构建 LayerWeave 本身；其可选运行依赖仍需安装。
+
 ## 按任务寻找入口
 
 | 要做什么 | 入口 |

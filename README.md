@@ -26,6 +26,8 @@ python -X utf8 -m venv .venv
 
 可编辑安装让其他工作目录也能导入 layerweave，源码修改直接生效。pyproject.toml 提供本地开发入口；本分支不单独制作面向使用者的发行包。核心和普通工具运行只需标准库，dev 依赖用于开发验证。示例使用临时数据，不修改实际项目。
 
+源码安装还需要 setuptools>=77.0.3 和 wheel。pip 默认在临时构建环境中准备它们，即使当前环境已有 setuptools，也可能联网下载。若卡在 Installing build dependencies，先看[源码安装排查](docs/developer-conventions.md#可编辑安装与构建依赖)；只有提前装好构建依赖后，才适合关闭构建隔离。
+
 ## 按需查看接口
 
 ```powershell

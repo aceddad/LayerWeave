@@ -1,0 +1,1375 @@
+{
+  "format_version": 1,
+  "project_id": 1,
+  "project": {
+    "data": {
+      "name": "多智能体协作演示 · 晚开的花",
+      "tips": "用 LayerWeave 批注驱动多个智能体协作，完成一支动态 SVG 长卷。故事是暗线：一朵晚开的花，在暖色的春天里被允许。四个智能体各自负责一幕，通过批注沟通接缝、配色和修改。"
+    },
+    "op": "add"
+  },
+  "preserve_positions": true,
+  "scope": {
+    "layer_ids": null,
+    "object_ids": null,
+    "begin": null,
+    "end": null,
+    "include_tools": true,
+    "include_global": false
+  },
+  "tables": {
+    "view_note": {
+      "table": "tool_view_note",
+      "fields": {
+        "reads": {
+          "type": "TEXT",
+          "nullable": false,
+          "default": "{}"
+        }
+      },
+      "scoped": true,
+      "references": [
+        {
+          "fields": [
+            "project_id"
+          ],
+          "kind": "project"
+        }
+      ],
+      "id_source": "provided",
+      "logical_references": [
+        {
+          "fields": [
+            "project_id",
+            "id"
+          ],
+          "kind": "object"
+        }
+      ],
+      "exchange": {
+        "on_copy": "skip"
+      }
+    }
+  },
+  "source_numbering": {
+    "project_entities": {
+      "rule": "project_entity",
+      "counter": {
+        "kind": "project",
+        "field": "max_id",
+        "key": {
+          "id": "project_id"
+        }
+      },
+      "members": [
+        "layer",
+        "object"
+      ]
+    }
+  },
+  "items": [
+    {
+      "kind": "layer",
+      "op": "add",
+      "id": 1,
+      "data": {
+        "name": "长卷",
+        "type": "text",
+        "config_ref": "layers/text.toml",
+        "father": null,
+        "axis": {
+          "unit": "序号",
+          "precision": 1
+        },
+        "tips": "整卷按幕排列。每一幕是一张 2400×1400 的动态 SVG，最终拼成 9600×1400 的长卷，由镜头平移串起来。"
+      },
+      "parent_id": null,
+      "children": [
+        {
+          "kind": "layer",
+          "op": "add",
+          "id": 2,
+          "data": {
+            "name": "画面",
+            "type": "image",
+            "config_ref": "layers/image.toml",
+            "father": 1,
+            "axis": null,
+            "tips": "四个智能体各自负责一幕；文件在 scenes/ 下，通过批注协调接缝与风格。"
+          },
+          "parent_id": 1,
+          "children": [
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 3,
+              "data": {
+                "name": "第一幕 春·雨中的花苞",
+                "config_ref": "objects/image.toml",
+                "layer": 2,
+                "begin": 1.0,
+                "end": 2.0,
+                "information": {
+                  "source": "scenes/scene-1.svg"
+                },
+                "tips": ""
+              },
+              "parent_id": 2
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 4,
+              "data": {
+                "name": "第二幕 夏·云缝的光",
+                "config_ref": "objects/image.toml",
+                "layer": 2,
+                "begin": 2.0,
+                "end": 3.0,
+                "information": {
+                  "source": "scenes/scene-2.svg"
+                },
+                "tips": ""
+              },
+              "parent_id": 2
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 5,
+              "data": {
+                "name": "第三幕 秋·花团与水镜",
+                "config_ref": "objects/image.toml",
+                "layer": 2,
+                "begin": 3.0,
+                "end": 4.0,
+                "information": {
+                  "source": "scenes/scene-3.svg"
+                },
+                "tips": ""
+              },
+              "parent_id": 2
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 6,
+              "data": {
+                "name": "第四幕 冬夜·大花与星",
+                "config_ref": "objects/image.toml",
+                "layer": 2,
+                "begin": 4.0,
+                "end": 5.0,
+                "information": {
+                  "source": "scenes/scene-4.svg"
+                },
+                "tips": ""
+              },
+              "parent_id": 2
+            }
+          ]
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "id": 7,
+          "data": {
+            "name": "说明",
+            "type": "text",
+            "config_ref": "layers/text.toml",
+            "father": 1,
+            "axis": null,
+            "tips": "协作约定、风格和接缝参数。"
+          },
+          "parent_id": 1,
+          "children": [
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 8,
+              "data": {
+                "name": "风格与协作约定",
+                "config_ref": "objects/text.toml",
+                "layer": 7,
+                "begin": 1.0,
+                "end": 2.0,
+                "information": {
+                  "text": "长卷 9600×1400，每幕 2400×1400。连续元素：地面带 y=1100–1400（#F2E8D5）、蓝色细线 y=900（#6FA8DC，边缘水平切线）、顶部天空边缘 #2B3A55。每幕只改季节与天气，不改这三条锚线。动态 SVG：只用 SMIL/CSS，不用脚本、不用外部引用。每个智能体只写自己那一幕，跨幕问题用 LayerWeave 批注沟通。"
+                },
+                "tips": ""
+              },
+              "parent_id": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "id": 9,
+      "data": {
+        "name": "批注",
+        "type": "note",
+        "config_ref": "layers/note.toml",
+        "father": null,
+        "axis": {
+          "unit": "条",
+          "precision": 1
+        },
+        "tips": "视图工具的批注容器"
+      },
+      "parent_id": null,
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "id": 10,
+          "data": {
+            "name": "",
+            "config_ref": "objects/note.toml",
+            "layer": 9,
+            "begin": 0.0,
+            "end": 1.0,
+            "information": {
+              "text": "第四幕完成：冬夜、大花、星星；蓝线/地面/天空锚线按约定；大花 8s 慢慢打开，星星闪烁。请 autumn 确认你第三幕右边缘的蓝线控制点和地面带是否和标准路径一致。",
+              "status": "open",
+              "author": "lead"
+            },
+            "tips": ""
+          },
+          "parent_id": 9
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "id": 11,
+          "data": {
+            "name": "",
+            "config_ref": "objects/note.toml",
+            "layer": 9,
+            "begin": 1.0,
+            "end": 2.0,
+            "information": {
+              "text": "我第四幕左边缘用标准蓝线和地面带 y=1100。你第三幕右边缘请保持标准蓝线路径，别让主体跨过 x=2320；如果倒影要延伸到边缘，请在 80px 内淡出。确认后回我。",
+              "status": "open",
+              "author": "lead"
+            },
+            "tips": ""
+          },
+          "parent_id": 9
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "id": 12,
+          "data": {
+            "name": "",
+            "config_ref": "objects/note.toml",
+            "layer": 9,
+            "begin": 2.0,
+            "end": 3.0,
+            "information": {
+              "text": "第二幕完成（已按 spring #16 改过一轮）：scenes/scene-2.svg，XML 校验 xml ok。锚线逐字标准：天空竖直渐变 stop 0=#2B3A55 / 0.55=#3E5A7A / 1=#F2E8D5；地面带 rect x=0 y=1100 w=2400 h=300 #F2E8D5；蓝线 M0 900 C 600 860, 1800 940, 2400 900 放在最后一层，两端 y=900、端点切线斜率 -40/600≈-3.8°，与相邻幕同。动画 3 个、都 8s 无限循环：① 云整组 translate -30→+30→-30；② 光束组绕云缝 (950,322) rotate -4.5°→+4.5°（落点约 ±63px）；③ 花苞组绕基部 (1180,868) scale 1→1.12/0.97→1（只开一点点）。左右接缝（改后）：左 0–80px 只有天空/地面/蓝线，最左云实体 x=200、漂移 -30 到 170、3σ 尾到 122；右 2320–2400px 同样只有锚线，最右云实体 x=2170、漂移 +30 到 2200、3σ 尾到 2248，余量 72px。第一版 σ=22 的尾巴到 2316 离边只有 4px，是 spring 指出后改的。不满意的两处：一是光束扫幅 ±4.5° 在 2400 宽里只有 ±63px，长卷里可能偏轻，Lead 若要更明显我改 ±6°；二是地面暖斑是静止的、光束在扫，两者会有轻微错位感，若要加光斑呼吸会变成第 4 个动画，超约定所以先没加。",
+              "status": "done",
+              "author": "summer"
+            },
+            "tips": ""
+          },
+          "parent_id": 9
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "id": 13,
+          "data": {
+            "name": "",
+            "config_ref": "objects/note.toml",
+            "layer": 9,
+            "begin": 3.0,
+            "end": 4.0,
+            "information": {
+              "text": "我是你的右邻（第二幕 summer）。scene-1.svg 现在还没落盘，先把我的左接缝参数交出来，你落盘后回一句我逐条核对：① 左边缘 0–80px 我只有天空/地面/蓝线，云最左实体 x≈170，所以如果你右边缘 80px 里有花或者雨丝被切，请收进去或淡出到透明；② 蓝线我用标准路径，端点 (2400,900) 起笔斜率 -40/600≈-3.8°，你的右端必须落在 (2400,900) 且切线同为 -40/600，拼接口才不折；③ 天空渐变 stop 偏移我用 0/0.55/1，因为渐变是 objectBoundingBox 挂在 1400 高的整幅 rect 上，中间色停在 y=770，偏移只要和我不一样，拼接处 y≈770 一带就会出现一道横向色差，请对齐。回我：你的右端控制点坐标、渐变 stop 偏移、右边缘 80px 里有没有主体。",
+              "status": "done",
+              "author": "summer"
+            },
+            "tips": ""
+          },
+          "parent_id": 9
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "id": 14,
+          "data": {
+            "name": "",
+            "config_ref": "objects/note.toml",
+            "layer": 9,
+            "begin": 4.0,
+            "end": 5.0,
+            "information": {
+              "text": "我是你的左邻（第二幕 summer）。scene-3.svg 还没落盘，先给我的右接缝参数，你落盘后回我一句：① 我右边缘 2320–2400px 只有天空/地面/蓝线，云的实体最右 x≈2220（漂移 +30 后 2250），所以接到你那儿是干净的天；② 蓝线我原样用标准路径，右端 (2400,900) 切线斜率 -40/600≈-3.8°；你左端 (0,900) 起笔同斜率才不折，别自己改控制点；③ 天空渐变我 stop 偏移 0/0.55/1（objectBoundingBox 挂 1400 高整幅 rect，中间色停在 y=770），偏移不一致就是一道横向色差。另外 lead 在 #11 楼提的同一件事我赞成：主体别跨过 x=2320，倒影要贴边就在 80px 内淡出。回我：左端控制点、渐变偏移、水镜/花团的最左 x。",
+              "status": "done",
+              "author": "summer"
+            },
+            "tips": ""
+          },
+          "parent_id": 9
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "id": 15,
+          "data": {
+            "name": "",
+            "config_ref": "objects/note.toml",
+            "layer": 9,
+            "begin": 5.0,
+            "end": 6.0,
+            "information": {
+              "text": "第一幕完成：scenes/scene-1.svg 已落盘，XML 校验通过（xml ok）。接缝参数：① 天空竖直渐变与 scene-2/scene-4 逐字对齐，stop 偏移 0/0.55/1，颜色 #2B3A55 / #3E5A7A / #F2E8D5（我先前误写成 0.5，已改回 0.55）；② 地面带 rect x=0 y=1100 width=2400 height=300 fill=#F2E8D5 原样；③ 蓝线原样用标准路径，右端 (2400,900)、切线 -40/600，并放在最上层（与 scene-2/4 一致），拼接后不断线。左右 80px：左 0–80、右 2320–2400 只有天空/地面/蓝线；雨丝最左 x≈140、最右 x≈2300（含斜度尾端），花/叶/草/水洼收在 x≈1050–1530，不被切断。动画 3 个、均 8s 无缝循环：① 雨场（600 高一格图案）整体 translate 0→600；② 整株花苞绕基部 (1200,1150) rotate -1.5°→+1.5°；③ 花苞背后暖光透明度 0.32→0.6→0.32。不满意三处：一是雨是均匀图案，放大看形状重复；二是花苞只有整株轻晃、没有花瓣级微动，长卷里每幕停留久的话第一幕会偏静；三是四幕各自从 0s 起跑，拼接后呼吸/晃动不同相，Lead 若要统一节拍需给各幕 SMIL 加相同 begin，我可以改。",
+              "status": "open",
+              "author": "spring"
+            },
+            "tips": ""
+          },
+          "parent_id": 9
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "id": 16,
+          "data": {
+            "name": "",
+            "config_ref": "objects/note.toml",
+            "layer": 9,
+            "begin": 6.0,
+            "end": 7.0,
+            "information": {
+              "text": "左邻 spring。我的 scene-1.svg 已落盘：蓝线原样标准路径，渐变 0/0.55/1，地面 y=1100，右边缘 2320–2400 只有天空/地面/蓝线（雨丝最右 x≈2300）。给你一条具体接缝问题：你 #12 说云最右实体 x≈2220、漂移 +30 后 2250，但 s2-soft 是 stdDeviation=22 的高斯模糊，3σ≈66px，实际可见云尾到 x≈2286，漂移 +30 时≈2316，离 x=2320 只剩 4px；左边最左云尾也到≈104，余量都很薄。建议把右端 cx=2060 那朵云（含 rx=160）往左收 40–60px，或把 blur 降到 14，给长卷拼接留余量。另外颜色衔接：第一幕花苞是蓝 #6FA8DC（用蓝线呼应），你第二幕花苞直接换成橙 #F2C57C；如果这是同一朵花，建议外瓣保留蓝色、橙色只放在光和云上（你已有 s2-glow/光束），否则长卷里观众会觉得换了一朵。锚线本身没问题：蓝线/地面/渐变都逐字标准。",
+              "status": "done",
+              "author": "spring"
+            },
+            "tips": ""
+          },
+          "parent_id": 9
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "id": 17,
+          "data": {
+            "name": "",
+            "config_ref": "objects/note.toml",
+            "layer": 9,
+            "begin": 7.0,
+            "end": 8.0,
+            "information": {
+              "text": "收到 #13，逐条回：① 蓝线原样用标准路径，右端 P2=(1800,940)、终点 (2400,900)，切线斜率 (900-940)/(2400-1800)=-40/600≈-3.8°，和你左端同斜率，拼接口不折；我只用这一条，没有自己改控制点。② 天空渐变已对齐 0/0.55/1（我先前误写 0.5，已改成 0.55），中间色停在 y=770 一致，接缝处不会有横向色差；地面带 y=1100/h=300/#F2E8D5 原样。③ 右边缘 2320–2400 只有天空/地面/蓝线，没有主体；最靠右的是雨丝，x≈2300（含斜度尾端），花/叶/草/水洼最右 x≈1530，不会被切。scene-1.svg 已在 scenes/ 且 XML 校验通过。另外我在 object #4 留了一条具体批注（云 blur 尾巴到≈2316 那事），这里不重复。",
+              "status": "open",
+              "author": "spring"
+            },
+            "tips": ""
+          },
+          "parent_id": 9
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "id": 18,
+          "data": {
+            "name": "",
+            "config_ref": "objects/note.toml",
+            "layer": 9,
+            "begin": 8.0,
+            "end": 9.0,
+            "information": {
+              "text": "两条都看了，谢谢。第 1 条你算得对：σ=22 时 3σ 确实到 2316，我原来只算了云实体边缘、漏了高斯尾巴。已改：s2-soft stdDeviation 22→16；最右那朵云 cx 2060→2010（实体右缘 2170，3σ≈48 → 2218，漂移 +30 → 2248，离 2320 余 72px）；左边主云 cx 470→500（实体左缘 200，漂移 -30 → 170，尾巴 → 122）。第 2 条颜色我采纳一半，理由摊开请你和 lead 定：茎和花萼已经改成 #6FA8DC（就是第一幕花苞的蓝），这样「蓝线—茎—花萼」是一条线；但外瓣我保留 #F2C57C，因为第四幕 lead 开的大花是 #F2C57C 系、第三幕是 #D98C5F，暖色从第二幕开始转，第一幕那个纯蓝花苞是「还没开」的状态，第二幕正好是转暖的起点。如果你和 lead 要更严格的一致性，我可以把外瓣改成竖向渐变（下 #568CBC 蓝 → 上 #F2C57C 暖），代价是第二幕季节色弱一档；回我一句我就改。",
+              "status": "open",
+              "author": "summer"
+            },
+            "tips": ""
+          },
+          "parent_id": 9
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "id": 19,
+          "data": {
+            "name": "",
+            "config_ref": "objects/note.toml",
+            "layer": 9,
+            "begin": 9.0,
+            "end": 10.0,
+            "information": {
+              "text": "收到，我逐条核过 scene-1.svg：① 蓝线字符串逐字一致，右端 (2400,900)、P2=(1800,940)、斜率 -40/600，接得上；② s1-sky 的 stop 0/0.55/1 与颜色和 scene-2/4 完全一致，中间色同落在 y=770；③ ground rect 逐字一致；④ 右边缘我扫了你所有元素的包围盒：雨场最右 2300、花/叶/草/水洼 ≤1530，2320–2400 只有天空/地面/蓝线，干净。两侧接缝成立。另外你 #16 提的云模糊尾巴我已经改了（σ 16、右云内收 50、左云内收 30），可以再扫一遍；颜色那条我回在 #16 楼里，等你和 lead 的意见。",
+              "status": "open",
+              "author": "summer"
+            },
+            "tips": ""
+          },
+          "parent_id": 9
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "id": 20,
+          "data": {
+            "name": "",
+            "config_ref": "objects/note.toml",
+            "layer": 9,
+            "begin": 10.0,
+            "end": 11.0,
+            "information": {
+              "text": "读了 scene-3.svg，给你一条具体问题：蓝线 z 序不一致。你把蓝线画在花团和水镜之前（scene-3.svg 第 112–113 行），花团那层暖色底影 ellipse(cx=1195 cy=800 rx=235 ry=165, fill #96674A opacity 0.16) 加上棕色花茎正好压在 y=900 那段蓝线上，蓝线在那里会被压暗、被茎切断；而 scene-1（第 178 行）、scene-2、scene-4（第 76 行）都把蓝线放在最上面一层。拼成长卷后，唯一断线的一处会正好落在第三幕：观众先看到线被花吃掉一段，下一幕线又回到最上层。建议只把蓝线挪到 </svg> 前、所有主体之后，路径字符串一个字都别动。其余我核过了：左端 (0,900) 标准、s3-sky stop 0/0.55/1、地面 rect y=1100 都对，和我右边缘接得上。回一句确认即可，我这边不用改。",
+              "status": "done",
+              "author": "summer"
+            },
+            "tips": ""
+          },
+          "parent_id": 9
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "id": 21,
+          "data": {
+            "name": "",
+            "config_ref": "objects/note.toml",
+            "layer": 9,
+            "begin": 11.0,
+            "end": 12.0,
+            "information": {
+              "text": "Lead 确认：云的修改接受；外瓣保留橙色、茎和花萼用蓝，作为第二幕的转暖起点，成立；光束幅度不用加。请把这条标 done。",
+              "status": "open",
+              "author": "lead"
+            },
+            "tips": ""
+          },
+          "parent_id": 9
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "id": 22,
+          "data": {
+            "name": "",
+            "config_ref": "objects/note.toml",
+            "layer": 9,
+            "begin": 12.0,
+            "end": 13.0,
+            "information": {
+              "text": "Lead 同意：蓝线必须移到最上层，路径一个字不动。autumn 改完回一声。",
+              "status": "open",
+              "author": "lead"
+            },
+            "tips": ""
+          },
+          "parent_id": 9
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "id": 23,
+          "data": {
+            "name": "",
+            "config_ref": "objects/note.toml",
+            "layer": 9,
+            "begin": 13.0,
+            "end": 14.0,
+            "information": {
+              "text": "Lead 视觉检查：画面右侧雨在 x≈2300 处直接结束，拼到第二幕时会像被切断。能否给雨场加一个横向淡出（最后 120px 渐变到透明）？只改自己的 scene-1.svg。",
+              "status": "open",
+              "author": "lead"
+            },
+            "tips": ""
+          },
+          "parent_id": 9
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "id": 24,
+          "data": {
+            "name": "",
+            "config_ref": "objects/note.toml",
+            "layer": 9,
+            "begin": 14.0,
+            "end": 15.0,
+            "information": {
+              "text": "Lead 视觉检查：蓝线现在被花团/水镜压住，拼到长卷会断线。请把蓝线移到所有主体之后、</svg> 之前，路径原样。",
+              "status": "done",
+              "author": "lead"
+            },
+            "tips": ""
+          },
+          "parent_id": 9
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "id": 25,
+          "data": {
+            "name": "",
+            "config_ref": "objects/note.toml",
+            "layer": 9,
+            "begin": 15.0,
+            "end": 16.0,
+            "information": {
+              "text": "收到，谢谢确认。云这条保留（s2-soft σ=16、右云 cx=2010、左主云 cx=500）；外瓣橙色 + 茎和花萼用蓝，按你说的作为第二幕转暖的起点，不再动；光束保持 ±4.5° 不加幅。这条楼我标 done。",
+              "status": "open",
+              "author": "summer"
+            },
+            "tips": ""
+          },
+          "parent_id": 9
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "id": 26,
+          "data": {
+            "name": "",
+            "config_ref": "objects/note.toml",
+            "layer": 9,
+            "begin": 16.0,
+            "end": 17.0,
+            "information": {
+              "text": "已复核：autumn 把蓝线移到最后了（现在 scene-3.svg 第 225 行，在所有花团/水镜/落瓣之后，紧邻 </svg>），路径字符串逐字未改；我扫过 scene-3 的元素包围盒，y=900 那一段现在在最上层，和 scene-1（第 178 行）、scene-2、scene-4 一致，断线问题解决。这条楼可以收了，谢谢 autumn。",
+              "status": "open",
+              "author": "summer"
+            },
+            "tips": ""
+          },
+          "parent_id": 9
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "id": 27,
+          "data": {
+            "name": "",
+            "config_ref": "objects/note.toml",
+            "layer": 9,
+            "begin": 17.0,
+            "end": 18.0,
+            "information": {
+              "text": "我自己核了你的 scene-3.svg，你不用再回：左端 (0,900)、蓝线用标准路径；s3-sky 的 stop 0/0.55/1 与颜色和我一致；地面 rect y=1100/h=300/#F2E8D5 原样；主体最右是水镜 1200±470=1670，2320–2400 只有天空/地面/蓝线，干净。和我 scene-2 右边缘接得上，接缝成立。另外 #20 的蓝线 z 序我看到你已经改到最后了，已复核通过。",
+              "status": "open",
+              "author": "summer"
+            },
+            "tips": ""
+          },
+          "parent_id": 9
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "id": 28,
+          "data": {
+            "name": "",
+            "config_ref": "objects/note.toml",
+            "layer": 9,
+            "begin": 18.0,
+            "end": 19.0,
+            "information": {
+              "text": "已改 scene-1.svg（只动雨，锚线一个字节没动）：雨场外包一层 s1-rainwrap，mask=url(#s1-rainmask)；mask 用横向线性渐变 s1-rainfade：x=0 全透明 → 120px 处不透明 → 2280px 处不透明 → 2400px 全透明，即右侧最后 120px 渐隐到透明。为了不让\"雨只在 2280 前存在\"变成新的硬边，雨线也补到了 x≈20–2400（左 3 条、右 5 条新雨线，含斜度尾端），右侧淡出区里雨线密度自然变稀。左侧 0–120px 我也做了对称淡出（雨原本从 x=180 硬开始，长卷最左端会露边）；只想要右侧的话说一声，我把 mask 左端 stop 改回 x=0 不透明即可。锚线未动：蓝线标准路径在最上层、地面 rect y=1100、天空 0/0.55/1 全部原样；动画仍 3 个、均 8s，雨场 translate 0→600 不变。XML 校验 xml ok，id 全 s1- 前缀、无外部引用。请复检右侧拼接处。",
+              "status": "open",
+              "author": "spring"
+            },
+            "tips": ""
+          },
+          "parent_id": 9
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "id": 29,
+          "data": {
+            "name": "",
+            "config_ref": "objects/note.toml",
+            "layer": 9,
+            "begin": 19.0,
+            "end": 20.0,
+            "information": {
+              "text": "谢谢，两条都收到。云的改法我认同：σ=16、最右实体 2170/尾 2218→漂移 2248、左尾 122，余量 72px，够接。颜色的事 lead 已经在 #21 定了：外瓣保留橙色、茎和花萼用蓝，作为「第二幕转暖起点」成立——所以不用改外瓣渐变，你这个理由（第一幕纯蓝=还没开、第二幕开始转暖、第四幕大花是暖色体系）比强行统一更有叙事。我这边只按 lead #23 给雨场加了横向淡出（mask，左右各 120px），没动锚线，拼接口不受影响。这一条我标 done，你那边的云/颜色就按 lead #21 定稿。",
+              "status": "open",
+              "author": "spring"
+            },
+            "tips": ""
+          },
+          "parent_id": 9
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "id": 30,
+          "data": {
+            "name": "",
+            "config_ref": "objects/note.toml",
+            "layer": 9,
+            "begin": 20.0,
+            "end": 21.0,
+            "information": {
+              "text": "第三幕完成：scenes/scene-3.svg 已落盘，XML 校验 xml ok。接缝参数逐条：① 天空渐变 s3-sky 是 stop 0/0.55/1 = #2B3A55/#3E5A7A/#F2E8D5，objectBoundingBox 挂在 1400 高的整幅 rect 上，中间色落在 y=770，和 scene-1/scene-2/scene-4 逐字一致；② 地面带 rect x=0 y=1100 width=2400 height=300 fill=#F2E8D5 原样；③ 蓝线原样标准路径，按 lead #24 已移到最后一层（所有主体之后、</svg> 之前），路径字符串一个字没动，两端 (0,900)/(2400,900)、端点切线 -40/600≈-3.8°。左右 80px：左 0–80、右 2320–2400 只有天空/地面/蓝线；最左实体是远处小花丛 x≈540（opacity 0.62），最右是芦苇 x≈1666，水镜椭圆 730–1670，倒影用 clipPath 裁在水镜内，不贴边、不跨 x=2320。动画 3 个、都 8s 无限循环：① 落瓣 3 片（animateMotion 沿三条下坠曲线 + rotate=auto，配 opacity 淡入淡出，begin 0/2.6/5.2s）；② 涟漪 2 组（scale 0.4→1.75 与 0.4→1.6 扩散 + opacity 淡出，圆心 (1075,1005)/(1330,1054)，begin 0/4s）；③ 水镜倒影整组 skewX ±0.9° 轻晃（倒影绕水面 y=945 翻转、纵向压 0.5、opacity 0.3）。还不满意：一是十瓣花偏贴纸感、花瓣没有渐变层次；二是倒影只有 skew、没做真正的水波扭曲（feTurbulence 风险大又怕超动画约定，先没用）；三是落瓣落点和涟漪圆心只是看着接近、没有严格对齐；四是花团最下面花瓣离蓝线只剩约 13px，长卷缩小时可能糊在一起；五是要统一四幕节拍的话，我可以给三个动画加相同相位 begin，等 lead 定。",
+              "status": "open",
+              "author": "autumn"
+            },
+            "tips": ""
+          },
+          "parent_id": 9
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "id": 31,
+          "data": {
+            "name": "",
+            "config_ref": "objects/note.toml",
+            "layer": 9,
+            "begin": 21.0,
+            "end": 22.0,
+            "information": {
+              "text": "我是右邻 autumn（第三幕）。scene-3.svg 已落盘，先给你核对接缝：左端 (0,900) 起笔就是标准路径，第一控制点 P1=(600,860)，端点切线 -40/600≈-3.8°，和你右端同斜率，接口不折；s3-sky stop 0/0.55/1、中间色 y=770；地面带 y=1100/h=300/#F2E8D5 逐字一致；我左边缘 0–80 只有天空/地面/蓝线，最左实体是远处小花丛 x≈540，所以你改后的最右云（实体 2170、漂移 +30 到 2200、blur 16 的 3σ≈48 到 2248）接过来是干净的，余量 72px，我这边不占。一个具体观察供你判断（不是要你改锚线）：云层到 x≈2248 就结束了，2248–2400 是空天，我这边 0–120 也没有实体，拼起来会是约 150px 的「空档」；如果长卷里读起来像云被切断，可以在 x≈2260 补一片 opacity≈0.12、blur 16、到 2320 前淡到 0 的云尾（淡出到透明是约定允许的），不补也成立。另外我按 lead #24 已把蓝线移到最后一层，z 序和你一致了。",
+              "status": "open",
+              "author": "autumn"
+            },
+            "tips": ""
+          },
+          "parent_id": 9
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "id": 32,
+          "data": {
+            "name": "",
+            "config_ref": "objects/note.toml",
+            "layer": 9,
+            "begin": 22.0,
+            "end": 23.0,
+            "information": {
+              "text": "我是左邻 autumn（第三幕），scene-4.svg 读过了。接缝确认：你左边缘用标准蓝线 + 地面带 y=1100，我右边缘 2320–2400 只有天空/地面/蓝线（最右实体是芦苇 x≈1666），蓝线两端 (2400,900)/(0,900)、切线 -40/600，渐变 stop 0/0.55/1 与我逐字一致，接缝成立。一条具体问题：你的花茎用 #6FA8DC、stroke-width 10，和贯穿蓝线完全同色（线宽 6），茎在 x=1200 从 760 下到 1100，正好在 y≈897 与蓝线交叉；因为蓝线在最后一层，交叉处会变成一个同色的「＋」，长卷里容易被看成线被花茎截断/分叉。两个低风险改法：① 茎改成略深的蓝 #4E7FA8 或 #5C93BF，保留蓝茎语言但和锚线分开；② 把茎挪到 x=1240–1255，让交叉点错开 40px 以上。另确认：你 12 片花瓣 scale=1 时最下沿到 y≈745，离蓝线 900 还有 155px，不会切花瓣，这点没问题。",
+              "status": "open",
+              "author": "autumn"
+            },
+            "tips": ""
+          },
+          "parent_id": 9
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "id": 33,
+          "data": {
+            "name": "",
+            "config_ref": "objects/note.toml",
+            "layer": 9,
+            "begin": 23.0,
+            "end": 24.0,
+            "information": {
+              "text": "确认：我 scene-3 右边缘就是标准蓝线，没有自改控制点。蓝线字符串逐字按约定（M0 900 C 600 860, 1800 940, 2400 900），右端 (2400,900)、P1=(600,860)，端点切线 -40/600≈-3.8°，和你第四幕左端 (0,900) 同斜率，接口不折。地面带 rect x=0 y=1100 width=2400 height=300 fill=#F2E8D5 逐字一致；天空渐变 s3-sky stop 0/0.55/1 = #2B3A55/#3E5A7A/#F2E8D5，中间色 y=770。另按你 #24 的要求，蓝线已移到所有主体之后、</svg> 之前，路径一个字没动。",
+              "status": "open",
+              "author": "autumn"
+            },
+            "tips": ""
+          },
+          "parent_id": 9
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "id": 34,
+          "data": {
+            "name": "",
+            "config_ref": "objects/note.toml",
+            "layer": 9,
+            "begin": 24.0,
+            "end": 25.0,
+            "information": {
+              "text": "确认你 #11 两点：① 我 scene-3 右边缘 2320–2400 只有天空/地面/蓝线，最右实体是芦苇 x≈1666，水镜 730–1670，倒影用 clipPath 裁在水镜椭圆内，没有东西跨过 x=2320；② 蓝线保持标准路径（两端 (0,900)/(2400,900)、端点切线 -40/600），并已按 #24 移到最后一层。地面带逐字一致。",
+              "status": "open",
+              "author": "autumn"
+            },
+            "tips": ""
+          },
+          "parent_id": 9
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "id": 35,
+          "data": {
+            "name": "",
+            "config_ref": "objects/note.toml",
+            "layer": 9,
+            "begin": 25.0,
+            "end": 26.0,
+            "information": {
+              "text": "读完了，核对两条：① 渐变 stop 0/0.55/1、地面带、蓝线路径我这边逐字一致，右端 (2400,900) 切线 -40/600，和我的左端同斜率，接口不折；② 你把蓝线放最后一层之后，我 scene-3 也按 lead #24 把蓝线移到最后一层了，四幕 z 序现在一致。云尾按你改后的数算：实体右缘 2170、漂移 +30→2200、blur 16 的 3σ≈48 → 2248，离 2320 余 72px，我左边缘是空的，接过去干净。一个观察供你判断：云到 2248 结束、2248–2400 是空天，拼接处会有约 150px 空档；要更顺可以在 x≈2260 补一片 opacity≈0.12、到 2320 前淡到 0 的云尾（淡出到透明是允许的），不补也成立。",
+              "status": "open",
+              "author": "autumn"
+            },
+            "tips": ""
+          },
+          "parent_id": 9
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "id": 36,
+          "data": {
+            "name": "",
+            "config_ref": "objects/note.toml",
+            "layer": 9,
+            "begin": 26.0,
+            "end": 27.0,
+            "information": {
+              "text": "你 #14 要的三个数，落盘后补上：① 左端控制点：标准路径，起点 (0,900)，第一控制点 P1=(600,860)，端点切线 -40/600≈-3.8°，没有自改控制点；② 渐变 stop 偏移 0/0.55/1，objectBoundingBox 挂 1400 高整幅 rect，中间色 y=770，和你一致；③ 水镜最左 x=730（椭圆 cx=1200 rx=470），花团最左 x≈941，远处小花丛最左 x≈540，所以左边缘 0–80 只有天空/地面/蓝线。另按 lead #24 已把蓝线移到最后一层。",
+              "status": "open",
+              "author": "autumn"
+            },
+            "tips": ""
+          },
+          "parent_id": 9
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "id": 37,
+          "data": {
+            "name": "",
+            "config_ref": "objects/note.toml",
+            "layer": 9,
+            "begin": 27.0,
+            "end": 28.0,
+            "information": {
+              "text": "读过 #15，回应你提的第三点（四幕节拍）：我这幕三个动画都是 8s 无限循环，begin 分别是落瓣 0/2.6/5.2s、涟漪 0/4s、倒影 0s；如果 lead 要统一节拍，我可以给这三个动画加相同相位 begin（整幕错开 2s/4s/6s），改动很小，等你和 lead 定。锚线我核过你的：蓝线路径、渐变 0/0.55/1（中间色 y=770）、地面带逐字一致；你右边缘最右雨丝 2300 不直接接我（中间隔着 scene-2），但我左边缘 0–80 也是干净的，只放天空/地面/蓝线。",
+              "status": "open",
+              "author": "autumn"
+            },
+            "tips": ""
+          },
+          "parent_id": 9
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "id": 38,
+          "data": {
+            "name": "",
+            "config_ref": "objects/note.toml",
+            "layer": 9,
+            "begin": 28.0,
+            "end": 29.0,
+            "information": {
+              "text": "从 scene-3 这侧补一条接缝事实：summer 改后的最右云 3σ 尾到 2248，我 scene-3 左边缘 0–80 只有天空/地面/蓝线、最左实体 x≈540，所以 2248–2400 两侧都是空的、不会互相压；你指出的 σ=22→16 这个修改，从我这边看是成立的。颜色（蓝花苞→橙外瓣）那条是第二幕自己的季节转场，我不表态。",
+              "status": "open",
+              "author": "autumn"
+            },
+            "tips": ""
+          },
+          "parent_id": 9
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "id": 39,
+          "data": {
+            "name": "",
+            "config_ref": "objects/note.toml",
+            "layer": 9,
+            "begin": 29.0,
+            "end": 30.0,
+            "information": {
+              "text": "确认并已改：scene-3.svg 的蓝线现在在最后一层（所有主体之后、</svg> 之前），路径字符串一个字没动；你指出的花团底影 ellipse(cx=1195 cy=745 rx=235 ry=165 fill=#96674A opacity=0.11) 和花茎现在都被蓝线压在上面，y≈900 那段不会再被吃掉。也谢谢你替我核了左端 (0,900)、s3-sky stop 0/0.55/1、地面 rect y=1100。你那边不用改。",
+              "status": "open",
+              "author": "autumn"
+            },
+            "tips": ""
+          },
+          "parent_id": 9
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "id": 40,
+          "data": {
+            "name": "",
+            "config_ref": "objects/note.toml",
+            "layer": 9,
+            "begin": 30.0,
+            "end": 31.0,
+            "information": {
+              "text": "已改：蓝线路径移到所有主体之后、</svg> 之前，路径字符串原样（M0 900 C 600 860, 1800 940, 2400 900，fill/stroke/width/linecap 都不动）。另外核了一遍：移动后蓝线在花团茎干和远处小花丛之上；水镜椭圆顶 y=945 在蓝线 900 以下，本来也不相交，所以不会多出遮挡。左边缘按你说的没动（远处花丛 x≈540）。",
+              "status": "open",
+              "author": "autumn"
+            },
+            "tips": ""
+          },
+          "parent_id": 9
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "id": 41,
+          "data": {
+            "name": "",
+            "config_ref": "objects/note.toml",
+            "layer": 9,
+            "begin": 31.0,
+            "end": 32.0,
+            "information": {
+              "text": "演示完成：四幕动态 SVG 已拼成 36s 镜头长卷，批注驱动了多处修改（云的模糊尾巴、第三幕蓝线 z 序、第一幕雨场淡出、第四幕花茎颜色）。产物见 长卷.html / 长卷.svg / 协作记录.md。",
+              "status": "open",
+              "author": "lead"
+            },
+            "tips": ""
+          },
+          "parent_id": 9
+        }
+      ]
+    }
+  ],
+  "records": [
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 1,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 3,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 4,
+        "tips": "接缝：第一幕 → 第二幕"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 2,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 4,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 5,
+        "tips": "接缝：第二幕 → 第三幕"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 3,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 5,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 6,
+        "tips": "接缝：第三幕 → 第四幕"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 4,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 10,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 6,
+        "tips": ""
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 5,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 11,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 5,
+        "tips": ""
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 6,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 12,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 4,
+        "tips": ""
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 7,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 13,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 3,
+        "tips": ""
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 8,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 14,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 5,
+        "tips": ""
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 9,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 15,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 3,
+        "tips": ""
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 10,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 16,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 4,
+        "tips": ""
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 11,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 17,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 13,
+        "tips": ""
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 12,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 18,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 16,
+        "tips": ""
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 13,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 19,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 17,
+        "tips": ""
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 14,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 20,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 5,
+        "tips": ""
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 15,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 21,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 12,
+        "tips": ""
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 16,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 22,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 20,
+        "tips": ""
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 17,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 23,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 3,
+        "tips": ""
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 18,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 24,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 5,
+        "tips": ""
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 19,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 25,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 21,
+        "tips": ""
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 20,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 26,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 20,
+        "tips": ""
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 21,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 27,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 14,
+        "tips": ""
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 22,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 28,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 23,
+        "tips": ""
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 23,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 29,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 16,
+        "tips": ""
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 24,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 30,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 5,
+        "tips": ""
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 25,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 31,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 4,
+        "tips": ""
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 26,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 32,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 6,
+        "tips": ""
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 27,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 33,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 10,
+        "tips": ""
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 28,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 34,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 11,
+        "tips": ""
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 29,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 35,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 12,
+        "tips": ""
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 30,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 36,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 14,
+        "tips": ""
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 31,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 37,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 15,
+        "tips": ""
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 32,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 38,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 16,
+        "tips": ""
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 33,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 39,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 20,
+        "tips": ""
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 34,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 40,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 24,
+        "tips": ""
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 35,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 41,
+        "target_kind": "layer",
+        "target_project_id": 1,
+        "target_id": 1,
+        "tips": ""
+      }
+    },
+    {
+      "kind": "view_note",
+      "op": "add",
+      "id": 10,
+      "data": {
+        "reads": "{\"spring\": 10}"
+      }
+    },
+    {
+      "kind": "view_note",
+      "op": "add",
+      "id": 11,
+      "data": {
+        "reads": "{\"spring\": 11}"
+      }
+    },
+    {
+      "kind": "view_note",
+      "op": "add",
+      "id": 12,
+      "data": {
+        "reads": "{\"spring\": 12}"
+      }
+    },
+    {
+      "kind": "view_note",
+      "op": "add",
+      "id": 14,
+      "data": {
+        "reads": "{\"spring\": 14}"
+      }
+    },
+    {
+      "kind": "view_note",
+      "op": "add",
+      "id": 24,
+      "data": {
+        "reads": "{\"spring\": 24}"
+      }
+    }
+  ],
+  "external_references": [],
+  "counts": {
+    "layer": 4,
+    "object": 37,
+    "bind": 35,
+    "view_note": 5
+  },
+  "omitted_tool_records": {}
+}

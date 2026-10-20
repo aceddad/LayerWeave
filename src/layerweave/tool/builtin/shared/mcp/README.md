@@ -4,14 +4,15 @@
 
 ## 安装与启动
 
-在源码仓库的虚拟环境中安装可选依赖：
+普通使用优先用 uv/uvx 从本地 wheel 启动，见下方“用 uvx 管理运行环境”；软件首页的 uv 虚拟环境也可复用。只维护源码时，在开发环境安装：
 
 ```sh
 python -X utf8 -m pip install -e ".[mcp]"
 python -X utf8 -m layerweave.tool.builtin.shared.mcp --config mcp.json
 ```
 
-安装后也可运行 `layerweave-mcp --config mcp.json`。本地 wheel 可用 `python -X utf8 -m pip install "路径/layerweave-0.7.7-py3-none-any.whl[mcp]"`。基础 Python/CLI 不需要 MCP SDK；本服务使用官方 MCP Python SDK 2.3 系列兼容接口。
+安装后也可运行 `layerweave-mcp --config mcp.json`。基础 Python/CLI 不需要 MCP SDK；本服务使用官方 MCP Python SDK 2.3 系列兼容接口。
+
 
 源码可编辑安装会准备构建依赖，网络或旧 setuptools 问题见[源码安装排查](../../../../../../docs/developer-conventions.md#可编辑安装与构建依赖)。现成 wheel 避免构建 LayerWeave 本身，但 mcp extra 的运行依赖仍可能需要下载。FFmpeg 由使用者选装，不包含在 wheel 或 mcp extra 中；需要抽帧等媒体能力时，按[选装说明](../../view/GUIDE.md#选装-ffmpeg)提供 PATH 或在客户端的服务项 env 中设置 FFMPEG，随后重启服务。
 
@@ -49,7 +50,7 @@ MCP 客户端配置示意，解释器与文件使用实际绝对路径：
 安装 [uv](https://docs.astral.sh/uv/getting-started/installation/) 后，可直接从已下载的 wheel 启动 MCP，无需手工安装 Python 或激活环境：
 
 ```powershell
-uvx --python 3.11 --from "./layerweave-0.7.7-py3-none-any.whl[mcp]" layerweave-mcp --config ./mcp.json
+uvx --python 3.11 --from "./layerweave-0.7.8-py3-none-any.whl[mcp]" layerweave-mcp --config ./mcp.json
 ```
 
 uvx 按指定来源准备隔离环境；缺少所需 Python 时，uv 默认自动下载。首次准备需要联网，此后可复用缓存。该命令持续运行 stdio 服务，应由 MCP 客户端管理；不是网页启动器。安装与解释器策略见 [uv 工具说明](https://docs.astral.sh/uv/guides/tools/)和 [Python 管理](https://docs.astral.sh/uv/concepts/python-versions/)。
@@ -61,7 +62,7 @@ uvx 按指定来源准备隔离环境；缺少所需 Python 时，uv 默认自�
   "mcpServers": {
     "layerweave": {
       "command": "C:/Users/YOU/.local/bin/uvx.exe",
-      "args": ["--python", "3.11", "--from", "D:/packages/layerweave-0.7.7-py3-none-any.whl[mcp]", "layerweave-mcp", "--config", "D:/my-project/mcp.json"],
+      "args": ["--python", "3.11", "--from", "D:/packages/layerweave-0.7.8-py3-none-any.whl[mcp]", "layerweave-mcp", "--config", "D:/my-project/mcp.json"],
       "env": {"PYTHONUTF8": "1"}
     }
   }

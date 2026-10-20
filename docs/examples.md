@@ -1,6 +1,6 @@
 # 可运行示例
 
-面向使用者的完整场景案例存放在[场景演示目录](../examples/showcases/README.md)；本页介绍 Python 接口示例。
+第一次体验推荐[文章解析](../examples/showcases/article-reading/README.md)，其余十一个场景见[案例目录](../examples/showcases/README.md)。案例独立于安装包，手书和 H3 提供无视频阅读版；本页介绍 Python 接口示例。
 
 完成安装后，从项目根运行示例脚本；examples 不安装为全局 Python 包。示例使用内存或专用临时数据库，不修改 output 中的实际项目数据。[返回项目首页](../README.md)。
 

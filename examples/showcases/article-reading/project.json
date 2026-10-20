@@ -1,0 +1,1803 @@
+{
+  "format_version": 1,
+  "name": "写得更快以后，谁来证明改动值得合入？",
+  "when": "两篇工程文章主题的原创对读案例：完整中文正文 + 来源定位 + 论点/图/讨论。",
+  "project": {
+    "op": "add",
+    "data": {
+      "name": "写得更快以后，谁来证明改动值得合入？",
+      "tips": "先读 README。P 为原创短论完整正文，S 为外部原文链接。每个根都是独立序号列表，关联表达语义。"
+    }
+  },
+  "items": [
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "original",
+      "data": {
+        "name": "正文｜原创对读短论",
+        "config_ref": "layers/text.toml",
+        "axis": {
+          "unit": "段落序号",
+          "precision": 1
+        },
+        "tips": "P01—P10 为 article.md 中的完整正文，不是外文原文。每段占 [n,n+1)。"
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "p01",
+          "data": {
+            "name": "P01 问题从产量移向判断",
+            "config_ref": "objects/text.toml",
+            "begin": 1,
+            "end": 2,
+            "information": {
+              "text": "读完这两篇工程文章，我更关心一个问题：当生成改动的速度超过团队理解改动的速度，什么东西应该成为交付单位？我的答案是带着可核查依据的提案。代码只是提案的一部分；它为什么必要、怎样验证、由谁承担后果，也属于提案。下面将两篇文章当作观察材料，再提出自己的判断；观察和判断之间不能省掉论证。",
+              "source_key": "p01",
+              "attribution": "本案例作者提出的问题与立场",
+              "document": "assets/article.md",
+              "paragraph": 1
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "p02",
+          "data": {
+            "name": "P02 审查文章的实践观察",
+            "config_ref": "objects/text.toml",
+            "begin": 2,
+            "end": 3,
+            "information": {
+              "text": "Claude Code 团队介绍了分层审查、按风险安排人工参与，以及快速回退的实践；文章报告合并量上升的同时，回退比例下降。[A] 这些观察让我把审查理解为对注意力的配置：某个检查应当针对某种失败。检查很多并不自动构成充分证据，还需要解释每个检查覆盖什么，以及剩余问题由谁判断。",
+              "source_key": "p02",
+              "attribution": "首句为 A 的简述；其后为本案例作者解释",
+              "document": "assets/article.md",
+              "paragraph": 2
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "p03",
+          "data": {
+            "name": "P03 维护文章的取证观察",
+            "config_ref": "objects/text.toml",
+            "begin": 3,
+            "end": 4,
+            "information": {
+              "text": "OpenAI 的维护案例把代码历史、协作记录和生产数据用于支持清理提案；一个被标为永久保留的开关，即使存在成本问题，也先交给人复核。[B] 我从中看到两个独立判断：系统现在怎样运行，以及团队为什么保留这段行为。前者可以增加事实把握，后者可能需要重新确认意图；两者不应相互替代。",
+              "source_key": "p03",
+              "attribution": "第一句为 B 的简述；其后为本案例作者解释",
+              "document": "assets/article.md",
+              "paragraph": 3
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "p04",
+          "data": {
+            "name": "P04 跨文连接只是一个推论",
+            "config_ref": "objects/text.toml",
+            "begin": 4,
+            "end": 5,
+            "information": {
+              "text": "把前两段放在一起，我提出一个跨文推论：审查新代码和清理旧代码，可以共享同一种提案结构——目标、证据、边界、责任。它们仍有不同的证明负担：新增功能要说明为什么需要，删除功能要说明失去什么。这个结构是我的整理，两组作者没有共同提出它；相似的工作方式也不能证明模型之间等价。",
+              "source_key": "p04",
+              "attribution": "本案例作者的跨文推论",
+              "document": "assets/article.md",
+              "paragraph": 4
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "p05",
+          "data": {
+            "name": "P05 算清总成本的分母",
+            "config_ref": "objects/text.toml",
+            "begin": 5,
+            "end": 6,
+            "information": {
+              "text": "设想两份候选清单：甲便宜但需要逐项调查，乙贵一些却给出可复核材料。仅比较生成清单的账单，无法决定哪份更划算。我建议把模型支出、人工核验、返工和运行后损失放进同一个观察窗口，并同时记录每项改动的收益。这个账本是评价方案，不是两篇文章已经测得的综合结果。",
+              "source_key": "p05",
+              "attribution": "本案例作者的假设例子与评价建议",
+              "document": "assets/article.md",
+              "paragraph": 5
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "p06",
+          "data": {
+            "name": "P06 共同盲区不能靠票数消失",
+            "config_ref": "objects/text.toml",
+            "begin": 6,
+            "end": 7,
+            "information": {
+              "text": "假如多个检查共享同一份不完整的测试数据，全部通过也可能只是共同没有看到问题。这是一个逻辑上的反例，并非对两家团队实际事故的断言。对读时应当追问证据之间是否独立、缺少哪类使用场景，以及换一个业务条件后结论是否仍成立。把检查名称列得更长，并不能回答这些问题。",
+              "source_key": "p06",
+              "attribution": "本案例作者的反例与批评",
+              "document": "assets/article.md",
+              "paragraph": 6
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "p07",
+          "data": {
+            "name": "P07 实践结果离因果证明还有距离",
+            "config_ref": "objects/text.toml",
+            "begin": 7,
+            "end": 8,
+            "information": {
+              "text": "审查文章也明确承认：尚未实现根据回退或事故指标自动收紧审批的熔断机制。[A] 对我而言，这提醒读者区分实践方向和已经落地的能力。第 2 段的数据还不足以单独证明哪一项措施造成改善；变更难度、统计口径和团队学习都可能影响结果。这里保留疑问，不把相关变化升级为因果定律。",
+              "source_key": "p07",
+              "attribution": "首句为 A 的明确陈述；其后为本案例作者质疑",
+              "document": "assets/article.md",
+              "paragraph": 7
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "p08",
+          "data": {
+            "name": "P08 局部模型比较不能代替迁移实验",
+            "config_ref": "objects/text.toml",
+            "begin": 8,
+            "end": 9,
+            "information": {
+              "text": "维护文章在一次实验清理比较中，给出了不同模型配置的发现数量和 API 成本。[B] 这是一项有边界的比较，不能直接推出某配置在所有仓库都最划算。我还想知道重复运行的波动、遗漏候选的代价，以及人工复核时间。如果这些问题没有答案，就应把选择视为待验证假设，而非通用排名。",
+              "source_key": "p08",
+              "attribution": "首句为 B 的比较范围；其后为本案例作者质疑",
+              "document": "assets/article.md",
+              "paragraph": 8
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "p09",
+          "data": {
+            "name": "P09 把主张变成可以失败的试验",
+            "config_ref": "objects/text.toml",
+            "begin": 9,
+            "end": 10,
+            "information": {
+              "text": "对一个准备尝试的团队，我建议先选一类规模相近的任务，记录原有流程的核验时间，再试用提案结构；事先约定什么结果算改善、什么结果必须停止。若核验更慢或返工更多，就修改方案。这里仍有薄弱处：小样本难以覆盖罕见损失，短期顺利也不能保证长期有效，因此不能仅凭试点放开所有改动。",
+              "source_key": "p09",
+              "attribution": "本案例作者的试验建议及自我限制",
+              "document": "assets/article.md",
+              "paragraph": 9
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "p10",
+          "data": {
+            "name": "P10 结论仍要带着适用条件",
+            "config_ref": "objects/text.toml",
+            "begin": 10,
+            "end": 11,
+            "information": {
+              "text": "因此，我愿意接受的结论是：把可追溯依据组织成可审议的提案，值得作为工程实践去试验。第 2、3 段提供观察起点，第 4 段搭起解释，第 6 至 9 段限定适用范围。这个结论不要求预先相信任何模型；它要求下一位读者能沿着依据检查我的判断，发现反例后仍能修改结论。这也是把文章做成关联式精读案例的理由。",
+              "source_key": "p10",
+              "attribution": "本案例作者的条件性结论",
+              "document": "assets/article.md",
+              "paragraph": 10
+            }
+          }
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "interpret",
+      "data": {
+        "name": "解读｜读者如何理解",
+        "config_ref": "layers/text.toml",
+        "axis": {
+          "unit": "解读序号",
+          "precision": 1
+        },
+        "tips": "I 对象可以同时解释多个段落。位置只代表解读顺序，语义对应看关联。"
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "i01",
+          "data": {
+            "name": "I01 从产量问题到提案单位",
+            "config_ref": "objects/text.toml",
+            "begin": 1,
+            "end": 2,
+            "information": {
+              "text": "P01 提出问题，P04 提出回答。把“提案”作为组织单位是本文作者的观点；它需要接受反例检验，不能靠两篇文章的权威获得自动成立的资格。",
+              "source_key": "i01",
+              "attribution": "本案例读者解读"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "i02",
+          "data": {
+            "name": "I02 观察与解释的分界",
+            "config_ref": "objects/text.toml",
+            "begin": 2,
+            "end": 3,
+            "information": {
+              "text": "P02、P03 都先简述来源，再进入作者解释。应分别问：外文作者说了什么？本文从中推出什么？E01/E03 帮助回到源网页；G01 展示两条观察如何汇入 C01。",
+              "source_key": "i02",
+              "attribution": "本案例读者解读"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "i03",
+          "data": {
+            "name": "I03 多个检查也可能共享盲区",
+            "config_ref": "objects/text.toml",
+            "begin": 3,
+            "end": 4,
+            "information": {
+              "text": "P06 是作者构造的反例。它攻击的是“检查数量等于证据充分性”这一可能推论，不是在报告某家团队已经发生的故障。P07 则引入一个具体的能力边界。",
+              "source_key": "i03",
+              "attribution": "本案例读者解读"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "i04",
+          "data": {
+            "name": "I04 成本问题要保留范围",
+            "config_ref": "objects/text.toml",
+            "begin": 4,
+            "end": 5,
+            "information": {
+              "text": "P05 是假设账本，P08 是对局部比较的追问。E04 提供一组可核对的数值；没有人工时数据，就不能从表格计算完整工程成本。",
+              "source_key": "i04",
+              "attribution": "本案例读者解读"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "i05",
+          "data": {
+            "name": "I05 试点与结论的张力",
+            "config_ref": "objects/text.toml",
+            "begin": 5,
+            "end": 6,
+            "information": {
+              "text": "P09 建议试点，同时承认小样本限制。P10 的“值得试验”与“已经证实普遍有效”强度不同。D03 专门讨论如何避免把短期成功扩大解释。",
+              "source_key": "i05",
+              "attribution": "本案例读者解读"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "claims",
+      "data": {
+        "name": "论点｜跨段命题",
+        "config_ref": "layers/text.toml",
+        "axis": {
+          "unit": "论点序号",
+          "precision": 1
+        },
+        "tips": "论点有自己的顺序；跨段关系使用 bind，不用一段很长的时间区间。"
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "c01",
+          "data": {
+            "name": "C01 全文结论：可核查提案值得试验",
+            "config_ref": "objects/text.toml",
+            "begin": 1,
+            "end": 2,
+            "information": {
+              "text": "【本文作者论点】将目标、证据、边界、责任组成可核查提案，值得在限定范围内试验。P02/P03 是两条不同观察，P04 是推论桥梁，P10 是结论；这些关系不等于因果证明。",
+              "source_key": "c01",
+              "attribution": "本案例读者解读"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "c02",
+          "data": {
+            "name": "C02 模型账单不是完整工程成本",
+            "config_ref": "objects/text.toml",
+            "begin": 2,
+            "end": 3,
+            "information": {
+              "text": "【读者分析】解释 P05 与 P08 时，必须区分局部 API 花费与包含人工核验、返工的总成本。E04 只提供前者，不能直接给出后者。",
+              "source_key": "c02",
+              "attribution": "本案例读者解读"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "c03",
+          "data": {
+            "name": "C03 推广需要额外证据",
+            "config_ref": "objects/text.toml",
+            "begin": 3,
+            "end": 4,
+            "information": {
+              "text": "【读者分析】P06 的反例、P07 的边界与 P09 的小样本问题，限制了 C01 的推广强度。它们要求补证，不等于否定已有实践。",
+              "source_key": "c03",
+              "attribution": "本案例读者解读"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "evidence",
+      "data": {
+        "name": "证据｜来源与可证明范围",
+        "config_ref": "layers/text.toml",
+        "axis": {
+          "unit": "证据序号",
+          "precision": 1
+        },
+        "tips": "E 对象是证据卡；外文全文留在来源网站。区分作者自报、局部比较与独立验证。"
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "e01",
+          "data": {
+            "name": "E01 审查实践的前后观察",
+            "config_ref": "objects/text.toml",
+            "begin": 1,
+            "end": 2,
+            "information": {
+              "text": "【A 作者自报】6—9 月合并 PR 超过原来的两倍，回退份额下降超过 40%。定位：文章开头、出现 June 的段落。能支持“该团队观察到同期改善”；不能隔离各措施的因果贡献，也不是跨团队对照实验。",
+              "source_key": "e01",
+              "attribution": "外部作者陈述 + 本案例证据评估",
+              "url": "https://claude.dev/blog/solving-code-review-at-anthropic/",
+              "locator": "网页查找 June",
+              "evidence_type": "团队自报的前后观察"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "e02",
+          "data": {
+            "name": "E02 自动收紧审批尚未落地",
+            "config_ref": "objects/text.toml",
+            "begin": 2,
+            "end": 3,
+            "information": {
+              "text": "【A 定位卡】P07 首句对应回退讨论末尾的现状说明。定位词 circuit breakers。正文明确承认的缺口，不应在示意图中画成已实现功能。",
+              "source_key": "e02",
+              "attribution": "来源定位；不新增事实",
+              "url": "https://claude.dev/blog/solving-code-review-at-anthropic/",
+              "locator": "网页查找 circuit breakers",
+              "evidence_type": "作者明确承认的能力边界"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "e03",
+          "data": {
+            "name": "E03 意图冲突交给人复核",
+            "config_ref": "objects/text.toml",
+            "begin": 3,
+            "end": 4,
+            "information": {
+              "text": "【B 定位卡】P03 的开关例子位于陈旧实验清理部分，定位词 Permanent。读到对应实例后，再评估本文对“事实与意图”的划分；来源并未为所有清理任务建立统一证明标准。",
+              "source_key": "e03",
+              "attribution": "来源定位 + 本案例证据评估",
+              "url": "https://developers.openai.com/blog/maintaining-software-with-the-gpt-6-family",
+              "locator": "网页查找 Permanent",
+              "evidence_type": "作者描述的单个实例"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "e04",
+          "data": {
+            "name": "E04 一次清理比较的数值",
+            "config_ref": "objects/text.toml",
+            "begin": 4,
+            "end": 5,
+            "information": {
+              "text": "【B 作者报告的局部比较】Astra Ultra：142 项，$109.06；Sol Ultra：131 项，$15.12；Sol Medium：86 项，$5.27。模型全名依次为 GPT-6 Astra、GPT-6.1 Sol、GPT-6.1 Sol。范围：同一仓库指定子目录的陈旧实验清理；作者审核发现项。定位词 Cost per finding。这些是文中实验成本，不是当前价目表；此表未提供人工复核工时。",
+              "source_key": "e04",
+              "attribution": "外部作者数据 + 本案例范围说明",
+              "url": "https://developers.openai.com/blog/maintaining-software-with-the-gpt-6-family",
+              "locator": "网页查找 Cost per finding",
+              "evidence_type": "单次局部模型配置比较",
+              "comparison": [
+                {
+                  "model": "GPT-6 Astra",
+                  "effort": "Ultra",
+                  "findings": 142,
+                  "api_cost_usd": 109.06
+                },
+                {
+                  "model": "GPT-6.1 Sol",
+                  "effort": "Ultra",
+                  "findings": 131,
+                  "api_cost_usd": 15.12
+                },
+                {
+                  "model": "GPT-6.1 Sol",
+                  "effort": "Medium",
+                  "findings": 86,
+                  "api_cost_usd": 5.27
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "turns",
+      "data": {
+        "name": "转折｜推理强度变化",
+        "config_ref": "layers/text.toml",
+        "axis": {
+          "unit": "转折序号",
+          "precision": 1
+        },
+        "tips": "转折连接论证功能，不承担外部事实。"
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "t01",
+          "data": {
+            "name": "T01 从观察走向推论",
+            "config_ref": "objects/text.toml",
+            "begin": 1,
+            "end": 2,
+            "information": {
+              "text": "P02/P03 提供不同场景的观察，P04 将它们归纳到提案结构。归纳需要桥梁，不能直接宣布已证明。",
+              "source_key": "t01",
+              "attribution": "本案例读者解读"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "t02",
+          "data": {
+            "name": "T02 从收益转向证明边界",
+            "config_ref": "objects/text.toml",
+            "begin": 2,
+            "end": 3,
+            "information": {
+              "text": "P05 扩大成本账本，P06 给出反例，P07/P08 追问现有证据的适用范围。",
+              "source_key": "t02",
+              "attribution": "本案例读者解读"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "t03",
+          "data": {
+            "name": "T03 从质疑转向可失败试验",
+            "config_ref": "objects/text.toml",
+            "begin": 3,
+            "end": 4,
+            "information": {
+              "text": "P09 给出行动建议，P10 保留条件性结论；质疑成为试验设计的输入。",
+              "source_key": "t03",
+              "attribution": "本案例读者解读"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "sources",
+      "data": {
+        "name": "资料｜两篇外部原文",
+        "config_ref": "layers/text.toml",
+        "axis": {
+          "unit": "资料序号",
+          "precision": 1
+        },
+        "tips": "仅提供原文链接、作者和日期；不把原创短论冒充外文原文。"
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "s01",
+          "data": {
+            "name": "S01 外部原文 A｜Claude Code 审查",
+            "config_ref": "objects/text.toml",
+            "begin": 1,
+            "end": 2,
+            "information": {
+              "text": "How the Claude Code team does code review\n作者：Addy Osmani、Morgan Westlee Lunt、Qing Wang\n发布日期：2026-10-15\n访问日期：2026-10-20\n完整外文请打开来源链接；本案例仅含有限转述与原创分析。",
+              "source_key": "s01",
+              "attribution": "来源元数据",
+              "url": "https://claude.dev/blog/solving-code-review-at-anthropic/"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "s02",
+          "data": {
+            "name": "S02 外部原文 B｜GPT-6 软件维护",
+            "config_ref": "objects/text.toml",
+            "begin": 2,
+            "end": 3,
+            "information": {
+              "text": "Maintaining software with the GPT-6 family\n作者：Rodrigo Roim\n发布日期：2026-10-14\n访问日期：2026-10-20\n完整外文请打开来源链接；本案例仅含有限转述与原创分析。",
+              "source_key": "s02",
+              "attribution": "来源元数据",
+              "url": "https://developers.openai.com/blog/maintaining-software-with-the-gpt-6-family"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "diagrams",
+      "data": {
+        "name": "配图｜原创论证示意",
+        "config_ref": "layers/image.toml",
+        "axis": {
+          "unit": "图序号",
+          "precision": 1
+        },
+        "tips": "两幅 SVG 为本文读者制作的结构图，不是外部作者的原图或实证测量。"
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "g01",
+          "data": {
+            "name": "G01 从两条观察到有条件结论",
+            "config_ref": "objects/image.toml",
+            "begin": 1,
+            "end": 2,
+            "information": {
+              "source": "assets/argument-map.svg",
+              "caption": "P02/P03 → P04 → P10；P06/P07/P09 限制推广。箭头表示本文论证关系。",
+              "attribution": "本案例原创示意图；不是外文原图",
+              "source_key": "g01"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "g02",
+          "data": {
+            "name": "G02 成本比较的边界",
+            "config_ref": "objects/image.toml",
+            "begin": 2,
+            "end": 3,
+            "information": {
+              "source": "assets/cost-boundary.svg",
+              "caption": "把 E04 的局部 API 比较与 P05 的待测总成本分开。并不假定缺项为零。",
+              "attribution": "本案例原创示意图；不是外文原图",
+              "source_key": "g02"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "discussion",
+      "data": {
+        "name": "讨论｜锚定具体对象",
+        "config_ref": "layers/text.toml",
+        "axis": {
+          "unit": "讨论序号",
+          "precision": 1
+        },
+        "tips": "用普通文字对象加关联承载讨论，基础安装也可读；不是 visualization 的原生批注楼。状态 open 表示仍可讨论。"
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "d01",
+          "data": {
+            "name": "D01 质疑：相关变化能证明因果吗",
+            "config_ref": "objects/text.toml",
+            "begin": 1,
+            "end": 2,
+            "information": {
+              "text": "【读者批评，未解决】针对 P07 对 P02 数据的质疑：还需要同口径分母、变更风险构成与观察窗口。如果只有前后汇总，就暂时保留“同期改善”，不写成某一措施的独立效果。请沿 E01 回到来源段落。",
+              "source_key": "d01",
+              "attribution": "本案例读者解读",
+              "status": "open"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "d02",
+          "data": {
+            "name": "D02 追问：人工核验的时间在哪里",
+            "config_ref": "objects/text.toml",
+            "begin": 2,
+            "end": 3,
+            "information": {
+              "text": "【读者补证请求，未解决】针对 P05/P08 与 E04：为每项候选记录核验用时、是否采纳及后续返工，再比较总成本。不要把未报告的数据当作零。这个测量请求由本案例提出，不是原作者已完成的实验。",
+              "source_key": "d02",
+              "attribution": "本案例读者解读",
+              "status": "open"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "d03",
+          "data": {
+            "name": "D03 自我质疑：短期试点够不够",
+            "config_ref": "objects/text.toml",
+            "begin": 3,
+            "end": 4,
+            "information": {
+              "text": "【读者批评，未解决】针对 P09：若严重问题很少出现，短期没有事故并不能证明流程足够稳健。需预先定义检查盲区、跟踪期和升级人工核验的条件；目前缺少这些条件的实测结果。",
+              "source_key": "d03",
+              "attribution": "本案例读者解读",
+              "status": "open"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "records": [
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b001",
+      "data": {
+        "tips": "解释：解读针对该正文段落"
+      },
+      "refs": {
+        "source": {
+          "key": "i01"
+        },
+        "target": {
+          "key": "p01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b002",
+      "data": {
+        "tips": "解释：解读针对该正文段落"
+      },
+      "refs": {
+        "source": {
+          "key": "i01"
+        },
+        "target": {
+          "key": "p04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b003",
+      "data": {
+        "tips": "解释：解读针对该正文段落"
+      },
+      "refs": {
+        "source": {
+          "key": "i02"
+        },
+        "target": {
+          "key": "p02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b004",
+      "data": {
+        "tips": "解释：解读针对该正文段落"
+      },
+      "refs": {
+        "source": {
+          "key": "i02"
+        },
+        "target": {
+          "key": "p03"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b005",
+      "data": {
+        "tips": "解释：解读针对该正文段落"
+      },
+      "refs": {
+        "source": {
+          "key": "i03"
+        },
+        "target": {
+          "key": "p06"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b006",
+      "data": {
+        "tips": "解释：解读针对该正文段落"
+      },
+      "refs": {
+        "source": {
+          "key": "i03"
+        },
+        "target": {
+          "key": "p07"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b007",
+      "data": {
+        "tips": "解释：解读针对该正文段落"
+      },
+      "refs": {
+        "source": {
+          "key": "i04"
+        },
+        "target": {
+          "key": "p05"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b008",
+      "data": {
+        "tips": "解释：解读针对该正文段落"
+      },
+      "refs": {
+        "source": {
+          "key": "i04"
+        },
+        "target": {
+          "key": "p08"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b009",
+      "data": {
+        "tips": "解释：解读针对该正文段落"
+      },
+      "refs": {
+        "source": {
+          "key": "i05"
+        },
+        "target": {
+          "key": "p09"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b010",
+      "data": {
+        "tips": "解释：解读针对该正文段落"
+      },
+      "refs": {
+        "source": {
+          "key": "i05"
+        },
+        "target": {
+          "key": "p10"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b011",
+      "data": {
+        "tips": "观察依据 A"
+      },
+      "refs": {
+        "source": {
+          "key": "c01"
+        },
+        "target": {
+          "key": "p02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b012",
+      "data": {
+        "tips": "观察依据 B"
+      },
+      "refs": {
+        "source": {
+          "key": "c01"
+        },
+        "target": {
+          "key": "p03"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b013",
+      "data": {
+        "tips": "跨文推论桥梁"
+      },
+      "refs": {
+        "source": {
+          "key": "c01"
+        },
+        "target": {
+          "key": "p04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b014",
+      "data": {
+        "tips": "结论落点"
+      },
+      "refs": {
+        "source": {
+          "key": "c01"
+        },
+        "target": {
+          "key": "p10"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b015",
+      "data": {
+        "tips": "局部成本解释的组成部分"
+      },
+      "refs": {
+        "source": {
+          "key": "c02"
+        },
+        "target": {
+          "key": "p05"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b016",
+      "data": {
+        "tips": "局部成本解释的组成部分"
+      },
+      "refs": {
+        "source": {
+          "key": "c02"
+        },
+        "target": {
+          "key": "p08"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b017",
+      "data": {
+        "tips": "局部成本解释的组成部分"
+      },
+      "refs": {
+        "source": {
+          "key": "c02"
+        },
+        "target": {
+          "key": "e04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b018",
+      "data": {
+        "tips": "局部成本解释的组成部分"
+      },
+      "refs": {
+        "source": {
+          "key": "c02"
+        },
+        "target": {
+          "key": "i04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b019",
+      "data": {
+        "tips": "局部成本解释的组成部分"
+      },
+      "refs": {
+        "source": {
+          "key": "c02"
+        },
+        "target": {
+          "key": "d02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b020",
+      "data": {
+        "tips": "局部成本解释的组成部分"
+      },
+      "refs": {
+        "source": {
+          "key": "c02"
+        },
+        "target": {
+          "key": "g02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b021",
+      "data": {
+        "tips": "限制条件或待补证处"
+      },
+      "refs": {
+        "source": {
+          "key": "c03"
+        },
+        "target": {
+          "key": "p06"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b022",
+      "data": {
+        "tips": "限制条件或待补证处"
+      },
+      "refs": {
+        "source": {
+          "key": "c03"
+        },
+        "target": {
+          "key": "p07"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b023",
+      "data": {
+        "tips": "限制条件或待补证处"
+      },
+      "refs": {
+        "source": {
+          "key": "c03"
+        },
+        "target": {
+          "key": "p09"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b024",
+      "data": {
+        "tips": "限制条件或待补证处"
+      },
+      "refs": {
+        "source": {
+          "key": "c03"
+        },
+        "target": {
+          "key": "d01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b025",
+      "data": {
+        "tips": "限制条件或待补证处"
+      },
+      "refs": {
+        "source": {
+          "key": "c03"
+        },
+        "target": {
+          "key": "d03"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b026",
+      "data": {
+        "tips": "限制：结论须带适用条件"
+      },
+      "refs": {
+        "source": {
+          "key": "c01"
+        },
+        "target": {
+          "key": "c03"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b027",
+      "data": {
+        "tips": "依据对应：简述所在正文段落"
+      },
+      "refs": {
+        "source": {
+          "key": "e01"
+        },
+        "target": {
+          "key": "p02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b028",
+      "data": {
+        "tips": "出处：回到外部文章链接"
+      },
+      "refs": {
+        "source": {
+          "key": "e01"
+        },
+        "target": {
+          "key": "s01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b029",
+      "data": {
+        "tips": "核查：定位这段陈述的出处与范围"
+      },
+      "refs": {
+        "source": {
+          "key": "p02"
+        },
+        "target": {
+          "key": "e01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b030",
+      "data": {
+        "tips": "依据对应：简述所在正文段落"
+      },
+      "refs": {
+        "source": {
+          "key": "e02"
+        },
+        "target": {
+          "key": "p07"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b031",
+      "data": {
+        "tips": "出处：回到外部文章链接"
+      },
+      "refs": {
+        "source": {
+          "key": "e02"
+        },
+        "target": {
+          "key": "s01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b032",
+      "data": {
+        "tips": "核查：定位这段陈述的出处与范围"
+      },
+      "refs": {
+        "source": {
+          "key": "p07"
+        },
+        "target": {
+          "key": "e02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b033",
+      "data": {
+        "tips": "依据对应：简述所在正文段落"
+      },
+      "refs": {
+        "source": {
+          "key": "e03"
+        },
+        "target": {
+          "key": "p03"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b034",
+      "data": {
+        "tips": "出处：回到外部文章链接"
+      },
+      "refs": {
+        "source": {
+          "key": "e03"
+        },
+        "target": {
+          "key": "s02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b035",
+      "data": {
+        "tips": "核查：定位这段陈述的出处与范围"
+      },
+      "refs": {
+        "source": {
+          "key": "p03"
+        },
+        "target": {
+          "key": "e03"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b036",
+      "data": {
+        "tips": "依据对应：简述所在正文段落"
+      },
+      "refs": {
+        "source": {
+          "key": "e04"
+        },
+        "target": {
+          "key": "p08"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b037",
+      "data": {
+        "tips": "出处：回到外部文章链接"
+      },
+      "refs": {
+        "source": {
+          "key": "e04"
+        },
+        "target": {
+          "key": "s02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b038",
+      "data": {
+        "tips": "核查：定位这段陈述的出处与范围"
+      },
+      "refs": {
+        "source": {
+          "key": "p08"
+        },
+        "target": {
+          "key": "e04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b039",
+      "data": {
+        "tips": "论证转折涉及的段落"
+      },
+      "refs": {
+        "source": {
+          "key": "t01"
+        },
+        "target": {
+          "key": "p02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b040",
+      "data": {
+        "tips": "论证转折涉及的段落"
+      },
+      "refs": {
+        "source": {
+          "key": "t01"
+        },
+        "target": {
+          "key": "p03"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b041",
+      "data": {
+        "tips": "论证转折涉及的段落"
+      },
+      "refs": {
+        "source": {
+          "key": "t01"
+        },
+        "target": {
+          "key": "p04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b042",
+      "data": {
+        "tips": "论证转折涉及的段落"
+      },
+      "refs": {
+        "source": {
+          "key": "t02"
+        },
+        "target": {
+          "key": "p05"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b043",
+      "data": {
+        "tips": "论证转折涉及的段落"
+      },
+      "refs": {
+        "source": {
+          "key": "t02"
+        },
+        "target": {
+          "key": "p06"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b044",
+      "data": {
+        "tips": "论证转折涉及的段落"
+      },
+      "refs": {
+        "source": {
+          "key": "t02"
+        },
+        "target": {
+          "key": "p07"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b045",
+      "data": {
+        "tips": "论证转折涉及的段落"
+      },
+      "refs": {
+        "source": {
+          "key": "t02"
+        },
+        "target": {
+          "key": "p08"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b046",
+      "data": {
+        "tips": "论证转折涉及的段落"
+      },
+      "refs": {
+        "source": {
+          "key": "t03"
+        },
+        "target": {
+          "key": "p09"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b047",
+      "data": {
+        "tips": "论证转折涉及的段落"
+      },
+      "refs": {
+        "source": {
+          "key": "t03"
+        },
+        "target": {
+          "key": "p10"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b048",
+      "data": {
+        "tips": "图解：论证结构对应"
+      },
+      "refs": {
+        "source": {
+          "key": "g01"
+        },
+        "target": {
+          "key": "p02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b049",
+      "data": {
+        "tips": "图解：论证结构对应"
+      },
+      "refs": {
+        "source": {
+          "key": "g01"
+        },
+        "target": {
+          "key": "p03"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b050",
+      "data": {
+        "tips": "图解：论证结构对应"
+      },
+      "refs": {
+        "source": {
+          "key": "g01"
+        },
+        "target": {
+          "key": "p04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b051",
+      "data": {
+        "tips": "图解：论证结构对应"
+      },
+      "refs": {
+        "source": {
+          "key": "g01"
+        },
+        "target": {
+          "key": "p10"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b052",
+      "data": {
+        "tips": "图解：论证结构对应"
+      },
+      "refs": {
+        "source": {
+          "key": "g01"
+        },
+        "target": {
+          "key": "c01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b053",
+      "data": {
+        "tips": "图解：成本边界对应"
+      },
+      "refs": {
+        "source": {
+          "key": "g02"
+        },
+        "target": {
+          "key": "p05"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b054",
+      "data": {
+        "tips": "图解：成本边界对应"
+      },
+      "refs": {
+        "source": {
+          "key": "g02"
+        },
+        "target": {
+          "key": "p08"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b055",
+      "data": {
+        "tips": "图解：成本边界对应"
+      },
+      "refs": {
+        "source": {
+          "key": "g02"
+        },
+        "target": {
+          "key": "c02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b056",
+      "data": {
+        "tips": "图解：成本边界对应"
+      },
+      "refs": {
+        "source": {
+          "key": "g02"
+        },
+        "target": {
+          "key": "e04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b057",
+      "data": {
+        "tips": "阅读下一步：区分观察与解释"
+      },
+      "refs": {
+        "source": {
+          "key": "p02"
+        },
+        "target": {
+          "key": "i02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b058",
+      "data": {
+        "tips": "阅读下一步：打开论证结构图"
+      },
+      "refs": {
+        "source": {
+          "key": "p02"
+        },
+        "target": {
+          "key": "g01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b059",
+      "data": {
+        "tips": "阅读下一步：比较的边界"
+      },
+      "refs": {
+        "source": {
+          "key": "p08"
+        },
+        "target": {
+          "key": "i04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b060",
+      "data": {
+        "tips": "阅读下一步：打开成本示意图"
+      },
+      "refs": {
+        "source": {
+          "key": "p08"
+        },
+        "target": {
+          "key": "g02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b061",
+      "data": {
+        "tips": "讨论锚点：该问题具体针对这个对象"
+      },
+      "refs": {
+        "source": {
+          "key": "d01"
+        },
+        "target": {
+          "key": "p07"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b062",
+      "data": {
+        "tips": "讨论锚点：该问题具体针对这个对象"
+      },
+      "refs": {
+        "source": {
+          "key": "d01"
+        },
+        "target": {
+          "key": "p02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b063",
+      "data": {
+        "tips": "讨论锚点：该问题具体针对这个对象"
+      },
+      "refs": {
+        "source": {
+          "key": "d01"
+        },
+        "target": {
+          "key": "e01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b064",
+      "data": {
+        "tips": "讨论锚点：该问题具体针对这个对象"
+      },
+      "refs": {
+        "source": {
+          "key": "d02"
+        },
+        "target": {
+          "key": "p05"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b065",
+      "data": {
+        "tips": "讨论锚点：该问题具体针对这个对象"
+      },
+      "refs": {
+        "source": {
+          "key": "d02"
+        },
+        "target": {
+          "key": "p08"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b066",
+      "data": {
+        "tips": "讨论锚点：该问题具体针对这个对象"
+      },
+      "refs": {
+        "source": {
+          "key": "d02"
+        },
+        "target": {
+          "key": "e04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b067",
+      "data": {
+        "tips": "讨论锚点：该问题具体针对这个对象"
+      },
+      "refs": {
+        "source": {
+          "key": "d03"
+        },
+        "target": {
+          "key": "p09"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "b068",
+      "data": {
+        "tips": "讨论锚点：该问题具体针对这个对象"
+      },
+      "refs": {
+        "source": {
+          "key": "d03"
+        },
+        "target": {
+          "key": "p10"
+        }
+      }
+    }
+  ]
+}

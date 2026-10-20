@@ -8,3 +8,9 @@ prune frontend/view/node_modules
 prune frontend/view/.vite
 prune frontend/view/coverage
 global-exclude *.py[cod] .DS_Store .env .env.* keys.local.json keys.json .keys.local.json.*.tmp *.sqlite3 *.sqlite3-* *.db *.log
+
+# 案例数据与小素材进入源码包；完整制作媒体不分发。
+recursive-exclude examples/showcases *.mp4 *.webm *.mov *.mkv *.avi *.mp3 *.wav *.flac
+prune examples/showcases/*/source/node_modules
+prune examples/showcases/*/source/dist
+prune examples/showcases/*/__pycache__

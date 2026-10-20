@@ -1,0 +1,226 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2400 1400" width="2400" height="1400">
+  <!-- 第三幕 秋·花团与水镜 / autumn -->
+  <defs>
+    <!-- 天空：四幕统一（顶部 #2B3A55，中部 55% #3E5A7A，底部 #F2E8D5） -->
+    <linearGradient id="s3-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2B3A55"/>
+      <stop offset="0.55" stop-color="#3E5A7A"/>
+      <stop offset="1" stop-color="#F2E8D5"/>
+    </linearGradient>
+
+    <!-- 远山：左右两端淡出到透明 -->
+    <linearGradient id="s3-hill-far" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#C9A483" stop-opacity="0"/>
+      <stop offset="0.14" stop-color="#C9A483" stop-opacity="0.26"/>
+      <stop offset="0.5" stop-color="#D2B08F" stop-opacity="0.4"/>
+      <stop offset="0.86" stop-color="#C9A483" stop-opacity="0.26"/>
+      <stop offset="1" stop-color="#C9A483" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="s3-hill-near" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#BB9068" stop-opacity="0"/>
+      <stop offset="0.16" stop-color="#BB9068" stop-opacity="0.22"/>
+      <stop offset="0.5" stop-color="#C69A72" stop-opacity="0.34"/>
+      <stop offset="0.84" stop-color="#BB9068" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#BB9068" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- 秋日暖光 -->
+    <radialGradient id="s3-warm" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#E9B48C" stop-opacity="0.3"/>
+      <stop offset="0.6" stop-color="#E9B48C" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#E9B48C" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- 水镜 -->
+    <linearGradient id="s3-water" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3F5A78"/>
+      <stop offset="0.35" stop-color="#66819A"/>
+      <stop offset="0.72" stop-color="#B3A693"/>
+      <stop offset="1" stop-color="#D9C6AA"/>
+    </linearGradient>
+    <linearGradient id="s3-water-veil" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F2E8D5" stop-opacity="0.08"/>
+      <stop offset="0.55" stop-color="#F2E8D5" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#F2E8D5" stop-opacity="0.42"/>
+    </linearGradient>
+    <clipPath id="s3-pond-clip">
+      <ellipse cx="1200" cy="1050" rx="470" ry="105"/>
+    </clipPath>
+
+    <!-- 一朵秋花：外圈十瓣、内圈六瓣，奶油心 + 一点蓝 -->
+    <g id="s3-blossom">
+      <g>
+        <ellipse cx="0" cy="-48" rx="19" ry="48"/>
+        <ellipse cx="0" cy="-48" rx="19" ry="48" transform="rotate(36)"/>
+        <ellipse cx="0" cy="-48" rx="19" ry="48" transform="rotate(72)"/>
+        <ellipse cx="0" cy="-48" rx="19" ry="48" transform="rotate(108)"/>
+        <ellipse cx="0" cy="-48" rx="19" ry="48" transform="rotate(144)"/>
+        <ellipse cx="0" cy="-48" rx="19" ry="48" transform="rotate(180)"/>
+        <ellipse cx="0" cy="-48" rx="19" ry="48" transform="rotate(216)"/>
+        <ellipse cx="0" cy="-48" rx="19" ry="48" transform="rotate(252)"/>
+        <ellipse cx="0" cy="-48" rx="19" ry="48" transform="rotate(288)"/>
+        <ellipse cx="0" cy="-48" rx="19" ry="48" transform="rotate(324)"/>
+      </g>
+      <g opacity="0.6">
+        <ellipse cx="0" cy="-32" rx="14" ry="32" transform="rotate(30)"/>
+        <ellipse cx="0" cy="-32" rx="14" ry="32" transform="rotate(90)"/>
+        <ellipse cx="0" cy="-32" rx="14" ry="32" transform="rotate(150)"/>
+        <ellipse cx="0" cy="-32" rx="14" ry="32" transform="rotate(210)"/>
+        <ellipse cx="0" cy="-32" rx="14" ry="32" transform="rotate(270)"/>
+        <ellipse cx="0" cy="-32" rx="14" ry="32" transform="rotate(330)"/>
+      </g>
+      <circle r="20" fill="#F2E8D5" opacity="0.95"/>
+      <circle r="8" fill="#6FA8DC" opacity="0.45"/>
+    </g>
+
+    <!-- 一片花瓣：长轴朝 +x，配合 animateMotion 的 rotate auto -->
+    <path id="s3-petal" d="M0 0 C 17 8, 36 11, 52 0 C 36 -11, 17 -8, 0 0 Z"/>
+
+    <!-- 花团：枝、叶、花；主体与水中倒影共用 -->
+    <g id="s3-bush">
+      <g fill="none" stroke="#8C6448" stroke-width="8" stroke-linecap="round">
+        <path d="M1204 1037 C 1198 969, 1192 913, 1186 851"/>
+        <path d="M1202 955 C 1152 917, 1112 881, 1084 847"/>
+        <path d="M1202 955 C 1258 917, 1296 883, 1314 849"/>
+        <path d="M1198 925 C 1190 845, 1184 725, 1190 613"/>
+        <path d="M1202 925 C 1240 861, 1266 795, 1292 745"/>
+      </g>
+      <ellipse cx="1195" cy="745" rx="235" ry="165" fill="#96674A" opacity="0.11"/>
+      <g fill="#A9764E" opacity="0.82">
+        <ellipse cx="1016" cy="707" rx="46" ry="15" transform="rotate(-34 1016 707)"/>
+        <ellipse cx="1058" cy="837" rx="40" ry="13" transform="rotate(-16 1058 837)"/>
+        <ellipse cx="1160" cy="863" rx="38" ry="12" transform="rotate(6 1160 863)"/>
+        <ellipse cx="1298" cy="861" rx="40" ry="13" transform="rotate(-8 1298 861)"/>
+        <ellipse cx="1392" cy="751" rx="46" ry="15" transform="rotate(28 1392 751)"/>
+        <ellipse cx="1352" cy="821" rx="38" ry="12" transform="rotate(36 1352 821)"/>
+        <ellipse cx="1124" cy="599" rx="40" ry="13" transform="rotate(-48 1124 599)"/>
+        <ellipse cx="1272" cy="573" rx="40" ry="13" transform="rotate(44 1272 573)"/>
+      </g>
+      <use href="#s3-blossom" transform="translate(1195 581) scale(0.86)" fill="#D98C5F"/>
+      <use href="#s3-blossom" transform="translate(1052 645) scale(0.78)" fill="#E2A07A"/>
+      <use href="#s3-blossom" transform="translate(1338 641) scale(0.80)" fill="#C97B50"/>
+      <use href="#s3-blossom" transform="translate(1010 751) scale(0.72)" fill="#C97B50"/>
+      <use href="#s3-blossom" transform="translate(1378 751) scale(0.74)" fill="#E2A07A"/>
+      <use href="#s3-blossom" transform="translate(1078 813) scale(0.72)" fill="#D98C5F"/>
+      <use href="#s3-blossom" transform="translate(1300 817) scale(0.70)" fill="#D98C5F"/>
+      <use href="#s3-blossom" transform="translate(1170 757) scale(1.02)" fill="#D98C5F"/>
+      <use href="#s3-blossom" transform="translate(1262 705) scale(0.88)" fill="#EBB894"/>
+    </g>
+
+    <!-- 水边芦苇 -->
+    <g id="s3-reeds">
+      <g fill="none" stroke="#8A6A4E" stroke-linecap="round">
+        <path d="M1608 1000 C 1604 920, 1598 850, 1592 796" stroke-width="6"/>
+        <path d="M1650 1025 C 1648 958, 1644 900, 1640 852" stroke-width="5"/>
+        <path d="M1568 1000 C 1562 940, 1558 890, 1552 862" stroke-width="5"/>
+        <path d="M1608 976 C 1622 930, 1652 908, 1666 902" stroke-width="4"/>
+        <path d="M1604 962 C 1588 918, 1560 900, 1546 896" stroke-width="4"/>
+      </g>
+      <g fill="#A9764E">
+        <ellipse cx="1592" cy="788" rx="9" ry="30"/>
+        <ellipse cx="1640" cy="846" rx="8" ry="26"/>
+        <ellipse cx="1552" cy="854" rx="7" ry="22"/>
+      </g>
+    </g>
+  </defs>
+
+  <!-- 天空 -->
+  <rect x="0" y="0" width="2400" height="1400" fill="url(#s3-sky)"/>
+  <!-- 秋日暖光 -->
+  <ellipse cx="1200" cy="765" rx="560" ry="330" fill="url(#s3-warm)"/>
+  <!-- 地面带：四幕一致 -->
+  <rect x="0" y="1100" width="2400" height="300" fill="#F2E8D5"/>
+
+  <!-- 远山（两端淡出） -->
+  <path d="M200 1100 C 380 1016, 560 990, 760 1026 C 940 1058, 1080 1044, 1240 1014 C 1420 982, 1580 1000, 1760 1046 C 1920 1086, 2060 1094, 2200 1100 Z" fill="url(#s3-hill-far)"/>
+  <path d="M120 1100 C 300 1042, 460 1020, 640 1042 C 820 1064, 960 1086, 1140 1080 C 1320 1074, 1460 1046, 1640 1038 C 1820 1030, 2020 1066, 2280 1100 Z" fill="url(#s3-hill-near)"/>
+
+  <!-- 远处的小花丛：与主体呼应，压住左侧空处 -->
+  <g opacity="0.62">
+    <g fill="none" stroke="#8C6448" stroke-width="5" stroke-linecap="round">
+      <path d="M616 1090 C 610 1010, 606 940, 600 872"/>
+      <path d="M614 1000 C 594 960, 578 920, 566 890"/>
+      <path d="M616 1000 C 638 964, 652 930, 658 900"/>
+    </g>
+    <ellipse cx="616" cy="960" rx="34" ry="11" fill="#A9764E" opacity="0.7" transform="rotate(-24 616 960)"/>
+    <use href="#s3-blossom" transform="translate(600 830) scale(0.42)" fill="#B98663"/>
+    <use href="#s3-blossom" transform="translate(562 884) scale(0.36)" fill="#C29575"/>
+    <use href="#s3-blossom" transform="translate(656 894) scale(0.34)" fill="#B98663"/>
+  </g>
+
+  <!-- 花团 -->
+  <use href="#s3-bush"/>
+
+  <!-- 水镜 -->
+  <g>
+    <ellipse cx="1200" cy="1050" rx="470" ry="105" fill="url(#s3-water)"/>
+    <!-- 倒影：以水面 y=945 为轴，纵向压缩，轻微左右晃 -->
+    <g clip-path="url(#s3-pond-clip)">
+      <g transform="translate(24 1417.5) scale(0.98 -0.5)" opacity="0.3">
+        <g>
+          <animateTransform attributeName="transform" type="skewX" values="0.9;-0.9;0.9" dur="8s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.4 0 0.6 1;0.4 0 0.6 1"/>
+          <use href="#s3-bush"/>
+        </g>
+      </g>
+      <g transform="translate(0 1500) scale(1 -0.5)" opacity="0.16">
+        <use href="#s3-reeds"/>
+      </g>
+    </g>
+    <ellipse cx="1200" cy="1050" rx="470" ry="105" fill="url(#s3-water-veil)"/>
+
+    <!-- 涟漪 -->
+    <g transform="translate(1075 1005)">
+      <g opacity="0">
+        <animate attributeName="opacity" values="0;0.6;0.5;0" keyTimes="0;0.07;0.45;1" dur="8s" begin="0s" repeatCount="indefinite"/>
+        <animateTransform attributeName="transform" type="scale" values="0.4;1.75" dur="8s" begin="0s" repeatCount="indefinite" calcMode="spline" keyTimes="0;1" keySplines="0.1 0.5 0.5 1"/>
+        <ellipse rx="46" ry="11" fill="none" stroke="#F2E8D5" stroke-width="3"/>
+        <ellipse rx="72" ry="17" fill="none" stroke="#F2E8D5" stroke-width="2.5"/>
+      </g>
+    </g>
+    <g transform="translate(1330 1054)">
+      <g opacity="0">
+        <animate attributeName="opacity" values="0;0.5;0.42;0" keyTimes="0;0.07;0.45;1" dur="8s" begin="4s" repeatCount="indefinite"/>
+        <animateTransform attributeName="transform" type="scale" values="0.4;1.6" dur="8s" begin="4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;1" keySplines="0.1 0.5 0.5 1"/>
+        <ellipse rx="46" ry="11" fill="none" stroke="#F2E8D5" stroke-width="3"/>
+        <ellipse rx="72" ry="17" fill="none" stroke="#F2E8D5" stroke-width="2.5"/>
+      </g>
+    </g>
+
+    <!-- 落在水面上的两片花瓣 -->
+    <use href="#s3-petal" fill="#D98C5F" opacity="0.9" transform="translate(1002 1062) rotate(16) scale(1.1)"/>
+    <use href="#s3-petal" fill="#E2A07A" opacity="0.85" transform="translate(1372 1026) rotate(-12) scale(1.05)"/>
+
+    <!-- 远岸高光与水岸边缘 -->
+    <ellipse cx="1200" cy="953" rx="372" ry="13" fill="#F2E8D5" opacity="0.16"/>
+    <ellipse cx="1200" cy="1050" rx="470" ry="105" fill="none" stroke="#F2E8D5" stroke-width="4" stroke-opacity="0.38"/>
+  </g>
+
+  <!-- 水边芦苇 -->
+  <use href="#s3-reeds"/>
+
+  <!-- 落瓣：从花团落下，落到水面后淡出 -->
+  <g opacity="0">
+    <animate attributeName="opacity" values="0;0.95;0.95;0" keyTimes="0;0.08;0.8;1" dur="8s" begin="0s" repeatCount="indefinite"/>
+    <g>
+      <animateMotion dur="8s" begin="0s" repeatCount="indefinite" rotate="auto" path="M985 815 C 950 870, 965 940, 1000 985"/>
+      <use href="#s3-petal" fill="#D98C5F"/>
+    </g>
+  </g>
+  <g opacity="0">
+    <animate attributeName="opacity" values="0;0.95;0.95;0" keyTimes="0;0.08;0.8;1" dur="8s" begin="2.6s" repeatCount="indefinite"/>
+    <g>
+      <animateMotion dur="8s" begin="2.6s" repeatCount="indefinite" rotate="auto" path="M1400 790 C 1440 850, 1420 950, 1390 1020"/>
+      <use href="#s3-petal" fill="#C97B50"/>
+    </g>
+  </g>
+  <g opacity="0">
+    <animate attributeName="opacity" values="0;0.9;0.9;0" keyTimes="0;0.08;0.8;1" dur="8s" begin="5.2s" repeatCount="indefinite"/>
+    <g>
+      <animateMotion dur="8s" begin="5.2s" repeatCount="indefinite" rotate="auto" path="M1110 545 C 1050 620, 1015 760, 1040 940"/>
+      <use href="#s3-petal" fill="#E2A07A"/>
+    </g>
+  </g>
+
+  <!-- 贯穿全卷的蓝线：放在所有主体之后，保证长卷里不被压断 -->
+  <path d="M0 900 C 600 860, 1800 940, 2400 900" fill="none" stroke="#6FA8DC" stroke-width="6" stroke-linecap="round"/>
+</svg>

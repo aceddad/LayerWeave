@@ -1,0 +1,3169 @@
+{
+  "format_version": 1,
+  "name": "LayerWeave 自身源码导览",
+  "when": "从职责、执行流程和修改意图进入固定提交源码",
+  "project": {
+    "op": "add",
+    "data": {
+      "name": "LayerWeave 自身源码导览 · 0.7.6",
+      "tips": "基线 visualization 042ad82c2131ed0e97658a2285e2dd7ce81f6498；阅读序号不是代码行号、耗时或对象 ID。路径以仓库根为基准，source_targets 不提供运行时 IDE 跳转。"
+    }
+  },
+  "items": [
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "architecture",
+      "data": {
+        "config_ref": "layers/text.toml",
+        "name": "架构职责",
+        "tips": "从职责进入模块。顺序只是阅读建议；依赖箭头在 bind.tips 中说明。",
+        "axis": {
+          "unit": "阅读序号",
+          "precision": 1
+        }
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "core",
+          "data": {
+            "config_ref": "objects/text.toml",
+            "name": "抽象核心 · 身份与封装语义",
+            "begin": 1,
+            "end": 2,
+            "information": {
+              "text": "core 只组织身份、引用和纯字典合并；identity_key/reference 不查数据库。基础 Layer/Object 定义在 models，可经 core 导出。模型构造和赋值不自动执行内容检查；归属存在性与父链无环由支撑保证。",
+              "navigation_key": "core",
+              "category": "source",
+              "source_targets": [
+                {
+                  "path": "src/layerweave/core/identity.py",
+                  "kind": "python",
+                  "symbol": "identity_key",
+                  "access": "public",
+                  "line_hint": 4
+                },
+                {
+                  "path": "src/layerweave/core/identity.py",
+                  "kind": "python",
+                  "symbol": "reference",
+                  "access": "public",
+                  "line_hint": 9
+                },
+                {
+                  "path": "src/layerweave/core/encapsulation.py",
+                  "kind": "python",
+                  "symbol": "merge_definition",
+                  "access": "public",
+                  "line_hint": 22
+                },
+                {
+                  "path": "src/layerweave/core/README.md",
+                  "kind": "markdown",
+                  "section": "抽象核心",
+                  "access": "documentation"
+                }
+              ],
+              "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+              "review_state": "已按固定提交核验"
+            },
+            "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "models",
+          "data": {
+            "config_ref": "objects/text.toml",
+            "name": "模型 · Layer、Object 与 Text",
+            "begin": 2,
+            "end": 3,
+            "information": {
+              "text": "Layer 保存 father/axis/objects，Object 保存 layer/begin/end/information/bind。Text 是 Object 的空派生类，Title 继承 Text；内容约定在对应 TOML。Python 实例不保存 project_id/config_ref/type，保存与装配由支撑适配。",
+              "navigation_key": "models",
+              "category": "source",
+              "source_targets": [
+                {
+                  "path": "src/layerweave/models/layers/base.py",
+                  "kind": "python",
+                  "symbol": "Layer",
+                  "access": "public",
+                  "line_hint": 7
+                },
+                {
+                  "path": "src/layerweave/models/objects/base.py",
+                  "kind": "python",
+                  "symbol": "Object",
+                  "access": "public",
+                  "line_hint": 5
+                },
+                {
+                  "path": "src/layerweave/models/objects/text.py",
+                  "kind": "python",
+                  "symbol": "Text",
+                  "access": "public",
+                  "line_hint": 4
+                },
+                {
+                  "path": "src/layerweave/models/objects/title.py",
+                  "kind": "python",
+                  "symbol": "Title",
+                  "access": "public",
+                  "line_hint": 4
+                }
+              ],
+              "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+              "review_state": "已按固定提交核验"
+            },
+            "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "support",
+          "data": {
+            "config_ref": "objects/text.toml",
+            "name": "支撑 · 公共 API 与统一写入",
+            "begin": 3,
+            "end": 4,
+            "information": {
+              "text": "support 提供配置读取、SQLite、发号、事务、日志和实例装配。外部工具从 support.api 的显式导出进入；存储内部函数可阅读但不承诺稳定。工具决定业务修改，支撑收集真实变化并原子提交，不由工具伪造日志。",
+              "navigation_key": "support",
+              "category": "source",
+              "source_targets": [
+                {
+                  "path": "src/layerweave/support/api.py",
+                  "kind": "python",
+                  "symbol": "__all__",
+                  "access": "public",
+                  "line_hint": 28
+                },
+                {
+                  "path": "docs/architecture.md",
+                  "kind": "markdown",
+                  "section": "统一写入入口",
+                  "access": "documentation"
+                }
+              ],
+              "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+              "review_state": "已按固定提交核验",
+              "public_entry": "layerweave.support.api"
+            },
+            "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "tools",
+          "data": {
+            "config_ref": "objects/text.toml",
+            "name": "工具 · 可替换业务包",
+            "begin": 4,
+            "end": 5,
+            "information": {
+              "text": "usage 的 records、query、exchange、validation、undo 各自完成业务。依赖方向为工具→支撑→核心；工具包携带自己的辅助代码，不依赖其他可卸载包的私有实现。工具可缺席，共享的写入规则仍由支撑保证。",
+              "navigation_key": "tools",
+              "category": "source",
+              "source_targets": [
+                {
+                  "path": "docs/architecture.md",
+                  "kind": "markdown",
+                  "section": "三部分及依赖",
+                  "access": "documentation"
+                },
+                {
+                  "path": "src/layerweave/tool/builtin/developer/README.md",
+                  "kind": "markdown",
+                  "section": "开发内部工具",
+                  "access": "documentation"
+                }
+              ],
+              "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+              "review_state": "已按固定提交核验"
+            },
+            "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "configs",
+          "data": {
+            "config_ref": "objects/text.toml",
+            "name": "配置 · class、type 与 config_ref",
+            "begin": 5,
+            "end": 6,
+            "information": {
+              "text": "记录的 objects/text.toml 相对 configs 根；该文件 [object].class 绑定 Text，[object].information.text 声明字符串。layers/text.toml 绑定 TextLayer 并接受 text。每份封装自己声明 type/class；extends 相对当前 TOML，而非仓库根。",
+              "navigation_key": "configs",
+              "category": "source",
+              "source_targets": [
+                {
+                  "path": "src/layerweave/configs/objects/text.toml",
+                  "kind": "toml",
+                  "key": "object.class",
+                  "access": "declaration"
+                },
+                {
+                  "path": "src/layerweave/configs/objects/text.toml",
+                  "kind": "toml",
+                  "key": "object.information.text",
+                  "access": "declaration"
+                },
+                {
+                  "path": "src/layerweave/configs/layers/text.toml",
+                  "kind": "toml",
+                  "key": "layer.class",
+                  "access": "declaration"
+                },
+                {
+                  "path": "src/layerweave/configs/layers/text.toml",
+                  "kind": "toml",
+                  "key": "layer.objects",
+                  "access": "declaration"
+                }
+              ],
+              "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+              "review_state": "已按固定提交核验"
+            },
+            "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "skills",
+          "data": {
+            "config_ref": "objects/text.toml",
+            "name": "技能 · 供 AI 阅读的工具线索",
+            "begin": 6,
+            "end": 7,
+            "information": {
+              "text": "tool/skills 的技能由层配置 tools 中 route/tier/when 指向，供 AI 按需阅读选择；这些词条不自动执行，也不是 COMMANDS 或发号规则。源码路径、随包资源和 ZIP 安装目标各有基准，定位时先看工具区的选择与定位技能。",
+              "navigation_key": "skills",
+              "category": "source",
+              "source_targets": [
+                {
+                  "path": "src/layerweave/tool/README.md",
+                  "kind": "markdown",
+                  "section": "选择与定位技能",
+                  "access": "documentation"
+                },
+                {
+                  "path": "src/layerweave/configs/layers/text.toml",
+                  "kind": "toml",
+                  "key": "layer.tools",
+                  "access": "declaration"
+                }
+              ],
+              "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+              "review_state": "已按固定提交核验"
+            },
+            "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "branches",
+          "data": {
+            "config_ref": "objects/text.toml",
+            "name": "分支范围 · visualization 与 main",
+            "begin": 7,
+            "end": 8,
+            "information": {
+              "text": "基线 README 明确 visualization 为完整版本，main 为无视图开发源码，保留 Python/CLI 及共用核心、支撑和非视图工具；视图、MCP 服务及发行封装在完整分支。这里陈述该提交的分支约定，没有把另一个分支的当前 HEAD 当成已逐文件核验。",
+              "navigation_key": "branches",
+              "category": "source",
+              "source_targets": [
+                {
+                  "path": "README.md",
+                  "kind": "markdown",
+                  "section": "按需查帮助与扩展",
+                  "access": "documentation"
+                },
+                {
+                  "path": "AGENTS.md",
+                  "kind": "markdown",
+                  "section": "修改原则",
+                  "access": "documentation"
+                }
+              ],
+              "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+              "review_state": "已按固定提交核验"
+            },
+            "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "adapters",
+          "data": {
+            "config_ref": "objects/text.toml",
+            "name": "视图与 MCP · 工具及适配入口",
+            "begin": 8,
+            "end": 9,
+            "information": {
+              "text": "视图位于 tool/builtin/view，网页源码在 frontend/view；MCP 位于 tool/builtin/shared/mcp，按 COMMANDS 的 schema 和函数绑定暴露能力。两者不属于抽象核心。画布详情与沿读跳到案例对象；source_targets 是说明资料，不会自动打开 IDE 或编辑源码。",
+              "navigation_key": "adapters",
+              "category": "source",
+              "source_targets": [
+                {
+                  "path": "src/layerweave/tool/builtin/view/GUIDE.md",
+                  "kind": "markdown",
+                  "section": "沿读",
+                  "access": "documentation"
+                },
+                {
+                  "path": "src/layerweave/tool/builtin/view/server.py",
+                  "kind": "python",
+                  "symbol": "make_server",
+                  "access": "internal",
+                  "line_hint": 317
+                },
+                {
+                  "path": "src/layerweave/tool/builtin/shared/mcp/README.md",
+                  "kind": "markdown",
+                  "section": "发现与调用",
+                  "access": "documentation"
+                },
+                {
+                  "path": "docs/developer-conventions.md",
+                  "kind": "markdown",
+                  "section": "实现原则",
+                  "access": "documentation"
+                }
+              ],
+              "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+              "review_state": "已按固定提交核验"
+            },
+            "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "execution",
+      "data": {
+        "config_ref": "layers/text.toml",
+        "name": "执行链路",
+        "tips": "三条真实流程；分层里的序号是讲解步骤，不是调用栈、行号、耗时或身份。",
+        "axis": {
+          "unit": "阅读序号",
+          "precision": 1
+        }
+      },
+      "children": [
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "write",
+          "data": {
+            "config_ref": "layers/text.toml",
+            "name": "链路一 · 创建并保存文字对象",
+            "tips": "先有项目与文字层，再保存 Text。公共入口与内部落库步骤分开标记。"
+          },
+          "children": [
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "save-entry",
+              "data": {
+                "config_ref": "objects/text.toml",
+                "name": "W1 · Text 与带检查保存入口",
+                "begin": 1,
+                "end": 2,
+                "information": {
+                  "text": "前置：项目和所属 TextLayer 已保存。构造 Text(layer=层编号, information={text:正文}) 后调用 save_object_with_checks。它把 optional_checker 传给支撑 save_object；基础 support.api.save_object 默认 checker=None。可选检测的发现与导入延迟到提交后。",
+                  "navigation_key": "save-entry",
+                  "category": "source",
+                  "source_targets": [
+                    {
+                      "path": "src/layerweave/tool/builtin/usage/records/save.py",
+                      "kind": "python",
+                      "symbol": "save_object_with_checks",
+                      "access": "tool-public",
+                      "line_hint": 12
+                    },
+                    {
+                      "path": "src/layerweave/support/storage/save.py",
+                      "kind": "python",
+                      "symbol": "save_object",
+                      "access": "public via support.api",
+                      "line_hint": 136
+                    },
+                    {
+                      "path": "src/layerweave/support/providers.py",
+                      "kind": "python",
+                      "symbol": "optional_checker",
+                      "access": "public",
+                      "line_hint": 28
+                    }
+                  ],
+                  "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+                  "review_state": "已按固定提交核验",
+                  "public_entry": "layerweave.tool.builtin.usage.records.save:save_object_with_checks"
+                },
+                "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "save-body",
+              "data": {
+                "config_ref": "objects/text.toml",
+                "name": "W2 · 保存编排与配置推断",
+                "begin": 2,
+                "end": 3,
+                "information": {
+                  "text": "save_object→_save→run_operation 开启写会话后执行 _save_in_session→_save_entity。实例经 infer_config 用实际 Python 类查唯一配置；字典新记录必须有 config_ref。Loader.load 成功后 _upsert 以 id 是否为空选择 create/update，再保存传入发出 bind；read_object 返回完整记录。_save 仅在 run_operation 成功返回后回填输入 id/layer/位置，包括检查失败但已提交的情况。",
+                  "navigation_key": "save-body",
+                  "category": "source",
+                  "source_targets": [
+                    {
+                      "path": "src/layerweave/support/storage/save.py",
+                      "kind": "python",
+                      "symbol": "_save",
+                      "access": "internal",
+                      "line_hint": 120
+                    },
+                    {
+                      "path": "src/layerweave/support/storage/save.py",
+                      "kind": "python",
+                      "symbol": "_save_in_session",
+                      "access": "internal",
+                      "line_hint": 94
+                    },
+                    {
+                      "path": "src/layerweave/support/storage/save.py",
+                      "kind": "python",
+                      "symbol": "_save_entity",
+                      "access": "internal",
+                      "line_hint": 61
+                    },
+                    {
+                      "path": "src/layerweave/support/storage/save.py",
+                      "kind": "python",
+                      "symbol": "_upsert",
+                      "access": "internal",
+                      "line_hint": 31
+                    },
+                    {
+                      "path": "src/layerweave/support/storage/models.py",
+                      "kind": "python",
+                      "symbol": "infer_config",
+                      "access": "internal",
+                      "line_hint": 24
+                    }
+                  ],
+                  "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+                  "review_state": "已按固定提交核验"
+                },
+                "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "crud",
+              "data": {
+                "config_ref": "objects/text.toml",
+                "name": "W3 · 编码、落点与真实插入",
+                "begin": 3,
+                "end": 4,
+                "information": {
+                  "text": "内部 crud.create 检查当前会话、种类/范围及可写字段，JSON 序列化后对 object 的位置按所属层轴精度落点，再进入 _insert。_insert 先发号，再 INSERT，读回数据库规范化记录，维护计数上界，最后 append_change。它不自行提交或检查封装内容。",
+                  "navigation_key": "crud",
+                  "category": "source",
+                  "source_targets": [
+                    {
+                      "path": "src/layerweave/support/storage/crud.py",
+                      "kind": "python",
+                      "symbol": "create",
+                      "access": "internal",
+                      "line_hint": 128
+                    },
+                    {
+                      "path": "src/layerweave/support/storage/crud.py",
+                      "kind": "python",
+                      "symbol": "_positions",
+                      "access": "internal",
+                      "line_hint": 105
+                    },
+                    {
+                      "path": "src/layerweave/support/storage/crud.py",
+                      "kind": "python",
+                      "symbol": "_insert",
+                      "access": "internal",
+                      "line_hint": 139
+                    }
+                  ],
+                  "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+                  "review_state": "已按固定提交核验"
+                },
+                "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "allocate",
+              "data": {
+                "config_ref": "objects/text.toml",
+                "name": "W4 · 项目簇发号",
+                "begin": 4,
+                "end": 5,
+                "information": {
+                  "text": "_insert 通过 entry_for 找表的发号词条，再调用 allocate。默认 project_entities 的 project_entity 规则调用 increment，以 project_id 定位 projects.max_id，递增并返回 {project_id,id}。计数变化进入当前会话 numbering，尚未提交；allocate 本身不插入业务行。之后控制返回 _insert 插入记录。",
+                  "navigation_key": "allocate",
+                  "category": "source",
+                  "source_targets": [
+                    {
+                      "path": "src/layerweave/support/numbering/registry.py",
+                      "kind": "python",
+                      "symbol": "entry_for",
+                      "access": "internal",
+                      "line_hint": 41
+                    },
+                    {
+                      "path": "src/layerweave/support/numbering/registry.py",
+                      "kind": "python",
+                      "symbol": "DEFAULT",
+                      "access": "internal",
+                      "line_hint": 12
+                    },
+                    {
+                      "path": "src/layerweave/support/numbering/service.py",
+                      "kind": "python",
+                      "symbol": "allocate",
+                      "access": "public via support.api",
+                      "line_hint": 53
+                    },
+                    {
+                      "path": "src/layerweave/support/numbering/service.py",
+                      "kind": "python",
+                      "symbol": "project_entity",
+                      "access": "internal",
+                      "line_hint": 35
+                    },
+                    {
+                      "path": "src/layerweave/support/numbering/service.py",
+                      "kind": "python",
+                      "symbol": "increment",
+                      "access": "public via support.api",
+                      "line_hint": 9
+                    }
+                  ],
+                  "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+                  "review_state": "已按固定提交核验"
+                },
+                "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "journal",
+              "data": {
+                "config_ref": "objects/text.toml",
+                "name": "W5 · before/after 业务日志",
+                "begin": 5,
+                "end": 6,
+                "information": {
+                  "text": "append_change 在同一连接里 INSERT changes，写 operation_id、action、before_data/after_data，再 record_change 加入会话。相同前后值不制造日志。对象 INSERT、计数和这条日志尚在同一事务内；任一步失败会一起回滚。changes.id 是日志身份，不是对象身份。",
+                  "navigation_key": "journal",
+                  "category": "source",
+                  "source_targets": [
+                    {
+                      "path": "src/layerweave/support/storage/journal.py",
+                      "kind": "python",
+                      "symbol": "append_change",
+                      "access": "internal",
+                      "line_hint": 15
+                    },
+                    {
+                      "path": "src/layerweave/support/transaction.py",
+                      "kind": "python",
+                      "symbol": "record_change",
+                      "access": "internal",
+                      "line_hint": 91
+                    }
+                  ],
+                  "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+                  "review_state": "已按固定提交核验"
+                },
+                "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "commit-check",
+              "data": {
+                "config_ref": "objects/text.toml",
+                "name": "W6 · 提交、检查与反馈",
+                "begin": 6,
+                "end": 7,
+                "information": {
+                  "text": "run_operation 的 work 完成后，transaction 先按最终状态检查父链和簇冲突，再 commit；失败返回 ok=false/applied=false。退出事务后 run_checks 才调用 checker。成功返回 operation.status、changes、可选 numbering、data、checks；checks.completed 也可能含 error，checks.failed 表示检测器异常，不撤销已提交业务。最后回到 _save 回填输入实例。",
+                  "navigation_key": "commit-check",
+                  "category": "source",
+                  "source_targets": [
+                    {
+                      "path": "src/layerweave/support/operation.py",
+                      "kind": "python",
+                      "symbol": "run_operation",
+                      "access": "public via support.api",
+                      "line_hint": 14
+                    },
+                    {
+                      "path": "src/layerweave/support/transaction.py",
+                      "kind": "python",
+                      "symbol": "transaction",
+                      "access": "public via support.api",
+                      "line_hint": 137
+                    },
+                    {
+                      "path": "src/layerweave/support/transaction.py",
+                      "kind": "python",
+                      "symbol": "_check_parents",
+                      "access": "internal",
+                      "line_hint": 100
+                    },
+                    {
+                      "path": "src/layerweave/support/transaction.py",
+                      "kind": "python",
+                      "symbol": "_check_numbering",
+                      "access": "internal",
+                      "line_hint": 120
+                    },
+                    {
+                      "path": "src/layerweave/support/channel.py",
+                      "kind": "python",
+                      "symbol": "run_checks",
+                      "access": "internal",
+                      "line_hint": 16
+                    }
+                  ],
+                  "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+                  "review_state": "已按固定提交核验"
+                },
+                "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "load",
+          "data": {
+            "config_ref": "layers/text.toml",
+            "name": "链路二 · 记录还原 Python 实例",
+            "tips": "read 保留原始记录；load 才根据 config_ref 装配类。"
+          },
+          "children": [
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "raw-read",
+              "data": {
+                "config_ref": "objects/text.toml",
+                "name": "R1 · 原始记录读取",
+                "begin": 1,
+                "end": 2,
+                "information": {
+                  "text": "read_object 在 read_snapshot 中调用 crud.read 得到解码后的字典，再读取发出 bind；不读配置、不检查内容。read_layer 同样取层及直接对象与其发出 bind，不递归子层或关联目标。记录保留 project_id/config_ref，缺配置时仍能读；不存在返回 None。",
+                  "navigation_key": "raw-read",
+                  "category": "source",
+                  "source_targets": [
+                    {
+                      "path": "src/layerweave/support/storage/assembly.py",
+                      "kind": "python",
+                      "symbol": "read_object",
+                      "access": "public via support.api",
+                      "line_hint": 14
+                    },
+                    {
+                      "path": "src/layerweave/support/storage/assembly.py",
+                      "kind": "python",
+                      "symbol": "read_layer",
+                      "access": "public via support.api",
+                      "line_hint": 23
+                    },
+                    {
+                      "path": "src/layerweave/support/storage/snapshot.py",
+                      "kind": "python",
+                      "symbol": "read_snapshot",
+                      "access": "public via support.api",
+                      "line_hint": 6
+                    }
+                  ],
+                  "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+                  "review_state": "已按固定提交核验"
+                },
+                "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "load-model",
+              "data": {
+                "config_ref": "objects/text.toml",
+                "name": "R2 · 按 config_ref 装配实例",
+                "begin": 2,
+                "end": 3,
+                "information": {
+                  "text": "load_object 先 read_object；非空才创建 Loader 并 restore_model。restore_model 载入 config_ref，拆 class 的模块:类，import_module 并逐段取类，核对基类与定义路径；层还核对 type。复制存储字段、id、bind 调用 cls(**values)，不把 config_ref/project_id/type 塞进模型。load_layer 递归装配直接 objects。失败报告目标与配置，不退回基础类冒充成功。",
+                  "navigation_key": "load-model",
+                  "category": "source",
+                  "source_targets": [
+                    {
+                      "path": "src/layerweave/support/storage/models.py",
+                      "kind": "python",
+                      "symbol": "load_object",
+                      "access": "public via support.api",
+                      "line_hint": 58
+                    },
+                    {
+                      "path": "src/layerweave/support/storage/models.py",
+                      "kind": "python",
+                      "symbol": "load_layer",
+                      "access": "public via support.api",
+                      "line_hint": 64
+                    },
+                    {
+                      "path": "src/layerweave/support/storage/models.py",
+                      "kind": "python",
+                      "symbol": "restore_model",
+                      "access": "internal",
+                      "line_hint": 30
+                    }
+                  ],
+                  "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+                  "review_state": "已按固定提交核验"
+                },
+                "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "loader",
+              "data": {
+                "config_ref": "objects/text.toml",
+                "name": "R3 · TOML 继承与类唯一绑定",
+                "begin": 3,
+                "end": 4,
+                "information": {
+                  "text": "Loader.load 从配置根解析 ref，校验本文件 type/class 明确存在且类只绑定一份配置；按当前文件目录解析 extends，递归加载并用 core.merge_definition 合并。class_config 用实际类的定义路径查索引。缓存只在本次 Loader 内；类型装配没有运行内容规则。正常 load 接受可信配置，导入 class 会执行 Python 模块。",
+                  "navigation_key": "loader",
+                  "category": "source",
+                  "source_targets": [
+                    {
+                      "path": "src/layerweave/support/configuration/loader.py",
+                      "kind": "python",
+                      "symbol": "Loader.load",
+                      "access": "public",
+                      "line_hint": 70
+                    },
+                    {
+                      "path": "src/layerweave/support/configuration/loader.py",
+                      "kind": "python",
+                      "symbol": "Loader.class_config",
+                      "access": "public",
+                      "line_hint": 140
+                    },
+                    {
+                      "path": "src/layerweave/support/configuration/loader.py",
+                      "kind": "python",
+                      "symbol": "Loader._index",
+                      "access": "internal",
+                      "line_hint": 122
+                    },
+                    {
+                      "path": "src/layerweave/core/encapsulation.py",
+                      "kind": "python",
+                      "symbol": "merge_definition",
+                      "access": "public",
+                      "line_hint": 22
+                    }
+                  ],
+                  "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+                  "review_state": "已按固定提交核验"
+                },
+                "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "key": "exchange",
+          "data": {
+            "config_ref": "layers/text.toml",
+            "name": "链路三 · JSON 新建带关联项目",
+            "tips": "先准备结构，再进入一次业务事务。key 的登记、等待和身份映射都可追踪。"
+          },
+          "children": [
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "exchange-entry",
+              "data": {
+                "config_ref": "objects/text.toml",
+                "name": "J1 · 导入入口与结构准备",
+                "begin": 1,
+                "end": 2,
+                "information": {
+                  "text": "import_project 先 document_value 解析文档，默认 prepare_exchange 独立登记 tables，再用 run_operation 包住 Importer。结构准备不属于业务撤销；业务失败也可保留已准备空表。该案例没有工具表。返回外层 ok/applied/operation/checks 与 schema；成功 data 中才有业务报告。",
+                  "navigation_key": "exchange-entry",
+                  "category": "source",
+                  "source_targets": [
+                    {
+                      "path": "src/layerweave/tool/builtin/usage/exchange/importing.py",
+                      "kind": "python",
+                      "symbol": "import_project",
+                      "access": "tool-public via exchange",
+                      "line_hint": 332
+                    },
+                    {
+                      "path": "src/layerweave/tool/builtin/usage/exchange/importing.py",
+                      "kind": "python",
+                      "symbol": "prepare_exchange",
+                      "access": "tool-public via exchange",
+                      "line_hint": 22
+                    },
+                    {
+                      "path": "src/layerweave/tool/builtin/usage/exchange/format.py",
+                      "kind": "python",
+                      "symbol": "document_value",
+                      "access": "internal",
+                      "line_hint": 19
+                    }
+                  ],
+                  "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+                  "review_state": "已按固定提交核验"
+                },
+                "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "flatten",
+              "data": {
+                "config_ref": "objects/text.toml",
+                "name": "J2 · 展平节点与登记 key",
+                "begin": 2,
+                "end": 3,
+                "information": {
+                  "text": "Importer.__init__ 取得 write/specs/source/target/Loader，先遍历 items 再 records；_flatten 按父子顺序建立 pending 节点并保存 parent。keys 把唯一字符串映射到节点，ids 保存合法来源身份；key 此时不是数据库 ID。重复 key 或非法节点立即报错。只有 layer 能带 children。",
+                  "navigation_key": "flatten",
+                  "category": "source",
+                  "source_targets": [
+                    {
+                      "path": "src/layerweave/tool/builtin/usage/exchange/importing.py",
+                      "kind": "python",
+                      "symbol": "Importer.__init__",
+                      "access": "internal",
+                      "line_hint": 54
+                    },
+                    {
+                      "path": "src/layerweave/tool/builtin/usage/exchange/importing.py",
+                      "kind": "python",
+                      "symbol": "Importer._flatten",
+                      "access": "internal",
+                      "line_hint": 82
+                    }
+                  ],
+                  "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+                  "review_state": "已按固定提交核验"
+                },
+                "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "import-run",
+              "data": {
+                "config_ref": "objects/text.toml",
+                "name": "J3 · 新建项目与 pending 调度",
+                "begin": 3,
+                "end": 4,
+                "information": {
+                  "text": "Importer.run 先 defer_references，再按 new_project/来源/project.op 决定创建项目；write.create 返回项目身份，加入 maps。然后循环 pending 节点调用 _execute；父或引用目标尚未创建时 Pending 等下一轮。全部无进展才 unresolved_dependency 跳过；不会猜测旧编号。最后返回 counts/items/issues/id_map，外层随后统一提交和检查。",
+                  "navigation_key": "import-run",
+                  "category": "source",
+                  "source_targets": [
+                    {
+                      "path": "src/layerweave/tool/builtin/usage/exchange/importing.py",
+                      "kind": "python",
+                      "symbol": "Importer.run",
+                      "access": "internal",
+                      "line_hint": 260
+                    },
+                    {
+                      "path": "src/layerweave/support/transaction.py",
+                      "kind": "python",
+                      "symbol": "WriteSession.defer_references",
+                      "access": "public via support.api",
+                      "line_hint": 53
+                    }
+                  ],
+                  "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+                  "review_state": "已按固定提交核验"
+                },
+                "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "resolve",
+              "data": {
+                "config_ref": "objects/text.toml",
+                "name": "J4 · refs 解析成完整身份",
+                "begin": 4,
+                "end": 5,
+                "information": {
+                  "text": "_execute 先 _parent 确定父层，再 _payload 校验字段并转换声明引用。refs.source/target 的 key 经 _resolve→_resolved_node 取得目标节点 identity；pending 会等待，skipped/deleted 会跳过依赖。bind 填入端点 kind/project_id/id；嵌套新对象的 layer 取父层新 id。只转换已声明引用，不扫描 information 中的数字。",
+                  "navigation_key": "resolve",
+                  "category": "source",
+                  "source_targets": [
+                    {
+                      "path": "src/layerweave/tool/builtin/usage/exchange/importing.py",
+                      "kind": "python",
+                      "symbol": "Importer._parent",
+                      "access": "internal",
+                      "line_hint": 151
+                    },
+                    {
+                      "path": "src/layerweave/tool/builtin/usage/exchange/importing.py",
+                      "kind": "python",
+                      "symbol": "Importer._payload",
+                      "access": "internal",
+                      "line_hint": 166
+                    },
+                    {
+                      "path": "src/layerweave/tool/builtin/usage/exchange/importing.py",
+                      "kind": "python",
+                      "symbol": "Importer._resolve",
+                      "access": "internal",
+                      "line_hint": 129
+                    },
+                    {
+                      "path": "src/layerweave/tool/builtin/usage/exchange/importing.py",
+                      "kind": "python",
+                      "symbol": "Importer._resolved_node",
+                      "access": "internal",
+                      "line_hint": 122
+                    }
+                  ],
+                  "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+                  "review_state": "已按固定提交核验"
+                },
+                "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+              }
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "key": "map",
+              "data": {
+                "config_ref": "objects/text.toml",
+                "name": "J5 · 创建记录与返回 id_map",
+                "begin": 5,
+                "end": 6,
+                "information": {
+                  "text": "_execute 对 add 调用 write.create（preserve_positions=true 时 create_exact），成功后写 node.state/identity，并把 source 的 key 和可选旧身份与实际 target 一起加入 maps。后续 bind 因此能引用此前生成的身份。业务异常使记录/计数/日志整批回滚，不返回成功 id_map；部分跳过则 data.status=partial，要检查 counts.skipped。",
+                  "navigation_key": "map",
+                  "category": "source",
+                  "source_targets": [
+                    {
+                      "path": "src/layerweave/tool/builtin/usage/exchange/importing.py",
+                      "kind": "python",
+                      "symbol": "Importer._execute",
+                      "access": "internal",
+                      "line_hint": 218
+                    },
+                    {
+                      "path": "src/layerweave/support/transaction.py",
+                      "kind": "python",
+                      "symbol": "WriteSession.create",
+                      "access": "public via support.api",
+                      "line_hint": 33
+                    },
+                    {
+                      "path": "src/layerweave/support/records.py",
+                      "kind": "python",
+                      "symbol": "create_exact",
+                      "access": "internal",
+                      "line_hint": 16
+                    }
+                  ],
+                  "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+                  "review_state": "已按固定提交核验"
+                },
+                "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "tasks",
+      "data": {
+        "config_ref": "layers/text.toml",
+        "name": "开发任务",
+        "tips": "按修改意图进入，关联到实现、声明、例子和验证。假设改动不会修改本版本源码。",
+        "axis": {
+          "unit": "阅读序号",
+          "precision": 1
+        }
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "task-type",
+          "data": {
+            "config_ref": "objects/text.toml",
+            "name": "任务 · 新增层或对象封装",
+            "begin": 1,
+            "end": 2,
+            "information": {
+              "text": "从 Text/Title 与 TextLayer 参考类开始，新增对应 Python 类和 layers/objects TOML，明确本文件 type/class/extends；新增层还核对 objects 接受范围。一份类对应一份 TOML，config_ref 保持相对配置根。以 examples/title.py 试保存与重新装配，再看封装身份和 IO 回归；普通封装无需修改核心，统一导出仅按使用需要维护。",
+              "navigation_key": "task-type",
+              "category": "development-task",
+              "source_targets": [
+                {
+                  "path": "docs/developer-conventions.md",
+                  "kind": "markdown",
+                  "section": "按任务寻找入口",
+                  "access": "documentation"
+                },
+                {
+                  "path": "src/layerweave/support/API.md",
+                  "kind": "markdown",
+                  "section": "配置与自定义类型",
+                  "access": "documentation"
+                }
+              ],
+              "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+              "review_state": "已按固定提交核验"
+            },
+            "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "task-command",
+          "data": {
+            "config_ref": "objects/text.toml",
+            "name": "任务 · 增加一个内部命令",
+            "begin": 2,
+            "end": 3,
+            "information": {
+              "text": "以 walk_relations 模块为参考：普通业务函数、可选 main CLI 与字面量 COMMANDS 同处工具包。声明 entrypoint/input_schema/context/returns/examples，CLI 用支撑 parser_for/run_cli；有 MCP 时沿相同声明绑定。写命令使用 run_operation 或公开 *_in_session，不复制 SQL/发号/日志。读命令不必强行包写事务。核对帮助发现、schema/CLI 对应和行为测试。",
+              "navigation_key": "task-command",
+              "category": "development-task",
+              "source_targets": [
+                {
+                  "path": "src/layerweave/tool/builtin/developer/README.md",
+                  "kind": "markdown",
+                  "section": "开发内部工具",
+                  "access": "documentation"
+                },
+                {
+                  "path": "src/layerweave/tool/builtin/shared/help/COMMANDS.md",
+                  "kind": "markdown",
+                  "section": "同一份说明用于目录与 CLI",
+                  "access": "documentation"
+                }
+              ],
+              "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+              "review_state": "已按固定提交核验"
+            },
+            "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "task-tables",
+          "data": {
+            "config_ref": "objects/text.toml",
+            "name": "任务 · 登记工具自有表",
+            "begin": 3,
+            "end": 4,
+            "information": {
+              "text": "先写 register_tables 声明，选择 scoped/id_source、字段与 references；只为复制描述引用时用 logical_references。连接无待提交事务时独立登记，随后在同一 write 会话组合对象和工具记录修改。沿 review_note 例子观察共享日志、撤销和重开读取，核对表测试。声明持久化后不要求工具代码在场；登记不是内容写入的可撤销日志。",
+              "navigation_key": "task-tables",
+              "category": "development-task",
+              "source_targets": [
+                {
+                  "path": "docs/build-with-layerweave/03-managed-tables.md",
+                  "kind": "markdown",
+                  "section": "声明一张表",
+                  "access": "documentation"
+                },
+                {
+                  "path": "docs/build-with-layerweave/03-managed-tables.md",
+                  "kind": "markdown",
+                  "section": "逻辑引用与复制策略",
+                  "access": "documentation"
+                }
+              ],
+              "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+              "review_state": "已按固定提交核验"
+            },
+            "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "task-checks",
+          "data": {
+            "config_ref": "objects/text.toml",
+            "name": "任务 · 已提交但检查有问题",
+            "begin": 4,
+            "end": 5,
+            "information": {
+              "text": "先读 operation.status/ok/applied 和 operation_id，确认 committed 后不要重复 create。再区分 checks.completed 的 issues 与 checks.failed 的 error；基础保存未配置检查会 not_run。沿 W6 看实际提交时点，按 issue.target 回读原记录，修正内容后 recheck；需退回业务时按原 operation_id 撤销。内容 error 不等同 SQLite 结构失败。",
+              "navigation_key": "task-checks",
+              "category": "development-task",
+              "source_targets": [
+                {
+                  "path": "src/layerweave/support/API.md",
+                  "kind": "markdown",
+                  "section": "提交后的可选检查",
+                  "access": "documentation"
+                },
+                {
+                  "path": "src/layerweave/support/channel.py",
+                  "kind": "python",
+                  "symbol": "run_checks",
+                  "access": "internal",
+                  "line_hint": 16
+                }
+              ],
+              "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+              "review_state": "已按固定提交核验"
+            },
+            "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "impact",
+          "data": {
+            "config_ref": "objects/text.toml",
+            "name": "假设修改 · 沿读增加 include_records 参数",
+            "begin": 5,
+            "end": 6,
+            "information": {
+              "text": "假设为 walk_relations 增加 include_records: bool=True，使 false 时仍保留节点身份/边而省略正文；这是待设计改动，基线没有该参数。直接核对：业务函数及 add_node 返回、main 参数与透传、COMMANDS.input_schema/returns/examples/notes；help 由声明派生，CLI argparse 仍须同步。行为测试需覆盖默认兼容、false 下图身份/深度/截断不变；命令测试核对参数签名与 CLI。MCP 声明与视图沿读仅列为相关阅读，需实际搜索调用者后确定影响；静态关系不穷尽影响范围。此节点标记供体验任务演练复查，不表示定位已失效。",
+              "navigation_key": "impact",
+              "category": "hypothetical-change",
+              "source_targets": [
+                {
+                  "path": "src/layerweave/tool/builtin/usage/query/walk.py",
+                  "kind": "python",
+                  "symbol": "walk_relations",
+                  "access": "tool-public",
+                  "line_hint": 7
+                },
+                {
+                  "path": "src/layerweave/tool/builtin/usage/query/walk.py",
+                  "kind": "python",
+                  "symbol": "main",
+                  "access": "cli",
+                  "line_hint": 60
+                },
+                {
+                  "path": "src/layerweave/tool/builtin/usage/query/walk.py",
+                  "kind": "python",
+                  "symbol": "COMMANDS",
+                  "access": "declaration",
+                  "line_hint": 75
+                }
+              ],
+              "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+              "review_state": "需复查（演练标记：include_records 假设未实施）"
+            },
+            "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "evidence",
+      "data": {
+        "config_ref": "layers/text.toml",
+        "name": "设计约定与测试",
+        "tips": "区分源码事实、文档约定、案例推导和需复查项。测试节点说明覆盖点，实际运行记录在内部交接中。",
+        "axis": {
+          "unit": "阅读序号",
+          "precision": 1
+        }
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "design-tools",
+          "data": {
+            "config_ref": "objects/text.toml",
+            "name": "约定 · 工具可替换，写入口共享",
+            "begin": 1,
+            "end": 2,
+            "information": {
+              "text": "已声明的架构约定：工具可独立增减，支撑不导入内置工具；真实业务写入共用事务、编号和日志。实现依据是 run_operation 与可选 provider 延迟发现。案例据此建议外部工具依赖 support.api；不把可卸载工具的私有函数当基础接口，也不推测作者选择 SQLite 的未写明动机。",
+              "navigation_key": "design-tools",
+              "category": "design-convention",
+              "source_targets": [
+                {
+                  "path": "docs/architecture.md",
+                  "kind": "markdown",
+                  "section": "三部分及依赖",
+                  "access": "documentation"
+                },
+                {
+                  "path": "docs/architecture.md",
+                  "kind": "markdown",
+                  "section": "统一写入入口",
+                  "access": "documentation"
+                },
+                {
+                  "path": "src/layerweave/support/providers.py",
+                  "kind": "python",
+                  "symbol": "optional_checker",
+                  "access": "public",
+                  "line_hint": 28
+                }
+              ],
+              "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+              "review_state": "已按固定提交核验"
+            },
+            "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "design-types",
+          "data": {
+            "config_ref": "objects/text.toml",
+            "name": "约定 · 类型装配与内容检查分开",
+            "begin": 2,
+            "end": 3,
+            "information": {
+              "text": "装配回答记录应成为哪个 Python 类，检查回答内容是否符合约定。Loader/restore_model 可在没有检测工具时还原 Title；Text 类不校验正文。run_checks 在业务提交后执行可选 checker；结构外键/父链仍在提交前保证。依据是架构三部分、模型定义和实际调用顺序，不是省略结构约束。",
+              "navigation_key": "design-types",
+              "category": "design-convention",
+              "source_targets": [
+                {
+                  "path": "docs/architecture.md",
+                  "kind": "markdown",
+                  "section": "三部分及依赖",
+                  "access": "documentation"
+                },
+                {
+                  "path": "src/layerweave/support/storage/models.py",
+                  "kind": "python",
+                  "symbol": "restore_model",
+                  "access": "internal",
+                  "line_hint": 30
+                },
+                {
+                  "path": "src/layerweave/support/channel.py",
+                  "kind": "python",
+                  "symbol": "run_checks",
+                  "access": "internal",
+                  "line_hint": 16
+                }
+              ],
+              "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+              "review_state": "已按固定提交核验"
+            },
+            "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "design-json",
+          "data": {
+            "config_ref": "objects/text.toml",
+            "name": "约定 · information 整体替换",
+            "begin": 3,
+            "end": 4,
+            "information": {
+              "text": "crud.update 将每个提交的 JSON 字段编码并整列更新，不递归合并嵌套键。只提交 information.text 的小字典会丢掉原 information 的其他键。修改本案例说明时先 deepcopy 完整 information，再改 text/review_state 后保存；不改 id/bind。没有传入的顶层字段不受影响，无变化不制造新日志。撤销冲突也按顶层 JSON 字段判断。",
+              "navigation_key": "design-json",
+              "category": "design-convention",
+              "source_targets": [
+                {
+                  "path": "src/layerweave/support/storage/crud.py",
+                  "kind": "python",
+                  "symbol": "update",
+                  "access": "internal",
+                  "line_hint": 183
+                },
+                {
+                  "path": "src/layerweave/tool/builtin/usage/exchange/FORMAT.md",
+                  "kind": "markdown",
+                  "section": "项目、归属和执行",
+                  "access": "documentation"
+                },
+                {
+                  "path": "src/layerweave/tool/builtin/usage/undo/service.py",
+                  "kind": "python",
+                  "symbol": "_plan",
+                  "access": "internal",
+                  "line_hint": 29
+                }
+              ],
+              "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+              "review_state": "已按固定提交核验"
+            },
+            "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "design-id",
+          "data": {
+            "config_ref": "objects/text.toml",
+            "name": "约定 · 项目簇与独立、provided 身份",
+            "begin": 4,
+            "end": 5,
+            "information": {
+              "text": "默认项目簇由 layer/object 和 auto scoped 工具表共享 projects.max_id；scoped 只表示项目范围，不自动等同入簇。provided 默认不入簇，由 data.id 给正整数，可与层/对象同号但仍受自身主键约束；可显式登记进簇。project/bind/change 为独立编号，未绑定词条时由 SQLite 发号。身份应保留 kind 与项目范围，不能单凭数字连关系。",
+              "navigation_key": "design-id",
+              "category": "design-convention",
+              "source_targets": [
+                {
+                  "path": "src/layerweave/support/numbering/registry.py",
+                  "kind": "python",
+                  "symbol": "numbering_entries",
+                  "access": "public via support.api",
+                  "line_hint": 17
+                },
+                {
+                  "path": "src/layerweave/support/storage/crud.py",
+                  "kind": "python",
+                  "symbol": "_encode_create",
+                  "access": "internal",
+                  "line_hint": 59
+                },
+                {
+                  "path": "src/layerweave/support/storage/crud.py",
+                  "kind": "python",
+                  "symbol": "_insert",
+                  "access": "internal",
+                  "line_hint": 139
+                },
+                {
+                  "path": "src/layerweave/support/API.md",
+                  "kind": "markdown",
+                  "section": "发号与自定义身份",
+                  "access": "documentation"
+                }
+              ],
+              "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+              "review_state": "已按固定提交核验"
+            },
+            "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "title-example",
+          "data": {
+            "config_ref": "objects/text.toml",
+            "name": "参考 · Title 类、配置与往返示例",
+            "begin": 5,
+            "end": 6,
+            "information": {
+              "text": "Title(Text) 没有新增长度或非空限制；objects/title.toml extends=text.toml 并显式绑定 Title。examples/title.py:create_example 保存、load_layer 重新装配并修改；TextLayer 接受其派生类型。若新增层，对照 models/layers/text.py:TextLayer 与 layers/text.toml，保持同样的类/配置双继承原则。",
+              "navigation_key": "title-example",
+              "category": "source",
+              "source_targets": [
+                {
+                  "path": "src/layerweave/models/objects/title.py",
+                  "kind": "python",
+                  "symbol": "Title",
+                  "access": "public",
+                  "line_hint": 4
+                },
+                {
+                  "path": "src/layerweave/configs/objects/title.toml",
+                  "kind": "toml",
+                  "key": "object.class",
+                  "access": "declaration"
+                },
+                {
+                  "path": "src/layerweave/configs/objects/title.toml",
+                  "kind": "toml",
+                  "key": "object.extends",
+                  "access": "declaration"
+                },
+                {
+                  "path": "examples/title.py",
+                  "kind": "python",
+                  "symbol": "create_example",
+                  "access": "example",
+                  "line_hint": 20
+                },
+                {
+                  "path": "src/layerweave/models/layers/text.py",
+                  "kind": "python",
+                  "symbol": "TextLayer",
+                  "access": "public",
+                  "line_hint": 4
+                }
+              ],
+              "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+              "review_state": "已按固定提交核验"
+            },
+            "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "walk-command",
+          "data": {
+            "config_ref": "objects/text.toml",
+            "name": "参考 · 沿读实现、CLI 与声明",
+            "begin": 6,
+            "end": 7,
+            "information": {
+              "text": "walk_relations 以完整身份去重，广度展开标准 bind；返回 scope/nodes/edges/truncated。main 的 argparse 显式收集参数，再透传业务函数；COMMANDS 另声明 schema、入口、帮助示例和 MCP 路由。此模块是新增命令参考，也是假设 include_records 参数改动的直接实现位置；基线始终在节点中返回 record。",
+              "navigation_key": "walk-command",
+              "category": "source",
+              "source_targets": [
+                {
+                  "path": "src/layerweave/tool/builtin/usage/query/walk.py",
+                  "kind": "python",
+                  "symbol": "walk_relations",
+                  "access": "tool-public",
+                  "line_hint": 7
+                },
+                {
+                  "path": "src/layerweave/tool/builtin/usage/query/walk.py",
+                  "kind": "python",
+                  "symbol": "main",
+                  "access": "cli",
+                  "line_hint": 60
+                },
+                {
+                  "path": "src/layerweave/tool/builtin/usage/query/walk.py",
+                  "kind": "python",
+                  "symbol": "COMMANDS",
+                  "access": "declaration",
+                  "line_hint": 75
+                }
+              ],
+              "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+              "review_state": "已按固定提交核验"
+            },
+            "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "discovery",
+          "data": {
+            "config_ref": "objects/text.toml",
+            "name": "参考 · 静态命令发现与帮助",
+            "begin": 7,
+            "end": 8,
+            "information": {
+              "text": "support.commands 通过 AST 读取字面量 COMMANDS，发现时不执行业务模块。command_help 根据发现结果和 schema 组织帮助；--help 共用示例，但 CLI 参数仍由模块 main 显式定义。增加参数要核对声明与真实签名，不能假定改了 JSON Schema 就自动增加 argparse 参数。",
+              "navigation_key": "discovery",
+              "category": "source",
+              "source_targets": [
+                {
+                  "path": "src/layerweave/support/commands.py",
+                  "kind": "python",
+                  "symbol": "_declarations",
+                  "access": "internal",
+                  "line_hint": 69
+                },
+                {
+                  "path": "src/layerweave/support/commands.py",
+                  "kind": "python",
+                  "symbol": "discover_commands",
+                  "access": "public developer helper",
+                  "line_hint": 97
+                },
+                {
+                  "path": "src/layerweave/support/commands.py",
+                  "kind": "python",
+                  "symbol": "command_help",
+                  "access": "public developer helper",
+                  "line_hint": 114
+                },
+                {
+                  "path": "src/layerweave/tool/builtin/shared/help/COMMANDS.md",
+                  "kind": "markdown",
+                  "section": "参数与业务说明的维护位置",
+                  "access": "documentation"
+                }
+              ],
+              "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+              "review_state": "已按固定提交核验"
+            },
+            "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "table-api",
+          "data": {
+            "config_ref": "objects/text.toml",
+            "name": "参考 · register_tables 声明入口",
+            "begin": 8,
+            "end": 9,
+            "information": {
+              "text": "register_tables 独立创建表、追加列或更新 logical_references/exchange 元信息；不能改现有列、身份和硬引用。table_specs 读声明副本。登记完成再走统一写原语，业务失败不会把先前结构登记当成可撤销内容。外部使用 support.api 导出；_definition 等规范化实现只供阅读。",
+              "navigation_key": "table-api",
+              "category": "source",
+              "source_targets": [
+                {
+                  "path": "src/layerweave/support/storage/tables.py",
+                  "kind": "python",
+                  "symbol": "register_tables",
+                  "access": "public via support.api",
+                  "line_hint": 175
+                },
+                {
+                  "path": "src/layerweave/support/storage/tables.py",
+                  "kind": "python",
+                  "symbol": "table_specs",
+                  "access": "public via support.api",
+                  "line_hint": 40
+                },
+                {
+                  "path": "src/layerweave/support/storage/tables.py",
+                  "kind": "python",
+                  "symbol": "_definition",
+                  "access": "internal",
+                  "line_hint": 119
+                }
+              ],
+              "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+              "review_state": "已按固定提交核验"
+            },
+            "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "table-example",
+          "data": {
+            "config_ref": "objects/text.toml",
+            "name": "参考 · review_note 工具表",
+            "begin": 9,
+            "end": 10,
+            "information": {
+              "text": "examples/tool_tables.py 的 DEFINITIONS.review_note 用 object_id 硬引用项目内对象，包含 TEXT/JSON 内容。create_example 先登记，再在一次 run_operation 修改对象并新增批注；随后按操作撤销、重做、关闭重开，仍可直接读 review_note。它是声明与组合写入参考，不要求新增核心模型。",
+              "navigation_key": "table-example",
+              "category": "source",
+              "source_targets": [
+                {
+                  "path": "examples/tool_tables.py",
+                  "kind": "python",
+                  "symbol": "DEFINITIONS",
+                  "access": "example declaration",
+                  "line_hint": 12
+                },
+                {
+                  "path": "examples/tool_tables.py",
+                  "kind": "python",
+                  "symbol": "create_example",
+                  "access": "example",
+                  "line_hint": 30
+                }
+              ],
+              "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+              "review_state": "已按固定提交核验"
+            },
+            "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "test-type",
+          "data": {
+            "config_ref": "objects/text.toml",
+            "name": "验证 · 类与配置身份",
+            "begin": 10,
+            "end": 11,
+            "information": {
+              "text": "封装测试核对 Title 仍是 Text 子类、保存后按原类还原、派生配置必须显式 class。IO 测试还演示新增 Python 子类由配置载入，无需修改核心。新增封装时同时检查类定义路径唯一性、config_ref 和现有接受关系；维护者更新到新提交后应重新运行相关测试。",
+              "navigation_key": "test-type",
+              "category": "test",
+              "source_targets": [
+                {
+                  "path": "tests/foundation/test_encapsulation_identity.py",
+                  "kind": "python",
+                  "symbol": "EncapsulationIdentityTests.test_title_is_a_text_subclass_and_text_tools_include_it",
+                  "access": "test",
+                  "line_hint": 75
+                },
+                {
+                  "path": "tests/foundation/test_encapsulation_identity.py",
+                  "kind": "python",
+                  "symbol": "EncapsulationIdentityTests.test_derived_config_must_explicitly_declare_its_own_class",
+                  "access": "test",
+                  "line_hint": 100
+                },
+                {
+                  "path": "tests/foundation/test_io.py",
+                  "kind": "python",
+                  "symbol": "IOTests.test_new_python_subclass_is_loaded_from_config_without_core_changes",
+                  "access": "test",
+                  "line_hint": 218
+                }
+              ],
+              "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+              "review_state": "已按固定提交核验"
+            },
+            "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "test-io",
+          "data": {
+            "config_ref": "objects/text.toml",
+            "name": "验证 · 保存、还原与提交时点",
+            "begin": 11,
+            "end": 12,
+            "information": {
+              "text": "IOTests 覆盖完整记录往返、失败回滚记录/计数/日志/输入实例编号，以及整层保存只在提交后检查一次。缺配置用例说明 read 仍可读原数据而 load 明确报错；read_write 示例展示关闭重开和一次更新的日志。",
+              "navigation_key": "test-io",
+              "category": "test",
+              "source_targets": [
+                {
+                  "path": "tests/foundation/test_io.py",
+                  "kind": "python",
+                  "symbol": "IOTests.test_failure_rolls_back_records_counter_log_and_python_ids",
+                  "access": "test",
+                  "line_hint": 127
+                },
+                {
+                  "path": "tests/foundation/test_io.py",
+                  "kind": "python",
+                  "symbol": "IOTests.test_whole_save_checks_once_after_commit_with_shared_log_id",
+                  "access": "test",
+                  "line_hint": 146
+                },
+                {
+                  "path": "tests/foundation/test_io.py",
+                  "kind": "python",
+                  "symbol": "IOTests.test_missing_config_does_not_prevent_raw_io_but_load_explains_target",
+                  "access": "test",
+                  "line_hint": 179
+                },
+                {
+                  "path": "examples/read_write.py",
+                  "kind": "python",
+                  "symbol": "create_example",
+                  "access": "example",
+                  "line_hint": 20
+                }
+              ],
+              "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+              "review_state": "已按固定提交核验"
+            },
+            "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "test-exchange",
+          "data": {
+            "config_ref": "objects/text.toml",
+            "name": "验证 · key 映射、JSON 替换与回滚",
+            "begin": 12,
+            "end": 13,
+            "information": {
+              "text": "ExchangeTests.test_new_ids_are_ignored_as_storage_ids_and_key_forward_refs_work 把 bind 放在被引用的新节点前，验证待处理引用。另有 information 整体替换、后期失败全批回滚和编辑保留身份并撤销的测试；examples/exchange.py 展示导出编辑、add 复制与撤销。",
+              "navigation_key": "test-exchange",
+              "category": "test",
+              "source_targets": [
+                {
+                  "path": "tests/tools/test_exchange.py",
+                  "kind": "python",
+                  "symbol": "ExchangeTests.test_new_ids_are_ignored_as_storage_ids_and_key_forward_refs_work",
+                  "access": "test",
+                  "line_hint": 178
+                },
+                {
+                  "path": "tests/tools/test_exchange.py",
+                  "kind": "python",
+                  "symbol": "ExchangeTests.test_update_does_not_implicitly_move_and_information_replaces_whole_field",
+                  "access": "test",
+                  "line_hint": 165
+                },
+                {
+                  "path": "tests/tools/test_exchange.py",
+                  "kind": "python",
+                  "symbol": "ExchangeTests.test_late_error_rolls_back_records_numbers_and_logs",
+                  "access": "test",
+                  "line_hint": 212
+                },
+                {
+                  "path": "examples/exchange.py",
+                  "kind": "python",
+                  "symbol": "main",
+                  "access": "example",
+                  "line_hint": 11
+                }
+              ],
+              "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+              "review_state": "已按固定提交核验"
+            },
+            "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "test-numbering",
+          "data": {
+            "config_ref": "objects/text.toml",
+            "name": "验证 · 发号策略与簇范围",
+            "begin": 13,
+            "end": 14,
+            "information": {
+              "text": "NumberingTests 覆盖 provided 复用层编号但不消耗项目计数，allocate 不写业务行，失败时计数回滚，以及独立自定义簇。用完整身份解释结果，不把其他表同号当冲突，也不把显式入簇的 provided 表排除在簇约束之外。",
+              "navigation_key": "test-numbering",
+              "category": "test",
+              "source_targets": [
+                {
+                  "path": "tests/foundation/test_numbering.py",
+                  "kind": "python",
+                  "symbol": "NumberingTests.test_provided_view_reuses_layer_key_without_consuming_project_counter",
+                  "access": "test",
+                  "line_hint": 64
+                },
+                {
+                  "path": "tests/foundation/test_numbering.py",
+                  "kind": "python",
+                  "symbol": "NumberingTests.test_thin_allocate_has_implicit_connection_and_does_not_create_business_rows",
+                  "access": "test",
+                  "line_hint": 114
+                },
+                {
+                  "path": "tests/foundation/test_numbering.py",
+                  "kind": "python",
+                  "symbol": "NumberingTests.test_allocation_and_metadata_rollback_with_failed_business_operation",
+                  "access": "test",
+                  "line_hint": 124
+                }
+              ],
+              "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+              "review_state": "已按固定提交核验"
+            },
+            "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "test-command",
+          "data": {
+            "config_ref": "objects/text.toml",
+            "name": "验证 · 命令声明与沿读行为",
+            "begin": 14,
+            "end": 15,
+            "information": {
+              "text": "CommandHelpTests 检查声明参数对应真实 callable，schema 与 CLI 有明确对应；WalkTests 检查图遍历、方向、深度、只读及数量上限。假设新增 include_records 时这些是直接回归入口，但基线测试并未测试尚不存在的新参数，需补充两种值的行为验收。",
+              "navigation_key": "test-command",
+              "category": "test",
+              "source_targets": [
+                {
+                  "path": "tests/tools/test_command_help.py",
+                  "kind": "python",
+                  "symbol": "CommandHelpTests.test_metadata_parameters_refer_to_real_callable_parameters",
+                  "access": "test",
+                  "line_hint": 84
+                },
+                {
+                  "path": "tests/tools/test_command_help.py",
+                  "kind": "python",
+                  "symbol": "CommandHelpTests.test_schema_and_cli_have_explicit_correspondence",
+                  "access": "test",
+                  "line_hint": 117
+                },
+                {
+                  "path": "tests/tools/test_sync_queries.py",
+                  "kind": "python",
+                  "symbol": "WalkTests.test_depth_direction_and_no_mutation",
+                  "access": "test",
+                  "line_hint": 154
+                },
+                {
+                  "path": "tests/tools/test_sync_queries.py",
+                  "kind": "python",
+                  "symbol": "WalkTests.test_cycle_and_diamond_keep_edges_and_shortest_depth",
+                  "access": "test",
+                  "line_hint": 144
+                }
+              ],
+              "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+              "review_state": "已按固定提交核验"
+            },
+            "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "test-tables",
+          "data": {
+            "config_ref": "objects/text.toml",
+            "name": "验证 · 工具表持久化与统一事务",
+            "begin": 15,
+            "end": 16,
+            "information": {
+              "text": "ToolTableTests 覆盖 JSON/默认值与项目共用发号、混合事务失败回滚、声明持久化但不泄漏到其他库。登记幂等且仅追加字段的测试用于开发工具表升级；它不等于允许重定义现有硬引用。",
+              "navigation_key": "test-tables",
+              "category": "test",
+              "source_targets": [
+                {
+                  "path": "tests/foundation/test_tool_tables.py",
+                  "kind": "python",
+                  "symbol": "ToolTableTests.test_default_values_json_and_shared_project_numbering",
+                  "access": "test",
+                  "line_hint": 55
+                },
+                {
+                  "path": "tests/foundation/test_tool_tables.py",
+                  "kind": "python",
+                  "symbol": "ToolTableTests.test_mixed_table_transaction_failure_rolls_back_all_rows_counters_and_logs",
+                  "access": "test",
+                  "line_hint": 92
+                },
+                {
+                  "path": "tests/foundation/test_tool_tables.py",
+                  "kind": "python",
+                  "symbol": "ToolTableTests.test_declaration_persists_without_leaking_to_other_databases",
+                  "access": "test",
+                  "line_hint": 197
+                },
+                {
+                  "path": "tests/foundation/test_tool_tables.py",
+                  "kind": "python",
+                  "symbol": "ToolTableTests.test_registration_is_idempotent_and_only_adds_fields",
+                  "access": "test",
+                  "line_hint": 213
+                }
+              ],
+              "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+              "review_state": "已按固定提交核验"
+            },
+            "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "test-feedback",
+          "data": {
+            "config_ref": "objects/text.toml",
+            "name": "验证 · 写入状态与诊断分离",
+            "begin": 16,
+            "end": 17,
+            "information": {
+              "text": "FeedbackTests 区分成功写入与相关配置 error，也区分只读、无变化、检测器失败。先看 operation，再看 checks；scope=related 只表示本次没有直接修改该目标，不证明问题是旧问题。这些测试是诊断路线的验证依据。",
+              "navigation_key": "test-feedback",
+              "category": "test",
+              "source_targets": [
+                {
+                  "path": "tests/foundation/test_feedback.py",
+                  "kind": "python",
+                  "symbol": "FeedbackTests.test_success_and_related_config_error_are_separate",
+                  "access": "test",
+                  "line_hint": 133
+                },
+                {
+                  "path": "tests/foundation/test_feedback.py",
+                  "kind": "python",
+                  "symbol": "FeedbackTests.test_read_noop_and_failed_checker_keep_distinct_statuses",
+                  "access": "test",
+                  "line_hint": 171
+                },
+                {
+                  "path": "src/layerweave/support/API.md",
+                  "kind": "markdown",
+                  "section": "字典输入",
+                  "access": "documentation"
+                }
+              ],
+              "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+              "review_state": "已按固定提交核验"
+            },
+            "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "recheck",
+          "data": {
+            "config_ref": "objects/text.toml",
+            "name": "工具 · 主动复查",
+            "begin": 17,
+            "end": 18,
+            "information": {
+              "text": "recheck 可按项目、子树或对象列表主动检查，内部复用 read_snapshot 与 validate，不写业务记录或日志。layer_ids 与 object_ids 互斥。返回 scope/counts/status/issues/issue_counts；本案例信息字段开放，导航元数据不是新的检测规则。",
+              "navigation_key": "recheck",
+              "category": "source",
+              "source_targets": [
+                {
+                  "path": "src/layerweave/tool/builtin/usage/validation/recheck.py",
+                  "kind": "python",
+                  "symbol": "recheck",
+                  "access": "tool-public",
+                  "line_hint": 11
+                },
+                {
+                  "path": "src/layerweave/tool/builtin/usage/validation/runner.py",
+                  "kind": "python",
+                  "symbol": "validate",
+                  "access": "tool-public",
+                  "line_hint": 203
+                }
+              ],
+              "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+              "review_state": "已按固定提交核验"
+            },
+            "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "undo",
+          "data": {
+            "config_ref": "objects/text.toml",
+            "name": "工具 · 修改说明并撤销",
+            "begin": 18,
+            "end": 19,
+            "information": {
+              "text": "查到需复查对象后，保存其完整 information 副本、完整身份和双向 bind；只修改 information 内的 text/review_state，再保存原 id。把此次 operation_id 交给 undo_operation，随后核对原说明、身份、关联恢复。撤销自身也写新日志，不回退发号高水位；若遇后来修改冲突，先读反馈，不能强行覆盖。",
+              "navigation_key": "undo",
+              "category": "source",
+              "source_targets": [
+                {
+                  "path": "src/layerweave/tool/builtin/usage/undo/service.py",
+                  "kind": "python",
+                  "symbol": "undo_operation",
+                  "access": "tool-public",
+                  "line_hint": 119
+                },
+                {
+                  "path": "src/layerweave/tool/builtin/usage/undo/service.py",
+                  "kind": "python",
+                  "symbol": "undo_operation_in_session",
+                  "access": "tool-public",
+                  "line_hint": 125
+                },
+                {
+                  "path": "src/layerweave/tool/builtin/usage/HISTORY.md",
+                  "kind": "markdown",
+                  "section": "撤销与重做",
+                  "access": "documentation"
+                }
+              ],
+              "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+              "review_state": "已按固定提交核验"
+            },
+            "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "query",
+          "data": {
+            "config_ref": "objects/text.toml",
+            "name": "工具 · 概览、定位、详情与关联",
+            "begin": 19,
+            "end": 20,
+            "information": {
+              "text": "先 project_overview 找根与数量，find_objects 按 name 或 information 内字符串定位（可搜索 navigation_key 或符号）；只用 project_details 展开相关子树。query_relations 读直接边，walk_relations 按步数读邻域。id 取本次查询或导入 id_map，路径则从 source_targets 回到固定提交源码；这两种跳转互不替代。",
+              "navigation_key": "query",
+              "category": "source",
+              "source_targets": [
+                {
+                  "path": "src/layerweave/tool/builtin/usage/query/project_overview.py",
+                  "kind": "python",
+                  "symbol": "project_overview",
+                  "access": "tool-public",
+                  "line_hint": 7
+                },
+                {
+                  "path": "src/layerweave/tool/builtin/usage/query/find_objects.py",
+                  "kind": "python",
+                  "symbol": "find_objects",
+                  "access": "tool-public",
+                  "line_hint": 19
+                },
+                {
+                  "path": "src/layerweave/tool/builtin/usage/query/project_details.py",
+                  "kind": "python",
+                  "symbol": "project_details",
+                  "access": "tool-public",
+                  "line_hint": 26
+                },
+                {
+                  "path": "src/layerweave/tool/builtin/usage/query/relations.py",
+                  "kind": "python",
+                  "symbol": "query_relations",
+                  "access": "tool-public",
+                  "line_hint": 6
+                },
+                {
+                  "path": "src/layerweave/tool/builtin/usage/query/walk.py",
+                  "kind": "python",
+                  "symbol": "walk_relations",
+                  "access": "tool-public",
+                  "line_hint": 7
+                }
+              ],
+              "evidence_basis": "源码及随提交文档；阅读路线是案例编排，不代表作者未声明的动机",
+              "review_state": "已按固定提交核验"
+            },
+            "tips": "路径以 README 源码基线的仓库根为准。internal 仅供阅读，不作为外部稳定依赖。"
+          }
+        }
+      ]
+    }
+  ],
+  "records": [
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-001",
+      "data": {
+        "tips": "依赖：工具→支撑；不是任意两个模块间直接调用"
+      },
+      "refs": {
+        "source": {
+          "key": "tools"
+        },
+        "target": {
+          "key": "support"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-002",
+      "data": {
+        "tips": "依赖：支撑→核心语义"
+      },
+      "refs": {
+        "source": {
+          "key": "support"
+        },
+        "target": {
+          "key": "core"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-003",
+      "data": {
+        "tips": "架构组成：模型定义核心结构；此边不宣称调用"
+      },
+      "refs": {
+        "source": {
+          "key": "models"
+        },
+        "target": {
+          "key": "core"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-004",
+      "data": {
+        "tips": "配置对应：class 绑定具体模型类"
+      },
+      "refs": {
+        "source": {
+          "key": "configs"
+        },
+        "target": {
+          "key": "models"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-005",
+      "data": {
+        "tips": "配置对应：layer.tools 提供供 AI 阅读的技能线索"
+      },
+      "refs": {
+        "source": {
+          "key": "skills"
+        },
+        "target": {
+          "key": "configs"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-006",
+      "data": {
+        "tips": "范围约定：完整分支维护视图及 MCP"
+      },
+      "refs": {
+        "source": {
+          "key": "branches"
+        },
+        "target": {
+          "key": "adapters"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-007",
+      "data": {
+        "tips": "架构归属：视图为工具，MCP 为适配入口"
+      },
+      "refs": {
+        "source": {
+          "key": "adapters"
+        },
+        "target": {
+          "key": "tools"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-008",
+      "data": {
+        "tips": "调用：包装→save_object→_save，进入 run_operation"
+      },
+      "refs": {
+        "source": {
+          "key": "save-entry"
+        },
+        "target": {
+          "key": "save-body"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-009",
+      "data": {
+        "tips": "调用与包围关系：_save 调用 run_operation；事务开启后运行保存，结束后提交与检查"
+      },
+      "refs": {
+        "source": {
+          "key": "save-body"
+        },
+        "target": {
+          "key": "commit-check"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-010",
+      "data": {
+        "tips": "调用：infer_config→Loader.class_config，_save_entity→Loader.load"
+      },
+      "refs": {
+        "source": {
+          "key": "save-body"
+        },
+        "target": {
+          "key": "loader"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-011",
+      "data": {
+        "tips": "调用：_upsert 的新建分支调用 crud.create"
+      },
+      "refs": {
+        "source": {
+          "key": "save-body"
+        },
+        "target": {
+          "key": "crud"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-012",
+      "data": {
+        "tips": "调用：_insert→entry_for/allocate；返回身份后再 INSERT"
+      },
+      "refs": {
+        "source": {
+          "key": "crud"
+        },
+        "target": {
+          "key": "allocate"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-013",
+      "data": {
+        "tips": "调用：INSERT/读回/计数维护后 append_change"
+      },
+      "refs": {
+        "source": {
+          "key": "crud"
+        },
+        "target": {
+          "key": "journal"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-014",
+      "data": {
+        "tips": "执行顺序：日志先记录在事务内，work 完成后才提交；不是 append_change 直接调用 commit"
+      },
+      "refs": {
+        "source": {
+          "key": "journal"
+        },
+        "target": {
+          "key": "commit-check"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-015",
+      "data": {
+        "tips": "调用：保存末尾 read_object/read_layer 组装返回 data"
+      },
+      "refs": {
+        "source": {
+          "key": "save-body"
+        },
+        "target": {
+          "key": "raw-read"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-016",
+      "data": {
+        "tips": "调用：load_object 先 read_object"
+      },
+      "refs": {
+        "source": {
+          "key": "load-model"
+        },
+        "target": {
+          "key": "raw-read"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-017",
+      "data": {
+        "tips": "调用：restore_model→Loader.load"
+      },
+      "refs": {
+        "source": {
+          "key": "load-model"
+        },
+        "target": {
+          "key": "loader"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-018",
+      "data": {
+        "tips": "配置对应：config_ref 指向包内相对 TOML"
+      },
+      "refs": {
+        "source": {
+          "key": "loader"
+        },
+        "target": {
+          "key": "configs"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-019",
+      "data": {
+        "tips": "装配：动态导入 config.class 并构造对应类"
+      },
+      "refs": {
+        "source": {
+          "key": "load-model"
+        },
+        "target": {
+          "key": "models"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-020",
+      "data": {
+        "tips": "调用：prepare_exchange 有 tables 时调用 register_tables；独立结构事务"
+      },
+      "refs": {
+        "source": {
+          "key": "exchange-entry"
+        },
+        "target": {
+          "key": "table-api"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-021",
+      "data": {
+        "tips": "调用：work 构造 Importer，__init__ 展平节点"
+      },
+      "refs": {
+        "source": {
+          "key": "exchange-entry"
+        },
+        "target": {
+          "key": "flatten"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-022",
+      "data": {
+        "tips": "调用与包围关系：业务阶段由 run_operation 统一提交、随后检查"
+      },
+      "refs": {
+        "source": {
+          "key": "exchange-entry"
+        },
+        "target": {
+          "key": "commit-check"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-023",
+      "data": {
+        "tips": "执行顺序：实例构造完成后 work 调用 engine.run；不是 _flatten 调用 run"
+      },
+      "refs": {
+        "source": {
+          "key": "flatten"
+        },
+        "target": {
+          "key": "import-run"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-024",
+      "data": {
+        "tips": "调用：pending 循环调用 _execute"
+      },
+      "refs": {
+        "source": {
+          "key": "import-run"
+        },
+        "target": {
+          "key": "map"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-025",
+      "data": {
+        "tips": "调用：_execute 先取父上下文，再 _payload 解析引用"
+      },
+      "refs": {
+        "source": {
+          "key": "map"
+        },
+        "target": {
+          "key": "resolve"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-026",
+      "data": {
+        "tips": "调用链：WriteSession.create→support.records.create→crud.create"
+      },
+      "refs": {
+        "source": {
+          "key": "map"
+        },
+        "target": {
+          "key": "crud"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-027",
+      "data": {
+        "tips": "依赖：引用节点的 identity 必须已由 _execute 写回；不是直接调用"
+      },
+      "refs": {
+        "source": {
+          "key": "resolve"
+        },
+        "target": {
+          "key": "map"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-028",
+      "data": {
+        "tips": "阅读路线 1：选择基类"
+      },
+      "refs": {
+        "source": {
+          "key": "task-type"
+        },
+        "target": {
+          "key": "models"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-029",
+      "data": {
+        "tips": "阅读路线 2：声明类与配置"
+      },
+      "refs": {
+        "source": {
+          "key": "task-type"
+        },
+        "target": {
+          "key": "configs"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-030",
+      "data": {
+        "tips": "参考实现：最小派生封装及可运行示例"
+      },
+      "refs": {
+        "source": {
+          "key": "task-type"
+        },
+        "target": {
+          "key": "title-example"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-031",
+      "data": {
+        "tips": "相关阅读：类型匹配和继承约束"
+      },
+      "refs": {
+        "source": {
+          "key": "task-type"
+        },
+        "target": {
+          "key": "loader"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-032",
+      "data": {
+        "tips": "验证依据：新增类型、唯一绑定与往返"
+      },
+      "refs": {
+        "source": {
+          "key": "task-type"
+        },
+        "target": {
+          "key": "test-type"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-033",
+      "data": {
+        "tips": "验证依据：新子类保存还原"
+      },
+      "refs": {
+        "source": {
+          "key": "task-type"
+        },
+        "target": {
+          "key": "test-io"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-034",
+      "data": {
+        "tips": "参考实现：函数、CLI、COMMANDS"
+      },
+      "refs": {
+        "source": {
+          "key": "task-command"
+        },
+        "target": {
+          "key": "walk-command"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-035",
+      "data": {
+        "tips": "声明机制：静态发现和派生帮助"
+      },
+      "refs": {
+        "source": {
+          "key": "task-command"
+        },
+        "target": {
+          "key": "discovery"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-036",
+      "data": {
+        "tips": "写命令依赖：公共事务与 API"
+      },
+      "refs": {
+        "source": {
+          "key": "task-command"
+        },
+        "target": {
+          "key": "support"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-037",
+      "data": {
+        "tips": "验证依据：签名、schema、CLI 和行为"
+      },
+      "refs": {
+        "source": {
+          "key": "task-command"
+        },
+        "target": {
+          "key": "test-command"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-038",
+      "data": {
+        "tips": "公共入口：register_tables/table_specs"
+      },
+      "refs": {
+        "source": {
+          "key": "task-tables"
+        },
+        "target": {
+          "key": "table-api"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-039",
+      "data": {
+        "tips": "参考实现：review_note"
+      },
+      "refs": {
+        "source": {
+          "key": "task-tables"
+        },
+        "target": {
+          "key": "table-example"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-040",
+      "data": {
+        "tips": "设计约定：范围与簇成员分别选择"
+      },
+      "refs": {
+        "source": {
+          "key": "task-tables"
+        },
+        "target": {
+          "key": "design-id"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-041",
+      "data": {
+        "tips": "验证依据：持久化与事务"
+      },
+      "refs": {
+        "source": {
+          "key": "task-tables"
+        },
+        "target": {
+          "key": "test-tables"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-042",
+      "data": {
+        "tips": "执行依据：提交先于内容检查"
+      },
+      "refs": {
+        "source": {
+          "key": "task-checks"
+        },
+        "target": {
+          "key": "commit-check"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-043",
+      "data": {
+        "tips": "验证依据：operation 与 checks 独立"
+      },
+      "refs": {
+        "source": {
+          "key": "task-checks"
+        },
+        "target": {
+          "key": "test-feedback"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-044",
+      "data": {
+        "tips": "后续操作：修正后主动复查"
+      },
+      "refs": {
+        "source": {
+          "key": "task-checks"
+        },
+        "target": {
+          "key": "recheck"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-045",
+      "data": {
+        "tips": "后续操作：需要退回业务时按 operation_id 撤销"
+      },
+      "refs": {
+        "source": {
+          "key": "task-checks"
+        },
+        "target": {
+          "key": "undo"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-046",
+      "data": {
+        "tips": "直接核对：函数、CLI 参数与透传、COMMANDS schema/返回/例子"
+      },
+      "refs": {
+        "source": {
+          "key": "impact"
+        },
+        "target": {
+          "key": "walk-command"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-047",
+      "data": {
+        "tips": "直接核对产物：由声明生成的 command_help；一般无需改发现器"
+      },
+      "refs": {
+        "source": {
+          "key": "impact"
+        },
+        "target": {
+          "key": "discovery"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-048",
+      "data": {
+        "tips": "直接回归入口：旧默认行为与拟新增参数覆盖；需补新断言"
+      },
+      "refs": {
+        "source": {
+          "key": "impact"
+        },
+        "target": {
+          "key": "test-command"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-049",
+      "data": {
+        "tips": "相关阅读：MCP/视图；需检索实际调用点再判断影响"
+      },
+      "refs": {
+        "source": {
+          "key": "impact"
+        },
+        "target": {
+          "key": "adapters"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-050",
+      "data": {
+        "tips": "体验操作：修改此导览说明并撤销，保留身份和关系"
+      },
+      "refs": {
+        "source": {
+          "key": "impact"
+        },
+        "target": {
+          "key": "undo"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-051",
+      "data": {
+        "tips": "源码依据：共享公共写入能力"
+      },
+      "refs": {
+        "source": {
+          "key": "design-tools"
+        },
+        "target": {
+          "key": "support"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-052",
+      "data": {
+        "tips": "实现依据：默认工具显式请求可选检测"
+      },
+      "refs": {
+        "source": {
+          "key": "design-tools"
+        },
+        "target": {
+          "key": "save-entry"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-053",
+      "data": {
+        "tips": "源码依据：按配置还原类"
+      },
+      "refs": {
+        "source": {
+          "key": "design-types"
+        },
+        "target": {
+          "key": "load-model"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-054",
+      "data": {
+        "tips": "源码依据：检测晚于提交"
+      },
+      "refs": {
+        "source": {
+          "key": "design-types"
+        },
+        "target": {
+          "key": "commit-check"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-055",
+      "data": {
+        "tips": "源码依据：update 对提交 JSON 字段整列替换"
+      },
+      "refs": {
+        "source": {
+          "key": "design-json"
+        },
+        "target": {
+          "key": "crud"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-056",
+      "data": {
+        "tips": "验证依据：information 替换用例"
+      },
+      "refs": {
+        "source": {
+          "key": "design-json"
+        },
+        "target": {
+          "key": "test-exchange"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-057",
+      "data": {
+        "tips": "源码依据：默认簇及规则调度"
+      },
+      "refs": {
+        "source": {
+          "key": "design-id"
+        },
+        "target": {
+          "key": "allocate"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-058",
+      "data": {
+        "tips": "验证依据：provided 与独立簇"
+      },
+      "refs": {
+        "source": {
+          "key": "design-id"
+        },
+        "target": {
+          "key": "test-numbering"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-059",
+      "data": {
+        "tips": "配置对应：Title 继承 text 的约定"
+      },
+      "refs": {
+        "source": {
+          "key": "title-example"
+        },
+        "target": {
+          "key": "configs"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-060",
+      "data": {
+        "tips": "验证依据：派生类身份与接受范围"
+      },
+      "refs": {
+        "source": {
+          "key": "title-example"
+        },
+        "target": {
+          "key": "test-type"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-061",
+      "data": {
+        "tips": "使用入口：对象定位与定向关联查询"
+      },
+      "refs": {
+        "source": {
+          "key": "walk-command"
+        },
+        "target": {
+          "key": "query"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-062",
+      "data": {
+        "tips": "调用：例子先 register_tables"
+      },
+      "refs": {
+        "source": {
+          "key": "table-example"
+        },
+        "target": {
+          "key": "table-api"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-063",
+      "data": {
+        "tips": "验证依据：工具表事务和重开"
+      },
+      "refs": {
+        "source": {
+          "key": "table-example"
+        },
+        "target": {
+          "key": "test-tables"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-064",
+      "data": {
+        "tips": "验证依据：保存/回填/检查时点"
+      },
+      "refs": {
+        "source": {
+          "key": "save-entry"
+        },
+        "target": {
+          "key": "test-io"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-065",
+      "data": {
+        "tips": "验证依据：缺配置仍可 read，load 报错"
+      },
+      "refs": {
+        "source": {
+          "key": "load-model"
+        },
+        "target": {
+          "key": "test-io"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-066",
+      "data": {
+        "tips": "验证依据：前向 key、回滚、撤销"
+      },
+      "refs": {
+        "source": {
+          "key": "exchange-entry"
+        },
+        "target": {
+          "key": "test-exchange"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-067",
+      "data": {
+        "tips": "更新前注意：保留整个 information 字段"
+      },
+      "refs": {
+        "source": {
+          "key": "undo"
+        },
+        "target": {
+          "key": "design-json"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "relation-068",
+      "data": {
+        "tips": "相关阅读：查询不等于内容复查"
+      },
+      "refs": {
+        "source": {
+          "key": "query"
+        },
+        "target": {
+          "key": "recheck"
+        }
+      }
+    }
+  ]
+}

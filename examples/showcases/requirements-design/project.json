@@ -1,0 +1,1740 @@
+{
+  "format_version": 1,
+  "name": "静音一小时之前：社区录音舱预约追踪案例",
+  "when": "需求→场景→设计→界面→验收；演示多对多追踪、刻意教学缺口和时长变更影响。",
+  "project": {
+    "op": "add",
+    "data": {
+      "name": "声隅｜社区录音舱预约",
+      "tips": "原创虚构案例，7 条需求、3 张 SVG、10 条未执行验收。6 个根均用序号轴，位置不表示预约时间。R07/Q01 为教学待决项；关系用于人工追踪，不自动证明产品实现。素材相对数据库目录。"
+    }
+  },
+  "items": [
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "context",
+      "data": {
+        "name": "背景与场景",
+        "config_ref": "layers/text.toml",
+        "axis": {
+          "unit": "序号",
+          "precision": 1
+        },
+        "tips": "第 n 项占 [n,n+1)，表示阅读顺序，不是预约时间或数据库编号。内容状态与关联均为案例约定，不增加核心规则。"
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "B01",
+          "data": {
+            "name": "B01 一间录音舱的预约边界",
+            "config_ref": "objects/text.toml",
+            "begin": 1,
+            "end": 2,
+            "information": {
+              "source_key": "B01",
+              "status": "范围基线·虚构案例",
+              "text": "使用者：已完成社区身份认证的居民；管理员仅提供维护时段数据，本案例不设计管理后台。\n目标：让居民在出发前确认可用时段、取得唯一预约，并在计划变化时释放名额。\n范围：虚构社区的一间录音舱，免费；单次 30 分钟，每人最多一条尚未结束且未取消的预约。身份认证、门禁、录音设备、通知、支付、候补、后台维护录入均在范围外。\n时间约束：场地时区 Asia/Hong_Kong，服务端时间为准。可选当地今天至第 6 天，共 7 个日期；每日 09:00–21:00；整点和半点起始；只允许 start > now 的时段。区间均为 [start,end)，20:30–21:00 是当天最后一档。\n状态：已预约（now < start）、使用时段中（start <= now < end）、已结束（end <= now）、已取消。使用时段中只由时间推导，不代表已签到。有效预约=未取消且 end > now；结束自动释放个人配额，但预约历史保留。\n预置数据：2026-10-21 18:00–18:30 已被其他人预约；18:30–19:00 空闲；19:00–19:30 维护。图中居民无其他有效预约。姓名、预约示例码与日期均为虚构设计数据。\n可用性约束：状态同时有文字和视觉标识；可用按钮支持键盘焦点与 Enter；禁用项说明原因。确认页返回时保留日期；提交失败时不清空选中时段。\n所有产品功能尚未开发；本案例验证的是数据、可读素材和追踪操作。唯一刻意未决的产品规则是 R07，见 Q01。"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "S01",
+          "data": {
+            "name": "S01 晚饭后录制一段播客",
+            "config_ref": "objects/text.toml",
+            "begin": 2,
+            "end": 3,
+            "information": {
+              "source_key": "S01",
+              "status": "场景已定义",
+              "text": "居民阿岚在 2026-10-21 17:00 打开预约页，查看当日状态，选 18:30–19:00，核对后确认。成功后进入“我的预约”；若被抢先预约，保留日期并返回可用时段。"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "S02",
+          "data": {
+            "name": "S02 计划改变释放名额",
+            "config_ref": "objects/text.toml",
+            "begin": 3,
+            "end": 4,
+            "information": {
+              "source_key": "S02",
+              "status": "场景已定义",
+              "text": "已有 18:30–19:00 预约，17:20 决定取消。先检查确认弹窗，确认后该预约变为已取消、配额释放，其他居民可以预约。18:30 起不允许自助取消。"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "S03",
+          "data": {
+            "name": "S03 路上耽搁且未签到",
+            "config_ref": "objects/text.toml",
+            "begin": 4,
+            "end": 5,
+            "information": {
+              "source_key": "S03",
+              "status": "教学场景·等待决策",
+              "text": "居民 18:38 才到达 18:30 开始的预约。是否保留到 19:00，还是超过宽限期释放？当前没有签到数据或宽限期决策，不能推断迟到，也不能自动转让。该场景刻意引出 Q01。"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "requirements",
+      "data": {
+        "name": "需求",
+        "config_ref": "layers/text.toml",
+        "axis": {
+          "unit": "序号",
+          "precision": 1
+        },
+        "tips": "第 n 项占 [n,n+1)，表示阅读顺序，不是预约时间或数据库编号。内容状态与关联均为案例约定，不增加核心规则。"
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "R01",
+          "data": {
+            "name": "R01 看清可预约时段",
+            "config_ref": "objects/text.toml",
+            "begin": 1,
+            "end": 2,
+            "information": {
+              "source_key": "R01",
+              "status": "已定义·待实现",
+              "text": "居民可选择当地今天起 7 天内的日期，查看 09:00–21:00 的半小时档。只有 start > 服务端 now、无预约且不与维护区间重叠的档可选；其余标明已预约／维护／已开始。不得公开其他居民身份。日期切换清除旧选择；键盘可完成选择与继续。",
+              "priority": "P0"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "R02",
+          "data": {
+            "name": "R02 原子占用一个时段",
+            "config_ref": "objects/text.toml",
+            "begin": 2,
+            "end": 3,
+            "information": {
+              "source_key": "R02",
+              "status": "已定义·待实现",
+              "text": "每次预约固定 30 分钟。点击确认时服务端重新检查时间、维护、个人配额与占用，并原子写入；同一时段并发请求最多一人成功。同一居民对同一提交意图重试，返回同一预约，不重复创建；已有成功结果先按提交标识返回，再评估新请求配额。网络结果未知时显示“结果待确认”，按原提交标识重试，不假报失败或另建意图。",
+              "priority": "P0",
+              "duration_minutes": 30,
+              "revision": "baseline-v1"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "R03",
+          "data": {
+            "name": "R03 每人只保留一条有效预约",
+            "config_ref": "objects/text.toml",
+            "begin": 3,
+            "end": 4,
+            "information": {
+              "source_key": "R03",
+              "status": "已定义·待实现",
+              "text": "有效预约定义为未取消且 end > now，包括使用时段中。居民已有一条有效预约时，不允许创建另一条，无论日期；界面提示并提供“查看我的预约”。取消成功或原预约结束后可再次预约。配额检查必须与创建一起原子执行。",
+              "priority": "P0"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "R04",
+          "data": {
+            "name": "R04 开始前确认取消",
+            "config_ref": "objects/text.toml",
+            "begin": 4,
+            "end": 5,
+            "information": {
+              "source_key": "R04",
+              "status": "已定义·待实现",
+              "text": "预约所属居民可在服务端 now < start 时取消；先弹出日期、时段和“释放后可能被他人预约”的确认说明。返回不更改预约；确认后原子更新为已取消并释放占用和配额。now >= start 拒绝取消；重复取消返回同一已取消结果，不产生新预约或重复释放。",
+              "priority": "P0"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "R05",
+          "data": {
+            "name": "R05 查看可信的预约状态",
+            "config_ref": "objects/text.toml",
+            "begin": 5,
+            "end": 6,
+            "information": {
+              "source_key": "R05",
+              "status": "已定义·待实现",
+              "text": "“我的预约”仅展示本人记录，含日期、场地时区、起止时间、状态。提交成功后显示新预约；刷新重读服务端状态。已预约且尚未开始时显示取消入口；开始后隐藏取消入口；已取消与已结束记录仅供查看。取消响应丢失时刷新确认最终状态，不把未知状态当作失败。",
+              "priority": "P0"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "R06",
+          "data": {
+            "name": "R06 维护时段不可占用",
+            "config_ref": "objects/text.toml",
+            "begin": 6,
+            "end": 7,
+            "information": {
+              "source_key": "R06",
+              "status": "已定义·待实现",
+              "text": "维护区间是管理员预先提供的只读数据，任何与其重叠的预约都不可创建，包括进入确认页后才新增维护的情况；使用 [start,end) 判断重叠，18:30–19:00 与 19:00–19:30 维护不冲突。已存在预约与新增维护冲突由人工运营处理，禁止此小版本静默取消。",
+              "priority": "P0"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "R07",
+          "data": {
+            "name": "R07 迟到保留与释放规则",
+            "config_ref": "objects/text.toml",
+            "begin": 7,
+            "end": 8,
+            "information": {
+              "source_key": "R07",
+              "status": "待决定·刻意教学缺口",
+              "text": "待决定：未到场是否释放预约、宽限分钟数、谁能确认到场以及通知和争议处理。当前不存在可用的签到信号，不能把“到达开始时间”当作实际到场，也不能把没点按钮视为缺席。暂维持 R05 时间状态，预约占用至 end；这只是未引入自动释放的基线，不代表迟到策略已批准。见 Q01；A10 阻塞，不得标通过。",
+              "priority": "待决",
+              "intentional_gap": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "design",
+      "data": {
+        "name": "设计说明",
+        "config_ref": "layers/text.toml",
+        "axis": {
+          "unit": "序号",
+          "precision": 1
+        },
+        "tips": "第 n 项占 [n,n+1)，表示阅读顺序，不是预约时间或数据库编号。内容状态与关联均为案例约定，不增加核心规则。"
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "D01",
+          "data": {
+            "name": "D01 可用性日历与状态编码",
+            "config_ref": "objects/text.toml",
+            "begin": 1,
+            "end": 2,
+            "information": {
+              "source_key": "D01",
+              "status": "已定义·待实现",
+              "text": "UI01：顶部给出日期与场地时区；状态行含时段、文本状态、可操作性。选择空闲档后在底部摘要显示所选时间并启用继续；日期切换取消旧选中。维护与占用不显示居民身份；已开始、维护、占用项不可提交。界面数据只是快照，最终可用性由 D02 再校验。配额占用时给出查看我的预约入口。文字状态、可见焦点和键盘操作共同服务 R01、R03、R06。",
+              "fulfills": [
+                "R01",
+                "R03",
+                "R06"
+              ]
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "D02",
+          "data": {
+            "name": "D02 确认与竞争反馈",
+            "config_ref": "objects/text.toml",
+            "begin": 2,
+            "end": 3,
+            "information": {
+              "source_key": "D02",
+              "status": "已定义·待实现",
+              "text": "UI02：展示日期、时间、30 分钟和配额规则；返回 UI01 保留日期；按钮提交期间禁用。确认由服务端事务重验并一次写入。成功转 UI03；冲突提示“该时段刚被预约”，维护变更提示“该时段现为维护”，时间过期提示“该时段已开始”，配额冲突给出查看我的预约。网络未知显示结果待确认，保留同一提交标识，重试可取得原成功结果。禁止仅靠按钮禁用防重。",
+              "fulfills": [
+                "R02",
+                "R03",
+                "R06"
+              ]
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "D03",
+          "data": {
+            "name": "D03 预约卡片与取消确认",
+            "config_ref": "objects/text.toml",
+            "begin": 3,
+            "end": 4,
+            "information": {
+              "source_key": "D03",
+              "status": "已定义·待实现",
+              "text": "UI03：本人预约按日期列出，当前卡片显示已预约、使用时段中、已结束或已取消。时间进入 start 后隐藏取消；时间状态不等于签到。取消弹窗展示日期时段及释放后果；返回保留原状，确认调用取消并刷新卡片。边界失败提示已开始；取消响应未知时显示“正在确认取消结果”，刷新后以服务端状态为准。配额与名额仅在取消确实成功后释放。",
+              "fulfills": [
+                "R04",
+                "R05"
+              ]
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "D04",
+          "data": {
+            "name": "D04 迟到策略的待决设计边界",
+            "config_ref": "objects/text.toml",
+            "begin": 4,
+            "end": 5,
+            "information": {
+              "source_key": "D04",
+              "status": "阻塞·刻意未完成设计",
+              "text": "目前 UI03 只显示时间状态，不显示已到场，不提供自动释放倒计时或签到控件。Q01 未定，尚无法画出可靠的迟到／释放分支。未来若选自动释放，应补签到来源、宽限边界、释放原子性、通知与申诉，再修改 UI03 与 A10。本对象是已写明的设计缺口说明，不是已完成设计。",
+              "fulfills": [
+                "R07"
+              ],
+              "intentional_gap": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "screens",
+      "data": {
+        "name": "界面草图",
+        "config_ref": "layers/image.toml",
+        "axis": {
+          "unit": "序号",
+          "precision": 1
+        },
+        "tips": "第 n 项占 [n,n+1)，表示阅读顺序，不是预约时间或数据库编号。内容状态与关联均为案例约定，不增加核心规则。"
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "UI01",
+          "data": {
+            "name": "UI01 选日期与时段",
+            "config_ref": "objects/image.toml",
+            "begin": 1,
+            "end": 2,
+            "information": {
+              "source_key": "UI01",
+              "status": "静态线框图·不可操作",
+              "text": "入口→选择空闲档→继续到 UI02；查看我的预约→UI03。覆盖 R01/R03/R06。",
+              "source": "assets/01-availability.svg",
+              "alt": "选日期与时段"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "UI02",
+          "data": {
+            "name": "UI02 核对并提交预约",
+            "config_ref": "objects/image.toml",
+            "begin": 2,
+            "end": 3,
+            "information": {
+              "source_key": "UI02",
+              "status": "静态线框图·不可操作",
+              "text": "UI01→核对→提交；成功到 UI03；冲突回 UI01；网络未知保留提交标识重试。覆盖 R02/R03/R06。",
+              "source": "assets/02-confirm.svg",
+              "alt": "核对并提交预约"
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "UI03",
+          "data": {
+            "name": "UI03 我的预约与取消",
+            "config_ref": "objects/image.toml",
+            "begin": 3,
+            "end": 4,
+            "information": {
+              "source_key": "UI03",
+              "status": "静态线框图·不可操作",
+              "text": "成功或“我的预约”进入；取消确认→已取消；时间状态不等于签到。覆盖 R04/R05，标出 R07 的 Q01 缺口。",
+              "source": "assets/03-my-booking.svg",
+              "alt": "我的预约与取消"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "acceptance",
+      "data": {
+        "name": "验收",
+        "config_ref": "layers/text.toml",
+        "axis": {
+          "unit": "序号",
+          "precision": 1
+        },
+        "tips": "第 n 项占 [n,n+1)，表示阅读顺序，不是预约时间或数据库编号。内容状态与关联均为案例约定，不增加核心规则。"
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "A01",
+          "data": {
+            "name": "A01 日期范围与可用性编码",
+            "config_ref": "objects/text.toml",
+            "begin": 1,
+            "end": 2,
+            "information": {
+              "source_key": "A01",
+              "status": "未执行·产品未实现",
+              "text": "验证需求：R01, R06\n前提：服务端时间 2026-10-21 17:00；按 B01 预置占用与维护。\n步骤：依次选今天与第 6 天；尝试选昨天和第 7 天；在当日用键盘选 18:30，再切换日期。\n预期结果：只有 7 个日期可选。已预约、维护、已开始档都有文字状态且不可选择；空闲档可键盘选中。切日期后旧选择清除；不展示他人身份。\n执行状态：未执行（被设计的产品尚未实现）。",
+              "requirements": [
+                "R01",
+                "R06"
+              ],
+              "preconditions": "服务端时间 2026-10-21 17:00；按 B01 预置占用与维护。",
+              "steps": "依次选今天与第 6 天；尝试选昨天和第 7 天；在当日用键盘选 18:30，再切换日期。",
+              "expected": "只有 7 个日期可选。已预约、维护、已开始档都有文字状态且不可选择；空闲档可键盘选中。切日期后旧选择清除；不展示他人身份。",
+              "execution_status": "未执行",
+              "blocked_by": null
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "A02",
+          "data": {
+            "name": "A02 预约成功与本人回读",
+            "config_ref": "objects/text.toml",
+            "begin": 2,
+            "end": 3,
+            "information": {
+              "source_key": "A02",
+              "status": "未执行·产品未实现",
+              "text": "验证需求：R02, R05\n前提：居民无有效预约；18:30–19:00 空闲，当前 17:00。\n步骤：选 18:30 档→核对→确认→刷新我的预约；用另一居民身份查看我的预约。\n预期结果：只创建一条 30 分钟预约；成功页及刷新后显示同一预约与时区、时段、已预约状态；另一居民的我的预约不出现这条记录。\n执行状态：未执行（被设计的产品尚未实现）。",
+              "requirements": [
+                "R02",
+                "R05"
+              ],
+              "preconditions": "居民无有效预约；18:30–19:00 空闲，当前 17:00。",
+              "steps": "选 18:30 档→核对→确认→刷新我的预约；用另一居民身份查看我的预约。",
+              "expected": "只创建一条 30 分钟预约；成功页及刷新后显示同一预约与时区、时段、已预约状态；另一居民的我的预约不出现这条记录。",
+              "execution_status": "未执行",
+              "blocked_by": null
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "A03",
+          "data": {
+            "name": "A03 两人竞争同一时段",
+            "config_ref": "objects/text.toml",
+            "begin": 3,
+            "end": 4,
+            "information": {
+              "source_key": "A03",
+              "status": "未执行·产品未实现",
+              "text": "验证需求：R02\n前提：两名居民均无有效预约，均已打开同一空闲时段确认页。\n步骤：同时提交两条独立提交意图。\n预期结果：恰好一人成功；另一人看到该时段刚被预约且可返回同日列表。不会有两条重叠的有效预约。\n执行状态：未执行（被设计的产品尚未实现）。",
+              "requirements": [
+                "R02"
+              ],
+              "preconditions": "两名居民均无有效预约，均已打开同一空闲时段确认页。",
+              "steps": "同时提交两条独立提交意图。",
+              "expected": "恰好一人成功；另一人看到该时段刚被预约且可返回同日列表。不会有两条重叠的有效预约。",
+              "execution_status": "未执行",
+              "blocked_by": null
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "A04",
+          "data": {
+            "name": "A04 配额与跨时段并发",
+            "config_ref": "objects/text.toml",
+            "begin": 4,
+            "end": 5,
+            "information": {
+              "source_key": "A04",
+              "status": "未执行·产品未实现",
+              "text": "验证需求：R03\n前提：居民先无预约；两个会话选择不同空闲档；另备已取消或已结束记录。\n步骤：同一居民并发提交两个不同档；成功者在 start 前后分别再尝试预约；取消成功或 end 到达后再试。\n预期结果：并发最多一条成功；已有未结束预约（含使用时段中）时拒绝第二条并提供查看入口；取消／结束后可重新预约。仅按预约条数计算配额。\n执行状态：未执行（被设计的产品尚未实现）。",
+              "requirements": [
+                "R03"
+              ],
+              "preconditions": "居民先无预约；两个会话选择不同空闲档；另备已取消或已结束记录。",
+              "steps": "同一居民并发提交两个不同档；成功者在 start 前后分别再尝试预约；取消成功或 end 到达后再试。",
+              "expected": "并发最多一条成功；已有未结束预约（含使用时段中）时拒绝第二条并提供查看入口；取消／结束后可重新预约。仅按预约条数计算配额。",
+              "execution_status": "未执行",
+              "blocked_by": null
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "A05",
+          "data": {
+            "name": "A05 取消确认与开始边界",
+            "config_ref": "objects/text.toml",
+            "begin": 5,
+            "end": 6,
+            "information": {
+              "source_key": "A05",
+              "status": "未执行·产品未实现",
+              "text": "验证需求：R04, R05\n前提：本人预约为 18:30–19:00，可控制服务端时间；每个分支使用独立初始记录。\n步骤：17:20 打开取消弹窗后返回；另一分支 18:29:59 确认；另一分支先打开弹窗，18:30:00 再确认。\n预期结果：返回不变；18:29:59 取消成功；18:30:00 拒绝且保持预约，刷新显示使用时段中并隐藏取消入口。只以服务端判定时刻为准。\n执行状态：未执行（被设计的产品尚未实现）。",
+              "requirements": [
+                "R04",
+                "R05"
+              ],
+              "preconditions": "本人预约为 18:30–19:00，可控制服务端时间；每个分支使用独立初始记录。",
+              "steps": "17:20 打开取消弹窗后返回；另一分支 18:29:59 确认；另一分支先打开弹窗，18:30:00 再确认。",
+              "expected": "返回不变；18:29:59 取消成功；18:30:00 拒绝且保持预约，刷新显示使用时段中并隐藏取消入口。只以服务端判定时刻为准。",
+              "execution_status": "未执行",
+              "blocked_by": null
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "A06",
+          "data": {
+            "name": "A06 取消释放与重复请求",
+            "config_ref": "objects/text.toml",
+            "begin": 6,
+            "end": 7,
+            "information": {
+              "source_key": "A06",
+              "status": "未执行·产品未实现",
+              "text": "验证需求：R04, R05, R03\n前提：本人预约尚未开始；另一居民等待同一档。\n步骤：确认取消并重复发送同一次取消；模拟成功响应丢失后刷新；另一居民预约释放的档，原居民另选空闲档。\n预期结果：原预约只有一个已取消最终状态；重复请求返回同一结果；刷新确认取消结果；他人可取得原档且原居民配额已释放；没有新建或复活原预约。\n执行状态：未执行（被设计的产品尚未实现）。",
+              "requirements": [
+                "R04",
+                "R05",
+                "R03"
+              ],
+              "preconditions": "本人预约尚未开始；另一居民等待同一档。",
+              "steps": "确认取消并重复发送同一次取消；模拟成功响应丢失后刷新；另一居民预约释放的档，原居民另选空闲档。",
+              "expected": "原预约只有一个已取消最终状态；重复请求返回同一结果；刷新确认取消结果；他人可取得原档且原居民配额已释放；没有新建或复活原预约。",
+              "execution_status": "未执行",
+              "blocked_by": null
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "A07",
+          "data": {
+            "name": "A07 确认时新增维护",
+            "config_ref": "objects/text.toml",
+            "begin": 7,
+            "end": 8,
+            "information": {
+              "source_key": "A07",
+              "status": "未执行·产品未实现",
+              "text": "验证需求：R06, R02\n前提：居民进入 18:30–19:00 确认页后，后台预置维护改为 18:45–19:15；另一个分支维护仅为 19:00–19:30。\n步骤：两个分支分别确认预约。\n预期结果：重叠分支拒绝并提示维护；仅首尾相接分支成功。不自动改动此前已存在的其他预约。\n执行状态：未执行（被设计的产品尚未实现）。",
+              "requirements": [
+                "R06",
+                "R02"
+              ],
+              "preconditions": "居民进入 18:30–19:00 确认页后，后台预置维护改为 18:45–19:15；另一个分支维护仅为 19:00–19:30。",
+              "steps": "两个分支分别确认预约。",
+              "expected": "重叠分支拒绝并提示维护；仅首尾相接分支成功。不自动改动此前已存在的其他预约。",
+              "execution_status": "未执行",
+              "blocked_by": null
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "A08",
+          "data": {
+            "name": "A08 双击与结果未知重试",
+            "config_ref": "objects/text.toml",
+            "begin": 8,
+            "end": 9,
+            "information": {
+              "source_key": "A08",
+              "status": "未执行·产品未实现",
+              "text": "验证需求：R02\n前提：空闲档且配额可用；能延迟或丢弃一次成功响应。\n步骤：双击确认，丢弃成功响应，再以相同提交标识重试；刷新我的预约。\n预期结果：提交期间按钮禁用；未知时显示结果待确认。服务端只创建一条，并以同一标识返回原预约，不误报个人配额冲突；刷新只有该条记录。\n执行状态：未执行（被设计的产品尚未实现）。",
+              "requirements": [
+                "R02"
+              ],
+              "preconditions": "空闲档且配额可用；能延迟或丢弃一次成功响应。",
+              "steps": "双击确认，丢弃成功响应，再以相同提交标识重试；刷新我的预约。",
+              "expected": "提交期间按钮禁用；未知时显示结果待确认。服务端只创建一条，并以同一标识返回原预约，不误报个人配额冲突；刷新只有该条记录。",
+              "execution_status": "未执行",
+              "blocked_by": null
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "A09",
+          "data": {
+            "name": "A09 时区与首尾时刻",
+            "config_ref": "objects/text.toml",
+            "begin": 9,
+            "end": 10,
+            "information": {
+              "source_key": "A09",
+              "status": "未执行·产品未实现",
+              "text": "验证需求：R01, R02, R05\n前提：设备时区改成 UTC；场地仍为 Asia/Hong_Kong。独立分支分别控制服务端时间。\n步骤：读取 2026-10-21 20:30–21:00；20:29:59 提交一份、20:30:00 提交另一份；让成功预约走到 21:00。\n预期结果：始终显示场地时区；20:29:59 可成功，20:30:00 拒绝；21:00 状态为已结束且释放配额，不出现跨营业时间的档。\n执行状态：未执行（被设计的产品尚未实现）。",
+              "requirements": [
+                "R01",
+                "R02",
+                "R05"
+              ],
+              "preconditions": "设备时区改成 UTC；场地仍为 Asia/Hong_Kong。独立分支分别控制服务端时间。",
+              "steps": "读取 2026-10-21 20:30–21:00；20:29:59 提交一份、20:30:00 提交另一份；让成功预约走到 21:00。",
+              "expected": "始终显示场地时区；20:29:59 可成功，20:30:00 拒绝；21:00 状态为已结束且释放配额，不出现跨营业时间的档。",
+              "execution_status": "未执行",
+              "blocked_by": null
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "A10",
+          "data": {
+            "name": "A10 迟到是否释放的阻塞验收",
+            "config_ref": "objects/text.toml",
+            "begin": 10,
+            "end": 11,
+            "information": {
+              "source_key": "A10",
+              "status": "未执行·待决阻塞",
+              "text": "验证需求：R07\n前提：18:30–19:00 预约，18:38 无可信到场信号；Q01 未决定。\n步骤：设计审阅时询问是否释放、依据何种到场信号及宽限边界；不执行不存在的产品功能。\n预期结果：目前只能判定为阻塞，不能判定通过或失败。选保留方案后补充整段保留断言；选自动释放方案后补充宽限前／恰好到期／宽限后、签到竞争及通知断言。\n执行状态：未执行（被设计的产品尚未实现）；阻塞于 Q01，判定标准未定。",
+              "requirements": [
+                "R07"
+              ],
+              "preconditions": "18:30–19:00 预约，18:38 无可信到场信号；Q01 未决定。",
+              "steps": "设计审阅时询问是否释放、依据何种到场信号及宽限边界；不执行不存在的产品功能。",
+              "expected": "目前只能判定为阻塞，不能判定通过或失败。选保留方案后补充整段保留断言；选自动释放方案后补充宽限前／恰好到期／宽限后、签到竞争及通知断言。",
+              "execution_status": "未执行",
+              "blocked_by": "Q01"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "key": "decisions",
+      "data": {
+        "name": "待决与变更",
+        "config_ref": "layers/text.toml",
+        "axis": {
+          "unit": "序号",
+          "precision": 1
+        },
+        "tips": "第 n 项占 [n,n+1)，表示阅读顺序，不是预约时间或数据库编号。内容状态与关联均为案例约定，不增加核心规则。"
+      },
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "Q01",
+          "data": {
+            "name": "Q01 迟到策略需场地运营决策",
+            "config_ref": "objects/text.toml",
+            "begin": 1,
+            "end": 2,
+            "information": {
+              "source_key": "Q01",
+              "status": "待决定·教学缺口",
+              "text": "刻意保留的教学问题：R07 未决，D04 阻塞，A10 没有可执行的最终预期；有关联不等于已覆盖。不是忘写验收。\n方案 L：整段保留，无签到与自动释放；简单但空置时间无法回收。方案 G：如超过 5 分钟自动释放；5 分钟只是待评估值，必须先有可靠签到信号、并发裁决、通知和申诉规则。\n决策责任角色：场地运营负责人（虚构角色，无真人信息）；实施任何迟到释放功能前完成决策。需收集：迟到比例、签到可用性与无障碍需求、误释放后果。\n未决期间：沿用 B01/R05 时间状态、占用至 end，不展示签到或自动释放承诺。完成标准：记录所选方案与理由，补齐 R07/D04，必要时修改 UI03，拆分并写全 A10 的各边界断言，再开展产品测试。",
+              "intentional_gap": true
+            }
+          }
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "key": "C01",
+          "data": {
+            "name": "C01 单次改为六十分钟的备选评审",
+            "config_ref": "objects/text.toml",
+            "begin": 2,
+            "end": 3,
+            "information": {
+              "source_key": "C01",
+              "status": "未批准·变更演练",
+              "text": "触发：录制者反馈 30 分钟不够。现行 R02 固定 30 分钟，以下均为提案，未批准。\n方案 A（本次演练）：统一 60 分钟，仍每半小时可起始，一次原子占用连续两档；任何一档被占用／维护即整体失败；20:00–21:00 为最后合法起始，20:30 不可选。个人配额仍按一条预约计算；取消一次释放全部两档。已有 30 分钟预约保留原区间，新规则生效后只影响新预约。\n方案 B：提供 30/60 分钟选项；保留短时用户，但需时长选择、混合占用检查与更多组合验收。\n方案 A 影响：R01 可用开始时刻与最后一档，R03 一条配额含义，R04 取消全部区间，R05 混合历史显示，R06 任一半档维护；D01 连续空闲筛选、D02 两档原子提交与重试、D03 完整区间取消；UI01/02/03 的时长、摘要与错误文案。\n验收逐项复查：A01 两档连续可用；A02 新单 60 分钟且旧单 30 分钟回读；A03 交叉起始的部分重叠竞争；A04 一单而非两配额；A05 仍以 start 为取消边界；A06 一次取消释放两档；A07 任一半档维护整体拒绝；A08 重试仍只生成一单；A09 20:00 最后起始及旧单显示。需为这些项补测试分支，当前未执行。\nR07/Q01/D04/A10 的决策状态仍阻塞，时长变化不会自动解决迟到。\n演练只改临时副本 R02：信息中的时长改为 60，并追加方案 A 规则。原名称、身份和关联保持；其他设计与验收应出现需复查的不一致。查看关联后撤销这次更新，恢复完整原信息。不要把局部改文案当作方案已经落地。",
+              "proposal": "A:60; B:30/60"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "records": [
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-S01-R01",
+      "data": {
+        "tips": "场景提出此需求"
+      },
+      "refs": {
+        "source": {
+          "key": "S01"
+        },
+        "target": {
+          "key": "R01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-S01-R02",
+      "data": {
+        "tips": "场景提出此需求"
+      },
+      "refs": {
+        "source": {
+          "key": "S01"
+        },
+        "target": {
+          "key": "R02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-S01-R03",
+      "data": {
+        "tips": "场景提出此需求"
+      },
+      "refs": {
+        "source": {
+          "key": "S01"
+        },
+        "target": {
+          "key": "R03"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-S01-R05",
+      "data": {
+        "tips": "场景提出此需求"
+      },
+      "refs": {
+        "source": {
+          "key": "S01"
+        },
+        "target": {
+          "key": "R05"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-S01-R06",
+      "data": {
+        "tips": "场景提出此需求"
+      },
+      "refs": {
+        "source": {
+          "key": "S01"
+        },
+        "target": {
+          "key": "R06"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-S02-R03",
+      "data": {
+        "tips": "场景提出此需求"
+      },
+      "refs": {
+        "source": {
+          "key": "S02"
+        },
+        "target": {
+          "key": "R03"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-S02-R04",
+      "data": {
+        "tips": "场景提出此需求"
+      },
+      "refs": {
+        "source": {
+          "key": "S02"
+        },
+        "target": {
+          "key": "R04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-S02-R05",
+      "data": {
+        "tips": "场景提出此需求"
+      },
+      "refs": {
+        "source": {
+          "key": "S02"
+        },
+        "target": {
+          "key": "R05"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-S03-R07",
+      "data": {
+        "tips": "场景提出此需求"
+      },
+      "refs": {
+        "source": {
+          "key": "S03"
+        },
+        "target": {
+          "key": "R07"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-B01-S01",
+      "data": {
+        "tips": "范围中的主要使用场景"
+      },
+      "refs": {
+        "source": {
+          "key": "B01"
+        },
+        "target": {
+          "key": "S01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-B01-S02",
+      "data": {
+        "tips": "范围中的主要使用场景"
+      },
+      "refs": {
+        "source": {
+          "key": "B01"
+        },
+        "target": {
+          "key": "S02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-B01-S03",
+      "data": {
+        "tips": "范围中的主要使用场景"
+      },
+      "refs": {
+        "source": {
+          "key": "B01"
+        },
+        "target": {
+          "key": "S03"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-R01-D01",
+      "data": {
+        "tips": "需求由此设计说明响应；关联不代表实现或验收通过"
+      },
+      "refs": {
+        "source": {
+          "key": "R01"
+        },
+        "target": {
+          "key": "D01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-R03-D01",
+      "data": {
+        "tips": "需求由此设计说明响应；关联不代表实现或验收通过"
+      },
+      "refs": {
+        "source": {
+          "key": "R03"
+        },
+        "target": {
+          "key": "D01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-R06-D01",
+      "data": {
+        "tips": "需求由此设计说明响应；关联不代表实现或验收通过"
+      },
+      "refs": {
+        "source": {
+          "key": "R06"
+        },
+        "target": {
+          "key": "D01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-R02-D02",
+      "data": {
+        "tips": "需求由此设计说明响应；关联不代表实现或验收通过"
+      },
+      "refs": {
+        "source": {
+          "key": "R02"
+        },
+        "target": {
+          "key": "D02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-R03-D02",
+      "data": {
+        "tips": "需求由此设计说明响应；关联不代表实现或验收通过"
+      },
+      "refs": {
+        "source": {
+          "key": "R03"
+        },
+        "target": {
+          "key": "D02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-R06-D02",
+      "data": {
+        "tips": "需求由此设计说明响应；关联不代表实现或验收通过"
+      },
+      "refs": {
+        "source": {
+          "key": "R06"
+        },
+        "target": {
+          "key": "D02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-R04-D03",
+      "data": {
+        "tips": "需求由此设计说明响应；关联不代表实现或验收通过"
+      },
+      "refs": {
+        "source": {
+          "key": "R04"
+        },
+        "target": {
+          "key": "D03"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-R05-D03",
+      "data": {
+        "tips": "需求由此设计说明响应；关联不代表实现或验收通过"
+      },
+      "refs": {
+        "source": {
+          "key": "R05"
+        },
+        "target": {
+          "key": "D03"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-R07-D04",
+      "data": {
+        "tips": "需求由此设计说明响应；关联不代表实现或验收通过"
+      },
+      "refs": {
+        "source": {
+          "key": "R07"
+        },
+        "target": {
+          "key": "D04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-D01-UI01",
+      "data": {
+        "tips": "设计对应可打开的 SVG 草图"
+      },
+      "refs": {
+        "source": {
+          "key": "D01"
+        },
+        "target": {
+          "key": "UI01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-D02-UI02",
+      "data": {
+        "tips": "设计对应可打开的 SVG 草图"
+      },
+      "refs": {
+        "source": {
+          "key": "D02"
+        },
+        "target": {
+          "key": "UI02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-D03-UI03",
+      "data": {
+        "tips": "设计对应可打开的 SVG 草图"
+      },
+      "refs": {
+        "source": {
+          "key": "D03"
+        },
+        "target": {
+          "key": "UI03"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-D04-UI03",
+      "data": {
+        "tips": "设计在该草图体现；D04 仅标明缺失分支"
+      },
+      "refs": {
+        "source": {
+          "key": "D04"
+        },
+        "target": {
+          "key": "UI03"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-R01-A01",
+      "data": {
+        "tips": "此验收规格检查该需求；产品未实现，未执行"
+      },
+      "refs": {
+        "source": {
+          "key": "R01"
+        },
+        "target": {
+          "key": "A01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-R06-A01",
+      "data": {
+        "tips": "此验收规格检查该需求；产品未实现，未执行"
+      },
+      "refs": {
+        "source": {
+          "key": "R06"
+        },
+        "target": {
+          "key": "A01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-R02-A02",
+      "data": {
+        "tips": "此验收规格检查该需求；产品未实现，未执行"
+      },
+      "refs": {
+        "source": {
+          "key": "R02"
+        },
+        "target": {
+          "key": "A02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-R05-A02",
+      "data": {
+        "tips": "此验收规格检查该需求；产品未实现，未执行"
+      },
+      "refs": {
+        "source": {
+          "key": "R05"
+        },
+        "target": {
+          "key": "A02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-R02-A03",
+      "data": {
+        "tips": "此验收规格检查该需求；产品未实现，未执行"
+      },
+      "refs": {
+        "source": {
+          "key": "R02"
+        },
+        "target": {
+          "key": "A03"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-R03-A04",
+      "data": {
+        "tips": "此验收规格检查该需求；产品未实现，未执行"
+      },
+      "refs": {
+        "source": {
+          "key": "R03"
+        },
+        "target": {
+          "key": "A04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-R04-A05",
+      "data": {
+        "tips": "此验收规格检查该需求；产品未实现，未执行"
+      },
+      "refs": {
+        "source": {
+          "key": "R04"
+        },
+        "target": {
+          "key": "A05"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-R05-A05",
+      "data": {
+        "tips": "此验收规格检查该需求；产品未实现，未执行"
+      },
+      "refs": {
+        "source": {
+          "key": "R05"
+        },
+        "target": {
+          "key": "A05"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-R04-A06",
+      "data": {
+        "tips": "此验收规格检查该需求；产品未实现，未执行"
+      },
+      "refs": {
+        "source": {
+          "key": "R04"
+        },
+        "target": {
+          "key": "A06"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-R05-A06",
+      "data": {
+        "tips": "此验收规格检查该需求；产品未实现，未执行"
+      },
+      "refs": {
+        "source": {
+          "key": "R05"
+        },
+        "target": {
+          "key": "A06"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-R03-A06",
+      "data": {
+        "tips": "此验收规格检查该需求；产品未实现，未执行"
+      },
+      "refs": {
+        "source": {
+          "key": "R03"
+        },
+        "target": {
+          "key": "A06"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-R06-A07",
+      "data": {
+        "tips": "此验收规格检查该需求；产品未实现，未执行"
+      },
+      "refs": {
+        "source": {
+          "key": "R06"
+        },
+        "target": {
+          "key": "A07"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-R02-A07",
+      "data": {
+        "tips": "此验收规格检查该需求；产品未实现，未执行"
+      },
+      "refs": {
+        "source": {
+          "key": "R02"
+        },
+        "target": {
+          "key": "A07"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-R02-A08",
+      "data": {
+        "tips": "此验收规格检查该需求；产品未实现，未执行"
+      },
+      "refs": {
+        "source": {
+          "key": "R02"
+        },
+        "target": {
+          "key": "A08"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-R01-A09",
+      "data": {
+        "tips": "此验收规格检查该需求；产品未实现，未执行"
+      },
+      "refs": {
+        "source": {
+          "key": "R01"
+        },
+        "target": {
+          "key": "A09"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-R02-A09",
+      "data": {
+        "tips": "此验收规格检查该需求；产品未实现，未执行"
+      },
+      "refs": {
+        "source": {
+          "key": "R02"
+        },
+        "target": {
+          "key": "A09"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-R05-A09",
+      "data": {
+        "tips": "此验收规格检查该需求；产品未实现，未执行"
+      },
+      "refs": {
+        "source": {
+          "key": "R05"
+        },
+        "target": {
+          "key": "A09"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-R07-A10",
+      "data": {
+        "tips": "此验收规格检查该需求；产品未实现，未执行"
+      },
+      "refs": {
+        "source": {
+          "key": "R07"
+        },
+        "target": {
+          "key": "A10"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-R07-Q01",
+      "data": {
+        "tips": "该需求被这项刻意保留的决策阻塞"
+      },
+      "refs": {
+        "source": {
+          "key": "R07"
+        },
+        "target": {
+          "key": "Q01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-Q01-D04",
+      "data": {
+        "tips": "此决策阻塞设计／验收完成"
+      },
+      "refs": {
+        "source": {
+          "key": "Q01"
+        },
+        "target": {
+          "key": "D04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-Q01-A10",
+      "data": {
+        "tips": "此决策阻塞设计／验收完成"
+      },
+      "refs": {
+        "source": {
+          "key": "Q01"
+        },
+        "target": {
+          "key": "A10"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-C01-R01",
+      "data": {
+        "tips": "方案 A 的影响复查范围，具体理由见 C01；未批准、未实现"
+      },
+      "refs": {
+        "source": {
+          "key": "C01"
+        },
+        "target": {
+          "key": "R01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-C01-R02",
+      "data": {
+        "tips": "方案 A 的影响复查范围，具体理由见 C01；未批准、未实现"
+      },
+      "refs": {
+        "source": {
+          "key": "C01"
+        },
+        "target": {
+          "key": "R02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-C01-R03",
+      "data": {
+        "tips": "方案 A 的影响复查范围，具体理由见 C01；未批准、未实现"
+      },
+      "refs": {
+        "source": {
+          "key": "C01"
+        },
+        "target": {
+          "key": "R03"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-C01-R04",
+      "data": {
+        "tips": "方案 A 的影响复查范围，具体理由见 C01；未批准、未实现"
+      },
+      "refs": {
+        "source": {
+          "key": "C01"
+        },
+        "target": {
+          "key": "R04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-C01-R05",
+      "data": {
+        "tips": "方案 A 的影响复查范围，具体理由见 C01；未批准、未实现"
+      },
+      "refs": {
+        "source": {
+          "key": "C01"
+        },
+        "target": {
+          "key": "R05"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-C01-R06",
+      "data": {
+        "tips": "方案 A 的影响复查范围，具体理由见 C01；未批准、未实现"
+      },
+      "refs": {
+        "source": {
+          "key": "C01"
+        },
+        "target": {
+          "key": "R06"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-C01-D01",
+      "data": {
+        "tips": "方案 A 的影响复查范围，具体理由见 C01；未批准、未实现"
+      },
+      "refs": {
+        "source": {
+          "key": "C01"
+        },
+        "target": {
+          "key": "D01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-C01-D02",
+      "data": {
+        "tips": "方案 A 的影响复查范围，具体理由见 C01；未批准、未实现"
+      },
+      "refs": {
+        "source": {
+          "key": "C01"
+        },
+        "target": {
+          "key": "D02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-C01-D03",
+      "data": {
+        "tips": "方案 A 的影响复查范围，具体理由见 C01；未批准、未实现"
+      },
+      "refs": {
+        "source": {
+          "key": "C01"
+        },
+        "target": {
+          "key": "D03"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-C01-A01",
+      "data": {
+        "tips": "方案 A 的影响复查范围，具体理由见 C01；未批准、未实现"
+      },
+      "refs": {
+        "source": {
+          "key": "C01"
+        },
+        "target": {
+          "key": "A01"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-C01-A02",
+      "data": {
+        "tips": "方案 A 的影响复查范围，具体理由见 C01；未批准、未实现"
+      },
+      "refs": {
+        "source": {
+          "key": "C01"
+        },
+        "target": {
+          "key": "A02"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-C01-A03",
+      "data": {
+        "tips": "方案 A 的影响复查范围，具体理由见 C01；未批准、未实现"
+      },
+      "refs": {
+        "source": {
+          "key": "C01"
+        },
+        "target": {
+          "key": "A03"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-C01-A04",
+      "data": {
+        "tips": "方案 A 的影响复查范围，具体理由见 C01；未批准、未实现"
+      },
+      "refs": {
+        "source": {
+          "key": "C01"
+        },
+        "target": {
+          "key": "A04"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-C01-A05",
+      "data": {
+        "tips": "方案 A 的影响复查范围，具体理由见 C01；未批准、未实现"
+      },
+      "refs": {
+        "source": {
+          "key": "C01"
+        },
+        "target": {
+          "key": "A05"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-C01-A06",
+      "data": {
+        "tips": "方案 A 的影响复查范围，具体理由见 C01；未批准、未实现"
+      },
+      "refs": {
+        "source": {
+          "key": "C01"
+        },
+        "target": {
+          "key": "A06"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-C01-A07",
+      "data": {
+        "tips": "方案 A 的影响复查范围，具体理由见 C01；未批准、未实现"
+      },
+      "refs": {
+        "source": {
+          "key": "C01"
+        },
+        "target": {
+          "key": "A07"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-C01-A08",
+      "data": {
+        "tips": "方案 A 的影响复查范围，具体理由见 C01；未批准、未实现"
+      },
+      "refs": {
+        "source": {
+          "key": "C01"
+        },
+        "target": {
+          "key": "A08"
+        }
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "key": "link-C01-A09",
+      "data": {
+        "tips": "方案 A 的影响复查范围，具体理由见 C01；未批准、未实现"
+      },
+      "refs": {
+        "source": {
+          "key": "C01"
+        },
+        "target": {
+          "key": "A09"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>多智能体协作演示 · 晚开的花</title>
+<style>
+  html, body { margin: 0; background: #101725; color: #e9eef7; font-family: system-ui, "Microsoft YaHei", sans-serif; }
+  header { padding: 18px 28px; display: flex; gap: 18px; align-items: baseline; }
+  h1 { font-size: 18px; font-weight: 600; margin: 0; letter-spacing: .04em; }
+  p { margin: 0; color: #93a4bd; font-size: 13px; }
+  .stage { width: min(96vw, 1600px); margin: 0 auto 40px; border: 1px solid #263247; border-radius: 10px; overflow: hidden; background: #2B3A55; }
+  .stage svg { width: 100%; height: auto; display: block; }
+  button { background: #263247; color: #e9eef7; border: 1px solid #3a4b66; border-radius: 6px; padding: 5px 12px; cursor: pointer; }
+</style>
+</head>
+<body>
+<header>
+  <h1>多智能体协作演示 · 晚开的花</h1>
+  <p>四幕动态 SVG · 镜头平移 · 批注驱动协作</p>
+  <button onclick="toggle()">暂停 / 播放</button>
+</header>
+<div class="stage">
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="1400" viewBox="0 0 2400 1400" preserveAspectRatio="xMidYMid meet"><defs><linearGradient id="global-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2B3A55" /><stop offset="0.55" stop-color="#3E5A7A" /><stop offset="1" stop-color="#F2E8D5" /></linearGradient><linearGradient id="seam-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2B3A55" /><stop offset="0.55" stop-color="#3E5A7A" /><stop offset="1" stop-color="#F2E8D5" /></linearGradient><linearGradient id="s1-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2B3A55" />
+      <stop offset="0.55" stop-color="#3E5A7A" />
+      <stop offset="1" stop-color="#F2E8D5" />
+    </linearGradient>
+
+
+    <linearGradient id="s1-cloud" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4B6384" stop-opacity="0" />
+      <stop offset="0.2" stop-color="#4B6384" stop-opacity="0.28" />
+      <stop offset="0.5" stop-color="#4B6384" stop-opacity="0.42" />
+      <stop offset="0.8" stop-color="#4B6384" stop-opacity="0.28" />
+      <stop offset="1" stop-color="#4B6384" stop-opacity="0" />
+    </linearGradient>
+
+
+    <linearGradient id="s1-mist" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#F2E8D5" stop-opacity="0" />
+      <stop offset="0.22" stop-color="#F2E8D5" stop-opacity="0.3" />
+      <stop offset="0.5" stop-color="#F2E8D5" stop-opacity="0.55" />
+      <stop offset="0.78" stop-color="#F2E8D5" stop-opacity="0.3" />
+      <stop offset="1" stop-color="#F2E8D5" stop-opacity="0" />
+    </linearGradient>
+
+
+    <radialGradient id="s1-glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#F2E8D5" stop-opacity="0.55" />
+      <stop offset="0.55" stop-color="#F2E8D5" stop-opacity="0.2" />
+      <stop offset="1" stop-color="#F2E8D5" stop-opacity="0" />
+    </radialGradient>
+
+
+    <radialGradient id="s1-wet" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#E7D9BD" stop-opacity="0.7" />
+      <stop offset="0.6" stop-color="#E7D9BD" stop-opacity="0.32" />
+      <stop offset="1" stop-color="#E7D9BD" stop-opacity="0" />
+    </radialGradient>
+
+
+    <linearGradient id="s1-budgrad" x1="0.1" y1="1" x2="0.9" y2="0">
+      <stop offset="0" stop-color="#568CBC" />
+      <stop offset="0.55" stop-color="#6FA8DC" />
+      <stop offset="1" stop-color="#8FBEE4" />
+    </linearGradient>
+
+
+    <linearGradient id="s1-leaf" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#8FB26B" />
+      <stop offset="1" stop-color="#A8C686" />
+    </linearGradient>
+
+
+    <linearGradient id="s1-rainfade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0" />
+      <stop offset="0.05" stop-color="#FFFFFF" stop-opacity="1" />
+      <stop offset="0.95" stop-color="#FFFFFF" stop-opacity="1" />
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0" />
+    </linearGradient>
+    <mask id="s1-rainmask" maskUnits="userSpaceOnUse" x="0" y="0" width="2400" height="1400">
+      <rect x="0" y="0" width="2400" height="1400" fill="url(#s1-rainfade)" />
+    </mask>
+
+
+    <g id="s1-rainfield" fill="none" stroke="#C9DCEB" stroke-linecap="round">
+      <path d="M30 100 L54 230" stroke-width="1.8" opacity="0.26" />
+      <path d="M84 320 L106 440" stroke-width="1.6" opacity="0.22" />
+      <path d="M138 500 L160 620" stroke-width="1.8" opacity="0.24" />
+      <path d="M180 40 L204 160" stroke-width="2" opacity="0.32" />
+      <path d="M318 150 L338 250" stroke-width="1.6" opacity="0.24" />
+      <path d="M462 20 L488 160" stroke-width="2.2" opacity="0.36" />
+      <path d="M600 210 L622 320" stroke-width="1.8" opacity="0.26" />
+      <path d="M748 80 L772 210" stroke-width="2" opacity="0.3" />
+      <path d="M890 250 L910 345" stroke-width="1.6" opacity="0.22" />
+      <path d="M1032 40 L1058 165" stroke-width="2.2" opacity="0.34" />
+      <path d="M1176 290 L1198 395" stroke-width="1.8" opacity="0.26" />
+      <path d="M1320 120 L1344 255" stroke-width="2" opacity="0.3" />
+      <path d="M1454 340 L1474 440" stroke-width="1.6" opacity="0.22" />
+      <path d="M1600 60 L1626 180" stroke-width="2.2" opacity="0.34" />
+      <path d="M1742 280 L1764 390" stroke-width="1.8" opacity="0.26" />
+      <path d="M1886 150 L1910 280" stroke-width="2" opacity="0.3" />
+      <path d="M2028 20 L2048 115" stroke-width="1.6" opacity="0.24" />
+      <path d="M2168 200 L2194 340" stroke-width="2.2" opacity="0.34" />
+      <path d="M2280 90 L2300 195" stroke-width="1.6" opacity="0.24" />
+      <path d="M250 380 L272 500" stroke-width="1.8" opacity="0.28" />
+      <path d="M392 480 L416 590" stroke-width="2" opacity="0.3" />
+      <path d="M536 340 L556 440" stroke-width="1.6" opacity="0.22" />
+      <path d="M680 520 L706 660" stroke-width="2.2" opacity="0.34" />
+      <path d="M824 400 L846 505" stroke-width="1.8" opacity="0.26" />
+      <path d="M966 540 L986 635" stroke-width="1.6" opacity="0.22" />
+      <path d="M1110 360 L1134 490" stroke-width="2" opacity="0.3" />
+      <path d="M1252 500 L1274 610" stroke-width="1.8" opacity="0.26" />
+      <path d="M1396 400 L1422 535" stroke-width="2.2" opacity="0.32" />
+      <path d="M1540 560 L1560 660" stroke-width="1.6" opacity="0.22" />
+      <path d="M1684 380 L1708 505" stroke-width="2" opacity="0.3" />
+      <path d="M1826 520 L1848 630" stroke-width="1.8" opacity="0.26" />
+      <path d="M1970 420 L1996 560" stroke-width="2.2" opacity="0.32" />
+      <path d="M2114 560 L2134 655" stroke-width="1.6" opacity="0.22" />
+      <path d="M2246 420 L2268 540" stroke-width="1.8" opacity="0.28" />
+      <path d="M2310 80 L2334 210" stroke-width="1.8" opacity="0.26" />
+      <path d="M2360 140 L2384 270" stroke-width="2" opacity="0.24" />
+      <path d="M2350 240 L2374 370" stroke-width="1.6" opacity="0.22" />
+      <path d="M2328 520 L2352 650" stroke-width="1.8" opacity="0.24" />
+      <path d="M2382 420 L2400 550" stroke-width="1.6" opacity="0.2" />
+    </g>
+  <linearGradient id="s2-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2B3A55" />
+      <stop offset="0.55" stop-color="#3E5A7A" />
+      <stop offset="1" stop-color="#F2E8D5" />
+    </linearGradient>
+    <radialGradient id="s2-glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#F2C57C" stop-opacity="0.55" />
+      <stop offset="0.6" stop-color="#F2C57C" stop-opacity="0.18" />
+      <stop offset="1" stop-color="#F2C57C" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="s2-beam-grad" gradientUnits="userSpaceOnUse" x1="950" y1="322" x2="1180" y2="1090">
+      <stop offset="0" stop-color="#F7EFDF" stop-opacity="0" />
+      <stop offset="0.18" stop-color="#F2C57C" stop-opacity="0.46" />
+      <stop offset="0.62" stop-color="#F2C57C" stop-opacity="0.3" />
+      <stop offset="1" stop-color="#F2E8D5" stop-opacity="0.1" />
+    </linearGradient>
+    <filter id="s2-soft" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="16" />
+    </filter>
+    <filter id="s2-beam-blur" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="10" />
+    </filter>
+  <linearGradient id="s3-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2B3A55" />
+      <stop offset="0.55" stop-color="#3E5A7A" />
+      <stop offset="1" stop-color="#F2E8D5" />
+    </linearGradient>
+
+
+    <linearGradient id="s3-hill-far" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#C9A483" stop-opacity="0" />
+      <stop offset="0.14" stop-color="#C9A483" stop-opacity="0.26" />
+      <stop offset="0.5" stop-color="#D2B08F" stop-opacity="0.4" />
+      <stop offset="0.86" stop-color="#C9A483" stop-opacity="0.26" />
+      <stop offset="1" stop-color="#C9A483" stop-opacity="0" />
+    </linearGradient>
+    <linearGradient id="s3-hill-near" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#BB9068" stop-opacity="0" />
+      <stop offset="0.16" stop-color="#BB9068" stop-opacity="0.22" />
+      <stop offset="0.5" stop-color="#C69A72" stop-opacity="0.34" />
+      <stop offset="0.84" stop-color="#BB9068" stop-opacity="0.22" />
+      <stop offset="1" stop-color="#BB9068" stop-opacity="0" />
+    </linearGradient>
+
+
+    <radialGradient id="s3-warm" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#E9B48C" stop-opacity="0.3" />
+      <stop offset="0.6" stop-color="#E9B48C" stop-opacity="0.12" />
+      <stop offset="1" stop-color="#E9B48C" stop-opacity="0" />
+    </radialGradient>
+
+
+    <linearGradient id="s3-water" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3F5A78" />
+      <stop offset="0.35" stop-color="#66819A" />
+      <stop offset="0.72" stop-color="#B3A693" />
+      <stop offset="1" stop-color="#D9C6AA" />
+    </linearGradient>
+    <linearGradient id="s3-water-veil" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F2E8D5" stop-opacity="0.08" />
+      <stop offset="0.55" stop-color="#F2E8D5" stop-opacity="0.14" />
+      <stop offset="1" stop-color="#F2E8D5" stop-opacity="0.42" />
+    </linearGradient>
+    <clipPath id="s3-pond-clip">
+      <ellipse cx="1200" cy="1050" rx="470" ry="105" />
+    </clipPath>
+
+
+    <g id="s3-blossom">
+      <g>
+        <ellipse cx="0" cy="-48" rx="19" ry="48" />
+        <ellipse cx="0" cy="-48" rx="19" ry="48" transform="rotate(36)" />
+        <ellipse cx="0" cy="-48" rx="19" ry="48" transform="rotate(72)" />
+        <ellipse cx="0" cy="-48" rx="19" ry="48" transform="rotate(108)" />
+        <ellipse cx="0" cy="-48" rx="19" ry="48" transform="rotate(144)" />
+        <ellipse cx="0" cy="-48" rx="19" ry="48" transform="rotate(180)" />
+        <ellipse cx="0" cy="-48" rx="19" ry="48" transform="rotate(216)" />
+        <ellipse cx="0" cy="-48" rx="19" ry="48" transform="rotate(252)" />
+        <ellipse cx="0" cy="-48" rx="19" ry="48" transform="rotate(288)" />
+        <ellipse cx="0" cy="-48" rx="19" ry="48" transform="rotate(324)" />
+      </g>
+      <g opacity="0.6">
+        <ellipse cx="0" cy="-32" rx="14" ry="32" transform="rotate(30)" />
+        <ellipse cx="0" cy="-32" rx="14" ry="32" transform="rotate(90)" />
+        <ellipse cx="0" cy="-32" rx="14" ry="32" transform="rotate(150)" />
+        <ellipse cx="0" cy="-32" rx="14" ry="32" transform="rotate(210)" />
+        <ellipse cx="0" cy="-32" rx="14" ry="32" transform="rotate(270)" />
+        <ellipse cx="0" cy="-32" rx="14" ry="32" transform="rotate(330)" />
+      </g>
+      <circle r="20" fill="#F2E8D5" opacity="0.95" />
+      <circle r="8" fill="#6FA8DC" opacity="0.45" />
+    </g>
+
+
+    <path id="s3-petal" d="M0 0 C 17 8, 36 11, 52 0 C 36 -11, 17 -8, 0 0 Z" />
+
+
+    <g id="s3-bush">
+      <g fill="none" stroke="#8C6448" stroke-width="8" stroke-linecap="round">
+        <path d="M1204 1037 C 1198 969, 1192 913, 1186 851" />
+        <path d="M1202 955 C 1152 917, 1112 881, 1084 847" />
+        <path d="M1202 955 C 1258 917, 1296 883, 1314 849" />
+        <path d="M1198 925 C 1190 845, 1184 725, 1190 613" />
+        <path d="M1202 925 C 1240 861, 1266 795, 1292 745" />
+      </g>
+      <ellipse cx="1195" cy="745" rx="235" ry="165" fill="#96674A" opacity="0.11" />
+      <g fill="#A9764E" opacity="0.82">
+        <ellipse cx="1016" cy="707" rx="46" ry="15" transform="rotate(-34 1016 707)" />
+        <ellipse cx="1058" cy="837" rx="40" ry="13" transform="rotate(-16 1058 837)" />
+        <ellipse cx="1160" cy="863" rx="38" ry="12" transform="rotate(6 1160 863)" />
+        <ellipse cx="1298" cy="861" rx="40" ry="13" transform="rotate(-8 1298 861)" />
+        <ellipse cx="1392" cy="751" rx="46" ry="15" transform="rotate(28 1392 751)" />
+        <ellipse cx="1352" cy="821" rx="38" ry="12" transform="rotate(36 1352 821)" />
+        <ellipse cx="1124" cy="599" rx="40" ry="13" transform="rotate(-48 1124 599)" />
+        <ellipse cx="1272" cy="573" rx="40" ry="13" transform="rotate(44 1272 573)" />
+      </g>
+      <use href="#s3-blossom" transform="translate(1195 581) scale(0.86)" fill="#D98C5F" />
+      <use href="#s3-blossom" transform="translate(1052 645) scale(0.78)" fill="#E2A07A" />
+      <use href="#s3-blossom" transform="translate(1338 641) scale(0.80)" fill="#C97B50" />
+      <use href="#s3-blossom" transform="translate(1010 751) scale(0.72)" fill="#C97B50" />
+      <use href="#s3-blossom" transform="translate(1378 751) scale(0.74)" fill="#E2A07A" />
+      <use href="#s3-blossom" transform="translate(1078 813) scale(0.72)" fill="#D98C5F" />
+      <use href="#s3-blossom" transform="translate(1300 817) scale(0.70)" fill="#D98C5F" />
+      <use href="#s3-blossom" transform="translate(1170 757) scale(1.02)" fill="#D98C5F" />
+      <use href="#s3-blossom" transform="translate(1262 705) scale(0.88)" fill="#EBB894" />
+    </g>
+
+
+    <g id="s3-reeds">
+      <g fill="none" stroke="#8A6A4E" stroke-linecap="round">
+        <path d="M1608 1000 C 1604 920, 1598 850, 1592 796" stroke-width="6" />
+        <path d="M1650 1025 C 1648 958, 1644 900, 1640 852" stroke-width="5" />
+        <path d="M1568 1000 C 1562 940, 1558 890, 1552 862" stroke-width="5" />
+        <path d="M1608 976 C 1622 930, 1652 908, 1666 902" stroke-width="4" />
+        <path d="M1604 962 C 1588 918, 1560 900, 1546 896" stroke-width="4" />
+      </g>
+      <g fill="#A9764E">
+        <ellipse cx="1592" cy="788" rx="9" ry="30" />
+        <ellipse cx="1640" cy="846" rx="8" ry="26" />
+        <ellipse cx="1552" cy="854" rx="7" ry="22" />
+      </g>
+    </g>
+  <linearGradient id="s4-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2B3A55" />
+      <stop offset="0.55" stop-color="#3E5A7A" />
+      <stop offset="1" stop-color="#F2E8D5" />
+    </linearGradient>
+    <radialGradient id="s4-glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#F2C57C" stop-opacity="0.85" />
+      <stop offset="0.55" stop-color="#F2C57C" stop-opacity="0.28" />
+      <stop offset="1" stop-color="#F2C57C" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="s4-petal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F7E7C6" />
+      <stop offset="0.6" stop-color="#F2C57C" />
+      <stop offset="1" stop-color="#D9A45C" />
+    </linearGradient>
+  </defs><rect x="0" y="0" width="9600" height="1400" fill="url(#global-sky)" /><rect x="0" y="1100" width="9600" height="300" fill="#F2E8D5" /><path d="M0 900 C 600 860, 1800 940, 2400 900 C 3000 860, 4200 940, 4800 900 C 5400 860, 6600 940, 7200 900 C 7800 860, 9000 940, 9600 900" fill="none" stroke="#6FA8DC" stroke-width="6" stroke-linecap="round" /><g id="camera"><g id="scene-1" transform="translate(0,0)"><rect x="0" y="0" width="2400" height="1400" fill="url(#s1-sky)" />
+  <rect x="0" y="40" width="2400" height="300" fill="url(#s1-cloud)" />
+
+
+  <rect x="0" y="980" width="2400" height="180" fill="url(#s1-mist)" />
+
+
+  <ellipse id="s1-halo" cx="1200" cy="880" rx="460" ry="360" fill="url(#s1-glow)" opacity="0.4">
+    <animate attributeName="opacity" values="0.32;0.6;0.32" keyTimes="0;0.5;1" calcMode="spline" keySplines="0.45 0 0.55 1;0.45 0 0.55 1" dur="8s" repeatCount="indefinite" />
+  </ellipse>
+
+
+  <rect x="-2" y="1100" width="2404" height="300" fill="#F2E8D5" />
+
+
+  <ellipse cx="1200" cy="1152" rx="880" ry="62" fill="url(#s1-wet)" />
+
+
+  <ellipse cx="1200" cy="1238" rx="330" ry="48" fill="#DFD1B4" opacity="0.55" />
+  <ellipse cx="1200" cy="1234" rx="292" ry="36" fill="#CBDDE9" opacity="0.4" />
+  <ellipse cx="1200" cy="1226" rx="200" ry="22" fill="#F2E8D5" opacity="0.3" />
+  <ellipse cx="1200" cy="1232" rx="86" ry="16" fill="#6FA8DC" opacity="0.2" />
+  <ellipse cx="1200" cy="1246" rx="220" ry="28" fill="none" stroke="#6FA8DC" stroke-width="2" opacity="0.3" />
+  <ellipse cx="1200" cy="1250" rx="300" ry="38" fill="none" stroke="#6FA8DC" stroke-width="2" opacity="0.16" />
+
+
+  <g fill="none" stroke="#A8C686" stroke-width="4" stroke-linecap="round" opacity="0.85">
+    <path d="M1040 1176 C 1034 1146, 1028 1128, 1018 1114" />
+    <path d="M1048 1176 C 1046 1144, 1050 1124, 1056 1108" />
+    <path d="M1056 1176 C 1060 1150, 1068 1132, 1080 1120" />
+    <path d="M1360 1170 C 1366 1140, 1372 1124, 1382 1110" />
+    <path d="M1352 1170 C 1354 1140, 1350 1120, 1344 1104" />
+    <path d="M1344 1170 C 1340 1146, 1332 1128, 1320 1116" />
+    <path d="M1128 1184 C 1124 1166, 1120 1154, 1114 1144" stroke-width="3.4" />
+    <path d="M1134 1184 C 1136 1164, 1142 1152, 1150 1142" stroke-width="3.4" />
+    <path d="M1280 1186 C 1284 1166, 1290 1154, 1298 1144" stroke-width="3.4" />
+    <path d="M1272 1186 C 1270 1164, 1264 1152, 1256 1142" stroke-width="3.4" />
+  </g>
+
+
+  <g id="s1-bud">
+    <animateTransform attributeName="transform" type="rotate" values="-1.5 1200 1150; 1.5 1200 1150; -1.5 1200 1150" keyTimes="0;0.5;1" calcMode="spline" keySplines="0.42 0 0.58 1;0.42 0 0.58 1" dur="8s" repeatCount="indefinite" />
+
+
+    <path d="M1200 1152 C 1196 1056, 1197 950, 1204 872" fill="none" stroke="#A8C686" stroke-width="10" stroke-linecap="round" />
+    <path d="M1200 1152 C 1196 1056, 1197 950, 1204 872" fill="none" stroke="#BCD49E" stroke-width="3" stroke-linecap="round" opacity="0.7" />
+
+
+    <path d="M1200 1032 C 1162 1022, 1126 998, 1100 966 C 1138 974, 1178 996, 1200 1032 Z" fill="url(#s1-leaf)" />
+    <path d="M1204 994 C 1248 986, 1288 958, 1308 924 C 1268 932, 1226 952, 1204 994 Z" fill="url(#s1-leaf)" />
+    <path d="M1200 1104 C 1174 1096, 1152 1080, 1140 1060 C 1166 1068, 1188 1080, 1200 1104 Z" fill="#A8C686" opacity="0.9" />
+    <path d="M1204 1082 C 1228 1074, 1250 1058, 1262 1040 C 1238 1046, 1216 1058, 1204 1082 Z" fill="#A8C686" opacity="0.85" />
+
+
+    <path d="M1204 872 C 1188 872, 1170 882, 1158 902 C 1180 896, 1196 886, 1204 872 Z" fill="#A8C686" />
+    <path d="M1204 872 C 1220 872, 1238 882, 1250 902 C 1228 896, 1212 886, 1204 872 Z" fill="#A8C686" />
+    <path d="M1204 874 C 1198 892, 1198 910, 1206 928 C 1210 910, 1210 892, 1204 874 Z" fill="#93B672" />
+
+
+    <path d="M1204 872 C 1166 858, 1142 822, 1140 778 C 1138 734, 1164 682, 1200 640 C 1236 682, 1262 734, 1260 778 C 1258 822, 1242 858, 1204 872 Z" fill="url(#s1-budgrad)" />
+    <path d="M1204 866 C 1180 848, 1166 810, 1168 774 C 1170 732, 1184 684, 1200 656 C 1188 700, 1184 748, 1186 786 C 1188 824, 1196 850, 1204 866 Z" fill="#5B93C4" opacity="0.45" />
+    <path d="M1216 664 C 1236 700, 1246 742, 1244 780 C 1242 818, 1230 850, 1212 866 C 1224 830, 1230 788, 1228 750 C 1226 712, 1218 686, 1216 664 Z" fill="#9CC6E9" opacity="0.5" />
+    <path d="M1200 860 C 1194 806, 1196 726, 1200 662" fill="none" stroke="#4F84B2" stroke-width="2.5" opacity="0.35" stroke-linecap="round" />
+    <path d="M1200 860 C 1206 806, 1206 726, 1200 662" fill="none" stroke="#4F84B2" stroke-width="2.5" opacity="0.22" stroke-linecap="round" />
+
+
+    <ellipse cx="1200" cy="640" rx="5" ry="8" fill="#DCEBF6" opacity="0.85" />
+    <ellipse cx="1148" cy="760" rx="3" ry="4.5" fill="#F2E8D5" opacity="0.8" />
+    <ellipse cx="1244" cy="716" rx="2.6" ry="4" fill="#F2E8D5" opacity="0.7" />
+  </g>
+
+
+  <g id="s1-rainwrap" mask="url(#s1-rainmask)">
+    <g id="s1-rain" opacity="0.9">
+      <use href="#s1-rainfield" y="-600" />
+      <use href="#s1-rainfield" />
+      <use href="#s1-rainfield" y="600" />
+      <use href="#s1-rainfield" y="1200" />
+      <animateTransform attributeName="transform" type="translate" values="0 0; 0 600" dur="8s" repeatCount="indefinite" />
+    </g>
+  </g>
+
+
+  <path d="M0 900 C 600 860, 1800 940, 2400 900" fill="none" stroke="#6FA8DC" stroke-width="6" stroke-linecap="round" />
+</g><g id="scene-2" transform="translate(2400,0)"><rect x="0" y="0" width="2400" height="1400" fill="url(#s2-sky)" />
+
+
+  <rect x="-2" y="1100" width="2404" height="300" fill="#F2E8D5" />
+
+
+  <g id="s2-clouds">
+    <animateTransform attributeName="transform" type="translate" values="-30 0; 30 0; -30 0" keyTimes="0;0.5;1" dur="8s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1" />
+
+    <g id="s2-cloud-body" filter="url(#s2-soft)" fill="#BFCCDD" opacity="0.66">
+      <ellipse cx="500" cy="404" rx="300" ry="84" />
+      <ellipse cx="380" cy="336" rx="180" ry="72" />
+      <ellipse cx="590" cy="320" rx="210" ry="84" />
+      <ellipse cx="720" cy="388" rx="150" ry="60" />
+      <ellipse cx="1560" cy="406" rx="360" ry="88" />
+      <ellipse cx="1410" cy="330" rx="200" ry="78" />
+      <ellipse cx="1690" cy="322" rx="220" ry="84" />
+      <ellipse cx="1830" cy="390" rx="160" ry="62" />
+      <ellipse cx="2010" cy="268" rx="160" ry="56" />
+      <ellipse cx="700" cy="236" rx="150" ry="50" />
+    </g>
+
+    <g id="s2-cloud-light" filter="url(#s2-soft)" fill="#F2E8D5" opacity="0.34">
+      <ellipse cx="560" cy="292" rx="210" ry="46" />
+      <ellipse cx="1650" cy="288" rx="230" ry="44" />
+      <ellipse cx="700" cy="216" rx="120" ry="28" />
+    </g>
+  </g>
+
+
+  <g id="s2-beam">
+    <animateTransform attributeName="transform" type="rotate" values="-4.5 950 322; 4.5 950 322; -4.5 950 322" keyTimes="0;0.5;1" dur="8s" repeatCount="indefinite" calcMode="spline" keySplines="0.45 0 0.55 1;0.45 0 0.55 1" />
+    <g id="s2-beam-shape" filter="url(#s2-beam-blur)">
+      <polygon id="s2-beam-soft" points="950,322 1010,1090 1350,1090" fill="url(#s2-beam-grad)" opacity="0.75" />
+      <polygon id="s2-beam-core" points="950,322 1104,1090 1258,1090" fill="url(#s2-beam-grad)" opacity="0.55" />
+    </g>
+  </g>
+
+
+  <ellipse id="s2-light-pool" cx="1180" cy="1122" rx="250" ry="40" fill="url(#s2-glow)" opacity="0.75" />
+
+
+  <circle id="s2-bud-glow" cx="1180" cy="792" r="170" fill="url(#s2-glow)" />
+  <path id="s2-stem" d="M1180 1105 C 1175 1020, 1185 930, 1180 866" fill="none" stroke="#6FA8DC" stroke-width="9" stroke-linecap="round" />
+  <g id="s2-bud" transform="translate(1180 868) scale(1.15)">
+    <g id="s2-bud-open">
+      <animateTransform attributeName="transform" type="scale" values="1 1; 1.12 0.97; 1 1" keyTimes="0;0.5;1" dur="8s" repeatCount="indefinite" calcMode="spline" keySplines="0.42 0 0.58 1;0.42 0 0.58 1" />
+
+      <path d="M0 4 C -20 12, -40 10, -58 -2" fill="none" stroke="#6FA8DC" stroke-width="6" opacity="0.8" />
+      <path d="M0 4 C 20 12, 40 10, 58 -2" fill="none" stroke="#6FA8DC" stroke-width="6" opacity="0.8" />
+
+      <path d="M0 4 C -64 -36, -58 -132, 0 -182 C 58 -132, 64 -36, 0 4 Z" fill="#F2C57C" />
+
+      <path d="M0 -2 C -34 -38, -30 -112, 0 -152 C 30 -112, 34 -38, 0 -2 Z" fill="#F7E7C6" opacity="0.92" />
+
+      <path d="M0 -2 C -10 -68, -8 -128, 0 -168" fill="none" stroke="#D9A45C" stroke-width="3" opacity="0.55" />
+    </g>
+  </g>
+
+
+  <path d="M0 900 C 600 860, 1800 940, 2400 900" fill="none" stroke="#6FA8DC" stroke-width="6" stroke-linecap="round" />
+</g><g id="scene-3" transform="translate(4800,0)"><rect x="0" y="0" width="2400" height="1400" fill="url(#s3-sky)" />
+
+  <ellipse cx="1200" cy="765" rx="560" ry="330" fill="url(#s3-warm)" />
+
+  <rect x="-2" y="1100" width="2404" height="300" fill="#F2E8D5" />
+
+
+  <path d="M200 1100 C 380 1016, 560 990, 760 1026 C 940 1058, 1080 1044, 1240 1014 C 1420 982, 1580 1000, 1760 1046 C 1920 1086, 2060 1094, 2200 1100 Z" fill="url(#s3-hill-far)" />
+  <path d="M120 1100 C 300 1042, 460 1020, 640 1042 C 820 1064, 960 1086, 1140 1080 C 1320 1074, 1460 1046, 1640 1038 C 1820 1030, 2020 1066, 2280 1100 Z" fill="url(#s3-hill-near)" />
+
+
+  <g opacity="0.62">
+    <g fill="none" stroke="#8C6448" stroke-width="5" stroke-linecap="round">
+      <path d="M616 1090 C 610 1010, 606 940, 600 872" />
+      <path d="M614 1000 C 594 960, 578 920, 566 890" />
+      <path d="M616 1000 C 638 964, 652 930, 658 900" />
+    </g>
+    <ellipse cx="616" cy="960" rx="34" ry="11" fill="#A9764E" opacity="0.7" transform="rotate(-24 616 960)" />
+    <use href="#s3-blossom" transform="translate(600 830) scale(0.42)" fill="#B98663" />
+    <use href="#s3-blossom" transform="translate(562 884) scale(0.36)" fill="#C29575" />
+    <use href="#s3-blossom" transform="translate(656 894) scale(0.34)" fill="#B98663" />
+  </g>
+
+
+  <use href="#s3-bush" />
+
+
+  <g>
+    <ellipse cx="1200" cy="1050" rx="470" ry="105" fill="url(#s3-water)" />
+
+    <g clip-path="url(#s3-pond-clip)">
+      <g transform="translate(24 1417.5) scale(0.98 -0.5)" opacity="0.3">
+        <g>
+          <animateTransform attributeName="transform" type="skewX" values="0.9;-0.9;0.9" dur="8s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.4 0 0.6 1;0.4 0 0.6 1" />
+          <use href="#s3-bush" />
+        </g>
+      </g>
+      <g transform="translate(0 1500) scale(1 -0.5)" opacity="0.16">
+        <use href="#s3-reeds" />
+      </g>
+    </g>
+    <ellipse cx="1200" cy="1050" rx="470" ry="105" fill="url(#s3-water-veil)" />
+
+
+    <g transform="translate(1075 1005)">
+      <g opacity="0">
+        <animate attributeName="opacity" values="0;0.6;0.5;0" keyTimes="0;0.07;0.45;1" dur="8s" begin="0s" repeatCount="indefinite" />
+        <animateTransform attributeName="transform" type="scale" values="0.4;1.75" dur="8s" begin="0s" repeatCount="indefinite" calcMode="spline" keyTimes="0;1" keySplines="0.1 0.5 0.5 1" />
+        <ellipse rx="46" ry="11" fill="none" stroke="#F2E8D5" stroke-width="3" />
+        <ellipse rx="72" ry="17" fill="none" stroke="#F2E8D5" stroke-width="2.5" />
+      </g>
+    </g>
+    <g transform="translate(1330 1054)">
+      <g opacity="0">
+        <animate attributeName="opacity" values="0;0.5;0.42;0" keyTimes="0;0.07;0.45;1" dur="8s" begin="4s" repeatCount="indefinite" />
+        <animateTransform attributeName="transform" type="scale" values="0.4;1.6" dur="8s" begin="4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;1" keySplines="0.1 0.5 0.5 1" />
+        <ellipse rx="46" ry="11" fill="none" stroke="#F2E8D5" stroke-width="3" />
+        <ellipse rx="72" ry="17" fill="none" stroke="#F2E8D5" stroke-width="2.5" />
+      </g>
+    </g>
+
+
+    <use href="#s3-petal" fill="#D98C5F" opacity="0.9" transform="translate(1002 1062) rotate(16) scale(1.1)" />
+    <use href="#s3-petal" fill="#E2A07A" opacity="0.85" transform="translate(1372 1026) rotate(-12) scale(1.05)" />
+
+
+    <ellipse cx="1200" cy="953" rx="372" ry="13" fill="#F2E8D5" opacity="0.16" />
+    <ellipse cx="1200" cy="1050" rx="470" ry="105" fill="none" stroke="#F2E8D5" stroke-width="4" stroke-opacity="0.38" />
+  </g>
+
+
+  <use href="#s3-reeds" />
+
+
+  <g opacity="0">
+    <animate attributeName="opacity" values="0;0.95;0.95;0" keyTimes="0;0.08;0.8;1" dur="8s" begin="0s" repeatCount="indefinite" />
+    <g>
+      <animateMotion dur="8s" begin="0s" repeatCount="indefinite" rotate="auto" path="M985 815 C 950 870, 965 940, 1000 985" />
+      <use href="#s3-petal" fill="#D98C5F" />
+    </g>
+  </g>
+  <g opacity="0">
+    <animate attributeName="opacity" values="0;0.95;0.95;0" keyTimes="0;0.08;0.8;1" dur="8s" begin="2.6s" repeatCount="indefinite" />
+    <g>
+      <animateMotion dur="8s" begin="2.6s" repeatCount="indefinite" rotate="auto" path="M1400 790 C 1440 850, 1420 950, 1390 1020" />
+      <use href="#s3-petal" fill="#C97B50" />
+    </g>
+  </g>
+  <g opacity="0">
+    <animate attributeName="opacity" values="0;0.9;0.9;0" keyTimes="0;0.08;0.8;1" dur="8s" begin="5.2s" repeatCount="indefinite" />
+    <g>
+      <animateMotion dur="8s" begin="5.2s" repeatCount="indefinite" rotate="auto" path="M1110 545 C 1050 620, 1015 760, 1040 940" />
+      <use href="#s3-petal" fill="#E2A07A" />
+    </g>
+  </g>
+
+
+  <path d="M0 900 C 600 860, 1800 940, 2400 900" fill="none" stroke="#6FA8DC" stroke-width="6" stroke-linecap="round" />
+</g><g id="scene-4" transform="translate(7200,0)"><rect x="0" y="0" width="2400" height="1400" fill="url(#s4-sky)" />
+  <rect x="-2" y="1100" width="2404" height="300" fill="#F2E8D5" />
+
+
+  <g fill="#F7F1E3">
+    <circle cx="180" cy="180" r="3"><animate attributeName="opacity" values="0.25;1;0.25" dur="8s" begin="0s" repeatCount="indefinite" /></circle>
+    <circle cx="320" cy="320" r="2"><animate attributeName="opacity" values="0.2;0.9;0.2" dur="7s" begin="1s" repeatCount="indefinite" /></circle>
+    <circle cx="470" cy="150" r="2.5"><animate attributeName="opacity" values="0.3;1;0.3" dur="9s" begin="2s" repeatCount="indefinite" /></circle>
+    <circle cx="640" cy="260" r="2"><animate attributeName="opacity" values="0.2;0.8;0.2" dur="6s" begin="0.5s" repeatCount="indefinite" /></circle>
+    <circle cx="820" cy="120" r="3"><animate attributeName="opacity" values="0.25;1;0.25" dur="8s" begin="1.5s" repeatCount="indefinite" /></circle>
+    <circle cx="980" cy="300" r="2"><animate attributeName="opacity" values="0.2;0.9;0.2" dur="7.5s" begin="3s" repeatCount="indefinite" /></circle>
+    <circle cx="1160" cy="170" r="2.5"><animate attributeName="opacity" values="0.3;1;0.3" dur="8.5s" begin="0.8s" repeatCount="indefinite" /></circle>
+    <circle cx="1340" cy="260" r="2"><animate attributeName="opacity" values="0.2;0.8;0.2" dur="6.5s" begin="2.4s" repeatCount="indefinite" /></circle>
+    <circle cx="1520" cy="140" r="3"><animate attributeName="opacity" values="0.25;1;0.25" dur="9s" begin="1.2s" repeatCount="indefinite" /></circle>
+    <circle cx="1700" cy="300" r="2"><animate attributeName="opacity" values="0.2;0.9;0.2" dur="7s" begin="3.2s" repeatCount="indefinite" /></circle>
+    <circle cx="1880" cy="180" r="2.5"><animate attributeName="opacity" values="0.3;1;0.3" dur="8s" begin="0.4s" repeatCount="indefinite" /></circle>
+    <circle cx="2060" cy="280" r="2"><animate attributeName="opacity" values="0.2;0.8;0.2" dur="6.8s" begin="2.8s" repeatCount="indefinite" /></circle>
+    <circle cx="2240" cy="160" r="3"><animate attributeName="opacity" values="0.25;1;0.25" dur="8.8s" begin="1.8s" repeatCount="indefinite" /></circle>
+  </g>
+
+
+  <circle cx="1200" cy="760" r="420" fill="url(#s4-glow)">
+    <animate attributeName="r" values="380;460;380" dur="8s" repeatCount="indefinite" />
+    <animate attributeName="opacity" values="0.7;1;0.7" dur="8s" repeatCount="indefinite" />
+  </circle>
+
+
+  <path d="M1200 1100 C 1190 980, 1210 880, 1200 760" fill="none" stroke="#4E7FA8" stroke-width="8" stroke-linecap="round" />
+
+
+  <g transform="translate(1200 760)">
+    <g>
+      <animateTransform attributeName="transform" type="scale" values="0.28;0.5;0.92;1;0.28" keyTimes="0;0.35;0.62;0.9;1" dur="8s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1;0.4 0 0.6 1;0.4 0 0.6 1" />
+      <g fill="url(#s4-petal)" opacity="0.92">
+        <ellipse cx="0" cy="-210" rx="72" ry="195" transform="rotate(0)" />
+        <ellipse cx="0" cy="-210" rx="72" ry="195" transform="rotate(30)" />
+        <ellipse cx="0" cy="-210" rx="72" ry="195" transform="rotate(60)" />
+        <ellipse cx="0" cy="-210" rx="72" ry="195" transform="rotate(90)" />
+        <ellipse cx="0" cy="-210" rx="72" ry="195" transform="rotate(120)" />
+        <ellipse cx="0" cy="-210" rx="72" ry="195" transform="rotate(150)" />
+        <ellipse cx="0" cy="-210" rx="72" ry="195" transform="rotate(180)" />
+        <ellipse cx="0" cy="-210" rx="72" ry="195" transform="rotate(210)" />
+        <ellipse cx="0" cy="-210" rx="72" ry="195" transform="rotate(240)" />
+        <ellipse cx="0" cy="-210" rx="72" ry="195" transform="rotate(270)" />
+        <ellipse cx="0" cy="-210" rx="72" ry="195" transform="rotate(300)" />
+        <ellipse cx="0" cy="-210" rx="72" ry="195" transform="rotate(330)" />
+      </g>
+      <circle cx="0" cy="0" r="96" fill="#F2C57C" />
+      <circle cx="0" cy="0" r="58" fill="#F7E7C6" />
+    </g>
+  </g>
+
+
+  <path d="M0 900 C 600 860, 1800 940, 2400 900" fill="none" stroke="#6FA8DC" stroke-width="6" stroke-linecap="round" />
+</g><path d="M0 900 C 600 860, 1800 940, 2400 900 C 3000 860, 4200 940, 4800 900 C 5400 860, 6600 940, 7200 900 C 7800 860, 9000 940, 9600 900" fill="none" stroke="#6FA8DC" stroke-width="6" stroke-linecap="round" /></g><animate attributeName="viewBox" values="0 0 2400 1400; 0 0 2400 1400; 2400 0 2400 1400; 2400 0 2400 1400; 4800 0 2400 1400; 4800 0 2400 1400; 7200 0 2400 1400; 7200 0 2400 1400" keyTimes="0; 0.12; 0.28; 0.40; 0.56; 0.68; 0.84; 1" dur="36s" repeatCount="indefinite" calcMode="linear" /></svg>
+</div>
+<script>
+const svg = document.querySelector('.stage svg');
+let paused = false;
+function toggle() {
+  paused = !paused;
+  if (paused) svg.pauseAnimations(); else svg.unpauseAnimations();
+}
+</script>
+</body>
+</html>

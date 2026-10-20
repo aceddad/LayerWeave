@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2400 1400" width="2400" height="1400">
+  <!-- 第二幕 夏·云缝的光 / summer -->
+  <defs>
+    <linearGradient id="s2-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2B3A55"/>
+      <stop offset="0.55" stop-color="#3E5A7A"/>
+      <stop offset="1" stop-color="#F2E8D5"/>
+    </linearGradient>
+    <radialGradient id="s2-glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#F2C57C" stop-opacity="0.55"/>
+      <stop offset="0.6" stop-color="#F2C57C" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#F2C57C" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="s2-beam-grad" gradientUnits="userSpaceOnUse" x1="950" y1="322" x2="1180" y2="1090">
+      <stop offset="0" stop-color="#F7EFDF" stop-opacity="0"/>
+      <stop offset="0.18" stop-color="#F2C57C" stop-opacity="0.46"/>
+      <stop offset="0.62" stop-color="#F2C57C" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#F2E8D5" stop-opacity="0.1"/>
+    </linearGradient>
+    <filter id="s2-soft" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="16"/>
+    </filter>
+    <filter id="s2-beam-blur" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="10"/>
+    </filter>
+  </defs>
+
+  <!-- 天空（四幕同一渐变） -->
+  <rect x="0" y="0" width="2400" height="1400" fill="url(#s2-sky)"/>
+
+  <!-- 地面带（四幕同一矩形） -->
+  <rect x="0" y="1100" width="2400" height="300" fill="#F2E8D5"/>
+
+  <!-- 云层：整组 8s 缓慢左右漂移；主体收在 x=140–2260 之间，靠边缘只有淡出的云尾 -->
+  <g id="s2-clouds">
+    <animateTransform attributeName="transform" type="translate"
+      values="-30 0; 30 0; -30 0" keyTimes="0;0.5;1" dur="8s" repeatCount="indefinite"
+      calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1"/>
+    <!-- 云体 -->
+    <g id="s2-cloud-body" filter="url(#s2-soft)" fill="#BFCCDD" opacity="0.66">
+      <ellipse cx="500" cy="404" rx="300" ry="84"/>
+      <ellipse cx="380" cy="336" rx="180" ry="72"/>
+      <ellipse cx="590" cy="320" rx="210" ry="84"/>
+      <ellipse cx="720" cy="388" rx="150" ry="60"/>
+      <ellipse cx="1560" cy="406" rx="360" ry="88"/>
+      <ellipse cx="1410" cy="330" rx="200" ry="78"/>
+      <ellipse cx="1690" cy="322" rx="220" ry="84"/>
+      <ellipse cx="1830" cy="390" rx="160" ry="62"/>
+      <ellipse cx="2010" cy="268" rx="160" ry="56"/>
+      <ellipse cx="700" cy="236" rx="150" ry="50"/>
+    </g>
+    <!-- 云顶暖光（夏天的暖色只压在中景云上，不碰左右边缘） -->
+    <g id="s2-cloud-light" filter="url(#s2-soft)" fill="#F2E8D5" opacity="0.34">
+      <ellipse cx="560" cy="292" rx="210" ry="46"/>
+      <ellipse cx="1650" cy="288" rx="230" ry="44"/>
+      <ellipse cx="700" cy="216" rx="120" ry="28"/>
+    </g>
+  </g>
+
+  <!-- 云缝里的一束光：整组绕云缝 8s 轻扫 -->
+  <g id="s2-beam">
+    <animateTransform attributeName="transform" type="rotate"
+      values="-4.5 950 322; 4.5 950 322; -4.5 950 322" keyTimes="0;0.5;1" dur="8s" repeatCount="indefinite"
+      calcMode="spline" keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>
+    <g id="s2-beam-shape" filter="url(#s2-beam-blur)">
+      <polygon id="s2-beam-soft" points="950,322 1010,1090 1350,1090" fill="url(#s2-beam-grad)" opacity="0.75"/>
+      <polygon id="s2-beam-core" points="950,322 1104,1090 1258,1090" fill="url(#s2-beam-grad)" opacity="0.55"/>
+    </g>
+  </g>
+
+  <!-- 光落在地上的暖斑（静止，让光扫时地面不跟着滑） -->
+  <ellipse id="s2-light-pool" cx="1180" cy="1122" rx="250" ry="40" fill="url(#s2-glow)" opacity="0.75"/>
+
+  <!-- 花苞：整体 8s 只开一点点（宽度 +12%，高度 -3%） -->
+  <circle id="s2-bud-glow" cx="1180" cy="792" r="170" fill="url(#s2-glow)"/>
+  <path id="s2-stem" d="M1180 1105 C 1175 1020, 1185 930, 1180 866" fill="none" stroke="#6FA8DC" stroke-width="9" stroke-linecap="round"/>
+  <g id="s2-bud" transform="translate(1180 868) scale(1.15)">
+    <g id="s2-bud-open">
+      <animateTransform attributeName="transform" type="scale"
+        values="1 1; 1.12 0.97; 1 1" keyTimes="0;0.5;1" dur="8s" repeatCount="indefinite"
+        calcMode="spline" keySplines="0.42 0 0.58 1;0.42 0 0.58 1"/>
+      <!-- 花萼：沿用第一幕花苞的蓝 #6FA8DC，和蓝线/蓝茎连成一条线 -->
+      <path d="M0 4 C -20 12, -40 10, -58 -2" fill="none" stroke="#6FA8DC" stroke-width="6" opacity="0.8"/>
+      <path d="M0 4 C 20 12, 40 10, 58 -2" fill="none" stroke="#6FA8DC" stroke-width="6" opacity="0.8"/>
+      <!-- 外层花苞 -->
+      <path d="M0 4 C -64 -36, -58 -132, 0 -182 C 58 -132, 64 -36, 0 4 Z" fill="#F2C57C"/>
+      <!-- 内层花瓣（将要裂开的那一点点） -->
+      <path d="M0 -2 C -34 -38, -30 -112, 0 -152 C 30 -112, 34 -38, 0 -2 Z" fill="#F7E7C6" opacity="0.92"/>
+      <!-- 缝 -->
+      <path d="M0 -2 C -10 -68, -8 -128, 0 -168" fill="none" stroke="#D9A45C" stroke-width="3" opacity="0.55"/>
+    </g>
+  </g>
+
+  <!-- 贯穿全卷的蓝线 -->
+  <path d="M0 900 C 600 860, 1800 940, 2400 900" fill="none" stroke="#6FA8DC" stroke-width="6" stroke-linecap="round"/>
+</svg>

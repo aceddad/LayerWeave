@@ -24,6 +24,13 @@ def check(archive):
                 'tests/_support/mcpfixture.py','tests/fixtures/view-plugin/parts/label.js',
                 'docs/releasing.md','examples/read_write.py'}
             assert required<=names,required-names
+            cases = Path(__file__).resolve().parents[2] / 'examples/showcases'
+            expected_cases = {p.relative_to(cases.parent.parent).as_posix()
+                              for p in cases.glob('*/project.json')}
+            assert expected_cases <= names, ('Missing public cases', expected_cases - names)
+            media_suffixes = {'.mp4', '.webm', '.mov', '.mkv', '.avi', '.mp3', '.wav', '.flac'}
+            assert not any(n.startswith('examples/showcases/') and PurePosixPath(n).suffix.lower() in media_suffixes
+                           for n in names), 'Production media must remain outside the public source archive'
             assert not any(local_only(name) for name in names),[n for n in names if local_only(n)]
             for member in members:
                 dest=temporary/member.name

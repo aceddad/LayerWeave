@@ -2,6 +2,8 @@
 
 **简体中文** | [English](README.en.md)
 
+**0.7.8 公开预览版 · Windows**
+
 用层、对象和关联组织内容，让 AI 与程序按需读取、编辑和扩充项目。
 
 LayerWeave 提供 Python API、命令行工具、MCP 接入和本机网页视图，适合字幕、分镜、手书、素材清单及有序信息管理。对象保存内容与起止位置，层组织结构，关联连接条目，轴说明位置数值的含义。
@@ -20,7 +22,7 @@ LayerWeave 提供 Python API、命令行工具、MCP 接入和本机网页视图
 
 首发支持 Windows。代码要求 Python 3.11+、SQLite 3.35+；以下使用 Python 3.11。可以让 [uv](https://docs.astral.sh/uv/getting-started/installation/) 自动准备 Python 和环境，也可以使用已有 Python。使用网页不需要 Node。
 
-### 安装完整包
+### 用 uv 安装完整包
 
 先取得本版本的 `layerweave-0.7.8-py3-none-any.whl`，放在选定的工作目录。安装 uv 后，在该目录的 PowerShell 中执行：
 
@@ -42,7 +44,27 @@ python -X utf8 -m venv .venv
 
 wheel 已构建好，安装 LayerWeave 本身不需要 setuptools；`[mcp]` 的依赖仍可能需要联网下载，wheel 不是完整离线环境。维护源码才需要可编辑安装；若卡在准备构建依赖，见[源码安装排查](docs/developer-conventions.md#可编辑安装与构建依赖)。
 
-### 创建项目并打开视图
+### 先试文章解析
+
+取得同版本源码包中的 `examples/showcases`，或把案例 ZIP 解压到工作目录的 `examples` 中。最终应有 `examples/showcases/article-reading/project.json`。安装包与案例分开，先试文章解析即可；[十二个案例的目录与准备说明](examples/showcases/README.md)集中说明其他场景。
+
+在刚才安装 wheel 的工作目录执行：
+
+```powershell
+.venv/Scripts/python.exe -X utf8 -m layerweave.tool.builtin.developer.database.cli examples/showcases/article-reading/reading.sqlite3
+.venv/Scripts/python.exe -X utf8 -m layerweave.tool.builtin.usage.exchange.cli apply examples/showcases/article-reading/reading.sqlite3 --data-file examples/showcases/article-reading/project.json --new-project --result-file import-result.json
+$caseImport = Get-Content -Raw -Encoding utf8 import-result.json | ConvertFrom-Json
+if (-not $caseImport.ok) { throw '导入失败，请检查 import-result.json' }
+$caseProjectId = $caseImport.data.project_id
+.venv/Scripts/python.exe -X utf8 -m layerweave.tool.builtin.usage.query.project_overview examples/showcases/article-reading/reading.sqlite3 $caseProjectId
+.venv/Scripts/python.exe -X utf8 -m layerweave.tool.builtin.view.server examples/showcases/article-reading/reading.sqlite3 --project $caseProjectId
+```
+
+打开服务打印的本机地址，先读“正文”和“解读”，再从一个论点沿关联找到证据与配图。[文章解析说明](examples/showcases/article-reading/README.md)还提供五条局部阅读路线。数据库放在案例目录，让相对图片路径直接可用；项目编号来自导入结果，重复导入会创建新副本。
+
+这个入门案例不需要 Key、FFmpeg、Node 或视图插件；查阅外部原文时才需联网。手书和 H3 提供无视频阅读版，使用静帧展示制作过程；完整音视频不随案例包分发。
+
+### 创建自己的项目
 
 ```powershell
 .venv/Scripts/python.exe -X utf8 -m layerweave.tool.builtin.developer.database.cli project.sqlite3
@@ -50,14 +72,9 @@ wheel 已构建好，安装 LayerWeave 本身不需要 setuptools；`[mcp]` 的�
 .venv/Scripts/python.exe -X utf8 -m layerweave.tool.builtin.usage.exchange.cli apply project.sqlite3 --template subtitles --new-project
 ```
 
-模板可选字幕、分镜或手书，结构可自由增减。导入输出会给出项目编号，将下方 `PROJECT_ID` 换成实际编号：
+模板可选字幕、分镜或手书，结构可自由增减。随后把导入返回的项目编号传给视图或查询工具，完整参数按需查 help。
 
-```powershell
-.venv/Scripts/python.exe -X utf8 -m layerweave.tool.builtin.usage.query.project_overview project.sqlite3 PROJECT_ID
-.venv/Scripts/python.exe -X utf8 -m layerweave.tool.builtin.view.server project.sqlite3 --project PROJECT_ID
-```
-
-打开服务输出的本机地址。FFmpeg 是用户选装的外部程序，不随 wheel、`[mcp]` 或 uv 自动安装；普通数据管理与文字视图不需要它。服务端抽帧需要 FFmpeg，缩略图和波形也会使用它；缺少时部分浏览功能回退，可能增加媒体加载量。安装后将其 bin 目录加入 PATH，或用 `FFMPEG` 指向 ffmpeg.exe 的完整路径（如 `D:/tools/ffmpeg/bin/ffmpeg.exe`），见[安装与功能影响](src/layerweave/tool/builtin/view/GUIDE.md#选装-ffmpeg)。AI 截图另外需要 Chrome、Edge 或 Chromium。媒体输出目录由 AI 或使用者选择。
+FFmpeg 是用户选装的外部程序，不随 wheel、`[mcp]` 或 uv 自动安装；普通数据管理与文字视图不需要它。服务端抽帧需要 FFmpeg，缩略图和波形也会使用它；缺少时部分浏览功能回退。安装后将其 bin 目录加入 PATH，或用 `FFMPEG` 指向 ffmpeg.exe 的完整路径，见[安装与功能影响](src/layerweave/tool/builtin/view/GUIDE.md#选装-ffmpeg)。AI 截图另外需要 Chrome、Edge 或 Chromium。媒体输出目录由 AI 或使用者选择。
 
 ## 连接 AI / MCP
 

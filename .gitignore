@@ -18,4 +18,11 @@ keys.json
 .keys.local.json.*.tmp
 
 # 视图网页源码的依赖（npm install 生成，不提交；编译结果在 src/layerweave/tool/builtin/view/web/）
-frontend/view/node_modules/
+node_modules/
+
+# 公开场景案例使用静帧；制作音视频保留在本地归档
+examples/showcases/**/*.mp4
+examples/showcases/**/*.webm
+examples/showcases/**/*.mov
+examples/showcases/**/*.mp3
+examples/showcases/**/*.wav

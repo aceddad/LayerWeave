@@ -1,0 +1,2858 @@
+{
+  "format_version": 1,
+  "project_id": 1,
+  "project": {
+    "data": {
+      "name": "ドーナツホール · 手书（无视频阅读版）",
+      "tips": "建议从歌曲与歌词出发，在理解、草图试作和成片之间反复调整；也可从关键画面开始。模板是可改名、增删和重组的起点，不是检查规则。制作模块共享成片时间，各对象覆盖实际对应区间，不要求各层同样分段；需要说明依据时用 bind 关联具体对象。资源按序号存放，候选与旧稿按秒保留且不会自动从查询排除。各层用途见 tips（详细展开可读），字段和可用技能按需查 help；技能可选且需确认已安装。媒体与源工程的输出目录由 AI 按项目选择，媒体对象用 information.source 记录真实路径。 公开版不附音视频；片段以图片呈现，音频与外部视频参考以文字呈现。编号映射、起止位置及关联保留。original_media 是说明数据，不是自动下载或播放入口。"
+    },
+    "op": "add"
+  },
+  "preserve_positions": true,
+  "scope": {
+    "layer_ids": null,
+    "object_ids": null,
+    "begin": null,
+    "end": null,
+    "include_tools": true,
+    "include_global": false
+  },
+  "tables": {},
+  "source_numbering": {
+    "project_entities": {
+      "rule": "project_entity",
+      "counter": {
+        "kind": "project",
+        "field": "max_id",
+        "key": {
+          "id": "project_id"
+        }
+      },
+      "members": [
+        "layer",
+        "object"
+      ]
+    }
+  },
+  "items": [
+    {
+      "kind": "layer",
+      "op": "add",
+      "id": 1,
+      "data": {
+        "name": "歌曲",
+        "type": "text",
+        "config_ref": "layers/text.toml",
+        "father": null,
+        "axis": {
+          "unit": "second",
+          "precision": 0.001
+        },
+        "tips": "作品的时间参照。可先放歌曲和已有字幕，再补音乐结构与卡点；根层也可放整曲说明。"
+      },
+      "parent_id": null,
+      "children": [
+        {
+          "kind": "layer",
+          "op": "add",
+          "id": 2,
+          "data": {
+            "name": "音频说明",
+            "type": "text",
+            "config_ref": "layers/text.toml",
+            "father": 1,
+            "axis": null,
+            "tips": "可用一个对象放整首歌：begin=0，end=实际歌长，information.source 写音频路径；多段音频也可分别安排。"
+          },
+          "parent_id": 1,
+          "children": [
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 3,
+              "data": {
+                "name": "歌曲",
+                "config_ref": "objects/text.toml",
+                "layer": 2,
+                "begin": 0.0,
+                "end": 204.359,
+                "information": {
+                  "text": "歌曲素材说明：公开案例不含音频与歌词文件。保留原时长与段落关系，可离线阅读项目；播放时需自行准备有权使用的音频。",
+                  "original_media": {
+                    "config_ref": "objects/audio.toml",
+                    "source": "assets/public/音频/歌曲.mp3"
+                  }
+                },
+                "tips": ""
+              },
+              "parent_id": 2
+            },
+            {
+              "kind": "layer",
+              "op": "add",
+              "id": 4,
+              "data": {
+                "name": "节拍与卡点",
+                "type": "text",
+                "config_ref": "layers/text.toml",
+                "father": 2,
+                "axis": null,
+                "tips": "只记录有用的拍、小节或变化点，information.text 写含义；单个卡点可用 begin=end，持续段用区间。可按需查找已安装的 audio-cues 技能。"
+              },
+              "parent_id": 2
+            },
+            {
+              "kind": "layer",
+              "op": "add",
+              "id": 11,
+              "data": {
+                "name": "分轨",
+                "type": "audio",
+                "config_ref": "layers/audio.toml",
+                "father": 2,
+                "axis": null,
+                "tips": "Demucs 四轨由歌曲分出，样例不带；画面用到的响度已经导出在 source/src/data/stems.json"
+              },
+              "parent_id": 2
+            }
+          ]
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "id": 16,
+          "data": {
+            "name": "歌词",
+            "type": "text",
+            "config_ref": "layers/text.toml",
+            "father": 1,
+            "axis": null,
+            "tips": "歌词原文有版权，样例不带；运行时从 assets/public/音频/歌词_日中.srt 读取（需自备）"
+          },
+          "parent_id": 1
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "id": 58,
+          "data": {
+            "name": "歌曲段落",
+            "type": "text",
+            "config_ref": "layers/text.toml",
+            "father": 1,
+            "axis": null,
+            "tips": "用文字对象记录前奏、主歌、副歌、间奏等音乐结构；每个对象覆盖该段。故事和镜头可以有自己的分段。"
+          },
+          "parent_id": 1,
+          "children": [
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 59,
+              "data": {
+                "name": "前奏",
+                "config_ref": "objects/text.toml",
+                "layer": 58,
+                "begin": 0.0,
+                "end": 16.73,
+                "information": {
+                  "text": "前奏：第 -0.78 小节起"
+                },
+                "tips": ""
+              },
+              "parent_id": 58
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 60,
+              "data": {
+                "name": "A1",
+                "config_ref": "objects/text.toml",
+                "layer": 58,
+                "begin": 16.73,
+                "end": 31.968,
+                "information": {
+                  "text": "A1：第 8.0 小节起"
+                },
+                "tips": ""
+              },
+              "parent_id": 58
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 61,
+              "data": {
+                "name": "A2",
+                "config_ref": "objects/text.toml",
+                "layer": 58,
+                "begin": 31.968,
+                "end": 47.207,
+                "information": {
+                  "text": "A2：第 16.0 小节起"
+                },
+                "tips": ""
+              },
+              "parent_id": 58
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 62,
+              "data": {
+                "name": "B1",
+                "config_ref": "objects/text.toml",
+                "layer": 58,
+                "begin": 47.207,
+                "end": 64.35,
+                "information": {
+                  "text": "B1：第 24.0 小节起"
+                },
+                "tips": ""
+              },
+              "parent_id": 58
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 63,
+              "data": {
+                "name": "副歌一",
+                "config_ref": "objects/text.toml",
+                "layer": 58,
+                "begin": 64.35,
+                "end": 83.398,
+                "information": {
+                  "text": "副歌一：第 33.0 小节起"
+                },
+                "tips": ""
+              },
+              "parent_id": 58
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 64,
+              "data": {
+                "name": "间奏一",
+                "config_ref": "objects/text.toml",
+                "layer": 58,
+                "begin": 83.398,
+                "end": 91.017,
+                "information": {
+                  "text": "间奏一：第 43.0 小节起"
+                },
+                "tips": ""
+              },
+              "parent_id": 58
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 65,
+              "data": {
+                "name": "A3",
+                "config_ref": "objects/text.toml",
+                "layer": 58,
+                "begin": 91.017,
+                "end": 106.255,
+                "information": {
+                  "text": "A3：第 47.0 小节起"
+                },
+                "tips": ""
+              },
+              "parent_id": 58
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 66,
+              "data": {
+                "name": "B2",
+                "config_ref": "objects/text.toml",
+                "layer": 58,
+                "begin": 106.255,
+                "end": 123.398,
+                "information": {
+                  "text": "B2：第 55.0 小节起"
+                },
+                "tips": ""
+              },
+              "parent_id": 58
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 67,
+              "data": {
+                "name": "副歌二",
+                "config_ref": "objects/text.toml",
+                "layer": 58,
+                "begin": 123.398,
+                "end": 142.446,
+                "information": {
+                  "text": "副歌二：第 64.0 小节起"
+                },
+                "tips": ""
+              },
+              "parent_id": 58
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 68,
+              "data": {
+                "name": "间奏二",
+                "config_ref": "objects/text.toml",
+                "layer": 58,
+                "begin": 142.446,
+                "end": 159.589,
+                "information": {
+                  "text": "间奏二：第 74.0 小节起"
+                },
+                "tips": ""
+              },
+              "parent_id": 58
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 69,
+              "data": {
+                "name": "C 段",
+                "config_ref": "objects/text.toml",
+                "layer": 58,
+                "begin": 159.589,
+                "end": 174.828,
+                "information": {
+                  "text": "C 段：第 83.0 小节起"
+                },
+                "tips": ""
+              },
+              "parent_id": 58
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 70,
+              "data": {
+                "name": "副歌三",
+                "config_ref": "objects/text.toml",
+                "layer": 58,
+                "begin": 174.828,
+                "end": 186.256,
+                "information": {
+                  "text": "副歌三：第 91.0 小节起"
+                },
+                "tips": ""
+              },
+              "parent_id": 58
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 71,
+              "data": {
+                "name": "鼓的过门",
+                "config_ref": "objects/text.toml",
+                "layer": 58,
+                "begin": 186.256,
+                "end": 189.351,
+                "information": {
+                  "text": "鼓的过门：第 97.0 小节起"
+                },
+                "tips": ""
+              },
+              "parent_id": 58
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 72,
+              "data": {
+                "name": "尾声",
+                "config_ref": "objects/text.toml",
+                "layer": 58,
+                "begin": 189.351,
+                "end": 204.359,
+                "information": {
+                  "text": "尾声：第 98.62 小节起"
+                },
+                "tips": ""
+              },
+              "parent_id": 58
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "id": 73,
+      "data": {
+        "name": "内涵控制",
+        "type": "text",
+        "config_ref": "layers/text.toml",
+        "father": null,
+        "axis": {
+          "unit": "second",
+          "precision": 0.001
+        },
+        "tips": "理解歌曲并决定表达内容。允许先试画面再回来调整；对象覆盖它解释的实际时间，整体设定也可放资源管理。"
+      },
+      "parent_id": null,
+      "children": [
+        {
+          "kind": "layer",
+          "op": "add",
+          "id": 74,
+          "data": {
+            "name": "含义推测",
+            "type": "text",
+            "config_ref": "layers/text.toml",
+            "father": 73,
+            "axis": null,
+            "tips": "按句、段或其他合适范围，写歌词可能的含义、依据和不确定处；information.text 存正文，可 bind 到相关歌词对象。"
+          },
+          "parent_id": 73,
+          "children": [
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 75,
+              "data": {
+                "name": "前奏 含义",
+                "config_ref": "objects/text.toml",
+                "layer": 74,
+                "begin": 0.0,
+                "end": 16.73,
+                "information": {
+                  "text": "没有人声。全曲的主角是“缺口”，不是某个人。前奏是一个醒着的夜。"
+                },
+                "tips": ""
+              },
+              "parent_id": 74
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 76,
+              "data": {
+                "name": "A1 含义",
+                "config_ref": "objects/text.toml",
+                "layer": 74,
+                "begin": 16.73,
+                "end": 31.968,
+                "information": {
+                  "text": "记忆里的空白在长大；她唯一确定的，是“想不起来”本身；一张脸反复浮现，她却认不出是谁。"
+                },
+                "tips": ""
+              },
+              "parent_id": 74
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 77,
+              "data": {
+                "name": "A2 含义",
+                "config_ref": "objects/text.toml",
+                "layer": 74,
+                "begin": 31.968,
+                "end": 47.207,
+                "information": {
+                  "text": "绕圈与追逐：电车沿着圆环追着白天，他们却往夜里走；那张脸又回来了；雨让声音消失。环线是一个圆：一直绕，追不上。"
+                },
+                "tips": ""
+              },
+              "parent_id": 74
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 78,
+              "data": {
+                "name": "B1 含义",
+                "config_ref": "objects/text.toml",
+                "layer": 74,
+                "begin": 47.207,
+                "end": 64.35,
+                "information": {
+                  "text": "她问自己：一直不知道，会不会伤到对方？对方要是知道她睡不着，会不会笑她？——对着不在的人说话。最后一句把“计数”带进副歌。"
+                },
+                "tips": ""
+              },
+              "parent_id": 74
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 79,
+              "data": {
+                "name": "副歌一 含义",
+                "config_ref": "objects/text.toml",
+                "layer": 74,
+                "begin": 64.35,
+                "end": 83.398,
+                "information": {
+                  "text": "把感情简化、计数，结果连对方给的温度都忘了；预感再也见不到；笑不出来。核心：计数就是遗忘。"
+                },
+                "tips": ""
+              },
+              "parent_id": 74
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 80,
+              "data": {
+                "name": "间奏一 含义",
+                "config_ref": "objects/text.toml",
+                "layer": 74,
+                "begin": 83.398,
+                "end": 91.017,
+                "information": {
+                  "text": "没有人声，只有采样和前奏的旋律：像回到了起点，又像被掌声推着往前。"
+                },
+                "tips": ""
+              },
+              "parent_id": 74
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 81,
+              "data": {
+                "name": "A3 含义",
+                "config_ref": "objects/text.toml",
+                "layer": 74,
+                "begin": 91.017,
+                "end": 106.255,
+                "information": {
+                  "text": "全曲的题眼：洞没法脱离甜甜圈单独存在——她也证明不了对方存在过；那张脸又回来；夜里她把自己塞进被子和床之间。"
+                },
+                "tips": ""
+              },
+              "parent_id": 74
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 82,
+              "data": {
+                "name": "B2 含义",
+                "config_ref": "objects/text.toml",
+                "layer": 74,
+                "begin": 106.255,
+                "end": 123.398,
+                "information": {
+                  "text": "她想要一种不会消失的东西来让自己安心；不求回到过去，只求真正被填满。——想“填”。"
+                },
+                "tips": ""
+              },
+              "parent_id": 74
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 83,
+              "data": {
+                "name": "副歌二 含义",
+                "config_ref": "objects/text.toml",
+                "layer": 74,
+                "begin": 123.398,
+                "end": 142.446,
+                "information": {
+                  "text": "计数逝去的感情，连声音也会忘；告别；眼泪。忘掉的东西从“温度”升级成“声音”。"
+                },
+                "tips": ""
+              },
+              "parent_id": 74
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 84,
+              "data": {
+                "name": "间奏二 含义",
+                "config_ref": "objects/text.toml",
+                "layer": 74,
+                "begin": 142.446,
+                "end": 159.589,
+                "information": {
+                  "text": "没有人声。追。"
+                },
+                "tips": ""
+              },
+              "parent_id": 74
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 85,
+              "data": {
+                "name": "C 段 含义",
+                "config_ref": "objects/text.toml",
+                "layer": 74,
+                "begin": 159.589,
+                "end": 174.828,
+                "information": {
+                  "text": "反转：心里的洞，是对方存在过的唯一证据；可她仍然空着，几乎碎掉。"
+                },
+                "tips": ""
+              },
+              "parent_id": 74
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 86,
+              "data": {
+                "name": "副歌三 含义",
+                "config_ref": "objects/text.toml",
+                "layer": 74,
+                "begin": 174.828,
+                "end": 186.256,
+                "information": {
+                  "text": "第三次唱遗忘与告别，明知道会碎，还是再起一次调。"
+                },
+                "tips": ""
+              },
+              "parent_id": 74
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 87,
+              "data": {
+                "name": "鼓的过门 含义",
+                "config_ref": "objects/text.toml",
+                "layer": 74,
+                "begin": 186.256,
+                "end": 189.351,
+                "information": {
+                  "text": "不唱了，只剩声音烧到最满。"
+                },
+                "tips": ""
+              },
+              "parent_id": 74
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 88,
+              "data": {
+                "name": "尾声 含义",
+                "config_ref": "objects/text.toml",
+                "layer": 74,
+                "begin": 189.351,
+                "end": 204.359,
+                "information": {
+                  "text": "她终于想起一个小小的词；呼吸平静下来，睁开眼；最后一句停在名字前。"
+                },
+                "tips": ""
+              },
+              "parent_id": 74
+            }
+          ]
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "id": 89,
+          "data": {
+            "name": "个人理解",
+            "type": "text",
+            "config_ref": "layers/text.toml",
+            "father": 73,
+            "axis": null,
+            "tips": "用文字记录自己的感受、情绪变化和表达取向，范围按实际含义安排；可关联歌词或含义推测。"
+          },
+          "parent_id": 73,
+          "children": [
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 90,
+              "data": {
+                "name": "用户的听感",
+                "config_ref": "objects/text.toml",
+                "layer": 89,
+                "begin": 0.0,
+                "end": 204.359,
+                "information": {
+                  "text": "萧瑟的秋天，残留着盛夏的余热，夏天早已过去，只能一遍遍寻觅，想找到某种证明却再也追不上。整首歌只有'我'在唱，一次次起调，走到边界之地，唱得撕心裂肺也看不见，是崩解感。可'我'不愿放弃也不愿沉沦，失败了就再找，像永不停歇的波浪；直到末尾波涛停下，不是找到了，只是海市蜃楼。鼓像心跳。间奏的奇特声音像演唱会的掌声，像鼓舞又像嘲弄，把痛苦和努力化作儿戏。热烈却空散，像落幕的烟火，想用热烈的体温盖住心里的空冷（寻寻觅觅，冷冷清清）。血是热的：只要不停下来，结果就还没到来。（用户，2026-10-19）"
+                },
+                "tips": ""
+              },
+              "parent_id": 89
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 91,
+              "data": {
+                "name": "核心",
+                "config_ref": "objects/text.toml",
+                "layer": 89,
+                "begin": 0.0,
+                "end": 204.359,
+                "information": {
+                  "text": "只要不停下来，结果就还没到来。这首歌不是在'找你'，是在'不让答案到来'；所有的热烈都是逃避。最后一句'你的名字是——'，答案要来的那一刻，歌停了。"
+                },
+                "tips": ""
+              },
+              "parent_id": 89
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 92,
+              "data": {
+                "name": "情绪线",
+                "config_ref": "objects/text.toml",
+                "layer": 89,
+                "begin": 0.0,
+                "end": 204.359,
+                "information": {
+                  "text": "前奏到 B1：秋天里找，越走越远；副歌一：第一次撞上边界；间奏一：晕眩，被推着向前；A3、B2：冷下来，想要一个能填满的形状；副歌二：更重地撞上；间奏二：整首歌最热的地方，她自己冲进幻觉；C 段：在顶点上突然冷下来，洞就是证明；副歌三：明知会碎也再起一次调；尾声：浪停了，海市蜃楼，停在名字出来之前。"
+                },
+                "tips": ""
+              },
+              "parent_id": 89
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 93,
+              "data": {
+                "name": "Claude：声音里听出来的",
+                "config_ref": "objects/text.toml",
+                "layer": 89,
+                "begin": 0.0,
+                "end": 204.359,
+                "information": {
+                  "text": "主歌是走路（鼓 + 贝斯 + 人声）；副歌是淹没（鼓退下，'其他'铺满，人声 0% 空白，她不换气）；间奏一几乎就是前奏（又回到起点）；间奏二先抽掉贝斯（地面塌了），2:30 贝斯回来（落地），2:33 起推高（跑），2:38.3–2:39.7 全曲唯一的静音（回头）；C 段整段没有贝斯，底鼓最重：歌本身空了一个洞；尾声一层层退掉，203.83 起静音。详见 03_草稿/自查/声音地图.png"
+                },
+                "tips": ""
+              },
+              "parent_id": 89
+            }
+          ]
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "id": 94,
+          "data": {
+            "name": "故事",
+            "type": "text",
+            "config_ref": "layers/text.toml",
+            "father": 73,
+            "axis": null,
+            "tips": "记录希望讲述的事件与人物变化，一段故事可跨多个镜头，不必沿用歌词或音乐段落的边界；可关联其理解依据。"
+          },
+          "parent_id": 73,
+          "children": [
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 95,
+              "data": {
+                "name": "前奏",
+                "config_ref": "objects/text.toml",
+                "layer": 94,
+                "begin": 0.0,
+                "end": 16.73,
+                "information": {
+                  "text": "秋天的早上，还有一点暖。夏天留下的东西：晒褪色的门票、窗台上一点残阳。她醒来，第一下起调。"
+                },
+                "tips": ""
+              },
+              "parent_id": 94
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 96,
+              "data": {
+                "name": "A1",
+                "config_ref": "objects/text.toml",
+                "layer": 94,
+                "begin": 16.73,
+                "end": 31.968,
+                "information": {
+                  "text": "她出门，第一道浪。走过夏天去过的地方，都换成了秋天的样子。记不起，只记得那张脸。"
+                },
+                "tips": ""
+              },
+              "parent_id": 94
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 97,
+              "data": {
+                "name": "A2",
+                "config_ref": "objects/text.toml",
+                "layer": 94,
+                "begin": 31.968,
+                "end": 47.207,
+                "information": {
+                  "text": "追着夜走，电车、天桥。天黑下来，雨开始落在眼睑上。"
+                },
+                "tips": ""
+              },
+              "parent_id": 94
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 98,
+              "data": {
+                "name": "B1",
+                "config_ref": "objects/text.toml",
+                "layer": 94,
+                "begin": 47.207,
+                "end": 64.35,
+                "information": {
+                  "text": "她第一次走到边界：夏天那个会场的门口，门锁着。犹豫：一无所知会不会伤到你；睡不着，你会笑吗。"
+                },
+                "tips": ""
+              },
+              "parent_id": 94
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 99,
+              "data": {
+                "name": "副歌一",
+                "config_ref": "objects/text.toml",
+                "layer": 94,
+                "begin": 64.35,
+                "end": 83.398,
+                "information": {
+                  "text": "第一次撞上边界。门后的幻觉漏出来，盛夏的光一下子涌满画面，又在'バイバイ'上碎掉。连你给的体温都忘了。"
+                },
+                "tips": ""
+              },
+              "parent_id": 94
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 100,
+              "data": {
+                "name": "间奏一",
+                "config_ref": "objects/text.toml",
+                "layer": 94,
+                "begin": 83.398,
+                "end": 91.017,
+                "information": {
+                  "text": "回到起点。间奏一的声音几乎就是前奏：前奏的构图原样回来（同一条地平线、同一片暖光、同一个远景），但画面在慢慢旋转、重影，像头晕；她在原地晃了一下。最后一拍猛地对正，切进 A3。（v5，取代 remix 稿）"
+                },
+                "tips": ""
+              },
+              "parent_id": 94
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 101,
+              "data": {
+                "name": "A3",
+                "config_ref": "objects/text.toml",
+                "layer": 94,
+                "begin": 91.017,
+                "end": 106.255,
+                "information": {
+                  "text": "冷下来，回到房间。甜甜圈第一次出现：她透过洞看出去，洞里是夏天。证明不了你存在。挤进毯子和床的缝隙。"
+                },
+                "tips": ""
+              },
+              "parent_id": 94
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 102,
+              "data": {
+                "name": "B2",
+                "config_ref": "objects/text.toml",
+                "layer": 94,
+                "begin": 106.255,
+                "end": 123.398,
+                "information": {
+                  "text": "想要一个答案。她把夏天的碎片摆满一地，想拼出'你'的形状：给我一个切实填满的形状。"
+                },
+                "tips": ""
+              },
+              "parent_id": 94
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 103,
+              "data": {
+                "name": "副歌二",
+                "config_ref": "objects/text.toml",
+                "layer": 94,
+                "begin": 123.398,
+                "end": 142.446,
+                "information": {
+                  "text": "第二次撞上边界，更重。拼好的形状缺一块，正好是中间那块。连你的声音都忘了。眼泪流出来。"
+                },
+                "tips": ""
+              },
+              "parent_id": 94
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 104,
+              "data": {
+                "name": "间奏二",
+                "config_ref": "objects/text.toml",
+                "layer": 94,
+                "begin": 142.446,
+                "end": 159.589,
+                "information": {
+                  "text": "整首歌最激烈的一段。2:22 贝斯消失，地面塌了，她往下掉；2:30 贝斯回来，落地，开始跑；2:33 起光往一个点涌，越跑越快；2:38.3 全曲唯一的静音，声音停了画面没停，她停住，回头。（v5，取代 remix 稿）"
+                },
+                "tips": ""
+              },
+              "parent_id": 94
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 105,
+              "data": {
+                "name": "C 段",
+                "config_ref": "objects/text.toml",
+                "layer": 94,
+                "begin": 159.589,
+                "end": 174.828,
+                "information": {
+                  "text": "顶点那一下，光全部熄灭。她站在空会场里，胸口的空就是你存在的唯一证明；可还是好空。安静，但还在动：最后几颗火星慢慢落。"
+                },
+                "tips": ""
+              },
+              "parent_id": 94
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 106,
+              "data": {
+                "name": "副歌三",
+                "config_ref": "objects/text.toml",
+                "layer": 94,
+                "begin": 174.828,
+                "end": 186.256,
+                "information": {
+                  "text": "最后一道浪。明知道会碎，她还是再起一次调，最用力的一次。又是'体温'，又是'拜拜'。"
+                },
+                "tips": ""
+              },
+              "parent_id": 94
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 107,
+              "data": {
+                "name": "鼓的过门",
+                "config_ref": "objects/text.toml",
+                "layer": 94,
+                "begin": 186.256,
+                "end": 189.351,
+                "information": {
+                  "text": "只有鼓，心跳冲到最满，画面跟着心跳冲向边界。"
+                },
+                "tips": ""
+              },
+              "parent_id": 94
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 108,
+              "data": {
+                "name": "尾声",
+                "config_ref": "objects/text.toml",
+                "layer": 94,
+                "begin": 189.351,
+                "end": 204.359,
+                "information": {
+                  "text": "浪停了，全片第一次真正安静。她闭着眼，呼吸合上了拍，睁开眼：海平线上浮着一片热气，好像有人站在那里。'你的名字是——'，画面在名字出来之前停住，全片唯一的静止。"
+                },
+                "tips": ""
+              },
+              "parent_id": 94
+            }
+          ]
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "id": 109,
+          "data": {
+            "name": "意象与表达",
+            "type": "text",
+            "config_ref": "layers/text.toml",
+            "father": 73,
+            "axis": null,
+            "tips": "用文字写意象、它代表什么及准备怎样被看见，例如物件、地点或动作；可 bind 到相关故事对象。"
+          },
+          "parent_id": 73,
+          "children": [
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 110,
+              "data": {
+                "name": "两种温度",
+                "config_ref": "objects/text.toml",
+                "layer": 109,
+                "begin": 0.0,
+                "end": 204.359,
+                "information": {
+                  "text": "秋天是现实（灰、冷蓝、褪色；她在走、在找）；盛夏是幻觉（暖橙、火光、过曝；热浪推着画面转、晕、冲）。"
+                },
+                "tips": ""
+              },
+              "parent_id": 109
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 111,
+              "data": {
+                "name": "浪",
+                "config_ref": "objects/text.toml",
+                "layer": 109,
+                "begin": 16.73,
+                "end": 186.256,
+                "information": {
+                  "text": "每一段都是一道浪：起调 → 往前找 → 在副歌的'バイバイ'撞上边界 → 碎掉 → 被间奏的热浪推着再来。画面一刻不停，直到尾声。"
+                },
+                "tips": ""
+              },
+              "parent_id": 109
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 112,
+              "data": {
+                "name": "边界之地",
+                "config_ref": "objects/text.toml",
+                "layer": 109,
+                "begin": 47.207,
+                "end": 83.398,
+                "information": {
+                  "text": "夏天那个海边会场的门口。门锁着，唱得再撕心裂肺也过不去。"
+                },
+                "tips": ""
+              },
+              "parent_id": 109
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 113,
+              "data": {
+                "name": "体温",
+                "config_ref": "objects/text.toml",
+                "layer": 109,
+                "begin": 64.35,
+                "end": 91.017,
+                "information": {
+                  "text": "副歌一被唱出来，间奏一在中心展开落下变灰，副歌三再唱一次。"
+                },
+                "tips": ""
+              },
+              "parent_id": 109
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 114,
+              "data": {
+                "name": "掌声与烟火",
+                "config_ref": "objects/text.toml",
+                "layer": 109,
+                "begin": 83.398,
+                "end": 91.017,
+                "information": {
+                  "text": "间奏的人声采样 = 演唱会的掌声，像鼓舞又像嘲弄。烟火只在两个间奏：第一次被动地看，第二次她自己冲进去。"
+                },
+                "tips": ""
+              },
+              "parent_id": 109
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 115,
+              "data": {
+                "name": "回眸",
+                "config_ref": "objects/text.toml",
+                "layer": 109,
+                "begin": 83.398,
+                "end": 91.017,
+                "information": {
+                  "text": "只出现两次。第一次带泪，戛然而止。"
+                },
+                "tips": ""
+              },
+              "parent_id": 109
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 116,
+              "data": {
+                "name": "掌声与烟火（高潮）",
+                "config_ref": "objects/text.toml",
+                "layer": 109,
+                "begin": 142.446,
+                "end": 159.589,
+                "information": {
+                  "text": "同上，第二次：她自己冲进幻觉，放声唱。"
+                },
+                "tips": ""
+              },
+              "parent_id": 109
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 117,
+              "data": {
+                "name": "回眸（回答）",
+                "config_ref": "objects/text.toml",
+                "layer": 109,
+                "begin": 189.351,
+                "end": 204.359,
+                "information": {
+                  "text": "第二次：睁眼，这一次没有切掉，一直看到名字出来前一刻。是对第一次的回答。"
+                },
+                "tips": ""
+              },
+              "parent_id": 109
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 118,
+              "data": {
+                "name": "海市蜃楼",
+                "config_ref": "objects/text.toml",
+                "layer": 109,
+                "begin": 189.351,
+                "end": 204.359,
+                "information": {
+                  "text": "浪停下不是因为找到了。盛夏的会场里好像有人在；停在名字之前。"
+                },
+                "tips": ""
+              },
+              "parent_id": 109
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "id": 119,
+      "data": {
+        "name": "图片控制",
+        "type": "text",
+        "config_ref": "layers/text.toml",
+        "father": null,
+        "axis": {
+          "unit": "second",
+          "precision": 0.001
+        },
+        "tips": "用画面设计、草图和样片验证表达。可用静态图、动态 SVG 或其他方式试作，按结果返回调整故事；源工程放资源管理，渲染的预演视频放动态样片。"
+      },
+      "parent_id": null,
+      "children": [
+        {
+          "kind": "layer",
+          "op": "add",
+          "id": 120,
+          "data": {
+            "name": "画面设计",
+            "type": "text",
+            "config_ref": "layers/text.toml",
+            "father": 119,
+            "axis": null,
+            "tips": "建议每镜一个文字对象：想产生什么感觉、地点光线、景别角度、构图留白、什么动或不动、需要哪些画面。其区间可作为该镜头草图的参照，可关联意象与表达。"
+          },
+          "parent_id": 119,
+          "children": [
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 411,
+              "data": {
+                "name": "前奏",
+                "config_ref": "objects/text.toml",
+                "layer": 120,
+                "begin": 0.0,
+                "end": 16.73,
+                "information": {
+                  "text": "黑场里一条海平线划开，裂成一条缝，缝里是夏天的会场，像睁眼。然后：墨色墙上一道斜窗光，门票是唯一暖的东西；窗形里看见黄昏的城，她背对着坐在床边；鞋抬起、落下，地平线从鞋底展开。"
+                },
+                "tips": ""
+              },
+              "parent_id": 120
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 413,
+              "data": {
+                "name": "A1",
+                "config_ref": "objects/text.toml",
+                "layer": 120,
+                "begin": 16.73,
+                "end": 31.968,
+                "information": {
+                  "text": "纸和墨。纸上一条墨线是地面，她走过去，第一句一字字印出来；低垂的脸在一个橙色的圆前；\"もう一回\"一行行往下叠；\"その顔\"是一张只剩头发轮廓的脸（五官被纸色抹掉）；巨大的\"思い出せない\"在她身后若隐若现。"
+                },
+                "tips": ""
+              },
+              "parent_id": 120
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 415,
+              "data": {
+                "name": "A2",
+                "config_ref": "objects/text.toml",
+                "layer": 120,
+                "begin": 31.968,
+                "end": 47.207,
+                "information": {
+                  "text": "纸上的地球仪，小电车绕着环线跑，字绕着环流，朝阳从球后升起；拉进真的高架；海堤上她逆着电车走，天一小节暗一档；\"何万回\"：格子里在走的她一拍翻倍 1→4→16→64；雨里仰头闭眼，后半句的字一个个熄灭。"
+                },
+                "tips": ""
+              },
+              "parent_id": 120
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 417,
+              "data": {
+                "name": "B1",
+                "config_ref": "objects/text.toml",
+                "layer": 120,
+                "begin": 47.207,
+                "end": 64.35,
+                "information": {
+                  "text": "夜，信息量降下来。锁着的门只从一条窄缝里看；手搭在栏杆上，栏杆的影子扫过；靠着门坐下（站 → 撑地 → 抱膝）；想笑的侧脸；隔栏的舞台灯一盏一盏亮，推进，白闪。"
+                },
+                "tips": ""
+              },
+              "parent_id": 120
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 419,
+              "data": {
+                "name": "副歌一",
+                "config_ref": "objects/text.toml",
+                "layer": 120,
+                "begin": 64.35,
+                "end": 83.398,
+                "information": {
+                  "text": "纯色的热、一个圆、光线；她站在光里唱，嘴型跟人声走；歌词连成带子从她身前身后流过；\"体温\"用真字形，军鼓那一下被切成两半；\"バイバイ\"手心朝上 → 合 → 攥紧，画面碎成斜窗格；空会场变成网点，点像火星一样往上飘；光里的脸唱最后一句，最后一拍光熄。"
+                },
+                "tips": ""
+              },
+              "parent_id": 120
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 421,
+              "data": {
+                "name": "间奏一",
+                "config_ref": "objects/text.toml",
+                "layer": 120,
+                "begin": 83.398,
+                "end": 91.017,
+                "information": {
+                  "text": "前奏的缝又出现，但在转、在重影，掌声采样上出故障；\"体温\"在中心展开、掉下来、变灰，落在地平线上弹一下；她回头（三张），眼里有泪，戛然而止。"
+                },
+                "tips": ""
+              },
+              "parent_id": 120
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 423,
+              "data": {
+                "name": "A3",
+                "config_ref": "objects/text.toml",
+                "layer": 120,
+                "begin": 91.017,
+                "end": 106.255,
+                "information": {
+                  "text": "桌上的甜甜圈，手伸进来；沿着洞画一圈虚线想\"只把洞切下来\"——切下来的只是桌面，原地留下真的黑洞；举起甜甜圈对着眼睛（三张）；透过洞只有洞里是夏天；被子和床的缝里，字被压扁。"
+                },
+                "tips": ""
+              },
+              "parent_id": 120
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 425,
+              "data": {
+                "name": "B2",
+                "config_ref": "objects/text.toml",
+                "layer": 120,
+                "begin": 106.255,
+                "end": 123.398,
+                "information": {
+                  "text": "俯拍，她跪坐在地板中间，夏天的东西一件件落下（带影子和小回弹）；看过曝的照片，白光吃掉画面；所有东西排成一个圈，中间空着，光从空里渗出来。"
+                },
+                "tips": ""
+              },
+              "parent_id": 120
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 427,
+              "data": {
+                "name": "副歌二",
+                "config_ref": "objects/text.toml",
+                "layer": 120,
+                "begin": 123.398,
+                "end": 142.446,
+                "information": {
+                  "text": "热浪更满，摆好的东西被卷起来绕着她飞；她唱（嘴型）；\"声\"：一条跟着人声起伏的波形，唱到\"いつか\"以后越来越平；抓住飞过的照片，照片烧成火星；空会场的网点之间漂着她的东西；泪从眼角滑下来，光暗下去。"
+                },
+                "tips": ""
+              },
+              "parent_id": 120
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 429,
+              "data": {
+                "name": "间奏二",
+                "config_ref": "objects/text.toml",
+                "layer": 120,
+                "begin": 142.446,
+                "end": 159.589,
+                "information": {
+                  "text": "地平线从中间断开；坠落（四张翻转），东西往上飞，镲是碎光；落地（鞋两张），地平线弹回；跑（八张循环）、光条；2:33 起半拍一切，朝镜头跑来的连续画（旧画风，用网屏统一）和奔跑特写交替；冲进白里；全曲唯一的静音里她回头。"
+                },
+                "tips": ""
+              },
+              "parent_id": 120
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 431,
+              "data": {
+                "name": "C 段",
+                "config_ref": "objects/text.toml",
+                "layer": 120,
+                "begin": 159.589,
+                "end": 174.828,
+                "information": {
+                  "text": "没有地平线。冷的虚空里她站着，胸口开一个洞，洞里是夏天；底鼓每一下画面一沉；手按胸口；\"虚しくて\"只有空心的字；\"千切れそうだ\"画面被切成竖条撕开，字也被切开。"
+                },
+                "tips": ""
+              },
+              "parent_id": 120
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 433,
+              "data": {
+                "name": "副歌三",
+                "config_ref": "objects/text.toml",
+                "layer": 120,
+                "begin": 174.828,
+                "end": 186.256,
+                "information": {
+                  "text": "热回来，她更近（半身唱）；\"体温\"这次是暗的，像烧焦；\"バイバイ\"这次手放下了。"
+                },
+                "tips": ""
+              },
+              "parent_id": 120
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 435,
+              "data": {
+                "name": "鼓的过门",
+                "config_ref": "objects/text.toml",
+                "layer": 120,
+                "begin": 186.256,
+                "end": 189.351,
+                "information": {
+                  "text": "不唱了，热烧到最满：过曝，只剩她的剪影，所有字的碎片往上烧。"
+                },
+                "tips": ""
+              },
+              "parent_id": 120
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 437,
+              "data": {
+                "name": "尾声",
+                "config_ref": "objects/text.toml",
+                "layer": 120,
+                "begin": 189.351,
+                "end": 204.359,
+                "information": {
+                  "text": "闭眼的特写，光一圈一圈往外退；会场冷下来，海平线在呼吸；睁眼（半睁、眨一下）；第二次完全睁开，镜头钻进瞳孔，瞳孔变成窗，窗里是海平线上的海市蜃楼；\"あなたの名前は\"，203.83 秒定格，全片唯一的静止。"
+                },
+                "tips": ""
+              },
+              "parent_id": 120
+            }
+          ]
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "id": 135,
+          "data": {
+            "name": "画面草图",
+            "type": "image",
+            "config_ref": "layers/image.toml",
+            "father": 119,
+            "axis": null,
+            "tips": "information.source 写草图图片或 SVG 文件路径，放在它表现的区间；可关联画面设计。一镜可以有多张草图，一张也可跨镜复用，不限定绘制方式。"
+          },
+          "parent_id": 119
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "id": 196,
+          "data": {
+            "name": "动态样片",
+            "type": "movie",
+            "config_ref": "layers/movie.toml",
+            "father": 119,
+            "axis": null,
+            "tips": "information.source 写已渲染的预演视频，覆盖实际表现的成片时间；可逐段或整段检查画面与音乐配合。SVG、代码等源工程放资源管理并用 bind 关联，想保留的旧版可移至候选与旧稿。"
+          },
+          "parent_id": 119
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "id": 211,
+          "data": {
+            "name": "原画",
+            "type": "image",
+            "config_ref": "layers/image.toml",
+            "father": 119,
+            "axis": null,
+            "tips": "information.source 写实际图片路径，对象放在成片使用它的区间，可关联草图和角色设定图。相同文件可被多个使用区间引用；生图技能只是可选制作方式。"
+          },
+          "parent_id": 119
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "id": 252,
+      "data": {
+        "name": "视频控制",
+        "type": "text",
+        "config_ref": "layers/text.toml",
+        "father": null,
+        "axis": {
+          "unit": "second",
+          "precision": 0.001
+        },
+        "tips": "安排镜头运动与实现方式，记录制作结果；按需使用或删除各子层。不同片段可以使用不同技术。"
+      },
+      "parent_id": null,
+      "children": [
+        {
+          "kind": "layer",
+          "op": "add",
+          "id": 253,
+          "data": {
+            "name": "镜头设计",
+            "type": "text",
+            "config_ref": "layers/text.toml",
+            "father": 252,
+            "axis": null,
+            "tips": "文字说明镜头怎样运动、为何运动、怎样衔接下一镜及对应的音乐位置；可关联画面设计和卡点。静态镜头也可使用。"
+          },
+          "parent_id": 252
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "id": 314,
+          "data": {
+            "name": "实现方式",
+            "type": "text",
+            "config_ref": "layers/text.toml",
+            "father": 252,
+            "axis": null,
+            "tips": "按实际片段记录图片、代码动画、视频生成或其他实现方法，以及文件和关键参数；可关联原画、代码和技术记录。按需查找已安装的 remotion-animate、video-generate 等技能。"
+          },
+          "parent_id": 252,
+          "children": [
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 412,
+              "data": {
+                "name": "前奏",
+                "config_ref": "objects/text.toml",
+                "layer": 314,
+                "begin": 0.0,
+                "end": 16.73,
+                "information": {
+                  "text": "缝 = 两条地平线之间的裁切；门票、背影是透明图，墙和窗光是纯色；窗光按军鼓一格一格挪。"
+                },
+                "tips": ""
+              },
+              "parent_id": 314
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 414,
+              "data": {
+                "name": "A1",
+                "config_ref": "objects/text.toml",
+                "layer": 314,
+                "begin": 16.73,
+                "end": 31.968,
+                "information": {
+                  "text": "走路四张一拍二轮换；脸部线稿用径向遮罩抹掉五官（\"你\"不出现）；电车光带扫过接 A2。"
+                },
+                "tips": ""
+              },
+              "parent_id": 314
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 416,
+              "data": {
+                "name": "A2",
+                "config_ref": "objects/text.toml",
+                "layer": 314,
+                "begin": 31.968,
+                "end": 47.207,
+                "information": {
+                  "text": "环线文字用 SVG textPath；海堤是整张画（要说话的地方），迎风走三张循环、水平翻转。"
+                },
+                "tips": ""
+              },
+              "parent_id": 314
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 418,
+              "data": {
+                "name": "B1",
+                "config_ref": "objects/text.toml",
+                "layer": 314,
+                "begin": 47.207,
+                "end": 64.35,
+                "information": {
+                  "text": "坐下三张落在拍上，换张时往下一沉；栏杆是代码画的墨色竖条。"
+                },
+                "tips": ""
+              },
+              "parent_id": 314
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 420,
+              "data": {
+                "name": "副歌一",
+                "config_ref": "objects/text.toml",
+                "layer": 314,
+                "begin": 64.35,
+                "end": 83.398,
+                "information": {
+                  "text": "对口型：闭 / 小 / 大三张嘴，人声响度一拍二取样；字形切开用 glyph-deform；会场网点用 image-halftone。"
+                },
+                "tips": ""
+              },
+              "parent_id": 314
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 422,
+              "data": {
+                "name": "间奏一",
+                "config_ref": "objects/text.toml",
+                "layer": 314,
+                "begin": 83.398,
+                "end": 91.017,
+                "information": {
+                  "text": "回眸 = 背后三张透明图；泪 = 蓄泪 / 滑下两张。"
+                },
+                "tips": ""
+              },
+              "parent_id": 314
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 424,
+              "data": {
+                "name": "A3",
+                "config_ref": "objects/text.toml",
+                "layer": 314,
+                "begin": 91.017,
+                "end": 106.255,
+                "information": {
+                  "text": "洞 = clip-path 椭圆；字压扁 = scaleY 跟着缝的宽度。"
+                },
+                "tips": ""
+              },
+              "parent_id": 314
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 426,
+              "data": {
+                "name": "B2",
+                "config_ref": "objects/text.toml",
+                "layer": 314,
+                "begin": 106.255,
+                "end": 123.398,
+                "information": {
+                  "text": "物件是八张透明图，位置和旋转写在代码里；圈 = 插值到圆周。"
+                },
+                "tips": ""
+              },
+              "parent_id": 314
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 428,
+              "data": {
+                "name": "副歌二",
+                "config_ref": "objects/text.toml",
+                "layer": 314,
+                "begin": 123.398,
+                "end": 142.446,
+                "information": {
+                  "text": "波形读人声分轨的响度；火星是 Canvas 粒子。"
+                },
+                "tips": ""
+              },
+              "parent_id": 314
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 430,
+              "data": {
+                "name": "间奏二",
+                "config_ref": "objects/text.toml",
+                "layer": 314,
+                "begin": 142.446,
+                "end": 159.589,
+                "information": {
+                  "text": "跑步一拍二；旧画风的连续画加灰阶 + 网点统一。"
+                },
+                "tips": ""
+              },
+              "parent_id": 314
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 432,
+              "data": {
+                "name": "C 段",
+                "config_ref": "objects/text.toml",
+                "layer": 314,
+                "begin": 159.589,
+                "end": 174.828,
+                "information": {
+                  "text": "胸口的洞 = 圆形裁切里放会场的画；空心字 = 字形描边不填色。"
+                },
+                "tips": ""
+              },
+              "parent_id": 314
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 434,
+              "data": {
+                "name": "副歌三",
+                "config_ref": "objects/text.toml",
+                "layer": 314,
+                "begin": 174.828,
+                "end": 186.256,
+                "information": {
+                  "text": "同副歌一的部件，取景更近。"
+                },
+                "tips": ""
+              },
+              "parent_id": 314
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 436,
+              "data": {
+                "name": "鼓的过门",
+                "config_ref": "objects/text.toml",
+                "layer": 314,
+                "begin": 186.256,
+                "end": 189.351,
+                "information": {
+                  "text": "剪影 = 唱歌那张透明图 brightness(0)。"
+                },
+                "tips": ""
+              },
+              "parent_id": 314
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 438,
+              "data": {
+                "name": "尾声",
+                "config_ref": "objects/text.toml",
+                "layer": 314,
+                "begin": 189.351,
+                "end": 204.359,
+                "information": {
+                  "text": "瞳孔窗 = 圆形裁切从瞳孔中心放大；定格 = 时刻钳在 203.83。"
+                },
+                "tips": ""
+              },
+              "parent_id": 314
+            }
+          ]
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "id": 375,
+          "data": {
+            "name": "首尾帧",
+            "type": "image",
+            "config_ref": "layers/image.toml",
+            "father": 252,
+            "axis": null,
+            "tips": "需要时记录首帧、尾帧或关键帧图片，information.source 写路径；可用 begin=end 表示发生位置，用名称或 tips 区分用途，并关联对应镜头。"
+          },
+          "parent_id": 252
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "id": 376,
+          "data": {
+            "name": "模型",
+            "type": "model",
+            "config_ref": "layers/model.toml",
+            "father": 252,
+            "axis": null,
+            "tips": "可选：角色模型或骨架等资源，按实际使用区间安排；并非填写调用哪个 AI 模型。字段按需查模型对象 help。"
+          },
+          "parent_id": 252
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "id": 377,
+          "data": {
+            "name": "动作",
+            "type": "active",
+            "config_ref": "layers/active.toml",
+            "father": 252,
+            "axis": null,
+            "tips": "可选：驱动模型或图片的动作数据，可 bind 到被驱动的具体对象；字段按需查动作对象 help，也可查已安装的 puppet-motion 技能。"
+          },
+          "parent_id": 252
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "id": 378,
+          "data": {
+            "name": "成片（总览静帧）",
+            "type": "image",
+            "config_ref": "layers/image.toml",
+            "father": 252,
+            "axis": null,
+            "tips": "information.source 写已渲染的分段或整片视频，区间对应其成片位置，可关联实现方式；可按需使用已安装的 video-verify 技能检查。候选版本可另放候选与旧稿。"
+          },
+          "parent_id": 252,
+          "children": [
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 439,
+              "data": {
+                "name": "全片 · 手书版 v10",
+                "config_ref": "objects/image.toml",
+                "layer": 378,
+                "begin": 0.0,
+                "end": 204.359,
+                "information": {
+                  "source": "assets/preview/overview.jpg",
+                  "text": "无歌词重渲染总览：从网页源工程关闭歌词与字形效果，保留时间数据，选取 32 个时刻。公开版只展示静帧，不附原视频；原资源位置保存在 original_media 中供恢复参考。",
+                  "original_media": {
+                    "config_ref": "objects/movie.toml",
+                    "source": "assets/film/donut-hole_v10_720p.mp4"
+                  }
+                },
+                "tips": ""
+              },
+              "parent_id": 378
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "layer",
+      "op": "add",
+      "id": 379,
+      "data": {
+        "name": "资源管理",
+        "type": "text",
+        "config_ref": "layers/text.toml",
+        "father": null,
+        "axis": {
+          "unit": "序号",
+          "precision": 1
+        },
+        "tips": "收藏与成片时间无关的设定、参考和源工程。建议第 n 条占 [n,n+1)，n 从 1 起，只表示顺序，不是数据库 ID；根层可放文字设定。制作对象可用 bind 指向具体资料。"
+      },
+      "parent_id": null,
+      "children": [
+        {
+          "kind": "object",
+          "op": "add",
+          "id": 440,
+          "data": {
+            "name": "一句话",
+            "config_ref": "objects/text.toml",
+            "layer": 379,
+            "begin": 1.0,
+            "end": 2.0,
+            "information": {
+              "text": "只要不停下来，结果就还没到来。夏天结束后，她一遍遍去找一个想不起的人；每一段都是一道浪：起调、往前找、撞上\"バイバイ\"、碎掉、再来。歌停在名字之前。"
+            },
+            "tips": ""
+          },
+          "parent_id": 379
+        },
+        {
+          "kind": "object",
+          "op": "add",
+          "id": 441,
+          "data": {
+            "name": "规矩",
+            "config_ref": "objects/text.toml",
+            "layer": 379,
+            "begin": 2.0,
+            "end": 3.0,
+            "information": {
+              "text": "\"你\"从不出现，只留痕迹（看不清的脸、空着的位置、夏天的东西）。\n人物只平移、推近，不把画掰歪。\n底可以是纯色或纸；整张插画只留给要说话的那几下。\n颜色只有两个方向：秋（灰、褪色的蓝、墨和纸）和热（橙、火光）。"
+            },
+            "tips": ""
+          },
+          "parent_id": 379
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "id": 384,
+          "data": {
+            "name": "角色设定图",
+            "type": "image",
+            "config_ref": "layers/image.toml",
+            "father": 379,
+            "axis": null,
+            "tips": "information.source 写设定图、三视图或色板路径，名称和 tips 说明角色与版本；文字设定可放资源管理根层，使用它的原画可关联过来。"
+          },
+          "parent_id": 379,
+          "children": [
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 385,
+              "data": {
+                "name": "她 · 正面",
+                "config_ref": "objects/image.toml",
+                "layer": 384,
+                "begin": 1.0,
+                "end": 2.0,
+                "information": {
+                  "source": "assets/character/她_定-01_01_正面.png"
+                },
+                "tips": ""
+              },
+              "parent_id": 384
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 386,
+              "data": {
+                "name": "她 · 四分之三",
+                "config_ref": "objects/image.toml",
+                "layer": 384,
+                "begin": 2.0,
+                "end": 3.0,
+                "information": {
+                  "source": "assets/character/她_定-01_02_四分之三.png"
+                },
+                "tips": ""
+              },
+              "parent_id": 384
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 387,
+              "data": {
+                "name": "她 · 侧面",
+                "config_ref": "objects/image.toml",
+                "layer": 384,
+                "begin": 3.0,
+                "end": 4.0,
+                "information": {
+                  "source": "assets/character/她_定-01_03_侧面.png"
+                },
+                "tips": ""
+              },
+              "parent_id": 384
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 388,
+              "data": {
+                "name": "她 · 背面",
+                "config_ref": "objects/image.toml",
+                "layer": 384,
+                "begin": 4.0,
+                "end": 5.0,
+                "information": {
+                  "source": "assets/character/她_定-01_04_背面.png"
+                },
+                "tips": ""
+              },
+              "parent_id": 384
+            }
+          ]
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "id": 389,
+          "data": {
+            "name": "图片参考",
+            "type": "image",
+            "config_ref": "layers/image.toml",
+            "father": 379,
+            "axis": null,
+            "tips": "收藏风格、构图、场景等参考和未采用的候选图片，information.source 写路径；无需先决定成片时间，采用后由制作对象关联。"
+          },
+          "parent_id": 379
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "id": 390,
+          "data": {
+            "name": "视频参考（外部链接）",
+            "type": "text",
+            "config_ref": "layers/text.toml",
+            "father": 379,
+            "axis": null,
+            "tips": "收藏运动、节奏等视频参考，information.source 写路径；这里 begin/end 表示列表位置，不是媒体片长或使用时间。"
+          },
+          "parent_id": 379,
+          "children": [
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 391,
+              "data": {
+                "name": "请聆听我的瑕疵（原神手书）",
+                "config_ref": "objects/text.toml",
+                "layer": 390,
+                "begin": 1.0,
+                "end": 2.0,
+                "information": {
+                  "text": "灰阶加一种点缀色；极端特写；象征物做成静止的画面\n外部参考页面（需联网）：https://www.bilibili.com/video/BV18U4y1K7ob/",
+                  "url": "https://www.bilibili.com/video/BV18U4y1K7ob/",
+                  "original_media": {
+                    "config_ref": "objects/movie.toml",
+                    "source": "https://www.bilibili.com/video/BV18U4y1K7ob/"
+                  }
+                },
+                "tips": ""
+              },
+              "parent_id": 390
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 392,
+              "data": {
+                "name": "春嵐（PV 练习）",
+                "config_ref": "objects/text.toml",
+                "layer": 390,
+                "begin": 2.0,
+                "end": 3.0,
+                "information": {
+                  "text": "黄加蓝；动态排版撑起全片；0.25–0.5 秒一切\n外部参考页面（需联网）：https://www.bilibili.com/video/BV1EY411d77Z/",
+                  "url": "https://www.bilibili.com/video/BV1EY411d77Z/",
+                  "original_media": {
+                    "config_ref": "objects/movie.toml",
+                    "source": "https://www.bilibili.com/video/BV1EY411d77Z/"
+                  }
+                },
+                "tips": ""
+              },
+              "parent_id": 390
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 393,
+              "data": {
+                "name": "恍惚（洛天依）",
+                "config_ref": "objects/text.toml",
+                "layer": 390,
+                "begin": 3.0,
+                "end": 4.0,
+                "information": {
+                  "text": "无线稿平涂，每场一套颜色；长时间几乎不动的停留\n外部参考页面（需联网）：https://www.bilibili.com/video/BV1sR4y1D7z4/",
+                  "url": "https://www.bilibili.com/video/BV1sR4y1D7z4/",
+                  "original_media": {
+                    "config_ref": "objects/movie.toml",
+                    "source": "https://www.bilibili.com/video/BV1sR4y1D7z4/"
+                  }
+                },
+                "tips": ""
+              },
+              "parent_id": 390
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 394,
+              "data": {
+                "name": "被生命所厌恶（星尘）",
+                "config_ref": "objects/text.toml",
+                "layer": 390,
+                "begin": 4.0,
+                "end": 5.0,
+                "information": {
+                  "text": "纯排版：竖排衬线字、红色强调、副歌硬切大字\n外部参考页面（需联网）：https://www.bilibili.com/video/BV1UkwheaE5k/",
+                  "url": "https://www.bilibili.com/video/BV1UkwheaE5k/",
+                  "original_media": {
+                    "config_ref": "objects/movie.toml",
+                    "source": "https://www.bilibili.com/video/BV1UkwheaE5k/"
+                  }
+                },
+                "tips": ""
+              },
+              "parent_id": 390
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 395,
+              "data": {
+                "name": "十重告别",
+                "config_ref": "objects/text.toml",
+                "layer": 390,
+                "begin": 5.0,
+                "end": 6.0,
+                "information": {
+                  "text": "灰加红；几何色带；人物立绘斜放；标签框字幕\n外部参考页面（需联网）：https://www.bilibili.com/video/BV1k3S7BkEag/",
+                  "url": "https://www.bilibili.com/video/BV1k3S7BkEag/",
+                  "original_media": {
+                    "config_ref": "objects/movie.toml",
+                    "source": "https://www.bilibili.com/video/BV1k3S7BkEag/"
+                  }
+                },
+                "tips": ""
+              },
+              "parent_id": 390
+            }
+          ]
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "id": 396,
+          "data": {
+            "name": "代码与源工程",
+            "type": "text",
+            "config_ref": "layers/text.toml",
+            "father": 379,
+            "axis": null,
+            "tips": "一个工程或脚本可用一个条目，information.text 记录文件位置、用途和运行方式；包括 SVG、动画工程等。制作对象可 bind 到具体条目。"
+          },
+          "parent_id": 379,
+          "children": [
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 442,
+              "data": {
+                "name": "网页原型（v10）",
+                "config_ref": "objects/text.toml",
+                "layer": 396,
+                "begin": 3.0,
+                "end": 4.0,
+                "information": {
+                  "text": "source/：Vite + React。画面只由时刻 t 决定（src/core/time.ts、clock.tsx）；src/v10/kit.tsx 是部件（色场、地平线、粒子、窗、字、网点、效果），parts.tsx 是人物（站位、循环、对口型），s1–s4 是各段。素材在 assets/public/v9/，位置写在 src/data/v9_assets.json。"
+                },
+                "tips": ""
+              },
+              "parent_id": 396
+            }
+          ]
+        },
+        {
+          "kind": "layer",
+          "op": "add",
+          "id": 401,
+          "data": {
+            "name": "技术记录",
+            "type": "text",
+            "config_ref": "layers/text.toml",
+            "father": 379,
+            "axis": null,
+            "tips": "information.text 记录可复用的方法、参数和经验，按条目排序；具体片段的实现方式可关联到这里。"
+          },
+          "parent_id": 379,
+          "children": [
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 443,
+              "data": {
+                "name": "对口型：只换嘴",
+                "config_ref": "objects/text.toml",
+                "layer": 401,
+                "begin": 4.0,
+                "end": 5.0,
+                "information": {
+                  "text": "嘴型变体用原图当参考图生成（gpt-image-2），只取嘴部一小块：模板匹配对齐、在嘴周围的环上校色、羽化椭圆贴回原图，脸的其他像素不动（scripts/lip_patch.py）。侧脸生成对不上时，改用原图修补：张嘴处 inpaint 成闭嘴、画一条嘴线；半张 = 原图的张嘴压扁。播放时按人声分轨的响度一拍二取样换嘴。"
+                },
+                "tips": ""
+              },
+              "parent_id": 401
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 444,
+              "data": {
+                "name": "画当零件",
+                "config_ref": "objects/text.toml",
+                "layer": 401,
+                "begin": 5.0,
+                "end": 6.0,
+                "information": {
+                  "text": "素材按编号取：透明图裁到内容边界并记下它在原构图里的位置，背景图存 1.5 倍（scripts/prep_v9.py）。代码按\"脚底中心\"或原位置摆放，所以同一组姿势换张时不会跳。"
+                },
+                "tips": ""
+              },
+              "parent_id": 401
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 445,
+              "data": {
+                "name": "网点与字形",
+                "config_ref": "objects/text.toml",
+                "layer": 401,
+                "begin": 6.0,
+                "end": 7.0,
+                "information": {
+                  "text": "空会场用 image-halftone 转成点（带每颗点的坐标和半径），Canvas 逐颗画，可以让点散开往上飘。\"体温\"\"千切れそうだ\"\"虚しくて\"\"あなたの名前は\"用 glyph-deform 导出的字形轮廓画：先沿直线切开再分开、只描边不填色。"
+                },
+                "tips": ""
+              },
+              "parent_id": 401
+            },
+            {
+              "kind": "object",
+              "op": "add",
+              "id": 446,
+              "data": {
+                "name": "出片",
+                "config_ref": "objects/text.toml",
+                "layer": 401,
+                "begin": 7.0,
+                "end": 8.0,
+                "information": {
+                  "text": "无头浏览器按全局帧号逐帧截图（scripts/capture_frames.mjs，分块并行），ffmpeg 合成并配上歌曲。审片：每秒取一帧拼总览，停住 ≥2 秒的地方为 0。"
+                },
+                "tips": ""
+              },
+              "parent_id": 401
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "records": [
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 82,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 411,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 59,
+        "tips": "这段画面对应的歌曲段落"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 83,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 411,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 95,
+        "tips": "画面依据的故事"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 84,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 412,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 411,
+        "tips": "这段画面怎么做出来"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 85,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 413,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 60,
+        "tips": "这段画面对应的歌曲段落"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 86,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 413,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 96,
+        "tips": "画面依据的故事"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 87,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 414,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 413,
+        "tips": "这段画面怎么做出来"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 88,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 415,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 61,
+        "tips": "这段画面对应的歌曲段落"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 89,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 415,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 97,
+        "tips": "画面依据的故事"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 90,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 416,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 415,
+        "tips": "这段画面怎么做出来"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 91,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 417,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 62,
+        "tips": "这段画面对应的歌曲段落"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 92,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 417,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 98,
+        "tips": "画面依据的故事"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 93,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 418,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 417,
+        "tips": "这段画面怎么做出来"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 94,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 419,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 63,
+        "tips": "这段画面对应的歌曲段落"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 95,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 419,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 99,
+        "tips": "画面依据的故事"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 96,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 420,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 419,
+        "tips": "这段画面怎么做出来"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 97,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 421,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 64,
+        "tips": "这段画面对应的歌曲段落"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 98,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 421,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 100,
+        "tips": "画面依据的故事"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 99,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 422,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 421,
+        "tips": "这段画面怎么做出来"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 100,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 423,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 65,
+        "tips": "这段画面对应的歌曲段落"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 101,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 423,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 101,
+        "tips": "画面依据的故事"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 102,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 424,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 423,
+        "tips": "这段画面怎么做出来"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 103,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 425,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 66,
+        "tips": "这段画面对应的歌曲段落"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 104,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 425,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 102,
+        "tips": "画面依据的故事"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 105,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 426,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 425,
+        "tips": "这段画面怎么做出来"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 106,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 427,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 67,
+        "tips": "这段画面对应的歌曲段落"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 107,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 427,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 103,
+        "tips": "画面依据的故事"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 108,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 428,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 427,
+        "tips": "这段画面怎么做出来"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 109,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 429,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 68,
+        "tips": "这段画面对应的歌曲段落"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 110,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 429,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 104,
+        "tips": "画面依据的故事"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 111,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 430,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 429,
+        "tips": "这段画面怎么做出来"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 112,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 431,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 69,
+        "tips": "这段画面对应的歌曲段落"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 113,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 431,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 105,
+        "tips": "画面依据的故事"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 114,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 432,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 431,
+        "tips": "这段画面怎么做出来"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 115,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 433,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 70,
+        "tips": "这段画面对应的歌曲段落"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 116,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 433,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 106,
+        "tips": "画面依据的故事"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 117,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 434,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 433,
+        "tips": "这段画面怎么做出来"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 118,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 435,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 71,
+        "tips": "这段画面对应的歌曲段落"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 119,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 435,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 107,
+        "tips": "画面依据的故事"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 120,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 436,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 435,
+        "tips": "这段画面怎么做出来"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 121,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 437,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 72,
+        "tips": "这段画面对应的歌曲段落"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 122,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 437,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 108,
+        "tips": "画面依据的故事"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 123,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 438,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 437,
+        "tips": "这段画面怎么做出来"
+      }
+    },
+    {
+      "kind": "bind",
+      "op": "add",
+      "id": 124,
+      "data": {
+        "source_kind": "object",
+        "source_project_id": 1,
+        "source_id": 439,
+        "target_kind": "object",
+        "target_project_id": 1,
+        "target_id": 442,
+        "tips": "成片由这个源工程渲染"
+      }
+    }
+  ],
+  "external_references": [],
+  "counts": {
+    "layer": 29,
+    "object": 101,
+    "bind": 43
+  },
+  "omitted_tool_records": {}
+}

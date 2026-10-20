@@ -2,6 +2,8 @@
 
 [简体中文](README.md) | **English**
 
+**0.7.8 public preview · Windows**
+
 Organize content into layers, objects, and relations so AI agents and programs can read, edit, and extend a project on demand.
 
 LayerWeave provides a Python API, command-line tools, MCP integration, and a local web view. It can represent subtitles, storyboards, illustrated music videos, asset lists, and ordered information. Objects hold content and positions; layers organize them; relations connect entries; axes explain what position values mean.
@@ -20,7 +22,7 @@ The interface supports Chinese and English; user content is left unchanged. Medi
 
 The initial supported platform is Windows. The code requires Python 3.11+ and SQLite 3.35+; these examples use Python 3.11. [uv](https://docs.astral.sh/uv/getting-started/installation/) can prepare Python and the environment for you, or you can use an existing Python installation. Node is not needed to use the web view.
 
-### Install the complete package
+### Install the complete package with uv
 
 Obtain `layerweave-0.7.8-py3-none-any.whl` and place it in your chosen working directory. After installing uv, run these commands in PowerShell from that directory:
 
@@ -42,7 +44,27 @@ python -X utf8 -m venv .venv
 
 The wheel is already built, so installing LayerWeave itself does not require setuptools. The `[mcp]` dependencies may still need downloading; the wheel is not a complete offline environment. Editable installation is for source development. If it stalls while preparing build dependencies, see [source installation troubleshooting (Chinese)](docs/developer-conventions.md#可编辑安装与构建依赖).
 
-### Create a project and open the view
+### Start with the article-reading example
+
+Copy `examples/showcases` from the matching source distribution, or extract the examples ZIP into an `examples` folder in your working directory. The result should include `examples/showcases/article-reading/project.json`. Examples are separate from the installed software. Start with article reading; the [case directory](examples/showcases/README.md) lists all twelve examples and their prerequisites.
+
+Run these commands from the working directory where you installed the wheel:
+
+```powershell
+.venv/Scripts/python.exe -X utf8 -m layerweave.tool.builtin.developer.database.cli examples/showcases/article-reading/reading.sqlite3
+.venv/Scripts/python.exe -X utf8 -m layerweave.tool.builtin.usage.exchange.cli apply examples/showcases/article-reading/reading.sqlite3 --data-file examples/showcases/article-reading/project.json --new-project --result-file import-result.json
+$caseImport = Get-Content -Raw -Encoding utf8 import-result.json | ConvertFrom-Json
+if (-not $caseImport.ok) { throw 'Import failed; inspect import-result.json' }
+$caseProjectId = $caseImport.data.project_id
+.venv/Scripts/python.exe -X utf8 -m layerweave.tool.builtin.usage.query.project_overview examples/showcases/article-reading/reading.sqlite3 $caseProjectId
+.venv/Scripts/python.exe -X utf8 -m layerweave.tool.builtin.view.server examples/showcases/article-reading/reading.sqlite3 --project $caseProjectId
+```
+
+Open the local URL printed by the server. Read the original essay and its interpretations, then follow a claim to its evidence and illustrations. The [article-reading guide (Chinese)](examples/showcases/article-reading/README.md) provides five focused reading tasks. Keep the database in the case directory so relative image paths resolve. Use the returned project ID; importing again creates another project.
+
+This starter case needs no API key, FFmpeg, Node, or view plugin. Local content is in Chinese and works offline; following external article links needs internet access. The hand-drawn MV and H3 cases use still images for offline reading, with no video or audio files in the public case package.
+
+### Create your own project
 
 ```powershell
 .venv/Scripts/python.exe -X utf8 -m layerweave.tool.builtin.developer.database.cli project.sqlite3
@@ -50,14 +72,9 @@ The wheel is already built, so installing LayerWeave itself does not require set
 .venv/Scripts/python.exe -X utf8 -m layerweave.tool.builtin.usage.exchange.cli apply project.sqlite3 --template subtitles --new-project
 ```
 
-Templates cover subtitles, storyboards, and illustrated music videos. Their structure can be freely adapted. The import result includes the project ID; replace `PROJECT_ID` below with that value:
+Templates cover subtitles, storyboards, and illustrated music videos. Their structure can be freely adapted. Pass the returned project ID to the view or query tools; use help for their parameters.
 
-```powershell
-.venv/Scripts/python.exe -X utf8 -m layerweave.tool.builtin.usage.query.project_overview project.sqlite3 PROJECT_ID
-.venv/Scripts/python.exe -X utf8 -m layerweave.tool.builtin.view.server project.sqlite3 --project PROJECT_ID
-```
-
-Open the local URL printed by the server. FFmpeg is an optional external program installed by the user; the wheel, `[mcp]`, and uv do not install it automatically. Ordinary data management and text views do not need it. Server-side frame extraction requires FFmpeg; thumbnails and waveforms also use it. Some browsing features fall back when it is absent, potentially loading more media data. After installing FFmpeg, add its bin directory to PATH or set `FFMPEG` to the full path of ffmpeg.exe (for example, `D:/tools/ffmpeg/bin/ffmpeg.exe`). See [setup and affected features (Chinese)](src/layerweave/tool/builtin/view/GUIDE.md#选装-ffmpeg). AI screenshots also require Chrome, Edge, or Chromium. The user or AI chooses the media output directories.
+FFmpeg is an optional external program installed by the user; the wheel, `[mcp]`, and uv do not install it automatically. Ordinary data management and text views do not need it. Server-side frame extraction requires FFmpeg; thumbnails and waveforms also use it, with some browsing fallbacks when absent. Add its bin directory to PATH or set `FFMPEG` to the full path of ffmpeg.exe; see [setup and affected features (Chinese)](src/layerweave/tool/builtin/view/GUIDE.md#选装-ffmpeg). AI screenshots also require Chrome, Edge, or Chromium. The user or AI chooses the media output directories.
 
 ## Connect an AI / MCP client
 

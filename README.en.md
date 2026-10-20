@@ -40,6 +40,8 @@ python -X utf8 -m venv .venv
 
 `[mcp]` adds the optional dependencies for AI integration. Omit it for Python/CLI-only use. Installing the package does not install the official view plugins. These commands use a local wheel and do not assume that this version is available on PyPI.
 
+The wheel is already built, so installing LayerWeave itself does not require setuptools. The `[mcp]` dependencies may still need downloading; the wheel is not a complete offline environment. Editable installation is for source development. If it stalls while preparing build dependencies, see [source installation troubleshooting (Chinese)](docs/developer-conventions.md#可编辑安装与构建依赖).
+
 ### Create a project and open the view
 
 ```powershell
@@ -55,7 +57,7 @@ Templates cover subtitles, storyboards, and illustrated music videos. Their stru
 .venv/Scripts/python.exe -X utf8 -m layerweave.tool.builtin.view.server project.sqlite3 --project PROJECT_ID
 ```
 
-Open the local URL printed by the server. Relevant audio/video operations use FFmpeg, supplied through PATH or the `FFMPEG` environment variable. AI screenshots also require Chrome, Edge, or Chromium. The user or AI chooses the media output directories.
+Open the local URL printed by the server. FFmpeg is an optional external program installed by the user; the wheel, `[mcp]`, and uv do not install it automatically. Ordinary data management and text views do not need it. Server-side frame extraction requires FFmpeg; thumbnails and waveforms also use it. Some browsing features fall back when it is absent, potentially loading more media data. After installing FFmpeg, add its bin directory to PATH or set `FFMPEG` to the full path of ffmpeg.exe (for example, `D:/tools/ffmpeg/bin/ffmpeg.exe`). See [setup and affected features (Chinese)](src/layerweave/tool/builtin/view/GUIDE.md#选装-ffmpeg). AI screenshots also require Chrome, Edge, or Chromium. The user or AI chooses the media output directories.
 
 ## Connect an AI / MCP client
 

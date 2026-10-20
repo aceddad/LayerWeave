@@ -80,7 +80,29 @@ DATABASE 替换为实际数据库路径，PROJECT_ID 替换为已存在项目编
 
 文件路径：`information.source` 是绝对路径就直接用，是相对路径就相对于数据库文件所在的目录；网址不经本机服务提供。服务只提供数据库里引用过、而且确实存在的文件，支持 Range 请求，所以视频可以拖动进度。
 
-视频画面：本机有 ffmpeg（在 PATH 里，或用环境变量 `FFMPEG` 指定）时，封面和"此刻"的画面由服务端抽帧，结果稳定，截图也拍得到；没有 ffmpeg 时，交给浏览器自己解码。
+## 选装 FFmpeg
+
+FFmpeg 是外部可执行程序，不随 LayerWeave wheel 提供，安装 mcp extra 或使用 uv 也不会自动装入它。由使用者按需安装；基础数据读写、文本展示和关联管理不依赖它。
+
+| 功能 | 有 FFmpeg | 没有 FFmpeg |
+|---|---|---|
+| 图片缩略图 | 服务端按需缩小并缓存；SVG/GIF 保留原图 | 发送原图，加载量可能更大 |
+| 音频波形 | 服务端计算并缓存波形数据 | 浏览器下载音频并尝试解码，受支持格式限制 |
+| 视频封面与当前帧的浏览 | 服务端抽帧 | 回退到浏览器解码，受支持格式及加载进度限制 |
+| view_frame 提取一帧 | 可以执行 | 明确报告找不到 FFmpeg |
+
+Windows 用户可从 [FFmpeg 官方下载页](https://ffmpeg.org/download.html)列出的 Windows 构建来源获取并解压。需要能运行的 ffmpeg.exe；安装同名 Python 包不能代替它。将其 bin 目录加入 PATH，或在启动 LayerWeave 的 PowerShell 中设置实际可执行文件路径：
+
+```powershell
+$env:FFMPEG = 'D:/tools/ffmpeg/bin/ffmpeg.exe'
+& $env:FFMPEG -version
+```
+
+路径换成自己的安装位置；FFMPEG 指向文件，不是 bin 目录。在同一窗口启动视图服务即可继承这个变量。若使用 PATH，可运行 `ffmpeg -version` 验证；修改系统环境变量后，重新启动原来已打开的终端或 MCP 客户端。
+
+若由 MCP 客户端启动，在该客户端的 LayerWeave 服务项 env 中加入 `"FFMPEG": "D:/tools/ffmpeg/bin/ffmpeg.exe"`，保留其他环境变量，再重启服务。这里是客户端启动配置，不是 LayerWeave 的 mcp.json；完整配置入口见[MCP 安装与启动](../shared/mcp/README.md#安装与启动)。程序优先采用有效的 FFMPEG 文件路径，其次查 PATH；磁盘上有文件但这两个入口都未提供时，程序仍会认为未安装。
+
+外置技能另有依赖时，以各自 SKILL.md 为准。FFmpeg 不会代替 AI 截图需要的 Chrome、Edge 或 Chromium。
 
 ## 给 AI 用
 

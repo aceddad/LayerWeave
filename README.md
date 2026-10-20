@@ -40,6 +40,8 @@ python -X utf8 -m venv .venv
 
 `[mcp]` 安装 AI 接入需要的可选依赖；只用 Python/CLI 时可以去掉。安装不会自动装入官方视图插件。这里使用本地 wheel，不假定同名版本已经发布到 PyPI。
 
+wheel 已构建好，安装 LayerWeave 本身不需要 setuptools；`[mcp]` 的依赖仍可能需要联网下载，wheel 不是完整离线环境。维护源码才需要可编辑安装；若卡在准备构建依赖，见[源码安装排查](docs/developer-conventions.md#可编辑安装与构建依赖)。
+
 ### 创建项目并打开视图
 
 ```powershell
@@ -55,7 +57,7 @@ python -X utf8 -m venv .venv
 .venv/Scripts/python.exe -X utf8 -m layerweave.tool.builtin.view.server project.sqlite3 --project PROJECT_ID
 ```
 
-打开服务输出的本机地址。FFmpeg 用于相关音视频处理，可通过 PATH 或 `FFMPEG` 环境变量提供；AI 截图另外需要 Chrome、Edge 或 Chromium。媒体输出目录由 AI 或使用者选择。
+打开服务输出的本机地址。FFmpeg 是用户选装的外部程序，不随 wheel、`[mcp]` 或 uv 自动安装；普通数据管理与文字视图不需要它。服务端抽帧需要 FFmpeg，缩略图和波形也会使用它；缺少时部分浏览功能回退，可能增加媒体加载量。安装后将其 bin 目录加入 PATH，或用 `FFMPEG` 指向 ffmpeg.exe 的完整路径（如 `D:/tools/ffmpeg/bin/ffmpeg.exe`），见[安装与功能影响](src/layerweave/tool/builtin/view/GUIDE.md#选装-ffmpeg)。AI 截图另外需要 Chrome、Edge 或 Chromium。媒体输出目录由 AI 或使用者选择。
 
 ## 连接 AI / MCP
 

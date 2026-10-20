@@ -13,6 +13,8 @@ python -X utf8 -m layerweave.tool.builtin.shared.mcp --config mcp.json
 
 安装后也可运行 `layerweave-mcp --config mcp.json`。本地 wheel 可用 `python -X utf8 -m pip install "路径/layerweave-0.7.6-py3-none-any.whl[mcp]"`。基础 Python/CLI 不需要 MCP SDK；本服务使用官方 MCP Python SDK 2.3 系列兼容接口。
 
+源码可编辑安装会准备构建依赖，网络或旧 setuptools 问题见[源码安装排查](../../../../../../docs/developer-conventions.md#可编辑安装与构建依赖)。现成 wheel 避免构建 LayerWeave 本身，但 mcp extra 的运行依赖仍可能需要下载。FFmpeg 由使用者选装，不包含在 wheel 或 mcp extra 中；需要抽帧等媒体能力时，按[选装说明](../../view/GUIDE.md#选装-ffmpeg)提供 PATH 或在客户端的服务项 env 中设置 FFMPEG，随后重启服务。
+
 `layerweave-mcp --list` 和 `--help` 输出普通文本；中文 Windows 上经管道调用时，推荐 `python -X utf8 -m layerweave.tool.builtin.shared.mcp --list`，或给脚本入口设置 `PYTHONUTF8=1`，见[命令行编码](../../usage/README.md#命令行编码)。这不改变正常 MCP 协议的编码处理。
 
 标准输出是协议流，日志在标准错误；这不是交互式命令行。`--list` 只输出有效动作、实际 direct 名称和声明问题。最小配置是 `{}`；[example.json](example.json) 提供可编辑示例：

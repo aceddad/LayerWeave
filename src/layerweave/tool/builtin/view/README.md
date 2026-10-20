@@ -12,7 +12,7 @@ python -X utf8 -m layerweave.tool.builtin.view.server DATABASE --project PROJECT
 
 DATABASE 换成数据库路径，PROJECT_ID 换成已有项目编号；也可以省略 --project。打开命令输出的本机地址。服务只监听 127.0.0.1，网页已编译并随包提供，使用者不需要 Node。
 
-顶栏可切换中文 / English，切换保留草稿、选择和插件状态。图片、视频和音频按对象引用显示；FFmpeg 可通过 PATH 或 `FFMPEG` 环境变量提供。AI 截图另外需要 Chrome、Edge 或 Chromium。
+顶栏可切换中文 / English，切换保留草稿、选择和插件状态。图片、视频和音频按对象引用显示；FFmpeg 不随包提供，由使用者按需安装，再通过 PATH 或 `FFMPEG` 环境变量提供。缺少时部分浏览功能回退，服务端抽帧不可用，详见[选装 FFmpeg](GUIDE.md#选装-ffmpeg)。AI 截图另外需要 Chrome、Edge 或 Chromium。
 
 ## 可选插件
 

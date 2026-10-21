@@ -4,7 +4,7 @@
 
 [GitHub](https://github.com/aceddad/LayerWeave/tree/main) · [Gitee](https://gitee.com/emotion1354414/layer-weave/tree/main) · [Complete version](https://github.com/aceddad/LayerWeave/tree/visualization)
 
-For the ready-to-use view and MCP service, download the [0.7.8 preview and twelve examples](https://github.com/aceddad/LayerWeave/releases/tag/v0.7.8). This branch contains the development sources without the view.
+For the ready-to-use view and MCP service, download the [0.7.9b1 preview and example launcher](https://github.com/aceddad/LayerWeave/releases/tag/v0.7.9b1). This branch contains the development sources without the view.
 
 **Fewer distractions: look only at the part that matters, and do only the task at hand.**
 

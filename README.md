@@ -4,7 +4,7 @@
 
 [GitHub](https://github.com/aceddad/LayerWeave/tree/main) · [Gitee](https://gitee.com/emotion1354414/layer-weave/tree/main) · [完整版本](https://github.com/aceddad/LayerWeave/tree/visualization)
 
-需要直接使用视图与 MCP，可下载 [0.7.8 预览版及十二案例](https://github.com/aceddad/LayerWeave/releases/tag/v0.7.8)；本分支保留无视图开发源码。
+需要直接使用视图与 MCP，可下载 [0.7.9b1 预览版与案例入口](https://github.com/aceddad/LayerWeave/releases/tag/v0.7.9b1)；本分支保留无视图开发源码。
 
 **少分心：只看相关的那一段，只做眼前的那一件事。**
 

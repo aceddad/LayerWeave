@@ -10,6 +10,8 @@ Its design principle is to **reduce scattered attention**: finding things, match
 
 This is the **main development branch**. It has no web view: you read, query, and edit projects directly through Python and the CLI, and it is the starting point for building new tools. The canvas, comments, AI screenshots, MCP service, and release packaging live on the **visualization branch**, the complete version. Both share the same core, support layer, and non-visual tools.
 
+**You are welcome to build on and extend the LayerWeave kernel.** You and your agents can reuse its foundations, add or replace tools, and build your own applications. The built-in tools provide usable functionality and examples of how to use the kernel. The view is one example application built on it; the separate view plugins demonstrate how that application can be extended further.
+
 ## 1. Information management: see everything at the same moment together
 
 Content sits on axes: videos and songs by the second, articles by paragraph, comics by page and panel, courses by learning step. Each item is an object with its own identity. Objects belong to layers, and layers form a tree; tracks sharing a time scale can be compared at the same moment, and relationships connect the objects. Paragraph numbers, page numbers, and seconds are not automatically converted. The complete version stores comments in sequence, pointing to content through relationships and ranges.

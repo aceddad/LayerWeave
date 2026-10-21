@@ -4,19 +4,19 @@
 
 **0.7.8 public preview · Windows**
 
-**Organize work into projects that agents can edit and tools can build on.**
+**Find project information by time and visual context.**
 
-LayerWeave keeps content, its relationships, and feedback in one project. People can inspect specific items and leave comments; agents can find the relevant material, read it, make changes, and continue the work. Images, audio, and video are referenced by file path or URL.
+LayerWeave organizes text, media references, and annotations into projects that can be queried by time or sequence. People locate content on a canvas. Agents can read which objects occupy a moment and how they relate, or capture a selected view to examine the visuals alongside the data. Images, audio, and video are referenced by file path or URL.
 
 ## What you can do
 
-**Read an article and trace a claim to its evidence.** Connect the essay, interpretations, evidence, and illustrations. Select a claim to find its supporting material, ask an agent to read that portion, and revise an interpretation while keeping its links to the essay. The [article-reading example](examples/showcases/article-reading/README.md) includes five runnable reading tasks and is a good place to start.
+**“Take a look at seconds 30–35.”** Select a range on the canvas. An agent can read the shots, media references, relationships, and annotations in that interval, then capture the corresponding view to inspect it visually. It can locate a specific object for a change and check the result through another query or screenshot. The [storyboard and H3 example](examples/showcases/donut-hole-h3/README.md) uses still images to illustrate 60 shots, with no video download required.
 
-**Plan a storyboard with its assets and implementation notes.** A shot can link to a story segment, images, and instructions for producing it. Adjust positions, replace assets, or edit a batch while retaining existing object identities; inspect change history or undo an operation when needed. The [storyboard and H3 example](examples/showcases/donut-hole-h3/README.md) uses still images to show how 60 shots are organized, with no video download required.
+**“Right here—this transition needs adjusting.”** Leave a comment on an object or range, or share the current view link with an agent. The agent can read the view position and selection, capture that linked view, and consult the corresponding content to understand what “here” refers to. Participants can reply later or mark a discussion read or resolved, allowing feedback to wait until they are ready. [Late Bloom](examples/showcases/late-bloom-scroll/README.md) records how four agents used annotations to check scene boundaries and assemble an animated scroll.
 
-**Leave comments that others can pick up later.** Attach feedback to an item or time range. Another person or agent can read it, reply, and mark it resolved. Each participant can track what they have read and query pending discussions. [Late Bloom](examples/showcases/late-bloom-scroll/README.md) records how four agents used annotations to check scene boundaries and assemble an animated scroll.
+**“Where are the explanation and illustration for this passage?”** Content can also follow paragraphs, pages, or reading order. Place an essay and its interpretations side by side, select a passage, and follow its relationships to evidence, illustrations, and discussion. An agent can read just that material. The [article-reading example](examples/showcases/article-reading/README.md) has five runnable reading tasks and remains the recommended starting point.
 
-Organize content by paragraph, page, sequence, or time, and connect related items. Use the existing tools through MCP, the command line, or Python; the optional web view supports Chinese and English. [Browse all twelve examples](examples/showcases/README.md). Their content and detailed walkthroughs are currently in Chinese.
+Screenshots supply the visuals; content queries return object identities, text, and relationships. The project, selected objects, and position range provide the common reference between them. Agents can use these capabilities through MCP, the CLI, or Python; see [reading views and project content](src/layerweave/tool/builtin/view/GUIDE.md#给-ai-用). The web view supports Chinese and English. [All twelve examples](examples/showcases/README.md) show further ways to manage information; their content and detailed guides are currently in Chinese.
 
 ## Add a tool for your own task
 

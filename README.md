@@ -14,18 +14,18 @@ LayerWeave 是面向 AI 使用与开发的信息管理工具。正文、素材�
 
 ## 快速安装
 
-当前为 **0.7.9b1 Windows 预览版**。在 PowerShell 中任选一种方式安装：
+当前为 **0.7.9b2 Windows 预览版**。在 PowerShell 中任选一种方式安装：
 
 使用 [uv](https://docs.astral.sh/uv/getting-started/installation/)，同时安装 MCP 依赖：
 
 ```powershell
-uv tool install --python 3.11 "layerweave[mcp]==0.7.9b1"
+uv tool install --python 3.11 "layerweave[mcp]==0.7.9b2"
 ```
 
 使用 Node.js 20+ / npm（Windows x64）：
 
 ```powershell
-npm install -g layerweave@0.7.9-beta.1
+npm install -g layerweave@0.7.9-beta.2
 ```
 
 安装完成后使用 `layerweave` 命令。uv 会准备独立 Python 环境；npm 安装启动器，首次执行时再自动准备 Python 和所需依赖。首次准备需要联网。**安装本身不会创建案例或打开视图。** 如果找不到命令，按安装器提示设置命令目录，再重新打开终端和 MCP 客户端。
@@ -71,7 +71,7 @@ npm install -g layerweave@0.7.9-beta.1
 
 接入后，先让 AI 调用 `layerweave_help`，按任务查找工具，再创建或打开你自己的项目。无需先运行 demo。客户端管理服务进程，MCP 启动本身不打开画布。
 
-默认数据库、项目、工具暴露，以及 uvx/npx 和自管 Python 环境的接法见 [MCP 说明](src/layerweave/tool/builtin/shared/mcp/README.md)与[npm 入口](distribution/npm/README.md)。
+默认数据库、项目、工具暴露，以及 uvx/npx 和自管 Python 环境的接法见 [MCP 说明](src/layerweave/tool/builtin/shared/mcp/README.md)与[npm 运行环境](src/layerweave/tool/builtin/shared/launcher/README.md#npm-运行环境)。
 
 </details>
 
@@ -100,16 +100,16 @@ layerweave demo
 已有 uv 或 npm 时，也可任选一条直接运行：
 
 ```powershell
-uvx layerweave@0.7.9b1 demo
+uvx layerweave@0.7.9b2 demo
 ```
 
 ```powershell
-npx --yes layerweave@0.7.9-beta.1 demo
+npx --yes layerweave@0.7.9-beta.2 demo
 ```
 
 </details>
 
-项目数据与下载缓存分开保存。更多参数见[统一入口说明](src/layerweave/tool/builtin/shared/launcher/README.md)，安装文件见 [GitHub Releases](https://github.com/aceddad/LayerWeave/releases/tag/v0.7.9b1)。在 Python 工程中导入或扩展内核，请从[开发入口](#按需组合开发自己的工具)开始。
+项目数据与下载缓存分开保存。更多参数见[统一入口说明](src/layerweave/tool/builtin/shared/launcher/README.md)，安装文件见 [GitHub Releases](https://github.com/aceddad/LayerWeave/releases/tag/v0.7.9b2)。在 Python 工程中导入或扩展内核，请从[开发入口](#按需组合开发自己的工具)开始。
 
 ## 把注意力留给当前这一段
 

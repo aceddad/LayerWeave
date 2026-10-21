@@ -16,21 +16,21 @@ python -X utf8 -m pip install -e ".[mcp,dev]"
 
 ```sh
 python -X utf8 -m build --sdist --wheel --outdir dist
-python -X utf8 -m tests.packaging.check_wheel dist/layerweave-0.7.9b1-py3-none-any.whl
-python -X utf8 -m tests.packaging.check_launcher dist/layerweave-0.7.9b1-py3-none-any.whl
-python -X utf8 -m tests.packaging.check_mcp_wheel dist/layerweave-0.7.9b1-py3-none-any.whl
-python -X utf8 -m tests.packaging.check_sdist dist/layerweave-0.7.9b1.tar.gz
+python -X utf8 -m tests.packaging.check_wheel dist/layerweave-0.7.9b2-py3-none-any.whl
+python -X utf8 -m tests.packaging.check_launcher dist/layerweave-0.7.9b2-py3-none-any.whl
+python -X utf8 -m tests.packaging.check_mcp_wheel dist/layerweave-0.7.9b2-py3-none-any.whl
+python -X utf8 -m tests.packaging.check_sdist dist/layerweave-0.7.9b2.tar.gz
 ```
 
 上述步骤只在本地构建和验收，不上传包仓库。上传位置、版本标签和正式发行说明应在实际发布时明确选择。
 
-统一入口版本为 Python 0.7.9b1 与 npm 0.7.9-beta.1，npm 预览使用 next 通道。npm 版本与固定的 Python 版本在 distribution/npm/package.json 声明，版本一致性由 npm 测试验证。在 distribution/npm 下执行 `npm test` 与 `npm pack --pack-destination ../../dist` 生成独立启动包。
+统一入口版本为 Python 0.7.9b2 与 npm 0.7.9-beta.2，npm 预览使用 next 通道。npm 版本与固定的 Python 版本在 distribution/npm/package.json 声明，版本一致性由 npm 测试验证。在 distribution/npm 下执行 `npm test` 与 `npm pack --pack-destination ../../dist` 生成独立启动包。
 
 构建钩子 setup.py/build_support.py 从 examples/showcases 自动生成案例清单，并只把 distribution/demos.json 声明的文章案例压缩进 wheel；其他案例保留版本固定的远端 ZIP 与 SHA-256。不要手改生成资源或把个人案例库放入安装包。
 
 发布到 PyPI 前，维护者需要 PyPI 账号与首次发布授权，可配置 GitHub Trusted Publishing；npm 需要独立账号和首次发布授权。先验收同一批 wheel、sdist 和 npm tarball，再上传；GitHub Release 与 PyPI 使用同一份 Python 发行物，不分别重建。包名简写只在对应索引发布后写成可直接执行的安装说明。此前发布的 0.7.8 保持原样。
 
-0.7.8 已作为公开预览版发布。GitHub 的默认展示分支与 Release 目标均使用 visualization，main 保持无视图开发源码。后续使用与 Python 发行版本对应的新标签（本轮预览为 v0.7.9b1），不覆盖已发布版本；预览版标记 pre-release。官方插件使用独立仓库与各自版本，不随宿主自动安装。地址与授权就绪后再创建新 Release，本地准备不等于发布。
+0.7.8 已作为公开预览版发布。GitHub 的默认展示分支与 Release 目标均使用 visualization，main 保持无视图开发源码。后续使用与 Python 发行版本对应的新标签（本轮预览为 v0.7.9b2），不覆盖已发布版本；预览版标记 pre-release。官方插件使用独立仓库与各自版本，不随宿主自动安装。地址与授权就绪后再创建新 Release，本地准备不等于发布。
 
 ## 软件发行物与案例包
 
@@ -72,4 +72,10 @@ ZIP 顶层是 showcases，使用者解压到自己工作目录的 examples 中�
 
 .github/workflows/publish-pypi.yml 由维护者手动指定已公开的 GitHub Release 标签执行，只下载已经验收的 wheel、sdist 和 SHA256SUMS，逐文件核对后原样上传，不重新构建。先公开 Release 再启动此工作流；只读工作流无法取得草稿附件。PyPI 的可信发布者绑定 GitHub owner aceddad、repository LayerWeave、workflow publish-pypi.yml、environment pypi；使用短期 OIDC 凭据，无需在仓库保存 PyPI token。首次发布需先在 PyPI 账号的 Publishing 页面登记 pending publisher。
 
-包索引描述由 README.md 在构建时生成 distribution/PYPI_README.md，相对文档和图片链接改为当前版本标签下的绝对 URL；不单独维护另一份介绍文案。
+## 包索引介绍
+
+根目录 README.md 与 README.en.md 是介绍文案的唯一来源。distribution/prepare_readmes.py 用同一套转换生成 distribution/PYPI_README.md 和 distribution/npm/README.md、README.en.md：图片使用版本标签下的 raw URL，文档与章节跳转使用对应标签下的 GitHub URL，代码示例保持原样。npm 专有的运行环境与缓存说明集中在[启动器手册](../src/layerweave/tool/builtin/shared/launcher/README.md#npm-运行环境)。
+
+Python 构建钩子和 npm 的 prepack 都调用该生成器。维护者执行 npm pack 前须激活开发用 Python 3.11+ 环境；生成器仅依赖标准库，普通 npm 用户安装包时不会运行它。可在仓库根用 `python -X utf8 distribution/prepare_readmes.py` 提前更新并检查生成文件；npm 的两份生成文档提交到仓库，但不手工编辑。
+
+PyPI 和 npm 的在线介绍保留发布时的快照，不随仓库提交自动刷新。仅修改文档也使用新版本号，npm 的版本和固定 Python 版本一起更新；保留此前发行物。发布验收核对 wheel 元数据里的介绍与 npm tarball 的 README.md 完全一致，中英文命令一致，图片及文档链接在对应版本标签下可访问。

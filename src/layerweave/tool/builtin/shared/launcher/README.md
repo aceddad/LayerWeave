@@ -25,14 +25,28 @@ layerweave mcp --config ./mcp.json
 
 ## uv / npm 启动
 
-Python 版本为 `0.7.9b1`，npm 版本为 `0.7.9-beta.1`。在自己的工作目录选择一种方式：
+Python 版本为 `0.7.9b2`，npm 版本为 `0.7.9-beta.2`。在自己的工作目录选择一种方式：
 
 ```powershell
-uvx layerweave@0.7.9b1 demo
-npx --yes layerweave@0.7.9-beta.1 demo
+uvx layerweave@0.7.9b2 demo
+npx --yes layerweave@0.7.9-beta.2 demo
 ```
 
-npm 自动管理运行环境，详细要求见[npm 分发入口](../../../../../../distribution/npm/README.md)。已有本地 wheel 时也可使用 `uvx --python 3.11 --from ./layerweave-0.7.9b1-py3-none-any.whl layerweave demo`。npm 使用预览通道 next，上面的明确版本命令不受通道变更影响。
+npm 自动管理运行环境，支持 Windows x64、Node.js 20+；无需预先安装 Python 或 uv，详细机制见下方 npm 运行环境。已有本地 wheel 时也可使用 `uvx --python 3.11 --from ./layerweave-0.7.9b2-py3-none-any.whl layerweave demo`。npm 使用预览通道 next，上面的明确版本命令不受通道变更影响。
+
+## npm 运行环境
+
+npm 包只准备运行环境并转交参数，案例、数据库、视图与 MCP 使用同一份 Python 实现。安装 npm 包不会创建项目；首次执行才准备运行环境。MCP 自动选择固定版本的 mcp extra，stdout 保留给协议，准备提示写到 stderr。
+
+优先使用 PATH 中可用的 uv >= 0.9；没有时下载固定版本的官方 uv，核对 SHA-256 后解压到用户缓存。uv 自动准备独立的 Python 3.11 与 LayerWeave 环境，不修改 PATH 或 shell 配置。首次准备需要网络，后续可复用缓存。
+
+| 环境变量 | 用途 |
+|---|---|
+| LAYERWEAVE_CACHE_DIR | 更改缓存位置，默认 `%LOCALAPPDATA%/LayerWeave/cache`；项目数据单独保存 |
+| LAYERWEAVE_UV | 指定已有的 uv >= 0.9 可执行文件 |
+| LAYERWEAVE_PYTHON_PACKAGE | 开发验收时指定本地 wheel 或完整 Python requirement；应匹配 npm 固定的 Python 版本，需要 MCP 时包含 mcp extra |
+
+启动器源码在 distribution/npm/lib/launch.mjs，官方 uv 地址与校验值在 runtime.json。包中不含用户数据库、安装后脚本或另一份 Python 实现。维护者构建 npm 包时需要开发环境的 Python 3.11+ 来生成介绍文案；普通用户安装和运行仍由启动器准备环境。构建与上传流程见[发布指南](../../../../../../docs/releasing.md)。
 
 ## 资源与扩展
 

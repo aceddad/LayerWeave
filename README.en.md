@@ -14,18 +14,18 @@ LayerWeave is an information management toolkit that AI agents can use and exten
 
 ## Quick install
 
-The current release is the **0.7.9b1 Windows preview**. Choose either installation method in PowerShell.
+The current release is the **0.7.9b2 Windows preview**. Choose either installation method in PowerShell.
 
 With [uv](https://docs.astral.sh/uv/getting-started/installation/), including MCP dependencies:
 
 ```powershell
-uv tool install --python 3.11 "layerweave[mcp]==0.7.9b1"
+uv tool install --python 3.11 "layerweave[mcp]==0.7.9b2"
 ```
 
 With Node.js 20+ / npm on Windows x64:
 
 ```powershell
-npm install -g layerweave@0.7.9-beta.1
+npm install -g layerweave@0.7.9-beta.2
 ```
 
 After installation, use the `layerweave` command. uv prepares an isolated Python environment; npm installs a launcher that prepares Python and the required dependencies on first use. Initial setup needs internet access. **Installation does not create an example project or open the view.** If the command is not found, follow the installer's PATH instructions and reopen your terminal and MCP client.
@@ -71,7 +71,7 @@ The configuration location depends on your client. Replace the example paths. If
 
 Once connected, have the AI call `layerweave_help` to find tools for your task, then create or open your own project. Running a demo is optional. The client manages the server process; starting MCP does not open the canvas.
 
-Default databases and projects, tool exposure, uvx/npx, and existing Python environments are covered in the [MCP guide (Chinese)](src/layerweave/tool/builtin/shared/mcp/README.md) and [npm guide](distribution/npm/README.en.md).
+Default databases and projects, tool exposure, uvx/npx, and existing Python environments are covered in the [MCP guide (Chinese)](src/layerweave/tool/builtin/shared/mcp/README.md) and [npm environment guide (Chinese)](src/layerweave/tool/builtin/shared/launcher/README.md#npm-运行环境).
 
 </details>
 
@@ -100,16 +100,16 @@ This opens the article-reading example in `./layerweave-demo/article-reading`. *
 With uv or npm available, use either command directly:
 
 ```powershell
-uvx layerweave@0.7.9b1 demo
+uvx layerweave@0.7.9b2 demo
 ```
 
 ```powershell
-npx --yes layerweave@0.7.9-beta.1 demo
+npx --yes layerweave@0.7.9-beta.2 demo
 ```
 
 </details>
 
-Project data stays separate from the download cache. More options are in the [launcher guide (Chinese)](src/layerweave/tool/builtin/shared/launcher/README.md); installation files are on [GitHub Releases](https://github.com/aceddad/LayerWeave/releases/tag/v0.7.9b1). To import or extend the kernel in a Python project, start with [development and extension](#compose-the-parts-build-your-own-tools).
+Project data stays separate from the download cache. More options are in the [launcher guide (Chinese)](src/layerweave/tool/builtin/shared/launcher/README.md); installation files are on [GitHub Releases](https://github.com/aceddad/LayerWeave/releases/tag/v0.7.9b2). To import or extend the kernel in a Python project, start with [development and extension](#compose-the-parts-build-your-own-tools).
 
 ## Keep attention on the relevant part
 

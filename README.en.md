@@ -4,19 +4,27 @@
 
 **0.7.8 public preview · Windows**
 
-Organize content into layers, objects, and relations so AI agents and programs can read, edit, and extend a project on demand.
+**Organize work into projects that agents can edit and tools can build on.**
 
-LayerWeave provides a Python API, command-line tools, MCP integration, and a local web view. It can represent subtitles, storyboards, illustrated music videos, asset lists, and ordered information. Objects hold content and positions; layers organize them; relations connect entries; axes explain what position values mean.
+LayerWeave keeps content, its relationships, and feedback in one project. People can inspect specific items and leave comments; agents can find the relevant material, read it, make changes, and continue the work. Images, audio, and video are referenced by file path or URL.
 
-## What it does
+## What you can do
 
-- Inspect layer trees and read selected subtrees, objects, or time ranges. Update by name or a stable key while retaining identities and relations.
-- Append, arrange, split, shift, copy, and transfer objects. Import and export batches as JSON.
-- Store data and change history in SQLite, with undo and redo by operation.
-- Extend the system with Python classes, TOML definitions, and tool-owned tables. Add or remove complete tool packages.
-- Inspect projects on a canvas, resize boards, and collaborate with AI through annotations. Shared layouts support project copying and undo. Install the assets, cuts, preview, and web plugins separately.
+**Read an article and trace a claim to its evidence.** Connect the essay, interpretations, evidence, and illustrations. Select a claim to find its supporting material, ask an agent to read that portion, and revise an interpretation while keeping its links to the essay. The [article-reading example](examples/showcases/article-reading/README.md) includes five runnable reading tasks and is a good place to start.
 
-The interface supports Chinese and English; user content is left unchanged. Media objects store resource references. Skills or the caller perform media generation and processing.
+**Plan a storyboard with its assets and implementation notes.** A shot can link to a story segment, images, and instructions for producing it. Adjust positions, replace assets, or edit a batch while retaining existing object identities; inspect change history or undo an operation when needed. The [storyboard and H3 example](examples/showcases/donut-hole-h3/README.md) uses still images to show how 60 shots are organized, with no video download required.
+
+**Leave comments that others can pick up later.** Attach feedback to an item or time range. Another person or agent can read it, reply, and mark it resolved. Each participant can track what they have read and query pending discussions. [Late Bloom](examples/showcases/late-bloom-scroll/README.md) records how four agents used annotations to check scene boundaries and assemble an animated scroll.
+
+Organize content by paragraph, page, sequence, or time, and connect related items. Use the existing tools through MCP, the command line, or Python; the optional web view supports Chinese and English. [Browse all twelve examples](examples/showcases/README.md). Their content and detailed walkthroughs are currently in Chinese.
+
+## Add a tool for your own task
+
+For example, after linking characters to shots, you can build a small tool that lists each character's shots from the existing project. When saving results, reuse the project's read/write operations, identifiers, and change records.
+
+Developers and agents can use the existing content structures through Python, or add their own types and database tables. View plugins provide specialized interfaces. Tool packages can be added or removed, and the underlying data operations can also be embedded directly in your own Python application.
+
+Start with the [extension guide](docs/build-with-layerweave/README.md). The [tool-owned table example](examples/tool_tables.py) demonstrates how a new tool shares record storage, history, and undo. See the [public API](src/layerweave/support/API.md) for individual calls. These detailed guides are in Chinese.
 
 ## Windows quick start
 
@@ -107,7 +115,7 @@ uvx --python 3.11 --from "./layerweave-0.7.8-py3-none-any.whl[mcp]" layerweave-m
 
 This runs a persistent stdio service, normally managed by an MCP client; it does not open the web view. Use absolute paths in a client's uvx configuration; the MCP guide includes an example. Once the package has a published download URL, that URL can also identify its source without adding a separate business API.
 
-## Find help and extend the system
+## Find tools and documentation
 
 ```powershell
 .venv/Scripts/python.exe -X utf8 -m layerweave.tool.builtin.shared.help.command_help
@@ -119,7 +127,6 @@ The detailed guides below are currently in Chinese; CLI/help descriptions and bu
 - [Usage guide](src/layerweave/tool/builtin/usage/README.md): choose a tool and inspect its inputs, outputs, and examples.
 - [JSON exchange and templates](src/layerweave/tool/builtin/usage/exchange/README.md): batch operations and starting structures.
 - [View and plugins](src/layerweave/tool/builtin/view/README.md): interface usage. [Official plugins](https://gitee.com/emotion1354414/layerweave-plugins) are optional; the canvas works with no plugins.
-- [Extension guide](docs/build-with-layerweave/README.md): build your own tools, definitions, and tables.
 - [Source development](docs/developer-conventions.md), [runnable examples](docs/examples.md), and [documentation index](docs/README.md).
 
 `visualization` is the complete version. `main` contains non-visual development sources with direct Python/CLI entry points and the same shared core, support layer, and non-visual tools. The complete branch maintains the view, MCP service, and release packaging. Commands use `-X utf8` for reliable piped output on Chinese Windows; see the [encoding notes](src/layerweave/tool/builtin/usage/README.md#命令行编码).

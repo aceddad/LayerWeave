@@ -4,19 +4,27 @@
 
 **0.7.8 公开预览版 · Windows**
 
-用层、对象和关联组织内容，让 AI 与程序按需读取、编辑和扩充项目。
+**把工作内容组织成 Agent 能操作、工具能复用的项目。**
 
-LayerWeave 提供 Python API、命令行工具、MCP 接入和本机网页视图，适合字幕、分镜、手书、素材清单及有序信息管理。对象保存内容与起止位置，层组织结构，关联连接条目，轴说明位置数值的含义。
+LayerWeave 把内容、它们之间的联系和反馈保存在同一份项目里。人可以查看具体内容、留下意见；Agent 可以找到相关部分，读取、修改并继续工作。图片、音视频通过文件路径或链接引用。
 
-## 能做什么
+## 可以怎样用
 
-- 查询层树，按子树、对象或时间区间读取；按名字或稳定键更新，保留身份与关联。
-- 接续、排列、分割、平移、复制与搬移对象，通过 JSON 批量导入导出。
-- 用 SQLite 保存数据和修改历史，按操作撤销与重做。
-- 用 Python 类、TOML 和工具自有表扩展，按完整工具包增减能力。
-- 在画布上查看项目、调整画板宽高、添加批注并与 AI 协作；共享排版可随项目复制和撤销，一览、接缝、预览和网页插件独立选装。
+**读文章，沿着论点找依据。** 把正文、解读、证据和配图联系起来。选一个论点，就能找到对应的材料；让 Agent 只展开这一部分，修订解读时保留它与正文的联系。[文章解析案例](examples/showcases/article-reading/README.md)提供五条可以实际运行的阅读路线，适合第一次体验。
 
-界面支持中文与英文，用户内容保持原文。媒体对象保存资源引用，生成和处理媒体由技能或调用方完成。
+**做分镜，把镜头与素材、做法连起来。** 一个镜头可以关联故事段落、图片和实现说明。调整镜头位置、替换素材或成批修改内容时，可以沿用已有对象，查看改动历史，必要时撤销。[动态分镜与 H3 案例](examples/showcases/donut-hole-h3/README.md)用静帧展示 60 个镜头的组织方式，无需下载视频。
+
+**留下批注，让协作接着进行。** 在具体对象或时间区间旁留下意见，其他人或 Agent 稍后读取、回复、标记处理。参与者各自记录已读，再按需查看待处理讨论。[晚开的花](examples/showcases/late-bloom-scroll/README.md)记录了四个 Agent 怎样通过批注核对画面接缝，共同完成一幅动态长卷。
+
+这些内容可以按段落、页码、顺序或时间组织，再通过关联连接。使用现成工具时，可通过 MCP、命令行或 Python 操作；网页视图按需使用，支持中文和英文。[查看全部十二个案例](examples/showcases/README.md)。
+
+## 为自己的任务添工具
+
+例如，给角色和镜头建立关联后，可以开发一个“按人物汇总镜头”的小工具，直接查询已有项目。保存结果时，复用项目的读写、编号和改动记录。
+
+Python 接口允许开发者和 Agent 使用现有内容结构，也可以增加自己的类型或数据表。需要专用界面时，可以编写视图插件；工具包可按需增减，底层读写也可直接嵌入自己的 Python 工程。
+
+从[扩展指南](docs/build-with-layerweave/README.md)选择最小接入方式；[工具自有表的可运行示例](examples/tool_tables.py)展示如何让新工具沿用记录、历史与撤销。具体调用见[公共 API](src/layerweave/support/API.md)。
 
 ## Windows 快速开始
 
@@ -107,7 +115,7 @@ uvx --python 3.11 --from "./layerweave-0.7.8-py3-none-any.whl[mcp]" layerweave-m
 
 这条命令会持续运行 stdio 服务，通常由 MCP 客户端托管；它不是启动网页的命令。客户端中的 uvx 配置使用绝对路径，完整例子见 MCP 说明。安装包放到正式下载地址后，也可通过 URL 指定来源，无需另写一套业务接口。
 
-## 按需查帮助与扩展
+## 查找工具与文档
 
 ```powershell
 .venv/Scripts/python.exe -X utf8 -m layerweave.tool.builtin.shared.help.command_help
@@ -117,7 +125,6 @@ uvx --python 3.11 --from "./layerweave-0.7.8-py3-none-any.whl[mcp]" layerweave-m
 - [使用入口](src/layerweave/tool/builtin/usage/README.md)：从任务选择工具，读取输入、输出和示例。
 - [JSON 交换与模板](src/layerweave/tool/builtin/usage/exchange/README.md)：批量操作与场景起点。
 - [视图与插件](src/layerweave/tool/builtin/view/README.md)：界面操作；[官方插件仓库](https://gitee.com/emotion1354414/layerweave-plugins)独立选装，零插件可用。
-- [扩展指南](docs/build-with-layerweave/README.md)：编写自己的工具、封装和工具表。
 - [源码开发](docs/developer-conventions.md)、[完整示例](docs/examples.md)、[文档目录](docs/README.md)。
 
 `visualization` 是完整版本；`main` 是无视图开发源码，保留直接 Python/CLI 入口，共用核心、支撑和非视图工具。视图、MCP 服务及发行封装在完整分支维护。命令中的 `-X utf8` 用于中文 Windows 的管道输出，详见[编码说明](src/layerweave/tool/builtin/usage/README.md#命令行编码)。

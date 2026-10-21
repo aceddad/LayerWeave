@@ -70,6 +70,6 @@ ZIP 顶层是 showcases，使用者解压到自己工作目录的 examples 中�
 
 ## PyPI 可信发布
 
-.github/workflows/publish-pypi.yml 由维护者手动指定 GitHub Release 标签执行，只下载已经验收的 wheel、sdist 和 SHA256SUMS，逐文件核对后原样上传，不重新构建。PyPI 的可信发布者绑定 GitHub owner aceddad、repository LayerWeave、workflow publish-pypi.yml、environment pypi；使用短期 OIDC 凭据，无需在仓库保存 PyPI token。首次发布需先在 PyPI 账号的 Publishing 页面登记 pending publisher。
+.github/workflows/publish-pypi.yml 由维护者手动指定已公开的 GitHub Release 标签执行，只下载已经验收的 wheel、sdist 和 SHA256SUMS，逐文件核对后原样上传，不重新构建。先公开 Release 再启动此工作流；只读工作流无法取得草稿附件。PyPI 的可信发布者绑定 GitHub owner aceddad、repository LayerWeave、workflow publish-pypi.yml、environment pypi；使用短期 OIDC 凭据，无需在仓库保存 PyPI token。首次发布需先在 PyPI 账号的 Publishing 页面登记 pending publisher。
 
 包索引描述由 README.md 在构建时生成 distribution/PYPI_README.md，相对文档和图片链接改为当前版本标签下的绝对 URL；不单独维护另一份介绍文案。

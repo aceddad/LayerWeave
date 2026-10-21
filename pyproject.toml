@@ -13,7 +13,8 @@ requires-python = ">=3.11"
 dependencies = []
 
 [project.urls]
-Repository = "https://gitee.com/emotion1354414/layer-weave/tree/main"
+Repository = "https://github.com/aceddad/LayerWeave/tree/main"
+Gitee = "https://gitee.com/emotion1354414/layer-weave/tree/main"
 
 [project.optional-dependencies]
 dev = ["build>=1.2", "setuptools>=77.0.3", "wheel"]

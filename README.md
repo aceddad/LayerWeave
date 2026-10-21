@@ -2,6 +2,8 @@
 
 **简体中文** | [English](README.en.md)
 
+[GitHub](https://github.com/aceddad/LayerWeave/tree/main) · [Gitee](https://gitee.com/emotion1354414/layer-weave/tree/main) · [完整版本](https://github.com/aceddad/LayerWeave/tree/visualization)
+
 **少分心：只看相关的那一段，只做眼前的那一件事。**
 
 LayerWeave 是一个面向人和 AI 的信息管理工具。它把文字、素材引用和批注放在按时间或顺序排列的轴上，用层级和关联组织起来，让参与者随时能找到"此刻、这里"相关的全部内容。图片和音视频通过文件路径或链接引用。

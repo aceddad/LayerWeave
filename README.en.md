@@ -2,6 +2,8 @@
 
 [简体中文](README.md) | **English**
 
+[GitHub](https://github.com/aceddad/LayerWeave/tree/main) · [Gitee](https://gitee.com/emotion1354414/layer-weave/tree/main) · [Complete version](https://github.com/aceddad/LayerWeave/tree/visualization)
+
 **Fewer distractions: look only at the part that matters, and do only the task at hand.**
 
 LayerWeave is an information management tool for people and AI. It places text, media references, and comments on axes ordered by time or sequence, organizes them with layers and relationships, and lets every participant find everything relevant to "this moment, right here." Images, audio, and video are referenced by file path or URL.

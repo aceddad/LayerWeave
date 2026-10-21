@@ -2,6 +2,8 @@
 
 **简体中文** | [English](README.en.md)
 
+[GitHub](https://github.com/aceddad/LayerWeave/tree/visualization) · [Gitee](https://gitee.com/emotion1354414/layer-weave/tree/visualization) · [内核开发分支](https://github.com/aceddad/LayerWeave/tree/main)
+
 **0.7.8 公开预览版 · Windows**
 
 **少分心：只看相关的那一段，只做眼前的那一件事。**
@@ -219,7 +221,7 @@ uvx --python 3.11 --from "./layerweave-0.7.8-py3-none-any.whl[mcp]" layerweave-m
 
 - [使用入口](src/layerweave/tool/builtin/usage/README.md)：从任务出发选工具，查看输入、输出和示例。
 - [JSON 交换与模板](src/layerweave/tool/builtin/usage/exchange/README.md)：批量操作和场景起点。
-- [视图与插件](src/layerweave/tool/builtin/view/README.md)：界面操作；[官方插件仓库](https://gitee.com/emotion1354414/layerweave-plugins)独立选装，不装插件也能用。
+- [视图与插件](src/layerweave/tool/builtin/view/README.md)：界面操作；[官方插件仓库](https://github.com/aceddad/layerweave-plugins)独立选装，不装插件也能用。
 - [源码开发](docs/developer-conventions.md)、[完整示例](docs/examples.md)、[文档目录](docs/README.md)。
 
 `visualization` 是完整版本；`main` 是不含视图的开发源码，保留直接的 Python/CLI 入口，与完整版共用核心、支撑和非视图工具。视图、MCP 服务和发行封装在完整分支维护。命令里的 `-X utf8` 是为了让中文 Windows 的管道输出不乱码，详见[编码说明](src/layerweave/tool/builtin/usage/README.md#命令行编码)。

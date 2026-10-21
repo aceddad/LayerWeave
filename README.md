@@ -224,6 +224,10 @@ uvx --python 3.11 --from "./layerweave-0.7.8-py3-none-any.whl[mcp]" layerweave-m
 
 `visualization` 是完整版本；`main` 是不含视图的开发源码，保留直接的 Python/CLI 入口，与完整版共用核心、支撑和非视图工具。视图、MCP 服务和发行封装在完整分支维护。命令里的 `-X utf8` 是为了让中文 Windows 的管道输出不乱码，详见[编码说明](src/layerweave/tool/builtin/usage/README.md#命令行编码)。
 
+## AI 协作开发
+
+项目由维护者主导设计与维护，Astra（Codex）与 Claude 协助本分支的开发、测试与文档整理。
+
 ## 许可证
 
 LayerWeave 本身采用 [MIT](LICENSE)。网页里的第三方组件保留各自的许可，见[第三方声明](THIRD_PARTY_NOTICES.md)。独立插件、技能和外部服务遵循各自的说明。

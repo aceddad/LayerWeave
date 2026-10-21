@@ -224,6 +224,10 @@ This runs a persistent stdio service, normally managed by an MCP client; it does
 
 `visualization` is the complete version. `main` contains the development sources without the view, keeps direct Python/CLI entry points, and shares the core, support layer, and non-visual tools. The view, MCP service, and release packaging are maintained on the complete branch. Commands use `-X utf8` so piped output stays readable on Chinese Windows; see the [encoding notes (Chinese)](src/layerweave/tool/builtin/usage/README.md#命令行编码).
 
+## AI-assisted development
+
+The maintainer leads the project's design and maintenance. Astra (Codex) and Claude assisted with development, testing, and documentation on this branch.
+
 ## License
 
 LayerWeave itself is licensed under [MIT](LICENSE). Bundled web components keep their own licenses; see [third-party notices](THIRD_PARTY_NOTICES.md). Separate plugins, skills, and external services follow their own terms.

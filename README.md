@@ -8,9 +8,9 @@
 
 LayerWeave 把正文、素材引用、证据和批注放在同一份项目里，按时间、段落或阅读顺序排列，再用层级和关联连接起来。人可以在画布上查看、定位和留言，AI 可以查询同一段内容、截图核对，并沿关联追溯依据。
 
-![文章解析案例：正文、解读和证据分层排列，关系线连接对应内容](docs/images/article-reading.png)
+![真实手书项目的完整工作视图：左侧层级目录，中间音频、分轨、故事、分镜与原画的时间轴，右侧查看此刻的内容和关联](docs/images/handdraw-workspace.png)
 
-*文章解析案例：选中一个论点，对照它的解读，再沿关联找到证据和讨论。*
+*真实手书制作项目：音频、分轨、故事、分镜与原画按时间组织，右侧“此刻”查看选中对象及当前位置的内容和关联。完整制作素材不随安装包提供。[查看原图](docs/images/handdraw-workspace.png)。*
 
 ## 快速开始
 
@@ -107,7 +107,7 @@ LayerWeave 提供 stdio MCP 服务，可由支持 MCP 的客户端自动启动�
 
 | 案例 | 可以怎样用 |
 |---|---|
-| [文章解析](examples/showcases/article-reading/README.md) · 推荐入门 | 将正文与逐段解读对照，从论点追溯证据、配图和讨论 |
+| [文章解析](examples/showcases/article-reading/README.md) · 推荐入门 · [截图](docs/images/article-reading.png) | 将正文与逐段解读对照，从论点追溯证据、配图和讨论 |
 | [动态分镜与 H3](examples/showcases/donut-hole-h3/README.md) | 对照镜头、故事段落与实现方式，追溯共用的素材 |
 | [手书制作](examples/showcases/donut-hole-tegaki/README.md) | 将听感、故事、画面设计、角色设定与实现记录放在一起 |
 | [晚开的花](examples/showcases/late-bloom-scroll/README.md) | 四个 AI 通过批注核对接缝和配色，共同完成一幅动态 SVG 长卷 |

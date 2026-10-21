@@ -8,9 +8,9 @@
 
 LayerWeave keeps text, media references, evidence, and comments in one project. Arrange them by time, paragraph, or reading order, then connect them through layers and relationships. People can browse, point, and comment on the canvas; AI agents can query the same content, capture its view, and follow links back to its sources.
 
-![The article-reading example, with text, interpretation, evidence, and a relationship between corresponding items](docs/images/article-reading.png)
+![A real music-video workspace: layers on the left, audio, stems, story, storyboards, and artwork on the timeline, with content and relationships in the Now panel](docs/images/handdraw-workspace.png)
 
-*Article reading: select a claim, compare its interpretation, and follow relationships to evidence and discussion. The example content is in Chinese.*
+*A real hand-drawn MV project: audio, stems, story, storyboards, and artwork organized by time. The Now panel shows the selected item and content and relationships at the playhead. Full production media is not included in the download. [View full-size image](docs/images/handdraw-workspace.png).*
 
 ## Quick start
 
@@ -107,7 +107,7 @@ Understanding screenshots requires a vision-capable AI. The caller decides when 
 
 | Example | What you can do |
 |---|---|
-| [Article reading](examples/showcases/article-reading/README.md) · recommended start | Compare text with its interpretation, then trace claims to evidence, illustrations, and discussion |
+| [Article reading](examples/showcases/article-reading/README.md) · recommended start · [screenshot](docs/images/article-reading.png) | Compare text with its interpretation, then trace claims to evidence, illustrations, and discussion |
 | [Storyboard and H3](examples/showcases/donut-hole-h3/README.md) | Compare shots, story sections, and implementation notes; trace shared assets |
 | [Hand-drawn MV](examples/showcases/donut-hole-tegaki/README.md) | Keep listening notes, story, visual design, character sheets, and implementation records together |
 | [Late Bloom](examples/showcases/late-bloom-scroll/README.md) | Follow four AIs using comments to coordinate seams and colors in one animated SVG scroll |

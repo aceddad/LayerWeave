@@ -2,21 +2,21 @@
 
 [简体中文](README.md) | **English**
 
-**Organize work into projects that agents can edit and tools can build on.**
+**Find project information by time and visual context.**
 
-LayerWeave keeps content, its relationships, and feedback in one project, so people, agents, and different tools can continue working with it. Images, audio, and video are referenced by file path or URL.
+LayerWeave organizes text, media references, and feedback into projects that can be queried by time or sequence. Its underlying data gives objects identities and relationships. The complete version connects that data to a canvas and screenshots for agents, so participants can examine visuals alongside project content. Images, audio, and video are referenced by file path or URL.
 
 This is the main development branch, with direct Python and CLI access. The visualization branch provides the web view, annotation tools, MCP service, and release packaging. Both share the same core, support layer, and non-visual tools.
 
 ## Start with a concrete task
 
-**Read an article and trace a claim to its evidence.** Query the essay passages, interpretations, evidence, and illustrations linked to a claim. Read the relevant portion and revise an interpretation while keeping its links to the essay. The [article-reading example](examples/showcases/article-reading/README.md) provides five runnable tasks that work with the base Python/CLI tools.
+**Find information by time.** Query seconds 30–35 for shots, media references, and relationships, then locate specific objects to edit. The complete version can also capture that range for a visual check. The [storyboard and H3 example](examples/showcases/donut-hole-h3/README.md) illustrates 60 shots with still images, requiring no video download.
 
-**Plan a storyboard with its assets and implementation notes.** Link shots to story segments, images, and production instructions. Query and edit by object or range, inspect history, and undo changes. The [storyboard and H3 example](examples/showcases/donut-hole-h3/README.md) illustrates 60 shots with still images, requiring no video download.
+**Connect “here” to specific content.** The complete version exposes the current view, selected objects, content at a moment, and screenshots. People can share a view link or leave an annotation for an agent to read, reply to, and address. [Late Bloom](examples/showcases/late-bloom-scroll/README.md) shows four agents checking scene boundaries through annotations; it uses the complete version's annotation types.
 
-**Use comments to continue shared work.** The complete version lets people and agents leave feedback on specific content, reply, and mark discussions resolved. [Late Bloom](examples/showcases/late-bloom-scroll/README.md) shows four agents checking scene boundaries. This case uses the complete version's annotation types.
+**Find material in reading order.** Arrange an essay, interpretations, and illustrations by paragraph or page, then follow relationships to evidence and discussion. The [article-reading example](examples/showcases/article-reading/README.md) offers five runnable tasks using the base Python/CLI tools and is the recommended starting point.
 
-Organize content by paragraph, page, sequence, or time, and connect related items. [Browse all twelve examples](examples/showcases/README.md). Their content and detailed walkthroughs are currently in Chinese.
+Content queries return object identities, text, and relationships; the complete version's screenshots supply the corresponding visuals. Developers can reuse the underlying queries and edits directly and add a view as needed. [Browse all twelve examples](examples/showcases/README.md). Their content and detailed walkthroughs are currently in Chinese.
 
 ## Build your own tools
 

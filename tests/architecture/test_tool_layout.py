@@ -54,12 +54,13 @@ class ToolLayoutTests(unittest.TestCase):
             self.assertEqual(json.loads(read.stdout)["data"][0]["name"], "示例项目")
 
     def test_current_documentation_links_resolve_after_moves(self):
-        documents = [ROOT / "README.md", ROOT / "AGENTS.md"]
+        documents = [ROOT / "README.md", ROOT / "README.en.md", ROOT / "AGENTS.md"]
         for directory in ("src", "docs", "examples"):
             documents.extend((ROOT / directory).rglob("*.md"))
         broken = []
         for document in documents:
-            for value in re.findall(r"\]\(([^)\n]+)\)", document.read_text(encoding="utf-8")):
+            text = re.sub(r"```.*?```", "", document.read_text(encoding="utf-8"), flags=re.S)
+            for value in re.findall(r"\]\(([^)\n]+)\)", text):
                 if ":" in value or value.startswith("#"):
                     continue
                 destination = value.split("#", 1)[0]

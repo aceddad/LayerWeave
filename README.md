@@ -1,117 +1,111 @@
-# LayerWeave 开发源码
+# LayerWeave 内核与开发源码
 
 **简体中文** | [English](README.en.md)
 
-[GitHub](https://github.com/aceddad/LayerWeave/tree/main) · [Gitee](https://gitee.com/emotion1354414/layer-weave/tree/main) · [完整版本](https://github.com/aceddad/LayerWeave/tree/visualization)
+[GitHub](https://github.com/aceddad/LayerWeave/tree/main) · [Gitee](https://gitee.com/emotion1354414/layer-weave/tree/main) · [完整应用与 MCP](https://github.com/aceddad/LayerWeave/tree/visualization)
 
-需要直接使用视图与 MCP，可下载 [0.7.9b1 预览版与案例入口](https://github.com/aceddad/LayerWeave/releases/tag/v0.7.9b1)；本分支保留无视图开发源码。
+**少分心：复用已有能力，专注你要开发的那一件事。**
 
-**少分心：只看相关的那一段，只做眼前的那一件事。**
+LayerWeave 用层、对象和关联组织按时间或顺序排列的信息，为工具提供统一的存储、编号、事务和改动记录。你和 AI 可以在这个基础上开发查询、编辑、协作或专用界面，按需组合已有部件。
 
-LayerWeave 是一个面向人和 AI 的信息管理工具。它把文字、素材引用和批注放在按时间或顺序排列的轴上，用层级和关联组织起来，让参与者随时能找到"此刻、这里"相关的全部内容。图片和音视频通过文件路径或链接引用。
+这里是 **main 开发分支**，包含内核、基础支撑和非视图工具。可直接使用的画布应用、MCP 服务与发行包在 [visualization](https://github.com/aceddad/LayerWeave/tree/visualization)，也是基于内核开发的上层应用示例。
 
-它的设计理念是**降低注意力的分散**：找东西、对位置、记改动、解释"我说的是哪里"这些事交给工具，人和 AI 把注意力留给真正需要思考的那一小块。
+## 跑通第一个例子
 
-做法是**组合**与**信息管理**。组合让每一部分都小而单一：对象放进层，层组成树，彼此用关联连接；核心只管最基本的结构，查询、编辑、视图、技能、插件都是可以加上、拿掉或替换的部件。拆得越细，信息也越分散，信息管理就把这些零散的块按时间、顺序和关联重新串起来，需要哪一块都能直接找到。于是不论处理信息还是开发功能，每次都可以优先处理当前这一小块。
-
-这里是 **main 开发分支**：不含网页视图，直接用 Python 和 CLI 读写、查询和编辑项目，也是开发新工具的起点。画布、批注、AI 截图、MCP 服务和发行封装在 **visualization 完整分支**，两边共用同一套核心、基础支撑和非视图工具。
-
-**欢迎基于 LayerWeave 内核开发和扩展。** 你和 AI 可以复用这里的基础能力，增加或替换工具，构建自己的应用。内置工具既提供现成的功能，也展示怎样使用内核；视图是其中一个上层应用示例，独立视图插件则进一步展示如何扩展这个应用。
-
-## 一、信息管理：把同一时刻的事放在一起看
-
-内容放在一条条轴上：视频和歌曲按秒，文章按段落，漫画按页和格，课程按学习步骤。每一项都是有身份的对象；对象分属不同的层，层组成树，共用同一时间尺度的轨道可以在同一时刻对照，对象之间再用关联连起来。段落、页码与秒不会自动换算；完整版本的批注按条目保存，通过关联和区间指向内容。
-
-查询 30–35 秒这一段，就能一次拿到各层的镜头、素材引用、关联，以及哪些轨道在这里是空着的；沿关联查到这一镜依据的故事和素材，再按对象身份定向修改，改完可以查历史、可以撤销。按段落或阅读顺序排列的内容也一样，选中一段，就能沿关联找到证据、配图和讨论。
-
-## 二、AI 友好：查得到、看得见、听得懂反馈
-
-所有能力都可以从 Python 和 CLI 调用，每次操作返回结构化的结果：写入了什么、有没有问题、编号是多少。AI 先用 `command_help` 查有哪些工具、参数怎么填，再针对具体目标操作，不必一次读完整个项目。
-
-完整版本在此之上提供 MCP 服务，以及读取当前视图、按时刻读取、沿关联展开、批注和截图的工具：人把视图链接或一条挂在具体内容上的批注交给 AI，AI 就知道"这里"指的是什么，还能顺着之前的批注追溯来龙去脉。
-
-## 三、开发友好：让 AI 专心做一件事
-
-方便开发是 LayerWeave 最初的设计目的之一，也是这个分支的主要用途。需要一个新功能时，可以把精力放在功能本身，直接复用保存、编号、事务、改动记录、历史和撤销等通用能力。
-
-比如你已经给角色和镜头建了关联，想要一份"每个角色出现在哪些镜头"的汇总：写一个小工具直接查询现有项目，保存结果时沿用项目已有的读写和改动记录，写错了也能撤销。
-
-常见的扩展方式：
-
-- **用现有结构：** 通过 Python 接口读写层、对象和关联，按位置、区间或子树查询。
-- **加自己的类型：** 新增层或对象类型，同时提供 Python 类和 TOML 声明。
-- **加自己的数据表：** 工具自己的表不必套用层和对象的结构，声明之后同样进入改动记录，可以查历史、可以撤销。
-- **组合已有工具：** 在同一个事务里调用多个工具，任何一步失败都整体回滚。
-- **需要专用界面时：** 接入完整版本的视图插件。
-
-完整版本的批注就是这样做出来的：`Note` 继承了普通的文字对象，回复用关联表达，已读状态和共享排版放在视图工具自己的表里，不用改动原有结构。
-
-这就是组合的好处：新功能可以复用已有的部件，把精力放在相关接口和自身逻辑上。
-
-整体很轻。核心和基础支撑仅依赖 Python 标准库，约三千行 Python；完整版本的 MCP 和部分技能另有可选依赖。具体操作放在可以替换的工具包里，不需要的可以移除，底层读写也可以直接嵌进你自己的 Python 工程。本分支现有 33 个内部命令，分布在 13 个工具包；另有 12 份技能材料供 AI 按需阅读，它们不会自动执行。
-
-从[扩展指南](docs/build-with-layerweave/README.md)选一种最小接入方式开始；[工具自有表的可运行示例](examples/tool_tables.py)演示了新工具怎样共用记录、历史与撤销；逐个接口见[公共 API](src/layerweave/support/API.md)，整体设计见[架构说明](docs/architecture.md)。
-
-## 四、视觉层：在完整版本里
-
-画布是人和 AI 共用的一扇窗：人在上面看、指、留言，AI 在上面截图、读取人正在看的位置。画布每两秒同步一次项目的变化，可以随时看 AI 改到了哪里；看到问题就把批注挂在那里，AI 先做完手上的事，再按批注逐条处理。这部分在 visualization 分支维护，与本分支共用同一套数据格式和非视图工具。
-
-## 案例
-
-| 案例 | 规模 | 可以看到什么 |
-|---|---|---|
-| [文章解析](examples/showcases/article-reading/README.md) · **推荐入门** | 8 个根层、32 个对象、68 条关联 | 原创中文短论与逐段解读并排，从论点追溯证据、配图和讨论；五条阅读路线只用基础的 Python/CLI 就能完成 |
-| [动态分镜与 H3](examples/showcases/donut-hole-h3/README.md) | 30 层、228 个对象、210 条关联 | 一首歌的 60 个镜头，连到段落和实现方式；使用生成素材的镜头还可追溯片段静帧与模型；用静帧阅读，不需要下载视频 |
-| [手书制作](examples/showcases/donut-hole-tegaki/README.md) | 29 层、101 个对象、43 条关联 | 同一首歌的另一种做法：故事、14 段画面设计、实现方式和角色设定 |
-| [晚开的花](examples/showcases/late-bloom-scroll/README.md) | 4 层、37 个对象，其中 32 条批注 | 四个 AI 用批注核对画面接缝、拼成一幅长卷；使用完整版本的批注类型 |
-
-十二个案例合计 125 层、691 个对象、927 条关联，另外八个覆盖小说、漫画、课程、调查、互动故事、需求、翻译审校和代码梳理，见[案例目录](examples/showcases/README.md)。
-
-## 开始开发
-
-首发以 Windows 为支持平台；代码要求 Python 3.11+ 和 SQLite 3.35+。取得本分支源码后，可以让 [uv](https://docs.astral.sh/uv/getting-started/installation/) 自动准备 Python。在源码根目录的 PowerShell 中运行：
+当前以 Windows 为支持平台，需要 Python 3.11+ 和 SQLite 3.35+。已有 [uv](https://docs.astral.sh/uv/getting-started/installation/) 时，在 PowerShell 中取得本分支源码并准备环境：
 
 ```powershell
+git clone --branch main https://github.com/aceddad/LayerWeave.git layerweave-core
+cd layerweave-core
 uv venv --python 3.11 .venv
-uv pip install --python .venv/Scripts/python.exe -e ".[dev]"
-.venv/Scripts/python.exe -X utf8 -B examples/read_write.py
+uv pip install --python .venv/Scripts/python.exe -e .
 ```
 
-uv 默认会下载缺少的 Python；第一次准备环境和依赖需要联网。不需要激活环境，直接用其中的解释器即可。已经有 Python、想用 pip 的话：
+已有源码时从 `uv venv` 开始。uv 会下载缺少的 Python；首次安装可能需要联网。可编辑安装使源码修改立即生效。自管 Python 环境、构建依赖和测试准备见[开发指南](docs/developer-conventions.md)。
+
+将下面代码保存为 `example.py`。它创建临时项目、保存一个文字层和对象，再从数据库还原成 Python 实例：
+
+```python
+from contextlib import closing
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+from layerweave.models import Text, TextLayer
+from layerweave.support.api import (
+    initialize_database, open_database, transaction,
+    save_layer, save_object, load_layer,
+)
+
+with TemporaryDirectory() as folder:
+    database = initialize_database(Path(folder) / "example.sqlite3")
+    with closing(open_database(database)) as connection:
+        with transaction(connection) as write:
+            project = write.create("project", {"name": "Reading notes"})
+
+        layer = TextLayer(name="Paragraphs")
+        save_layer(connection, project["id"], layer)
+        note = Text(layer=layer.id, begin=0, end=1,
+                    information={"text": "This claim needs a source."})
+        save_object(connection, project["id"], note)
+
+        loaded = load_layer(connection, project["id"], layer.id)
+        print(loaded.objects[0].information["text"])
+```
 
 ```powershell
-python -X utf8 -m venv .venv
-.venv/Scripts/python.exe -X utf8 -m pip install -e ".[dev]"
-.venv/Scripts/python.exe -X utf8 -B examples/read_write.py
+.venv/Scripts/python.exe -X utf8 example.py
 ```
 
-可编辑安装让其他工作目录也能导入 layerweave，修改源码立即生效。pyproject.toml 提供本地开发入口；本分支不单独制作面向使用者的发行包。核心和普通工具运行时只需要标准库，dev 依赖用于开发验证。示例使用临时数据，不会改动实际项目。
+输出 `This claim needs a source.`。示例数据随临时目录清理；用于实际项目时，将数据库路径换成自己的持久目录。编号由接口返回，实例的保存和读取不需要手写 SQL。[完整读写示例](examples/read_write.py)继续演示关闭重开、修改和查询历史。
 
-源码安装还需要 setuptools>=77.0.3 和 wheel。pip 默认在临时构建环境里准备它们，所以即使当前环境已有 setuptools，也可能联网下载。如果卡在 Installing build dependencies，先看[源码安装排查](docs/developer-conventions.md#可编辑安装与构建依赖)；只有提前装好构建依赖，才适合关闭构建隔离。
+## 可以复用什么
 
-想体验案例时，在同一个 PowerShell 中设置 `$casePython = (Resolve-Path .venv/Scripts/python.exe).Path`，再按所选案例的说明导入和查询。
+| 需求 | 现成能力 |
+|---|---|
+| 组织信息 | 对象装入层，层组成树；`bind` 连接对象、层以及跨项目的目标 |
+| 找到需要的部分 | 按层、子树、位置或区间查询，读取关联与项目概览 |
+| 保存一个功能的结果 | 统一写会话处理编号、事务和改动记录 |
+| 修正已经写入的内容 | 编辑、历史、撤销和检查工具；事务内可组合多个操作 |
+| 接入自己的数据 | 声明工具自有表，共用读写、改动记录和恢复能力 |
+| 适配新的内容类型 | Python 类与 TOML 声明一一对应，沿已有封装扩展 |
 
-## 按需查看接口
+轴可以表示秒、段落或页码，由项目解释，单位不自动换算。图片和音视频保存路径或链接引用。核心和基础支撑只依赖 Python 标准库；具体操作放在可替换的工具包里。
+
+## 按需组合，专注自己的功能
+
+LayerWeave 的理念是**降低注意力的分散**：处理内容时，只读取当前相关的部分；开发功能时，复用已有能力，把精力放在功能自身。
+
+比如，角色与镜头之间已经建好了关联，要汇总“每个角色出现在哪些镜头”，就可以直接查询现有项目。需要保存结果时，沿用已有的读写和改动记录，再配合撤销工具恢复改动。自己的数据不必全部套用层与对象的形式，也可以登记独立的工具表。
+
+**欢迎你和 AI 基于这个内核开发和扩展。** 层与对象可以组合，`bind` 将它们连接；工具和外置技能按任务选择。内置工具同时提供现成功能与开发参考。完整版本的视图本身也是工具包，独立视图插件进一步展示如何扩展上层应用。
+
+批注是一个例子：完整版本用 `Note` 继承文字对象，用关联表达回复，已读状态和布局则放在视图自己的表里。它复用了既有结构与存储能力。
+
+| 想开发什么 | 从这里开始 |
+|---|---|
+| 新的层或对象类型 | [模型与封装](src/layerweave/models/README.md)、[Title 示例](examples/title.py) |
+| 有自己数据的工具 | [工具表接入](docs/build-with-layerweave/03-managed-tables.md)、[可运行例子](examples/tool_tables.py) |
+| 组合多个操作 | [事务内组合](docs/build-with-layerweave/04-composing-tools.md) |
+| 跟随项目变化的界面或缓存 | [增量读取](docs/build-with-layerweave/05-incremental-reading.md) |
+| 为 AI 提供外置技能 | [技能与工具区](src/layerweave/tool/README.md) |
+
+更多思路见[扩展指南](docs/build-with-layerweave/README.md)，接口参数见[公共 API](src/layerweave/support/API.md)，模块职责见[架构说明](docs/architecture.md)。
+
+## 查找工具与案例
+
+通过现有 help 查看当前工具及示例，或查看层与对象的字段、用途和封装关系：
 
 ```powershell
 .venv/Scripts/python.exe -X utf8 -m layerweave.tool.builtin.shared.help.command_help
 .venv/Scripts/python.exe -X utf8 -m layerweave.tool.builtin.shared.help.config_help
 ```
 
-`command_help` 列出当前安装的工具和调用示例，`config_help` 说明各种层和对象的用途、字段与封装关系。命令里的 mcp 元信息供外部适配器读取，不会自行启动服务。
+- [文章解析案例](examples/showcases/article-reading/README.md)：用基础 Python/CLI 查询正文、解读和证据。
+- [十二个场景案例](examples/showcases/README.md)：创作、阅读、调查、协作和代码梳理；需要视图或批注的案例在完整分支体验。
+- [使用现成工具](src/layerweave/tool/builtin/usage/README.md)：读写、查询、编辑、历史与撤销、JSON 交换和模板。
+- [维护源码](docs/developer-conventions.md) · [测试导引](tests/README.md) · [文档目录](docs/README.md)。
 
-- [使用现成工具](src/layerweave/tool/builtin/usage/README.md)：读写项目、查询、按时序编辑、历史与撤销、JSON 交换和场景模板。
-- [维护源码](docs/developer-conventions.md)、[完整示例](docs/examples.md)、[文档目录](docs/README.md)。
-
-业务记录的写入统一走同一个入口；新增封装时同时提供 Python 类和 TOML。完整的工具包可以替换或移除。技能是供 AI 按需阅读的材料，使用前请确认它的依赖、KEY 和输出目录。
-
-## 验证改动
-
-```powershell
-.venv/Scripts/python.exe -X utf8 -B -m unittest discover -s tests -t . -v
-```
-
-测试按 architecture、foundation、tools 分类，使用临时数据，详见[测试导引](tests/README.md)。Windows 下的管道命令显式使用 -X utf8；也可以设置 PYTHONUTF8=1，见[编码说明](src/layerweave/tool/builtin/usage/README.md#命令行编码)。
+技能是供 AI 按需阅读的说明和脚本，不会自行执行。本分支保留直接 Python/CLI 调用，不包含网页视图和 MCP 服务封装。
 
 ## AI 协作开发
 
@@ -119,4 +113,4 @@ python -X utf8 -m venv .venv
 
 ## 许可证
 
-LayerWeave 源码采用 [MIT](LICENSE)。独立技能、外部库和服务遵循各自的说明。视图构建与第三方网页组件的分发说明见 visualization 分支。
+LayerWeave 源码采用 [MIT](LICENSE)。独立技能、外部库和服务遵循各自的说明；视图构建与第三方网页组件的分发说明见 visualization 分支。

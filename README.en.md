@@ -8,6 +8,8 @@
 
 LayerWeave is an information management tool for people and AI. It places text, media references, and comments on axes ordered by time or sequence, organizes them with layers and relationships, and lets every participant find everything relevant to "this moment, right here."
 
+This branch demonstrates an application built on the LayerWeave kernel; the view itself is a built-in tool package. The built-in tools show how to reuse the kernel, and the separate view plugins show how to extend the application further. These implementations are ready to use and serve as references for you and your agents to build new tools and applications.
+
 It follows one design principle: **reduce scattered attention.** In most tasks, only a small part needs real thought, yet much of the attention goes into finding things, matching positions, tracking changes, and explaining which part you meant. LayerWeave hands that work to tools:
 
 - An AI reads only the relevant content for a given span of time, instead of the whole project every time.

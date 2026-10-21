@@ -10,7 +10,8 @@
 - [视图](../src/layerweave/tool/builtin/view/README.md)：画布、批注、截图与选装插件。
 - [技能与外部服务](../src/layerweave/tool/README.md)：查找技能、连接信息与输出目录。
 - [Python 示例](examples.md)：可运行的接口调用示例。
-- [场景演示](../examples/showcases/README.md)：完整使用案例的存放位置与组织方式，目前尚未收录完成的案例。
+- [场景演示](../examples/showcases/README.md)：已收录十二个场景案例，附可导入数据与使用说明，推荐从文章解析开始。
+- [手书制作流程](workflows/hand-drawn-video.md)：从主旨、故事到 Remotion 合成的制作步骤，以及每一步放在哪一层、可用哪些技能。
 
 ## 开发自己的扩展
 

@@ -25,6 +25,9 @@ def check(wheel):
         assert archive.read(metadata).decode().splitlines() == ["layerweave"]
         from email import message_from_bytes
         metadata_text=message_from_bytes(archive.read(next(n for n in names if n.endswith('.dist-info/METADATA'))))
+        description = metadata_text.get_payload(decode=True).decode('utf-8')
+        assert f"https://github.com/aceddad/LayerWeave/blob/v{metadata_text['Version']}/README.en.md" in description
+        assert '](README.en.md)' not in description, 'Package-index README must use absolute links'
         assert 'MIT' in metadata_text['License-Expression']
         assert set(metadata_text.get_all('License-File'))=={'LICENSE','THIRD_PARTY_NOTICES.md'}
         for license_name in ('LICENSE','THIRD_PARTY_NOTICES.md'):

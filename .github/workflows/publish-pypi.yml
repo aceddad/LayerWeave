@@ -1,0 +1,58 @@
+name: Publish verified Python release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: GitHub release tag containing the already-tested distributions
+        required: true
+        default: v0.7.9b1
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Download the tested distributions
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          mkdir downloads dist
+          gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --dir downloads \
+            --pattern '*.whl' --pattern '*.tar.gz' --pattern SHA256SUMS
+          python3 - <<'PY'
+          import hashlib
+          import os
+          from pathlib import Path
+          import re
+          import shutil
+
+          tag = os.environ["RELEASE_TAG"]
+          if not re.fullmatch(r"v\d+\.\d+\.\d+(?:(?:a|b|rc)\d+)?", tag):
+              raise SystemExit("Expected a version tag such as v0.7.9b1")
+          version = tag[1:]
+          source = Path("downloads")
+          checksums = {}
+          for line in (source / "SHA256SUMS").read_text().splitlines():
+              checksum, filename = line.split(maxsplit=1)
+              checksums[filename] = checksum
+          for name in (f"layerweave-{version}-py3-none-any.whl", f"layerweave-{version}.tar.gz"):
+              file = source / name
+              digest = hashlib.sha256(file.read_bytes()).hexdigest()
+              if checksums.get(name) != digest:
+                  raise SystemExit("Missing or mismatched checksum: " + name)
+              shutil.copy2(file, Path("dist") / name)
+              print("Verified", name, digest)
+          PY
+      - name: Publish with PyPI Trusted Publishing
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086
+        with:
+          packages-dir: dist/
+          print-hash: true

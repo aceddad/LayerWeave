@@ -7,6 +7,7 @@ __pycache__/
 /dist/
 /layerweave-demo/
 /distribution/npm/*.tgz
+/distribution/PYPI_README.md
 venv/
 scratch/
 output/*

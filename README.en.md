@@ -4,7 +4,7 @@
 
 [GitHub](https://github.com/aceddad/LayerWeave/tree/visualization) · [Gitee](https://gitee.com/emotion1354414/layer-weave/tree/visualization) · [Kernel development branch](https://github.com/aceddad/LayerWeave/tree/main)
 
-**0.7.9b1 local development preview · Windows** (the published release is [0.7.8](https://github.com/aceddad/LayerWeave/releases/tag/v0.7.8))
+**0.7.9b1 public preview · Windows**
 
 **Fewer distractions: look only at the part that matters, and do only the task at hand.**
 
@@ -123,70 +123,48 @@ Images, audio, and video are referenced by file path or URL and are not copied i
 
 ## Windows quick start
 
-The initial supported platform is Windows. The code requires Python 3.11+ and SQLite 3.35+; these examples use Python 3.11. [uv](https://docs.astral.sh/uv/getting-started/installation/) can prepare Python and the environment for you, or you can use an existing Python installation. Node is not needed to use the web view.
+Open PowerShell in your chosen working directory and choose either entry point.
 
-### Install the complete package with uv
+With [uv](https://docs.astral.sh/uv/getting-started/installation/):
 
-0.7.9b1 adds a [unified launcher (Chinese)](src/layerweave/tool/builtin/shared/launcher/README.md): `layerweave demo` prepares article reading and opens the browser; `view` opens existing projects and `new` creates one from a template. Reopening preserves edits. uv and the [npm launcher](distribution/npm/README.en.md) share this implementation. These versions are not published to PyPI/npm yet; see those guides for local candidate packages. The instructions below remain the download path for the published 0.7.8 release.
+```powershell
+uvx layerweave@0.7.9b1 demo
+```
 
-The wheel, source archive, twelve-example ZIP, and SHA-256 checksums are available on the [0.7.8 preview release page](https://github.com/aceddad/LayerWeave/releases/tag/v0.7.8). After installing uv, open PowerShell in your chosen working directory and install directly from this release:
+With Node.js 20+ / npm on Windows x64:
+
+```powershell
+npx --yes layerweave@0.7.9-beta.1 demo
+```
+
+Both entry points use the same Python implementation, prepare the article-reading example, and open your browser. uv manages Python; the npm entry point automatically prepares uv and an independent Python 3.11 when needed. Initial setup needs internet access. The uv route does not require Node.
+
+The project lives in `./layerweave-demo/article-reading`. Running the same command again preserves objects, comments, layout, and media edits. Keep the terminal running while using the view; Ctrl+C stops the server. Use `--no-browser` to print the URL without opening a browser.
+
+Replace the final `demo` argument with one of these:
+
+| Arguments | Purpose |
+|---|---|
+| `demo --list` | List all twelve examples |
+| `demo comic-creation --dir ./my-comic` | Download and open the comic example on demand |
+| `view ./project.sqlite3` | Open an existing database; optionally select a project with `--project 1` |
+| `new ./my-project --template subtitles` | Create a project from the subtitles template |
+| `help project_overview` | Read the tool's detailed help |
+
+Article reading is bundled; other examples download and cache on first use. Projects live in your working directory, so clearing caches does not delete them. See the [launcher guide (Chinese)](src/layerweave/tool/builtin/shared/launcher/README.md), [npm guide](distribution/npm/README.en.md), and [example directory](examples/showcases/README.md).
+
+### Install into your own Python environment
+
+For scripts that import LayerWeave, or a persistent development environment:
 
 ```powershell
 uv venv --python 3.11 .venv
-uv pip install --python .venv/Scripts/python.exe "layerweave[mcp] @ https://github.com/aceddad/LayerWeave/releases/download/v0.7.8/layerweave-0.7.8-py3-none-any.whl"
+uv pip install --python .venv/Scripts/python.exe "layerweave[mcp]==0.7.9b1"
 ```
 
-By default, uv downloads a suitable Python version if one is missing. Initial setup and dependency downloads require internet access. You do not need to activate the environment; later commands use its interpreter directly. [How uv manages Python](https://docs.astral.sh/uv/concepts/python-versions/)
+`[mcp]` adds the optional AI integration dependencies; omit it for Python/CLI-only use. The wheel, source archive, and npm package are also available on the [GitHub Release page](https://github.com/aceddad/LayerWeave/releases/tag/v0.7.9b1) for installation from local files. Installing LayerWeave itself from a wheel does not require setuptools; runtime dependencies may still need downloading.
 
-If Python is already installed and you prefer pip, download the wheel from the release page into the current directory first:
-
-```powershell
-python -X utf8 -m venv .venv
-.venv/Scripts/python.exe -X utf8 -m pip install "./layerweave-0.7.8-py3-none-any.whl[mcp]"
-```
-
-`[mcp]` adds the optional dependencies for AI integration; omit it for Python/CLI-only use. Installing the package does not install the official view plugins. The package comes from GitHub Releases, not PyPI. A downloaded wheel also works with `uv pip install --python .venv/Scripts/python.exe "./layerweave-0.7.8-py3-none-any.whl[mcp]"`.
-
-The wheel is already built, so installing LayerWeave itself does not require setuptools. The `[mcp]` dependencies may still need downloading, so the wheel is not a complete offline environment. Editable installation is only for source development; if it stalls while preparing build dependencies, see [source installation troubleshooting (Chinese)](docs/developer-conventions.md#可编辑安装与构建依赖).
-
-### Try the article-reading example first
-
-Copy `examples/showcases` from the matching source distribution, or download and extract the [twelve-example ZIP](https://github.com/aceddad/LayerWeave/releases/download/v0.7.8/layerweave-showcases-0.7.8.zip):
-
-```powershell
-Invoke-WebRequest -Uri "https://github.com/aceddad/LayerWeave/releases/download/v0.7.8/layerweave-showcases-0.7.8.zip" -OutFile layerweave-showcases-0.7.8.zip
-Expand-Archive -LiteralPath layerweave-showcases-0.7.8.zip -DestinationPath examples
-```
-
-Check that `examples/showcases/article-reading/project.json` exists. The software and the examples are distributed separately; this one is enough to start. The [example directory](examples/showcases/README.md) covers the other eleven.
-
-Run these commands from the working directory where you installed the wheel:
-
-```powershell
-.venv/Scripts/python.exe -X utf8 -m layerweave.tool.builtin.developer.database.cli examples/showcases/article-reading/reading.sqlite3
-.venv/Scripts/python.exe -X utf8 -m layerweave.tool.builtin.usage.exchange.cli apply examples/showcases/article-reading/reading.sqlite3 --data-file examples/showcases/article-reading/project.json --new-project --result-file import-result.json
-$caseImport = Get-Content -Raw -Encoding utf8 import-result.json | ConvertFrom-Json
-if (-not $caseImport.ok) { throw 'Import failed; inspect import-result.json' }
-$caseProjectId = $caseImport.data.project_id
-.venv/Scripts/python.exe -X utf8 -m layerweave.tool.builtin.usage.query.project_overview examples/showcases/article-reading/reading.sqlite3 $caseProjectId
-.venv/Scripts/python.exe -X utf8 -m layerweave.tool.builtin.view.server examples/showcases/article-reading/reading.sqlite3 --project $caseProjectId
-```
-
-Open the local URL printed by the server. Read the essay and interpretation layers, then pick a claim and follow its relationships to evidence and illustrations. The [article-reading guide (Chinese)](examples/showcases/article-reading/README.md) has five focused reading tasks. Keep the database in the example directory so relative image paths resolve. Use the project ID from the import result; importing again creates another copy.
-
-This starter example needs no API key, FFmpeg, Node, or view plugin. Its content is in Chinese and works offline; only the external source articles need internet access.
-
-### Create your own project
-
-```powershell
-.venv/Scripts/python.exe -X utf8 -m layerweave.tool.builtin.developer.database.cli project.sqlite3
-.venv/Scripts/python.exe -X utf8 -m layerweave.tool.builtin.usage.exchange.cli templates
-.venv/Scripts/python.exe -X utf8 -m layerweave.tool.builtin.usage.exchange.cli apply project.sqlite3 --template subtitles --new-project
-```
-
-Templates cover subtitles, storyboards, and hand-drawn MVs, and their structure can be freely adapted after import. Pass the returned project ID to the view or query tools, and check help for parameters.
-
-FFmpeg is an optional external program; the wheel, `[mcp]`, and uv do not install it. Ordinary data management and text views don't need it. Server-side frame extraction requires FFmpeg, and thumbnails and waveforms also use it; without it, those browsing features fall back or are not shown. Add its bin directory to PATH, or set the `FFMPEG` environment variable to the full path of ffmpeg.exe; see [setup and affected features (Chinese)](src/layerweave/tool/builtin/view/GUIDE.md#选装-ffmpeg). AI screenshots also require Chrome, Edge, or Chromium. The user or AI chooses where media output goes.
+Ordinary data management and article reading need no API key, FFmpeg, or official view plugin. FFmpeg is optional for server-side frame extraction, thumbnails, and waveforms. AI screenshots require Chrome, Edge, or Chromium. See the [FFmpeg guide (Chinese)](src/layerweave/tool/builtin/view/GUIDE.md#选装-ffmpeg). Official view plugins remain separately installed.
 
 ## Connect an AI / MCP client
 
@@ -196,7 +174,7 @@ Save an `mcp.json` in your project working directory, with workspace set to its 
 {"workspace": "D:/my-project"}
 ```
 
-Configure a client that supports stdio MCP, for example:
+When using the Python environment created above, configure a stdio MCP client as follows:
 
 ```json
 {
@@ -214,7 +192,7 @@ Replace the interpreter and configuration paths with your actual locations; wher
 For MCP-only use, uvx can prepare the environment and start the service in one command:
 
 ```powershell
-uvx --python 3.11 --from "layerweave[mcp] @ https://github.com/aceddad/LayerWeave/releases/download/v0.7.8/layerweave-0.7.8-py3-none-any.whl" layerweave-mcp --config ./mcp.json
+uvx --python 3.11 --from "layerweave[mcp]==0.7.9b1" layerweave-mcp --config ./mcp.json
 ```
 
 This runs a persistent stdio service, normally managed by an MCP client; it does not open the web view. Use an absolute configuration-file path in your client; the MCP guide includes a full example. You can also point `--from` at a downloaded local wheel.

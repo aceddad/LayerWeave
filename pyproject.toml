@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "layerweave"
 dynamic = ["version"]
 description = "Layers, objects and composable tools for AI workflows"
-readme = "README.md"
+readme = "distribution/PYPI_README.md"
 license = "MIT AND ISC AND BSD-3-Clause"
 license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
 requires-python = ">=3.11"

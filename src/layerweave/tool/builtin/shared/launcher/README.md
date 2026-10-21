@@ -23,15 +23,16 @@ layerweave mcp --config ./mcp.json
 
 目标目录存在但没有启动器元数据，或属于其他案例/模板时，命令会提示换个目录；不会覆盖已有文件。初次准备在同一父目录的临时目录完成，成功后移到目标位置，失败后可直接重试。MCP 仍需 `layerweave[mcp]` 可选依赖；原来的 layerweave-mcp 入口继续可用。
 
-## 本地候选包与包索引
+## uv / npm 启动
 
-本次版本为 Python `0.7.9b1`、npm `0.7.9-beta.1`。PyPI/npm 发布授权完成前，使用本地构建包：
+Python 版本为 `0.7.9b1`，npm 版本为 `0.7.9-beta.1`。在自己的工作目录选择一种方式：
 
 ```powershell
-uvx --python 3.11 --from ./layerweave-0.7.9b1-py3-none-any.whl layerweave demo
+uvx layerweave@0.7.9b1 demo
+npx --yes layerweave@0.7.9-beta.1 demo
 ```
 
-npm 启动器的本地包调用见[分发入口](../../../../../../distribution/npm/README.md)。包索引发布后，等价命令为 `uvx layerweave@0.7.9b1 demo` 与 `npx --yes layerweave@0.7.9-beta.1 demo`。这些版本目前尚未发布到索引。
+npm 自动管理运行环境，详细要求见[npm 分发入口](../../../../../../distribution/npm/README.md)。已有本地 wheel 时也可使用 `uvx --python 3.11 --from ./layerweave-0.7.9b1-py3-none-any.whl layerweave demo`。npm 使用预览通道 next，上面的明确版本命令不受通道变更影响。
 
 ## 资源与扩展
 

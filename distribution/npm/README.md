@@ -1,19 +1,18 @@
 # LayerWeave npm 启动器
 
-简体中文 | [English](README.en.md)
+简体中文 | [English](https://github.com/aceddad/LayerWeave/blob/v0.7.9b1/distribution/npm/README.en.md)
 
 在 Windows x64 上，以一条命令启动 LayerWeave。npm 包只准备运行环境并转交参数，案例、数据库、视图与 MCP 的业务逻辑全部来自同一份 Python 包。
 
-## 当前本地候选包
+## 快速开始
 
-版本为 npm `0.7.9-beta.1`，固定使用 Python `0.7.9b1`。尚未发布到 npm/PyPI；拿到构建好的两个文件后，在工作目录执行：
+在自己的工作目录中执行：
 
 ```powershell
-$env:LAYERWEAVE_PYTHON_PACKAGE = (Resolve-Path ./layerweave-0.7.9b1-py3-none-any.whl).Path
-npx --yes --package ./layerweave-0.7.9-beta.1.tgz layerweave demo
+npx --yes layerweave@0.7.9-beta.1 demo
 ```
 
-正式上传包索引后可用 `npx --yes layerweave@0.7.9-beta.1 demo`。本次 npm 入口支持 Windows x64、Node.js 20+；不需要预先装 Python 或 uv。
+本次 npm 预览版使用 next 通道，固定匹配 Python `0.7.9b1`。支持 Windows x64、Node.js 20+；不需要预先安装 Python 或 uv。
 
 ## 命令
 
@@ -33,4 +32,4 @@ npx --yes --package ./layerweave-0.7.9-beta.1.tgz layerweave demo
 
 默认缓存为 `%LOCALAPPDATA%/LayerWeave/cache`。LAYERWEAVE_CACHE_DIR 可改缓存位置；LAYERWEAVE_UV 可指定已有 uv；LAYERWEAVE_PYTHON_PACKAGE 可指定本地 wheel 或完整 Python requirement，供未发布包验证。自定义来源时请使用与 npm 版本相符的 Python 包；需要 MCP 时提供含 mcp extra 的 requirement。
 
-构建 npm 包执行 `npm pack`；验证执行 `npm test`。包中没有项目数据库、用户素材、安装后脚本或另一份 Python 实现。PyPI/npm 索引发布前需要维护者账号与授权，详见仓库发布说明。
+构建 npm 包执行 `npm pack`；验证执行 `npm test`。包中没有项目数据库、用户素材、安装后脚本或另一份 Python 实现。发布需要维护者账号与授权，详见仓库发布说明。

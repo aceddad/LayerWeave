@@ -1,19 +1,18 @@
 # LayerWeave npm launcher
 
-[简体中文](README.md) | English
+[简体中文](https://github.com/aceddad/LayerWeave/blob/v0.7.9b1/distribution/npm/README.md) | English
 
 Start LayerWeave with one command on Windows x64. This package prepares the runtime and forwards arguments. All example, project, view, and MCP behavior lives in the same Python application used by uv.
 
-## Local preview
+## Quick start
 
-The npm version is `0.7.9-beta.1`, pinned to Python package `0.7.9b1`. Neither version is published to npm/PyPI yet. With the locally built files in your working directory:
+Run from your chosen working directory:
 
 ```powershell
-$env:LAYERWEAVE_PYTHON_PACKAGE = (Resolve-Path ./layerweave-0.7.9b1-py3-none-any.whl).Path
-npx --yes --package ./layerweave-0.7.9-beta.1.tgz layerweave demo
+npx --yes layerweave@0.7.9-beta.1 demo
 ```
 
-After registry publication the equivalent command will be `npx --yes layerweave@0.7.9-beta.1 demo`. This npm preview supports Windows x64 and Node.js 20+. Python and uv do not need to be installed beforehand.
+This npm preview uses the next dist-tag and pins Python package `0.7.9b1`. It supports Windows x64 and Node.js 20+. Python and uv do not need to be installed beforehand.
 
 ## Commands
 

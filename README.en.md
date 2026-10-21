@@ -8,6 +8,8 @@ LayerWeave is an information management tool for people and AI. It places text, 
 
 Its design principle is to **reduce scattered attention**: finding things, matching positions, tracking changes, and explaining which part you meant are handed to tools, so people and AI can spend their attention on the small part that actually needs thought.
 
+The method is **composition** together with **information management**. Composition keeps every part small and single-purpose: objects sit in layers, layers form a tree, and relationships connect them; the core handles only the basic structure, while queries, editing, the view, skills, and plugins are parts you can add, remove, or replace. The finer things are split, the more scattered the information becomes, so information management ties those pieces back together by time, sequence, and relationship, and any piece can be found directly. Whether working through information or building a feature, you can focus on the part at hand.
+
 This is the **main development branch**. It has no web view: you read, query, and edit projects directly through Python and the CLI, and it is the starting point for building new tools. The canvas, comments, AI screenshots, MCP service, and release packaging live on the **visualization branch**, the complete version. Both share the same core, support layer, and non-visual tools.
 
 **You are welcome to build on and extend the LayerWeave kernel.** You and your agents can reuse its foundations, add or replace tools, and build your own applications. The built-in tools provide usable functionality and examples of how to use the kernel. The view is one example application built on it; the separate view plugins demonstrate how that application can be extended further.
@@ -39,6 +41,8 @@ Common ways to extend it:
 - **For a dedicated interface:** use view plugins from the complete version.
 
 Comments in the complete version were built this way: `Note` extends the ordinary text object, replies are relationships, and read states and the shared layout live in the view tool's own tables, without changing the existing structure.
+
+This is what composition makes possible: a new feature can reuse existing parts, letting you focus on the relevant interfaces and its own logic.
 
 It is also light. Its core and support layer use only Python's standard library and come to roughly three thousand lines of Python; the complete version's MCP integration and some skills have their own optional dependencies. Concrete operations live in replaceable tool packages; you can remove the ones you don't need and embed the underlying data operations in your own Python application. This branch currently has 33 internal commands across 13 tool packages, plus 12 skill materials for AI to read as needed; skills never run on their own.
 

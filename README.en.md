@@ -109,6 +109,10 @@ All business-record writes go through one shared entry point; new types come wit
 
 Tests are grouped into architecture, foundation, and tools, and use temporary data; see the [test guide (Chinese)](tests/README.md). Piped commands on Windows use -X utf8 explicitly; alternatively set PYTHONUTF8=1, as described in the [encoding notes (Chinese)](src/layerweave/tool/builtin/usage/README.md#命令行编码).
 
+## AI-assisted development
+
+The maintainer leads the project's design and maintenance. Astra (Codex) assisted with development, testing, and documentation on this branch.
+
 ## License
 
 LayerWeave source code is licensed under [MIT](LICENSE). Separate skills, external libraries, and services follow their own terms. Distribution notes for the view build and third-party web components are on the visualization branch.

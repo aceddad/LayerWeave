@@ -109,6 +109,10 @@ python -X utf8 -m venv .venv
 
 测试按 architecture、foundation、tools 分类，使用临时数据，详见[测试导引](tests/README.md)。Windows 下的管道命令显式使用 -X utf8；也可以设置 PYTHONUTF8=1，见[编码说明](src/layerweave/tool/builtin/usage/README.md#命令行编码)。
 
+## AI 协作开发
+
+项目由维护者主导设计与维护，Astra（Codex）协助本分支的开发、测试与文档整理。
+
 ## 许可证
 
 LayerWeave 源码采用 [MIT](LICENSE)。独立技能、外部库和服务遵循各自的说明。视图构建与第三方网页组件的分发说明见 visualization 分支。

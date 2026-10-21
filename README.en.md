@@ -2,9 +2,29 @@
 
 [简体中文](README.md) | **English**
 
-Use layers, objects, and relations as a reusable Python foundation for your own AI tools.
+**Organize work into projects that agents can edit and tools can build on.**
 
-`main` is the non-visual development branch. It contains the core, models, support layer, non-visual internal tools, definitions, templates, and skill materials. Call Python or CLI entry points directly and add or remove complete tool packages. Shared implementations match `visualization`; the complete branch maintains the view, MCP service, and end-user release packaging, which are not installed by main.
+LayerWeave keeps content, its relationships, and feedback in one project, so people, agents, and different tools can continue working with it. Images, audio, and video are referenced by file path or URL.
+
+This is the main development branch, with direct Python and CLI access. The visualization branch provides the web view, annotation tools, MCP service, and release packaging. Both share the same core, support layer, and non-visual tools.
+
+## Start with a concrete task
+
+**Read an article and trace a claim to its evidence.** Query the essay passages, interpretations, evidence, and illustrations linked to a claim. Read the relevant portion and revise an interpretation while keeping its links to the essay. The [article-reading example](examples/showcases/article-reading/README.md) provides five runnable tasks that work with the base Python/CLI tools.
+
+**Plan a storyboard with its assets and implementation notes.** Link shots to story segments, images, and production instructions. Query and edit by object or range, inspect history, and undo changes. The [storyboard and H3 example](examples/showcases/donut-hole-h3/README.md) illustrates 60 shots with still images, requiring no video download.
+
+**Use comments to continue shared work.** The complete version lets people and agents leave feedback on specific content, reply, and mark discussions resolved. [Late Bloom](examples/showcases/late-bloom-scroll/README.md) shows four agents checking scene boundaries. This case uses the complete version's annotation types.
+
+Organize content by paragraph, page, sequence, or time, and connect related items. [Browse all twelve examples](examples/showcases/README.md). Their content and detailed walkthroughs are currently in Chinese.
+
+## Build your own tools
+
+For example, after linking characters to shots, you can write a tool that lists each character's shots from the existing project. Save its results using the same read/write operations, identifiers, and change records.
+
+Developers and agents can use the existing content structures or add their own types and database tables. Tool packages can be added or removed, and the underlying data operations can be embedded directly in your own Python application. Specialized interfaces can use the complete version's view plugins.
+
+Start with the [extension guide](docs/build-with-layerweave/README.md). The [tool-owned table example](examples/tool_tables.py) demonstrates how a new tool shares record storage, history, and undo. See the [public API](src/layerweave/support/API.md) for individual calls. These detailed guides are in Chinese.
 
 ## Start developing
 
@@ -28,9 +48,7 @@ Editable installation makes layerweave importable from other working directories
 
 Source installation also needs setuptools>=77.0.3 and wheel. By default, pip prepares them in an isolated build environment and may download them even if setuptools is installed in the current environment. If installation stalls at Installing build dependencies, see [source installation troubleshooting (Chinese)](docs/developer-conventions.md#可编辑安装与构建依赖). Disable build isolation only after installing the required build dependencies.
 
-## Learn through examples
-
-The source includes [twelve cases](examples/showcases/README.md); start with [article reading](examples/showcases/article-reading/README.md). After the uv setup above, set `$casePython = (Resolve-Path .venv/Scripts/python.exe).Path` and follow the case instructions. Main supports ordinary data operations; the canvas and the native annotations in the collaborative scroll case require the complete version. The hand-drawn MV and H3 cases are video-free reading editions. Full production media stays outside the public sources. Case content and detailed guides are in Chinese.
+To try a case, set `$casePython = (Resolve-Path .venv/Scripts/python.exe).Path` in the same PowerShell session, then follow that case's import and query instructions.
 
 ## Discover interfaces on demand
 
@@ -44,8 +62,6 @@ command_help lists installed tools and invocation examples. config_help explains
 The detailed guides below, CLI/help descriptions, and bundled template content are currently primarily Chinese. Machine-readable field and command names remain unchanged.
 
 - [Use existing tools](src/layerweave/tool/builtin/usage/README.md): project CRUD, queries, timeline editing, history and undo, JSON exchange, and templates.
-- [Foundation API](src/layerweave/support/API.md): raw reads, writes, model loading, and transactions.
-- [Extension guide](docs/build-with-layerweave/README.md): tool-owned tables, composed write sessions, incremental reads, and numbering rules.
 - [Source maintenance](docs/developer-conventions.md), [runnable examples](docs/examples.md), and [documentation index](docs/README.md).
 
 Use the shared write entry points for business records. A new definition provides both a Python class and TOML. Complete tool packages can be replaced or removed. Skills are materials for an agent to read on demand; check their dependencies, credentials, and output directories before use.

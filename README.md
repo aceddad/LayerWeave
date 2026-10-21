@@ -2,9 +2,29 @@
 
 **简体中文** | [English](README.en.md)
 
-用层、对象和关联组织内容，为自己的 AI 工具提供可复用的 Python 内核与内部工具。
+**把工作内容组织成 Agent 能操作、工具能复用的项目。**
 
-main 是无视图开发分支，包含核心、模型、基础支撑、非视图内部工具、配置、模板和技能材料。开发者直接调用 Python 或 CLI，并按完整工具包增减能力。共用实现与 visualization 保持一致；视图、MCP 服务和面向使用者的发行封装在完整分支维护，不随 main 安装。
+LayerWeave 把内容、它们之间的联系和反馈保存在同一份项目里，让人、Agent 和不同工具接着处理这些内容。图片、音视频通过文件路径或链接引用。
+
+这里是 main 开发分支，可直接使用 Python 和 CLI。网页视图、批注工具、MCP 服务与发行封装在 visualization 完整分支；共用的核心、基础支撑与非视图工具保持一致。
+
+## 从具体工作开始
+
+**读文章，沿着论点找依据。** 查询一个论点关联的正文、解读、证据和配图，只展开当前需要的部分。修改解读时保留它与正文的联系。[文章解析案例](examples/showcases/article-reading/README.md)提供五条可运行的阅读路线，基础 Python/CLI 即可完成。
+
+**做分镜，把镜头与素材、做法连起来。** 将镜头关联到故事段落、图片和实现说明，按对象或区间查询、修改，查看历史或撤销操作。[动态分镜与 H3 案例](examples/showcases/donut-hole-h3/README.md)以静帧展示 60 个镜头，无需下载视频。
+
+**通过批注接续协作。** 完整版本支持在具体内容旁留言、回复和标记处理，让其他人或 Agent 稍后接着工作。[晚开的花](examples/showcases/late-bloom-scroll/README.md)展示四个 Agent 核对画面接缝的过程；这个案例使用完整版本的批注类型。
+
+内容可以按段落、页码、顺序或时间组织，再通过关联连接。[查看全部十二个案例](examples/showcases/README.md)。
+
+## 开发自己的工具
+
+例如，给角色和镜头建立关联后，可以编写一个“按人物汇总镜头”的工具，查询已有项目，并复用项目的读写、编号和改动记录来保存结果。
+
+开发者和 Agent 可以使用现有内容结构，也可以增加自己的类型或数据表。工具包可按需增减，底层读写可以直接嵌入自己的 Python 工程；需要专用界面时，再接入完整版本的视图插件。
+
+从[扩展指南](docs/build-with-layerweave/README.md)选择最小接入方式；[工具自有表的可运行示例](examples/tool_tables.py)展示如何让新工具沿用记录、历史与撤销。具体调用见[公共 API](src/layerweave/support/API.md)。
 
 ## 开始开发
 
@@ -28,9 +48,7 @@ python -X utf8 -m venv .venv
 
 源码安装还需要 setuptools>=77.0.3 和 wheel。pip 默认在临时构建环境中准备它们，即使当前环境已有 setuptools，也可能联网下载。若卡在 Installing build dependencies，先看[源码安装排查](docs/developer-conventions.md#可编辑安装与构建依赖)；只有提前装好构建依赖后，才适合关闭构建隔离。
 
-## 用案例理解内核
-
-[十二个场景案例](examples/showcases/README.md)随源码提供，首次建议读[文章解析](examples/showcases/article-reading/README.md)。完成上面的 uv 安装后，设置 `$casePython = (Resolve-Path .venv/Scripts/python.exe).Path`，按案例说明导入和查询。main 可完成基础数据操作；画布及晚开的花案例的视图批注类型使用完整版本。手书与 H3 为无视频阅读版，完整制作素材不进入公开源码。
+体验案例时，在同一个 PowerShell 中设置 `$casePython = (Resolve-Path .venv/Scripts/python.exe).Path`，再按所选案例的说明导入和查询。
 
 ## 按需查看接口
 
@@ -42,8 +60,6 @@ python -X utf8 -m venv .venv
 command_help 展示当前安装的工具与调用示例，config_help 展示层和对象的用途、字段和封装关系。命令中的 mcp 元信息供外部适配器读取，不会自行启动服务。
 
 - [使用现成工具](src/layerweave/tool/builtin/usage/README.md)：读写项目、查询、时序编辑、历史与撤销、JSON 交换和场景模板。
-- [基础 API](src/layerweave/support/API.md)：原始读取、写入、模型装配和事务。
-- [扩展指南](docs/build-with-layerweave/README.md)：工具自有表、组合写会话、增量读取与编号规则。
 - [维护源码](docs/developer-conventions.md)、[完整示例](docs/examples.md)、[文档目录](docs/README.md)。
 
 业务记录写入复用统一入口；新增封装同时提供 Python 类与 TOML。完整工具包可替换或移除。技能是供 AI 按需阅读的材料，使用前确认其依赖、KEY 与输出目录。

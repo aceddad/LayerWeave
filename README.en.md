@@ -4,7 +4,7 @@
 
 [GitHub](https://github.com/aceddad/LayerWeave/tree/visualization) · [Gitee](https://gitee.com/emotion1354414/layer-weave/tree/visualization) · [Kernel development branch](https://github.com/aceddad/LayerWeave/tree/main)
 
-**0.7.8 public preview · Windows**
+**0.7.9b1 local development preview · Windows** (the published release is [0.7.8](https://github.com/aceddad/LayerWeave/releases/tag/v0.7.8))
 
 **Fewer distractions: look only at the part that matters, and do only the task at hand.**
 
@@ -113,7 +113,7 @@ Eight more examples cover fiction writing, comics, course study, research, inter
 
 | Part | In 0.7.8 |
 |---|---|
-| Internal commands | 46 across 15 tool packages: querying, range editing, copying and transfer, JSON exchange, checks, history and undo, the view, and more |
+| Internal commands | 47 across 16 tool packages: unified startup, querying, range editing, copying and transfer, JSON exchange, checks, history and undo, the view, and more |
 | Skill materials | 12 for AI to read as needed (stems and cue sheets, image generation, halftones, video generation and verification, motion reference, glyph deformation, and more); they are instructions and scripts and never run on their own |
 | View | 0.31.0, with a Chinese and English web interface; four official plugins are installed separately |
 | Integration | Python, CLI, and optional MCP; by default MCP exposes 4 general entry points plus three shortcuts: inbox, reply, and screenshot |
@@ -126,6 +126,8 @@ Images, audio, and video are referenced by file path or URL and are not copied i
 The initial supported platform is Windows. The code requires Python 3.11+ and SQLite 3.35+; these examples use Python 3.11. [uv](https://docs.astral.sh/uv/getting-started/installation/) can prepare Python and the environment for you, or you can use an existing Python installation. Node is not needed to use the web view.
 
 ### Install the complete package with uv
+
+0.7.9b1 adds a [unified launcher (Chinese)](src/layerweave/tool/builtin/shared/launcher/README.md): `layerweave demo` prepares article reading and opens the browser; `view` opens existing projects and `new` creates one from a template. Reopening preserves edits. uv and the [npm launcher](distribution/npm/README.en.md) share this implementation. These versions are not published to PyPI/npm yet; see those guides for local candidate packages. The instructions below remain the download path for the published 0.7.8 release.
 
 The wheel, source archive, twelve-example ZIP, and SHA-256 checksums are available on the [0.7.8 preview release page](https://github.com/aceddad/LayerWeave/releases/tag/v0.7.8). After installing uv, open PowerShell in your chosen working directory and install directly from this release:
 

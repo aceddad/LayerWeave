@@ -61,15 +61,15 @@ class VersionTests(unittest.TestCase):
         self.assertEqual(result["data"]["status"], "completed")
         rows = self.rows()
         expected = {"foundation", "records", "query", "editing", "history", "undo", "validation", "text",
-                    "help", "mcp", "database", "skills", "keys", "versions", "exchange", "view"}
+                    "help", "mcp", "database", "skills", "keys", "versions", "exchange", "view", "launcher"}
         self.assertEqual({row["name"] for row in rows}, {"layerweave." + name for name in expected})
-        self.assertEqual(len(rows), 16)
+        self.assertEqual(len(rows), 17)
         self.assertTrue(all(row["status"] == "online" and row["version"] for row in rows))
         self.assertEqual(next(row for row in rows if row["name"] == "layerweave.foundation")["version"], "0.5.3")
-        self.assertEqual(next(row for row in rows if row["name"] == "layerweave.view")["version"], "0.31.0")
-        self.assertEqual(sum(row["kind"] == "tool" for row in rows), 15)
+        self.assertEqual(next(row for row in rows if row["name"] == "layerweave.view")["version"], "0.31.1")
+        self.assertEqual(sum(row["kind"] == "tool" for row in rows), 16)
         self.assertEqual(sum(row["kind"] == "foundation" for row in rows), 1)
-        self.assertEqual(len(list(BUILTIN_ROOT.rglob("component.toml"))), 15)
+        self.assertEqual(len(list(BUILTIN_ROOT.rglob("component.toml"))), 16)
         self.assertTrue((PACKAGE_ROOT / "component.toml").is_file())
 
     def test_scan_is_static_ignores_undeclared_code_and_uses_defaults(self):

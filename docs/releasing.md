@@ -16,14 +16,21 @@ python -X utf8 -m pip install -e ".[mcp,dev]"
 
 ```sh
 python -X utf8 -m build --sdist --wheel --outdir dist
-python -X utf8 -m tests.packaging.check_wheel dist/layerweave-0.7.8-py3-none-any.whl
-python -X utf8 -m tests.packaging.check_mcp_wheel dist/layerweave-0.7.8-py3-none-any.whl
-python -X utf8 -m tests.packaging.check_sdist dist/layerweave-0.7.8.tar.gz
+python -X utf8 -m tests.packaging.check_wheel dist/layerweave-0.7.9b1-py3-none-any.whl
+python -X utf8 -m tests.packaging.check_launcher dist/layerweave-0.7.9b1-py3-none-any.whl
+python -X utf8 -m tests.packaging.check_mcp_wheel dist/layerweave-0.7.9b1-py3-none-any.whl
+python -X utf8 -m tests.packaging.check_sdist dist/layerweave-0.7.9b1.tar.gz
 ```
 
 上述步骤只在本地构建和验收，不上传包仓库。上传位置、版本标签和正式发行说明应在实际发布时明确选择。
 
-首发约定为 0.7.8 公开预览版：GitHub 的默认展示分支与 Release 目标均使用 visualization，main 保持无视图开发源码。正式上传时使用 v0.7.8 标签并标记 pre-release；Python 包版本仍为 0.7.8。官方插件使用独立仓库与各自版本，不随宿主自动安装。地址与授权就绪后再配置远端和创建 Release，本地准备不等于发布。
+当前统一入口候选版为 Python 0.7.9b1 与 npm 0.7.9-beta.1；二者尚未发布到索引。npm 版本与固定的 Python 版本在 distribution/npm/package.json 声明，版本一致性由 npm 测试验证。在 distribution/npm 下执行 `npm test` 与 `npm pack --pack-destination ../../dist` 生成独立启动包。
+
+构建钩子 setup.py/build_support.py 从 examples/showcases 自动生成案例清单，并只把 distribution/demos.json 声明的文章案例压缩进 wheel；其他案例保留版本固定的远端 ZIP 与 SHA-256。不要手改生成资源或把个人案例库放入安装包。
+
+发布到 PyPI 前，维护者需要 PyPI 账号与首次发布授权，可配置 GitHub Trusted Publishing；npm 需要独立账号和首次发布授权。先验收同一批 wheel、sdist 和 npm tarball，再上传；GitHub Release 与 PyPI 使用同一份 Python 发行物，不分别重建。包名简写只在对应索引发布后写成可直接执行的安装说明。此前发布的 0.7.8 保持原样。
+
+0.7.8 已作为公开预览版发布。GitHub 的默认展示分支与 Release 目标均使用 visualization，main 保持无视图开发源码。后续使用与 Python 发行版本对应的新标签（当前候选为 v0.7.9b1），不覆盖已发布版本；预览版标记 pre-release。官方插件使用独立仓库与各自版本，不随宿主自动安装。地址与授权就绪后再创建新 Release，本地准备不等于发布。
 
 ## 软件发行物与案例包
 
@@ -31,7 +38,7 @@ python -X utf8 -m tests.packaging.check_sdist dist/layerweave-0.7.8.tar.gz
 
 普通使用优先通过 uv 准备 Python 与隔离环境并安装下载的 wheel；已有 Python 也可用 pip；MCP 的 uvx 用法见其安装说明。公开下载 URL 就绪后可验证 URL 安装，再提供对应命令；PyPI 发布完成后才提供按包名安装的命令。不把本地路径示例写成已经上线的网络安装器。独立 Windows 安装器或自带运行环境的便携包仍是另一项交付工作。
 
-wheel 只安装 layerweave 命名空间、运行所需配置/技能/网页资源、模块手册和许可文件；不安装 tests、examples、前端开发依赖或本地数据库。使用接口从实时 help 查询；需要完整仓库文档、示例和网页源码时取得 sdist 或仓库源码。
+wheel 只安装 layerweave 命名空间、运行所需配置/技能/网页资源、启动器预置的文章案例、模块手册和许可文件；不安装 tests、其余案例、前端开发依赖或本地数据库。预置案例使用时复制到工作目录，不直接编辑安装资源。使用接口从实时 help 查询；需要完整仓库文档、示例和网页源码时取得 sdist 或仓库源码。
 
 本页的发行物来自 visualization。main 用作无视图的开发源码，核心、支撑与非视图工具同步，保留可编辑安装需要的最小元数据，不另行发布同名同版本的开发分支 wheel。视图、MCP 服务与发行构建在完整分支维护；两分支都使用 layerweave 导入名，开发环境按用途选择一份源码安装。
 
@@ -51,7 +58,7 @@ LayerWeave 自身采用 [MIT](../LICENSE)，网页中第三方内容保留其原
 
 examples/showcases 保存十二个案例的公开副本，文章解析为首页入门路线。手书与 H3 使用静帧版 project.json：保留层级、位置与关联，不附音视频；完整制作交付留在本地归档，不能从归档目录构建公开包。各案例说明标明原型源码需要另备的素材，不承诺缺素材的原型可完整播放。
 
-案例随 sdist 提供，不进入 wheel；也可独立打 ZIP。在完成归档内容检查后，从干净源码目录执行：
+全部案例随 sdist 提供；wheel 只预置文章解析，其余按需下载既有案例包。更新远端案例包时，也可独立打 ZIP。在完成归档内容检查后，从干净源码目录执行：
 
 ```powershell
 python -X utf8 -m zipfile -c dist/layerweave-showcases-0.7.8.zip examples/showcases

@@ -110,11 +110,11 @@ assert read_record(c,"read_cache",project_id=p) == []
 assert undo_operation(c,copied["operation_id"])["ok"]
 assert read_support("combined", "text")["status"] == "completed"
 commands = command_help()
-assert len(commands["items"]) == 46 and commands["status"] == "completed", commands
+assert len(commands["items"]) == 47 and commands["status"] == "completed", commands
 from layerweave.tool.builtin.developer.versions import manage_versions
 versions = manage_versions(c)
 assert versions["ok"] and versions["data"]["status"] == "completed", versions
-assert len(versions["data"]["items"]) == 16, versions   # 基础部分与 15 个完整工具包，包含 MCP 和视图。
+assert len(versions["data"]["items"]) == 17, versions   # 基础部分与 16 个完整工具包，包含 MCP、视图与启动器。
 assert all(row["status"] == "online" for row in versions["data"]["items"]), versions
 assert manage_versions(c,"read",name="layerweave.versions")["data"]["items"][0]["version"] == "0.1.1"
 from layerweave.tool.builtin.developer.keys.service import manage_keys, get_key

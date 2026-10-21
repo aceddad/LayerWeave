@@ -1,0 +1,5 @@
+name = "layerweave.launcher"
+kind = "tool"
+version = "0.1.0"
+description = "统一启动案例、已有项目、模板和 MCP；保留用户工作目录"
+changes = "默认案例随包，其他案例按需缓存；重复打开保留修改，uv/npm 共用入口。"

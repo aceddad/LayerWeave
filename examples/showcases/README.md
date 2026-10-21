@@ -2,7 +2,7 @@
 
 第一次使用从[文章解析](article-reading/README.md)开始：导入中文正文、解读、证据和配图，然后沿关联追溯一个论点。阅读本地案例不需要模型服务、API Key、FFmpeg 或 Node；打开外部原文时才需要联网。
 
-十二个案例均保留可导入的 project.json。案例不安装进 Python 的 site-packages，放在使用者选择的工作目录中；源码包与独立案例 ZIP 提供相同的 examples/showcases 目录。项目 JSON 使用交换格式 v1，这组案例以 LayerWeave 0.7.8 验证。
+十二个案例均保留可导入的 project.json。0.7.9b1 的[统一启动器](../../src/layerweave/tool/builtin/shared/launcher/README.md)随包预置文章解析，其他案例按需下载；实际使用时复制到使用者选择的工作目录，不在安装目录或下载缓存中编辑。源码包与独立案例 ZIP 提供相同的 examples/showcases 目录。项目 JSON 使用交换格式 v1，这组案例以 LayerWeave 0.7.8 验证。
 
 ## 准备环境
 

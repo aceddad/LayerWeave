@@ -5,6 +5,8 @@ __pycache__/
 *.egg-info/
 /build/
 /dist/
+/layerweave-demo/
+/distribution/npm/*.tgz
 venv/
 scratch/
 output/*

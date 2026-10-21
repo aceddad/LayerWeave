@@ -1,6 +1,6 @@
 # 写得更快以后，谁来证明改动值得合入？
 
-先按[案例目录的 uv 步骤](../README.md#准备环境)设置 `$casePython`，再进入本案例目录执行以下 PowerShell 命令。
+通过 0.7.9b1 启动器的 `layerweave demo` 打开时，案例已经准备好，数据库为同目录的 project.sqlite3，重复打开会保留修改。下面是供深入使用的 Python/CLI 演示；手动操作前，按[案例目录的 uv 步骤](https://github.com/aceddad/LayerWeave/blob/v0.7.8/examples/showcases/README.md#准备环境)设置 `$casePython`，再进入本案例目录执行。
 
 这是一个以两篇工程文章为主题的 LayerWeave 精读案例。用完整中文短论练习从结论追溯依据、区分作者陈述与读者推断，并保留可讨论的论证边界。
 

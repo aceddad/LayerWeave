@@ -1,5 +1,5 @@
 name = "layerweave.view"
 kind = "tool"
-version = "0.31.0"
+version = "0.31.1"
 description = "视图：画布上的时间轴画板、批注层、截图与“正在看哪儿”，网页源码在仓库 frontend/view"
-changes = "提供插件本地 HTML 相对资源预览接口 openDocument，并推荐独立选装的网页插件；文件预览不写项目库，沿用 host.api 3。"
+changes = "视图服务支持启动器显式打开浏览器，旧调用默认行为不变；沿用 host.api 3。"

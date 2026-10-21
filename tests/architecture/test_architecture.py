@@ -18,7 +18,7 @@ from tests._support.paths import ROOT
 PACKAGE = ROOT / "src/layerweave"
 PACKAGES = ("usage/records", "usage/query", "usage/editing", "usage/history", "usage/undo",
             "usage/validation", "usage/text", "usage/exchange", "shared/help", "shared/mcp", "developer/database", "developer/skills", "developer/keys", "developer/versions",
-            "view")   # visualization 分支：视图工具包
+            "view", "shared/launcher")   # visualization 分支：视图与启动工具包
 
 FIXTURE = '''
 from layerweave.support.api import open_database, save_layer, save_object, transaction, read_record
@@ -134,6 +134,12 @@ assert not any(n == "layerweave.tool" or n.startswith("layerweave.tool.") for n 
 
     def test_each_complete_package_works_alone(self):
         actions = {
+            "shared/launcher": '''
+from layerweave.tool.builtin.shared.launcher.__main__ import main
+import sys
+assert main([]) == 0
+assert 'layerweave.tool.builtin.view.server' not in sys.modules
+''',
             "usage/exchange": '''
 from layerweave.tool.builtin.usage.exchange import export_project, import_project, template_help
 assert len(template_help()["items"]) == 3

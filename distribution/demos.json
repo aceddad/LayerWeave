@@ -1,0 +1,8 @@
+{
+  "bundled": ["article-reading"],
+  "archive": {
+    "version": "0.7.8",
+    "url": "https://github.com/aceddad/LayerWeave/releases/download/v0.7.8/layerweave-showcases-0.7.8.zip",
+    "sha256": "1aeb72202b2936cfd8bf165ce523645f0f9264a3f94585c826777664cc12a6f5"
+  }
+}

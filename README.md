@@ -4,7 +4,7 @@
 
 [GitHub](https://github.com/aceddad/LayerWeave/tree/visualization) · [Gitee](https://gitee.com/emotion1354414/layer-weave/tree/visualization) · [内核开发分支](https://github.com/aceddad/LayerWeave/tree/main)
 
-**0.7.8 公开预览版 · Windows**
+**0.7.9b1 本地开发预览 · Windows**（已发布版本为 [0.7.8](https://github.com/aceddad/LayerWeave/releases/tag/v0.7.8)）
 
 **少分心：只看相关的那一段，只做眼前的那一件事。**
 
@@ -113,7 +113,7 @@ LayerWeave 从一开始就是为 AI 使用而设计的。所有能力都可以�
 
 | 部分 | 0.7.8 的内容 |
 |---|---|
-| 内部命令 | 46 个，分布在 15 个工具包：查询、按区间编辑、复制与迁移、JSON 交换、复查、历史与撤销、视图等 |
+| 内部命令 | 47 个，分布在 16 个工具包：统一启动、查询、按区间编辑、复制与迁移、JSON 交换、复查、历史与撤销、视图等 |
 | 技能材料 | 12 份，供 AI 按需阅读（分轨卡点、出图、网点、视频生成与核验、动作参考、字形变形等）；它们是说明和脚本，不会自动执行 |
 | 视图 | 0.31.0，网页支持中文和英文；四个官方插件独立选装 |
 | 接入方式 | Python、CLI 和可选的 MCP；MCP 默认提供 4 个通用入口，另加 inbox、reply、screenshot 三个快捷入口 |
@@ -126,6 +126,8 @@ LayerWeave 从一开始就是为 AI 使用而设计的。所有能力都可以�
 首发支持 Windows。代码要求 Python 3.11+ 和 SQLite 3.35+，下面的例子使用 Python 3.11。可以让 [uv](https://docs.astral.sh/uv/getting-started/installation/) 自动准备 Python 和环境，也可以用已有的 Python。使用网页不需要 Node。
 
 ### 用 uv 安装完整包
+
+0.7.9b1 新增[统一启动入口](src/layerweave/tool/builtin/shared/launcher/README.md)：`layerweave demo` 准备文章案例并打开浏览器，`view` 打开已有项目，`new` 从模板创建项目；重复打开保留修改。uv 与 [npm 启动器](distribution/npm/README.md)共用这套逻辑。PyPI/npm 尚未发布，当前候选包的本地调用方式见上述说明；下面保留已发布 0.7.8 的下载方式。
 
 安装包、源码包、十二案例 ZIP 与 SHA-256 校验值见 [0.7.8 预览版下载](https://github.com/aceddad/LayerWeave/releases/tag/v0.7.8)。装好 uv 后，在你选定的工作目录中打开 PowerShell，直接从该版本的安装包创建环境：
 

@@ -1,4 +1,8 @@
 include README.md README.en.md AGENTS.md LICENSE THIRD_PARTY_NOTICES.md pyproject.toml
+include setup.py build_support.py
+graft distribution
+prune distribution/npm/node_modules
+global-exclude *.tgz
 graft src/layerweave
 graft docs
 graft examples

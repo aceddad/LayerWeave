@@ -372,7 +372,7 @@ COMMANDS = [{'name': 'view_server',
   'mcp': {'enabled': False, 'group': 'view', 'reason': '驻留服务或开发性能测量请使用现有 CLI'}}]
 
 
-def serve(database, *, port=8765, project=None):
+def serve(database, *, port=8765, project=None, open_browser=False):
     """启动视图服务并一直运行，直到 Ctrl+C。"""
     server, url = make_server(database, port=port)
     if project is not None:
@@ -383,6 +383,9 @@ def serve(database, *, port=8765, project=None):
         print("提示：这个库里视图的表（折叠、已读）是旧声明。要用 JSON 交换复制项目，先跑一次 "
               "python -X utf8 -m layerweave.tool.builtin.view.tables DATABASE --upgrade（只改声明，不改数据）", flush=True)
     try:
+        if open_browser:
+            import webbrowser
+            threading.Thread(target=webbrowser.open, args=(url,), daemon=True).start()
         server.serve_forever()
     except KeyboardInterrupt:
         pass

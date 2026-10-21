@@ -4,6 +4,8 @@
 
 ## 使用 LayerWeave 操作项目
 
+- [统一启动](../src/layerweave/tool/builtin/shared/launcher/README.md)：一条命令准备案例或打开项目，重复打开保留修改；uv/npm 共用逻辑。
+
 - [使用入口](../src/layerweave/tool/builtin/usage/README.md)：从任务选择工具，按需查询命令与配置 help。
 - [MCP 接入](../src/layerweave/tool/builtin/shared/mcp/README.md)：stdio 启动、直接 JSON、常用独立入口与技能材料。
 - [JSON 导入导出](../src/layerweave/tool/builtin/usage/exchange/README.md)：批量写回、复制和场景模板。

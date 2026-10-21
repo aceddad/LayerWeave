@@ -4,7 +4,7 @@
 
 ## 安装与启动
 
-普通使用优先用 uv/uvx 从 [0.7.9b1 预览版](https://github.com/aceddad/LayerWeave/releases/tag/v0.7.9b1)的 wheel 启动，见下方“用 uvx 管理运行环境”；软件首页的 uv 虚拟环境也可复用。只维护源码时，在开发环境安装：
+首次接入可以直接使用[首页的 uv/npm 配置](../../../../../../README.md#接入-ai)，由统一入口自动准备运行环境。以下说明自管 Python 环境、配置字段与扩展方式；uvx 的详细配置也可见下方“用 uvx 管理运行环境”。维护源码时，在开发环境安装：
 
 ```sh
 python -X utf8 -m pip install -e ".[mcp]"

@@ -2,128 +2,19 @@
 
 **简体中文** | [English](README.en.md)
 
-[GitHub](https://github.com/aceddad/LayerWeave/tree/visualization) · [Gitee](https://gitee.com/emotion1354414/layer-weave/tree/visualization) · [内核开发分支](https://github.com/aceddad/LayerWeave/tree/main)
-
-**0.7.9b1 公开预览版 · Windows**
+[GitHub](https://github.com/aceddad/LayerWeave/tree/visualization) · [Gitee](https://gitee.com/emotion1354414/layer-weave/tree/visualization) · [快速开始](#快速开始) · [接入 AI](#接入-ai) · [开发与扩展](#按需组合开发自己的工具)
 
 **少分心：只看相关的那一段，只做眼前的那一件事。**
 
-LayerWeave 是一个面向人和 AI 的信息管理工具。它把文字、素材引用和批注放在按时间或顺序排列的轴上，用层级和关联组织起来，让参与者随时能找到"此刻、这里"相关的全部内容。
+LayerWeave 把正文、素材引用、证据和批注放在同一份项目里，按时间、段落或阅读顺序排列，再用层级和关联连接起来。人可以在画布上查看、定位和留言，AI 可以查询同一段内容、截图核对，并沿关联追溯依据。
 
-本分支展示基于 LayerWeave 内核开发的上层应用，视图本身也是一个内置工具包。内置工具展示如何复用内核，独立视图插件展示如何在应用之上继续扩展；这些实现均可直接使用，也欢迎作为你和 AI 开发新工具、新应用的参考。
+![文章解析案例：正文、解读和证据分层排列，关系线连接对应内容](docs/images/article-reading.png)
 
-它的设计理念只有一条：**降低注意力的分散。** 一个任务里，真正需要思考的往往只是其中一小块，而大量注意力被花在找东西、对位置、记改动、解释"我说的是哪里"上。LayerWeave 把这些事交给工具：
+*文章解析案例：选中一个论点，对照它的解读，再沿关联找到证据和讨论。*
 
-- AI 只读取这一段时间里的相关内容，不必每次读完整个项目；
-- 人在画面上指一下，不必反复描述是哪一段、哪个镜头；
-- 修改意见留在具体内容旁边，等对方有空再处理，不打断正在做的事；
-- 开发新功能时，可以复用存储、编号、改动记录和撤销，把精力放在这个功能本身。
+## 快速开始
 
-做法是**组合**与**信息管理**。组合让每一部分都小而单一：对象放进层，层组成树，彼此用关联连接；核心只管最基本的结构，查询、编辑、视图、技能、插件都是可以加上、拿掉或替换的部件。拆得越细，信息也越分散，信息管理就把这些零散的块按时间、顺序和关联重新串起来，需要哪一块都能直接找到。于是不论处理信息还是开发功能，每次都可以优先处理当前这一小块。
-
-下面分四部分说明它怎样做到这些。
-
-## 一、信息管理：把同一时刻的事放在一起看
-
-内容放在一条条轴上：视频和歌曲按秒，文章按段落，漫画按页和格，课程按学习步骤。轴上的每一项都是一个有身份的对象；对象分属不同的层，层又组成树，共用同一时间尺度的"镜头说明""素材""台词"可以在同一时刻对照。段落、页码与秒不会自动换算；批注自身按条目顺序保存，通过关联和区间指向被评论的内容。对象之间用关联连接：这一镜依据哪段故事，这句结论引用了哪条证据，这条意见针对的是哪一秒。
-
-这样一来，检查某一刻就不必到处翻找。问一句"30–35 秒这里有什么"，就能一次拿到这段时间里每一层的内容、它们之间的关联、已有的批注，以及哪些轨道在这里是空着的。要追问原因，就沿关联往下查；要改，就按对象身份定向修改，而不是整段重写。改动都有记录，可以查历史，也可以撤销。
-
-时间不是唯一的排法。按段落、页码或阅读顺序排列时，同样可以选中一段，沿关联找到对应的证据、配图和讨论。[十二个案例](examples/showcases/README.md)用这套结构分别处理了分镜、手书、文章精读、小说、漫画、课程、调查、互动故事、需求、翻译审校和代码梳理。
-
-## 二、AI 友好：查得到、看得见、听得懂反馈
-
-LayerWeave 从一开始就是为 AI 使用而设计的。所有能力都可以通过 Python、CLI 或 MCP 调用；AI 先用 `layerweave_help` 查有哪些工具、参数怎么填，再针对具体目标操作，不必一次读完整个项目。每次操作都会返回结构化的结果：写入了什么、有没有问题、编号是多少。
-
-一次实际的工作大概是这样的。你说："30–35 秒这里不太连贯，看一下。"
-
-1. 你在画布上圈出 30–35 秒，或者把当前视图的链接发给 AI。
-2. AI 读取这段时间里各层的内容、关联和批注。
-3. AI 按同一范围截一张图，对照画面和数据，判断问题出在哪个对象。
-4. AI 沿关联往回查：这一镜依据哪段故事，用了哪个素材，之前有没有人讨论过。
-5. 找到要改的对象后定向修改，再读取或截图复查。
-6. 没处理完的地方写成批注留下，下次接着做。
-
-支撑这些步骤的工具：
-
-| 工具 | 做什么 |
-|---|---|
-| `view_state` | 读取视图当前的状态：在看哪个项目和画板、选中了什么、播放头在哪 |
-| `view_at` | 读取某一刻或某一段里各层的内容、关联和批注；不指定范围时，读用户正在看的位置 |
-| `view_screenshot` | 截取画布、指定范围、某条批注指向的位置，或已安装插件的页面；可以直接按视图链接定位 |
-| `view_walk` | 从一个对象、层或批注出发，沿关联逐步展开，可限制方向、深度和数量 |
-| `view_note` | 留言、回复、改指向，标记已读和已处理；查询还有哪些在等自己处理 |
-| `view_layout` | 查询和调整画板的位置、尺寸和拼接 |
-
-截图给的是画面，查询给的是对象身份、正文和关联；两者通过同一个项目、同一组选中对象和同一段范围对应起来。
-
-人给 AI 的反馈也因此更准确。与其在对话里描述"大概在中间偏后、那个转场的地方"，不如直接把批注挂在那个对象或那几秒上；AI 读到批注时就知道它指的是什么，还能顺着之前的批注和回复，追溯这个问题的来龙去脉。
-
-几点说明：看懂画面靠的是有视觉能力的 AI，LayerWeave 本身不做以图搜图或图像识别；截图工具会另开一个只读页面来拍，不会改动你正在看的视图，拍的也只是 LayerWeave 自己的页面；什么时候去读批注、由哪个 AI 处理，由调用方决定，LayerWeave 不自带多 Agent 调度或定时唤醒。详见[给 AI 用的视图工具](src/layerweave/tool/builtin/view/GUIDE.md#给-ai-用)。
-
-## 三、开发友好：让 AI 专心做一件事
-
-方便开发是 LayerWeave 最初的设计目的之一。需要一个新功能时，AI 或开发者可以把精力放在功能本身，直接复用保存、编号、事务、改动记录、历史和撤销等通用能力。
-
-比如你已经给角色和镜头建了关联，想要一份"每个角色出现在哪些镜头"的汇总。写一个小工具直接查询现有项目就行；保存结果时，它沿用项目已有的读写和改动记录，写错了也能撤销。
-
-常见的扩展方式：
-
-- **用现有结构：** 通过 Python 接口读写层、对象和关联，按位置、区间或子树查询。
-- **加自己的类型：** 新增层或对象类型，同时提供 Python 类和 TOML 声明。
-- **加自己的数据表：** 工具自己的表不必套用层和对象的结构，声明之后同样进入改动记录，可以查历史、可以撤销。
-- **组合已有工具：** 在同一个事务里调用多个工具，任何一步失败都整体回滚。
-- **做专用界面：** 编写视图插件，在画布之外提供自己的页面。
-
-批注就是这样做出来的：`Note` 继承了普通的文字对象，回复用关联表达，已读状态和共享排版放在视图工具自己的表里。不用改动原有结构，就长出了一套协作功能。
-
-这就是组合的好处：新功能可以复用已有的部件，把精力放在相关接口和自身逻辑上。
-
-整体很轻。核心和基础支撑仅依赖 Python 标准库，约三千行 Python；MCP 和部分技能另有可选依赖。具体操作都放在可以替换的工具包里，不需要的可以不装，底层读写也可以直接嵌进你自己的 Python 工程。
-
-从[扩展指南](docs/build-with-layerweave/README.md)选一种最小接入方式开始；[工具自有表的可运行示例](examples/tool_tables.py)演示了新工具怎样共用记录、历史与撤销；逐个接口见[公共 API](src/layerweave/support/API.md)，整体设计见[架构说明](docs/architecture.md)。
-
-## 四、视觉层：人和 AI 共用的窗口
-
-前三部分不必打开画布也能用。视觉层是在同一份数据上加的一扇窗：人在这里看、指、留言，AI 在这里截图、读取人正在看的位置。
-
-- **随时看 AI 干到哪了。** 画布每两秒同步一次项目的变化，AI 写入的内容很快就会出现在对应的时间位置上，可以边看边指出问题。
-- **异步留言，不打断 AI。** 看到问题就把批注挂在那里，AI 手上的工作可以先做完，之后再按批注逐条处理、回复、标记完成。
-- **顺着线索追查。** 从一个对象出发，沿关系线看到它的依据、素材和讨论；也可以找对象、看改动、一览全部素材。
-- **检查结果。** AI 做完后，在画布上对照时间轴看整体效果，和 AI 看到的是同一份内容。
-
-[晚开的花](examples/showcases/late-bloom-scroll/README.md)展示了这种协作：四个 AI 各画一幕动态 SVG，通过 32 条批注互相核对接缝、配色和改动，最后拼成一幅 9600×1400 的长卷。
-
-网页支持中文和英文。官方插件（一览、接缝、预览、网页）独立选装，不装插件也能用。
-
-## 从案例开始看
-
-| 案例 | 规模 | 可以看到什么 |
-|---|---|---|
-| [文章解析](examples/showcases/article-reading/README.md) · **推荐入门** | 8 个根层、32 个对象、68 条关联 | 一篇约 1,350 字的原创中文短论与逐段解读并排；从一个论点出发，沿关联找到证据、配图和讨论；附五条可直接运行的阅读路线 |
-| [动态分镜与 H3](examples/showcases/donut-hole-h3/README.md) | 30 层、228 个对象、210 条关联 | 一首歌的 60 个镜头，连到段落和实现方式；使用生成素材的镜头还可追溯片段静帧与所用模型，也能看到多个镜头怎样共用同一段素材 |
-| [手书制作](examples/showcases/donut-hole-tegaki/README.md) | 29 层、101 个对象、43 条关联 | 同一首歌的另一种做法：听感与故事、14 段画面设计、对应的实现方式和角色设定，附 32 个时刻的总览图 |
-| [晚开的花](examples/showcases/late-bloom-scroll/README.md) | 4 层、37 个对象，其中 32 条批注 | 四个 AI 通过批注协作完成长卷；附可直接用浏览器打开的动态预览 |
-
-文章解析的正文是案例作者原创的中文短论，不是外部文章的全文或译文；查看引用的外部原文时需要联网。手书和 H3 是"无视频阅读版"：公开包用静帧展示结构和画面，不附歌曲和视频，所以不能下载后直接重新生成整部影片。
-
-另外八个案例覆盖小说创作、漫画创作、课程学习、信息调查、互动故事、需求设计、翻译审校和代码梳理。十二个案例合计 125 层、691 个对象、927 条关联，完整清单和准备方法见[案例目录](examples/showcases/README.md)。
-
-## 现在有什么
-
-| 部分 | 0.7.8 的内容 |
-|---|---|
-| 内部命令 | 47 个，分布在 16 个工具包：统一启动、查询、按区间编辑、复制与迁移、JSON 交换、复查、历史与撤销、视图等 |
-| 技能材料 | 12 份，供 AI 按需阅读（分轨卡点、出图、网点、视频生成与核验、动作参考、字形变形等）；它们是说明和脚本，不会自动执行 |
-| 视图 | 0.31.0，网页支持中文和英文；四个官方插件独立选装 |
-| 接入方式 | Python、CLI 和可选的 MCP；MCP 默认提供 4 个通用入口，另加 inbox、reply、screenshot 三个快捷入口 |
-| 起始模板 | 字幕、分镜、手书三种，结构可以自由增减 |
-
-图片、音频和视频通过文件路径或链接引用，不会搬进项目数据库；生成和处理这些媒体，由调用方、技能或外部工具完成。
-
-## Windows 快速开始
-
-在你选定的工作目录打开 PowerShell，选择一种入口即可。
+当前为 **0.7.9b1 Windows 预览版**。在自己的工作目录打开 PowerShell，任选一种入口：
 
 已有 [uv](https://docs.astral.sh/uv/getting-started/installation/)：
 
@@ -137,86 +28,117 @@ uvx layerweave@0.7.9b1 demo
 npx --yes layerweave@0.7.9-beta.1 demo
 ```
 
-两种入口使用同一套 Python 实现，都会准备文章解析案例并打开浏览器。uv 管理 Python 环境；npm 入口会在需要时自动准备 uv 与独立 Python 3.11。首次安装需要联网；使用 uv 路径不需要 Node。
+命令会准备环境并在浏览器中打开文章解析案例。uv 管理 Python；npm 入口会在需要时自动准备 uv 和独立 Python 3.11。首次运行需要联网。
 
-默认项目保存在 `./layerweave-demo/article-reading`。再次运行同一条命令会保留对象、批注、布局和素材修改。终端持续运行服务，Ctrl+C 停止；`--no-browser` 只打印访问地址。
+项目保存在 `./layerweave-demo/article-reading`。**再次运行同一条命令会保留修改**，包括对象、批注、布局和素材。使用时保持终端运行，按 Ctrl+C 停止服务；加 `--no-browser` 可只打印访问地址。
 
-把命令末尾的 `demo` 换成以下参数，即可使用其他入口：
+将命令末尾的 `demo` 换成以下参数，还可以：
 
 | 参数 | 用途 |
 |---|---|
-| `demo --list` | 列出十二个案例 |
-| `demo comic-creation --dir ./my-comic` | 按需下载并打开漫画案例 |
-| `view ./project.sqlite3` | 打开已有数据库；可加 `--project 1` 选择项目 |
+| `demo --list` | 查看十二个案例 |
+| `demo comic-creation --dir ./my-comic` | 下载漫画案例到指定目录并打开 |
+| `view ./project.sqlite3` | 打开已有数据库 |
 | `new ./my-project --template subtitles` | 从字幕模板创建自己的项目 |
-| `help project_overview` | 查看对应工具的详细说明 |
+| `help project_overview` | 查看项目概览工具的帮助 |
 
-文章解析随包提供，其他案例第一次需要时下载并缓存。数据放在自己的工作目录，缓存清理不会删除项目。详细参数见[统一启动入口](src/layerweave/tool/builtin/shared/launcher/README.md)，各场景见[案例目录](examples/showcases/README.md)。
+文章解析随包提供，其他案例按需下载。项目数据与下载缓存分开保存。更多参数见[统一入口说明](src/layerweave/tool/builtin/shared/launcher/README.md)；离线安装文件在 [GitHub Releases](https://github.com/aceddad/LayerWeave/releases/tag/v0.7.9b1)。
 
-### 安装到自己的 Python 环境
+## 接入 AI
 
-需要在脚本中导入 LayerWeave，或希望固定一个开发环境时：
+LayerWeave 提供 stdio MCP 服务，可由支持 MCP 的客户端自动启动。**视图与 MCP 可以分别使用，也可以同时访问同一个项目。**
 
-```powershell
-uv venv --python 3.11 .venv
-uv pip install --python .venv/Scripts/python.exe "layerweave[mcp]==0.7.9b1"
-```
-
-`[mcp]` 是可选的 AI 接入依赖；只用 Python/CLI 时可以去掉。也可以下载 [GitHub Release 中的 wheel、源码包与 npm 包](https://github.com/aceddad/LayerWeave/releases/tag/v0.7.9b1)，按启动器说明使用本地文件。wheel 已构建好，安装 LayerWeave 本身不需要 setuptools；运行依赖仍可能需要联网。
-
-普通数据管理与文章案例不需要 Key、FFmpeg 或官方视图插件。FFmpeg 由用户选装，用于服务端抽帧、缩略图和波形等；AI 截图需要 Chrome、Edge 或 Chromium。详见[FFmpeg 说明](src/layerweave/tool/builtin/view/GUIDE.md#选装-ffmpeg)。四个官方插件仍独立选装。
-
-## 连接 AI / MCP
-
-在项目工作目录保存一份 `mcp.json`，workspace 写实际的绝对路径：
+以下以 `D:/my-layerweave` 为工作目录，请换成你运行案例时的实际目录。在其中保存 `mcp.json`：
 
 ```json
-{"workspace": "D:/my-project"}
+{"workspace": "D:/my-layerweave"}
 ```
 
-使用上面的独立 Python 环境时，在支持 stdio MCP 的客户端里这样配置：
+已有 uv 时，在客户端的 MCP 配置中加入：
 
 ```json
 {
   "mcpServers": {
     "layerweave": {
-      "command": "D:/my-project/.venv/Scripts/python.exe",
-      "args": ["-X", "utf8", "-m", "layerweave.tool.builtin.shared.mcp", "--config", "D:/my-project/mcp.json"]
+      "command": "uvx",
+      "args": ["--python", "3.11", "--from", "layerweave[mcp]==0.7.9b1", "layerweave", "mcp", "--config", "D:/my-layerweave/mcp.json"]
     }
   }
 }
 ```
 
-把解释器和配置文件的路径换成实际位置；配置写在哪里由各客户端决定。AI 可以先调用 `layerweave_help` 查有哪些能力，再针对具体目标操作，不必每次读完整个项目。数据库和项目编号可以每次调用时传入，也可以设默认值，见[MCP 说明](src/layerweave/tool/builtin/shared/mcp/README.md)。
+<details>
+<summary>使用 npm 接入（Windows）</summary>
 
-只需要 MCP 的话，也可以让 uvx 一条命令准备好环境并启动服务：
+用下面的服务项替换上面的 `layerweave` 服务项；npm 会自动准备 Python 和 MCP 依赖：
 
-```powershell
-uvx --python 3.11 --from "layerweave[mcp]==0.7.9b1" layerweave-mcp --config ./mcp.json
+```json
+{
+  "command": "cmd",
+  "args": ["/c", "npx", "--yes", "layerweave@0.7.9-beta.1", "mcp", "--config", "D:/my-layerweave/mcp.json"]
+}
 ```
 
-这条命令会持续运行一个 stdio 服务，通常交给 MCP 客户端托管；它不会打开网页。客户端中的配置文件请用绝对路径，完整例子见 MCP 说明；`--from` 也可改成已下载的本地 wheel。
+</details>
 
-## 查找工具与文档
+配置文件的位置取决于客户端，示例中的路径需要替换；若客户端找不到 uvx，可用 `(Get-Command uvx).Source` 查到完整路径。接入后，可以让 AI：
 
-```powershell
-.venv/Scripts/python.exe -X utf8 -m layerweave.tool.builtin.shared.help.command_help
-.venv/Scripts/python.exe -X utf8 -m layerweave.tool.builtin.shared.help.config_help
-```
+> 先用 layerweave_help 查看可用工具，再查看 layerweave-demo/article-reading/project.sqlite3 的结构，找出第一段正文对应的解读和证据。
 
-`command_help` 列出当前安装的命令和调用示例，`config_help` 说明各种层和对象的用途、字段与封装关系。
+客户端会管理服务进程；MCP 启动本身不打开画布。默认数据库、项目、工具暴露和自管 Python 环境的接法见 [MCP 说明](src/layerweave/tool/builtin/shared/mcp/README.md)。
 
-- [使用入口](src/layerweave/tool/builtin/usage/README.md)：从任务出发选工具，查看输入、输出和示例。
-- [JSON 交换与模板](src/layerweave/tool/builtin/usage/exchange/README.md)：批量操作和场景起点。
-- [视图与插件](src/layerweave/tool/builtin/view/README.md)：界面操作；[官方插件仓库](https://github.com/aceddad/layerweave-plugins)独立选装，不装插件也能用。
-- [源码开发](docs/developer-conventions.md)、[完整示例](docs/examples.md)、[文档目录](docs/README.md)。
+## 把注意力留给当前这一段
 
-`visualization` 是完整版本；`main` 是不含视图的开发源码，保留直接的 Python/CLI 入口，与完整版共用核心、支撑和非视图工具。视图、MCP 服务和发行封装在完整分支维护。命令里的 `-X utf8` 是为了让中文 Windows 的管道输出不乱码，详见[编码说明](src/layerweave/tool/builtin/usage/README.md#命令行编码)。
+你说“30–35 秒这里不太连贯”时，可以把批注挂在那一段，或把视图链接交给 AI。AI 读取该范围各层的内容，按同一范围截图，沿关联查故事、素材和已有讨论，再定向修改并复查。暂时没处理完的意见留在原处，之后接着做。
+
+| 想做的事 | LayerWeave 提供的能力 |
+|---|---|
+| 找到“这里”相关的信息 | 按时刻、区间、层或子树读取内容，沿关联追溯依据 |
+| 让 AI 对照画面与数据 | 查询对象身份、正文和关联，同时截取对应视图或范围 |
+| 留意见，又不打断当前工作 | 批注、回复、待处理状态；人和 AI 都能沿讨论追查 |
+| 看 AI 改到哪里了 | 画布每两秒同步项目变化，按位置查看新增或修改的内容 |
+| 改错后找回内容 | 改动记录、历史与撤销；覆盖冲突会明确报告 |
+
+视频和歌曲可以按秒，文章按段落，漫画按页和格。轴的单位由项目解释，段落、页码与秒不会自动换算。图片和音视频通过路径或链接引用；生成、处理媒体由技能或外部工具完成。
+
+截图理解需要有视觉能力的 AI；何时读取批注、由哪个 AI 处理，由调用方安排。具体工具与调用方式可以从 help 按需查询，或阅读[视图使用说明](src/layerweave/tool/builtin/view/GUIDE.md#给-ai-用)。
+
+## 换一个场景试试
+
+| 案例 | 可以怎样用 |
+|---|---|
+| [文章解析](examples/showcases/article-reading/README.md) · 推荐入门 | 将正文与逐段解读对照，从论点追溯证据、配图和讨论 |
+| [动态分镜与 H3](examples/showcases/donut-hole-h3/README.md) | 对照镜头、故事段落与实现方式，追溯共用的素材 |
+| [手书制作](examples/showcases/donut-hole-tegaki/README.md) | 将听感、故事、画面设计、角色设定与实现记录放在一起 |
+| [晚开的花](examples/showcases/late-bloom-scroll/README.md) | 四个 AI 通过批注核对接缝和配色，共同完成一幅动态 SVG 长卷 |
+
+十二个案例还覆盖小说、漫画、课程、调查、互动故事、需求设计、翻译审校和代码梳理，见[完整案例目录](examples/showcases/README.md)。文章解析使用原创短论；手书与 H3 为不附歌曲和视频的静帧阅读版，完整影片需要另备素材。
+
+## 按需组合，开发自己的工具
+
+LayerWeave 的核心理念是**降低注意力的分散**。找东西、对位置、记改动这些事交给工具；开发一个新功能时，也应能专注它自身的逻辑。
+
+做法是**按需组合**：对象放进层，层组成树，通过 `bind` 关联彼此；内核提供基本结构，基础支撑负责保存、编号、事务和改动记录，工具、技能与插件按用途接入。核心和基础支撑只依赖 Python 标准库。
+
+比如，要汇总“每个角色出现在哪些镜头”，可以写一个工具查询现有关系；保存结果时复用已有的读写和记录能力，配合撤销工具恢复改动。工具也可以声明自己的表，不必把所有数据都塞进层和对象。
+
+**欢迎你和 AI 基于这个内核开发自己的应用。** 本分支是一个可直接使用的上层应用示例，视图本身也是工具包。内置工具展示如何复用内核，独立视图插件进一步展示如何扩展应用。批注就是其中一个例子：`Note` 继承文字对象，回复通过关联表达，已读状态与布局保存在视图自己的表里。
+
+- [main 开发分支](https://github.com/aceddad/LayerWeave/tree/main)：无视图的内核、基础支撑与非视图工具，带最小 Python 示例。
+- [扩展指南](docs/build-with-layerweave/README.md)：新增类型、自己的表、组合工具或接入增量变化。
+- [公共 API](src/layerweave/support/API.md)与[工具表例子](examples/tool_tables.py)：复用已有能力开发功能。
+- [官方视图插件](https://github.com/aceddad/layerweave-plugins)：一览、接缝、预览和网页插件独立选装。
+
+## 文档与可选组件
+
+[使用工具](src/layerweave/tool/builtin/usage/README.md) · [JSON 交换与模板](src/layerweave/tool/builtin/usage/exchange/README.md) · [视图与插件](src/layerweave/tool/builtin/view/README.md) · [维护源码](docs/developer-conventions.md) · [文档目录](docs/README.md)
+
+普通数据管理和文章案例不需要 API KEY、FFmpeg 或官方视图插件。服务端抽帧、视频缩略图和波形需要[选装 FFmpeg](src/layerweave/tool/builtin/view/GUIDE.md#选装-ffmpeg)；AI 截图需要 Chrome、Edge 或 Chromium。网页支持中英文，当前发行包的视图组件为 0.31.1。
 
 ## AI 协作开发
 
-项目由维护者主导设计与维护，Astra（Codex）与 Claude 协助本分支的开发、测试与文档整理。
+项目由维护者主导设计与维护，Astra（Codex）与 Claude 协助本分支的开发、测试和文档整理。
 
 ## 许可证
 
-LayerWeave 本身采用 [MIT](LICENSE)。网页里的第三方组件保留各自的许可，见[第三方声明](THIRD_PARTY_NOTICES.md)。独立插件、技能和外部服务遵循各自的说明。
+LayerWeave 自身采用 [MIT](LICENSE)。随包网页组件保留各自许可，见[第三方声明](THIRD_PARTY_NOTICES.md)；独立插件、技能和外部服务遵循各自的说明。

@@ -10,7 +10,7 @@ import time
 
 from .plugin_manifest import read_manifest
 
-DEFAULT_CATALOG = "https://gitee.com/emotion1354414/layerweave-plugins/raw/main/catalog/index.json"
+DEFAULT_CATALOG = "https://raw.githubusercontent.com/aceddad/layerweave-plugins/main/catalog/index.json"
 RECOMMENDED = [
     {"id": "layerweave.assets", "label": "一览", "description": "按种类分页查看图片、视频、音频和文字。"},
     {"id": "layerweave.preview", "label": "预览", "description": "按时间取帧，分页检查视频和动态图像。"},

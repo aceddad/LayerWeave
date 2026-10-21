@@ -1,6 +1,6 @@
 # 视图插件：使用与开发协议 v1
 
-接缝、一览、预览和网页在[独立插件仓库](https://gitee.com/emotion1354414/layerweave-plugins)发布，由用户选装。插件管理自视图 0.28.0 提供，网页插件需要视图 0.31.0+。主程序不携带它们的执行文件，零插件时可以正常使用画布。插件管理不改业务数据库。
+接缝、一览、预览和网页在[独立插件仓库](https://github.com/aceddad/layerweave-plugins)发布，由用户选装。默认目录为该仓库的 `main/catalog/index.json`，可通过 `--catalog` 改用其他目录。插件管理自视图 0.28.0 提供，网页插件需要视图 0.31.0+。主程序不携带它们的执行文件，零插件时可以正常使用画布。插件管理不改业务数据库。
 
 ## 先查，再选择安装
 
@@ -42,7 +42,7 @@ python -X utf8 -m layerweave.tool.builtin.view.plugins list
 ```json
 {
   "format": 1,
-  "catalog": "https://gitee.com/emotion1354414/layerweave-plugins/raw/main/catalog/index.json",
+  "catalog": "https://raw.githubusercontent.com/aceddad/layerweave-plugins/main/catalog/index.json",
   "plugins": []
 }
 ```

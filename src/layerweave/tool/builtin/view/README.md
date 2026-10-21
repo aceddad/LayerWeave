@@ -16,7 +16,7 @@ DATABASE 换成数据库路径，PROJECT_ID 换成已有项目编号；也可以
 
 ## 可选插件
 
-一览、接缝、预览、网页从[独立插件仓库](https://gitee.com/emotion1354414/layerweave-plugins)选装，零插件也能使用画布。网页插件提供网址、HTML 源码和本地 HTML 的独立展示页面，需要视图 0.31.0+。顶栏“插件”可查询、安装和更新；CLI 入口为：
+一览、接缝、预览、网页从[独立插件仓库](https://github.com/aceddad/layerweave-plugins)选装，零插件也能使用画布。默认目录来自 GitHub；可用 `--catalog` 指定其他目录。网页插件提供网址、HTML 源码和本地 HTML 的独立展示页面，需要视图 0.31.0+。顶栏“插件”可查询、安装和更新；CLI 入口为：
 
 ```sh
 python -X utf8 -m layerweave.tool.builtin.view.plugins market

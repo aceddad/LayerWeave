@@ -127,29 +127,36 @@ The initial supported platform is Windows. The code requires Python 3.11+ and SQ
 
 ### Install the complete package with uv
 
-Obtain `layerweave-0.7.8-py3-none-any.whl` and place it in your chosen working directory. After installing uv, run these commands in PowerShell from that directory:
+The wheel, source archive, twelve-example ZIP, and SHA-256 checksums are available on the [0.7.8 preview release page](https://github.com/aceddad/LayerWeave/releases/tag/v0.7.8). After installing uv, open PowerShell in your chosen working directory and install directly from this release:
 
 ```powershell
 uv venv --python 3.11 .venv
-uv pip install --python .venv/Scripts/python.exe "./layerweave-0.7.8-py3-none-any.whl[mcp]"
+uv pip install --python .venv/Scripts/python.exe "layerweave[mcp] @ https://github.com/aceddad/LayerWeave/releases/download/v0.7.8/layerweave-0.7.8-py3-none-any.whl"
 ```
 
 By default, uv downloads a suitable Python version if one is missing. Initial setup and dependency downloads require internet access. You do not need to activate the environment; later commands use its interpreter directly. [How uv manages Python](https://docs.astral.sh/uv/concepts/python-versions/)
 
-If Python is already installed and you prefer pip:
+If Python is already installed and you prefer pip, download the wheel from the release page into the current directory first:
 
 ```powershell
 python -X utf8 -m venv .venv
 .venv/Scripts/python.exe -X utf8 -m pip install "./layerweave-0.7.8-py3-none-any.whl[mcp]"
 ```
 
-`[mcp]` adds the optional dependencies for AI integration; omit it for Python/CLI-only use. Installing the package does not install the official view plugins. These commands use a local wheel and do not assume this version is available on PyPI.
+`[mcp]` adds the optional dependencies for AI integration; omit it for Python/CLI-only use. Installing the package does not install the official view plugins. The package comes from GitHub Releases, not PyPI. A downloaded wheel also works with `uv pip install --python .venv/Scripts/python.exe "./layerweave-0.7.8-py3-none-any.whl[mcp]"`.
 
 The wheel is already built, so installing LayerWeave itself does not require setuptools. The `[mcp]` dependencies may still need downloading, so the wheel is not a complete offline environment. Editable installation is only for source development; if it stalls while preparing build dependencies, see [source installation troubleshooting (Chinese)](docs/developer-conventions.md#可编辑安装与构建依赖).
 
 ### Try the article-reading example first
 
-Copy `examples/showcases` from the matching source distribution, or extract the examples ZIP into an `examples` folder in your working directory, so that `examples/showcases/article-reading/project.json` exists. The software and the examples are distributed separately; this one is enough to start. The [example directory](examples/showcases/README.md) covers the other eleven.
+Copy `examples/showcases` from the matching source distribution, or download and extract the [twelve-example ZIP](https://github.com/aceddad/LayerWeave/releases/download/v0.7.8/layerweave-showcases-0.7.8.zip):
+
+```powershell
+Invoke-WebRequest -Uri "https://github.com/aceddad/LayerWeave/releases/download/v0.7.8/layerweave-showcases-0.7.8.zip" -OutFile layerweave-showcases-0.7.8.zip
+Expand-Archive -LiteralPath layerweave-showcases-0.7.8.zip -DestinationPath examples
+```
+
+Check that `examples/showcases/article-reading/project.json` exists. The software and the examples are distributed separately; this one is enough to start. The [example directory](examples/showcases/README.md) covers the other eleven.
 
 Run these commands from the working directory where you installed the wheel:
 
@@ -205,10 +212,10 @@ Replace the interpreter and configuration paths with your actual locations; wher
 For MCP-only use, uvx can prepare the environment and start the service in one command:
 
 ```powershell
-uvx --python 3.11 --from "./layerweave-0.7.8-py3-none-any.whl[mcp]" layerweave-mcp --config ./mcp.json
+uvx --python 3.11 --from "layerweave[mcp] @ https://github.com/aceddad/LayerWeave/releases/download/v0.7.8/layerweave-0.7.8-py3-none-any.whl" layerweave-mcp --config ./mcp.json
 ```
 
-This runs a persistent stdio service, normally managed by an MCP client; it does not open the web view. Use absolute paths in a client's uvx configuration; the MCP guide includes a full example. Once the package has a published download URL, that URL can be used as the source as well.
+This runs a persistent stdio service, normally managed by an MCP client; it does not open the web view. Use an absolute configuration-file path in your client; the MCP guide includes a full example. You can also point `--from` at a downloaded local wheel.
 
 ## Find tools and documentation
 

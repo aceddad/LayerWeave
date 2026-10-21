@@ -127,29 +127,36 @@ LayerWeave 从一开始就是为 AI 使用而设计的。所有能力都可以�
 
 ### 用 uv 安装完整包
 
-先取得本版本的 `layerweave-0.7.8-py3-none-any.whl`，放进你选定的工作目录。装好 uv 后，在这个目录的 PowerShell 中执行：
+安装包、源码包、十二案例 ZIP 与 SHA-256 校验值见 [0.7.8 预览版下载](https://github.com/aceddad/LayerWeave/releases/tag/v0.7.8)。装好 uv 后，在你选定的工作目录中打开 PowerShell，直接从该版本的安装包创建环境：
 
 ```powershell
 uv venv --python 3.11 .venv
-uv pip install --python .venv/Scripts/python.exe "./layerweave-0.7.8-py3-none-any.whl[mcp]"
+uv pip install --python .venv/Scripts/python.exe "layerweave[mcp] @ https://github.com/aceddad/LayerWeave/releases/download/v0.7.8/layerweave-0.7.8-py3-none-any.whl"
 ```
 
 如果没有合适的 Python，uv 默认会自动下载。第一次准备环境和依赖需要联网。不需要激活虚拟环境，后面直接用其中的解释器即可。[uv 的 Python 管理说明](https://docs.astral.sh/uv/concepts/python-versions/)
 
-已经有 Python、想用 pip 的话：
+已经有 Python、想用 pip 的话，先从发布页下载 wheel 到当前目录：
 
 ```powershell
 python -X utf8 -m venv .venv
 .venv/Scripts/python.exe -X utf8 -m pip install "./layerweave-0.7.8-py3-none-any.whl[mcp]"
 ```
 
-`[mcp]` 会装上接入 AI 所需的可选依赖；只用 Python 或 CLI 时可以去掉。安装不会自动装官方视图插件。这里用的是本地 wheel，不假定 PyPI 上已经有同名版本。
+`[mcp]` 会装上接入 AI 所需的可选依赖；只用 Python 或 CLI 时可以去掉。安装不会自动装官方视图插件。安装来源是 GitHub Release，不是 PyPI；已下载的 wheel 也可用 `uv pip install --python .venv/Scripts/python.exe "./layerweave-0.7.8-py3-none-any.whl[mcp]"` 安装。
 
 wheel 已经构建好，安装 LayerWeave 本身不需要 setuptools；但 `[mcp]` 的依赖仍可能要联网下载，所以 wheel 不等于完整的离线环境。只有维护源码才需要可编辑安装；如果卡在准备构建依赖，见[源码安装排查](docs/developer-conventions.md#可编辑安装与构建依赖)。
 
 ### 先试文章解析
 
-从同版本的源码包取得 `examples/showcases`，或者把案例 ZIP 解压到工作目录的 `examples` 里，确认有 `examples/showcases/article-reading/project.json`。软件和案例是分开发放的，先试这一个就够了；其他场景见[十二个案例的目录与准备说明](examples/showcases/README.md)。
+从同版本的源码包取得 `examples/showcases`，或者下载并解压[十二案例 ZIP](https://github.com/aceddad/LayerWeave/releases/download/v0.7.8/layerweave-showcases-0.7.8.zip)：
+
+```powershell
+Invoke-WebRequest -Uri "https://github.com/aceddad/LayerWeave/releases/download/v0.7.8/layerweave-showcases-0.7.8.zip" -OutFile layerweave-showcases-0.7.8.zip
+Expand-Archive -LiteralPath layerweave-showcases-0.7.8.zip -DestinationPath examples
+```
+
+确认有 `examples/showcases/article-reading/project.json`。软件和案例是分开发放的，先试这一个就够了；其他场景见[十二个案例的目录与准备说明](examples/showcases/README.md)。
 
 在刚才安装 wheel 的工作目录执行：
 
@@ -205,10 +212,10 @@ FFmpeg 是可选的外部程序，wheel、`[mcp]` 和 uv 都不会自动安装�
 只需要 MCP 的话，也可以让 uvx 一条命令准备好环境并启动服务：
 
 ```powershell
-uvx --python 3.11 --from "./layerweave-0.7.8-py3-none-any.whl[mcp]" layerweave-mcp --config ./mcp.json
+uvx --python 3.11 --from "layerweave[mcp] @ https://github.com/aceddad/LayerWeave/releases/download/v0.7.8/layerweave-0.7.8-py3-none-any.whl" layerweave-mcp --config ./mcp.json
 ```
 
-这条命令会持续运行一个 stdio 服务，通常交给 MCP 客户端托管；它不会打开网页。客户端里的 uvx 配置请用绝对路径，完整例子见 MCP 说明。安装包放到正式下载地址后，也可以直接用 URL 指定来源。
+这条命令会持续运行一个 stdio 服务，通常交给 MCP 客户端托管；它不会打开网页。客户端中的配置文件请用绝对路径，完整例子见 MCP 说明；`--from` 也可改成已下载的本地 wheel。
 
 ## 查找工具与文档
 

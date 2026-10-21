@@ -17,6 +17,8 @@ It follows one design principle: **reduce scattered attention.** In most tasks, 
 - Feedback stays next to the content it concerns and waits until the other side is ready, without interrupting their current work.
 - When building a new feature, reuse storage, numbering, change records, and undo to keep attention on the feature itself.
 
+The method is **composition** together with **information management**. Composition keeps every part small and single-purpose: objects sit in layers, layers form a tree, and relationships connect them; the core handles only the basic structure, while queries, editing, the view, skills, and plugins are parts you can add, remove, or replace. The finer things are split, the more scattered the information becomes, so information management ties those pieces back together by time, sequence, and relationship, and any piece can be found directly. Whether working through information or building a feature, you can focus on the part at hand.
+
 The four parts below explain how.
 
 ## 1. Information management: see everything at the same moment together
@@ -72,6 +74,8 @@ Common ways to extend it:
 - **Build a dedicated interface:** write a view plugin that provides its own pages beyond the canvas.
 
 Comments were built exactly this way: `Note` extends the ordinary text object, replies are relationships, and read states and the shared layout live in the view tool's own tables. A full collaboration feature grew out of the existing structure without changing it.
+
+This is what composition makes possible: a new feature can reuse existing parts, letting you focus on the relevant interfaces and its own logic.
 
 It is also light. Its core and support layer use only Python's standard library and come to roughly three thousand lines of Python; MCP and some skills have their own optional dependencies. Concrete operations live in replaceable tool packages; you can leave out the ones you don't need and embed the underlying data operations in your own Python application.
 

@@ -2,102 +2,138 @@
 
 **简体中文** | [English](README.en.md)
 
-[GitHub](https://github.com/aceddad/LayerWeave/tree/visualization) · [Gitee](https://gitee.com/emotion1354414/layer-weave/tree/visualization) · [快速开始](#快速开始) · [接入 AI](#接入-ai) · [开发与扩展](#按需组合开发自己的工具)
+[GitHub](https://github.com/aceddad/LayerWeave/tree/visualization) · [Gitee](https://gitee.com/emotion1354414/layer-weave/tree/visualization) · [快速安装](#快速安装) · [开始使用](#开始使用) · [接入 AI](#接入-ai) · [开发与扩展](#按需组合开发自己的工具)
 
 **少分心：只看相关的那一段，只做眼前的那一件事。**
 
-LayerWeave 把正文、素材引用、证据和批注放在同一份项目里，按时间、段落或阅读顺序排列，再用层级和关联连接起来。人可以在画布上查看、定位和留言，AI 可以查询同一段内容、截图核对，并沿关联追溯依据。
+LayerWeave 是面向 AI 使用与开发的信息管理工具。正文、素材引用、证据和批注按时间、段落或阅读顺序组织，再通过层级和关联连接。AI 通过 MCP 按需查询、编辑和截图；人可以在同一份项目上查看、定位和留言。
 
 ![真实手书项目的完整工作视图：左侧层级目录，中间音频、分轨、故事、分镜与原画的时间轴，右侧查看此刻的内容和关联](docs/images/handdraw-workspace.png)
 
 *真实手书制作项目：音频、分轨、故事、分镜与原画按时间组织，右侧“此刻”查看选中对象及当前位置的内容和关联。完整制作素材不随安装包提供。[查看原图](docs/images/handdraw-workspace.png)。*
 
-## 快速开始
+## 快速安装
 
-当前为 **0.7.9b1 Windows 预览版**。在自己的工作目录打开 PowerShell，任选一种入口：
+当前为 **0.7.9b1 Windows 预览版**。在 PowerShell 中任选一种方式安装：
 
-已有 [uv](https://docs.astral.sh/uv/getting-started/installation/)：
-
-```powershell
-uvx layerweave@0.7.9b1 demo
-```
-
-已有 Node.js 20+ / npm（Windows x64）：
+使用 [uv](https://docs.astral.sh/uv/getting-started/installation/)，同时安装 MCP 依赖：
 
 ```powershell
-npx --yes layerweave@0.7.9-beta.1 demo
+uv tool install --python 3.11 "layerweave[mcp]==0.7.9b1"
 ```
 
-命令会准备环境并在浏览器中打开文章解析案例。uv 管理 Python；npm 入口会在需要时自动准备 uv 和独立 Python 3.11。首次运行需要联网。
+使用 Node.js 20+ / npm（Windows x64）：
 
-项目保存在 `./layerweave-demo/article-reading`。**再次运行同一条命令会保留修改**，包括对象、批注、布局和素材。使用时保持终端运行，按 Ctrl+C 停止服务；加 `--no-browser` 可只打印访问地址。
+```powershell
+npm install -g layerweave@0.7.9-beta.1
+```
 
-将命令末尾的 `demo` 换成以下参数，还可以：
+安装完成后使用 `layerweave` 命令。uv 会准备独立 Python 环境；npm 安装启动器，首次执行时再自动准备 Python 和所需依赖。首次准备需要联网。**安装本身不会创建案例或打开视图。** 如果找不到命令，按安装器提示设置命令目录，再重新打开终端和 MCP 客户端。
 
-| 参数 | 用途 |
-|---|---|
-| `demo --list` | 查看十二个案例 |
-| `demo comic-creation --dir ./my-comic` | 下载漫画案例到指定目录并打开 |
-| `view ./project.sqlite3` | 打开已有数据库 |
-| `new ./my-project --template subtitles` | 从字幕模板创建自己的项目 |
-| `help project_overview` | 查看项目概览工具的帮助 |
+## 开始使用
 
-文章解析随包提供，其他案例按需下载。项目数据与下载缓存分开保存。更多参数见[统一入口说明](src/layerweave/tool/builtin/shared/launcher/README.md)；离线安装文件在 [GitHub Releases](https://github.com/aceddad/LayerWeave/releases/tag/v0.7.9b1)。
+### 接入 AI
 
-## 接入 AI
+**推荐通过 MCP 让 AI 使用 LayerWeave。** AI 可以按需发现工具、查询和修改项目、查看相关画面并处理批注。配合视图，人可以查看同一份项目并留下反馈。Python/CLI 接口也可供脚本与自己的工具直接调用。
 
-LayerWeave 提供 stdio MCP 服务，可由支持 MCP 的客户端自动启动。**视图与 MCP 可以分别使用，也可以同时访问同一个项目。**
+<details>
+<summary>展开 MCP 接入配置（已通过 uv 或 npm 安装）</summary>
 
-以下以 `D:/my-layerweave` 为工作目录，请换成你运行案例时的实际目录。在其中保存 `mcp.json`：
+选择自己的工作目录，以下以 `D:/my-layerweave` 为例。在该目录保存 `mcp.json`：
 
 ```json
 {"workspace": "D:/my-layerweave"}
 ```
 
-已有 uv 时，在客户端的 MCP 配置中加入：
+通过 uv 安装后，在客户端的 MCP 配置中加入：
 
 ```json
 {
   "mcpServers": {
     "layerweave": {
-      "command": "uvx",
-      "args": ["--python", "3.11", "--from", "layerweave[mcp]==0.7.9b1", "layerweave", "mcp", "--config", "D:/my-layerweave/mcp.json"]
+      "command": "layerweave",
+      "args": ["mcp", "--config", "D:/my-layerweave/mcp.json"]
     }
   }
 }
 ```
 
-<details>
-<summary>使用 npm 接入（Windows）</summary>
-
-用下面的服务项替换上面的 `layerweave` 服务项；npm 会自动准备 Python 和 MCP 依赖：
+通过 npm 安装时，将其中的 `layerweave` 服务项替换为下面这项（Windows）：
 
 ```json
 {
   "command": "cmd",
-  "args": ["/c", "npx", "--yes", "layerweave@0.7.9-beta.1", "mcp", "--config", "D:/my-layerweave/mcp.json"]
+  "args": ["/c", "layerweave", "mcp", "--config", "D:/my-layerweave/mcp.json"]
 }
+```
+
+配置放在哪里取决于客户端，示例路径需要换成实际路径。若客户端找不到命令，通过 uv 安装的可用 `(Get-Command layerweave).Source` 查看程序位置；通过 npm 安装的可用 `(Get-Command layerweave.cmd).Source` 查看启动脚本位置。
+
+接入后，先让 AI 调用 `layerweave_help`，按任务查找工具，再创建或打开你自己的项目。无需先运行 demo。客户端管理服务进程，MCP 启动本身不打开画布。
+
+默认数据库、项目、工具暴露，以及 uvx/npx 和自管 Python 环境的接法见 [MCP 说明](src/layerweave/tool/builtin/shared/mcp/README.md)与[npm 入口](distribution/npm/README.md)。
+
+</details>
+
+### 打开或创建自己的项目
+
+| 命令 | 用途 |
+|---|---|
+| `layerweave --help` | 查看可用命令 |
+| `layerweave view ./project.sqlite3` | 打开已有数据库 |
+| `layerweave new ./my-project --template subtitles` | 用字幕模板创建自己的项目并打开视图 |
+| `layerweave help project_overview` | 查看项目概览工具的帮助 |
+
+视图与 MCP 可以分别使用，也可以访问同一个项目。打开视图后保持终端运行，按 Ctrl+C 停止服务；加 `--no-browser` 可只打印访问地址。
+
+### 可选：体验案例
+
+```powershell
+layerweave demo
+```
+
+默认打开文章解析案例，保存在 `./layerweave-demo/article-reading`。**再次运行同一条命令会保留对象、批注、布局和素材修改。** 用 `layerweave demo --list` 查看十二个案例，其他案例按需下载；例如 `layerweave demo comic-creation --dir ./my-comic`。
+
+<details>
+<summary>无需预先安装，直接体验</summary>
+
+已有 uv 或 npm 时，也可任选一条直接运行：
+
+```powershell
+uvx layerweave@0.7.9b1 demo
+```
+
+```powershell
+npx --yes layerweave@0.7.9-beta.1 demo
 ```
 
 </details>
 
-配置文件的位置取决于客户端，示例中的路径需要替换；若客户端找不到 uvx，可用 `(Get-Command uvx).Source` 查到完整路径。接入后，可以让 AI：
-
-> 先用 layerweave_help 查看可用工具，再查看 layerweave-demo/article-reading/project.sqlite3 的结构，找出第一段正文对应的解读和证据。
-
-客户端会管理服务进程；MCP 启动本身不打开画布。默认数据库、项目、工具暴露和自管 Python 环境的接法见 [MCP 说明](src/layerweave/tool/builtin/shared/mcp/README.md)。
+项目数据与下载缓存分开保存。更多参数见[统一入口说明](src/layerweave/tool/builtin/shared/launcher/README.md)，安装文件见 [GitHub Releases](https://github.com/aceddad/LayerWeave/releases/tag/v0.7.9b1)。在 Python 工程中导入或扩展内核，请从[开发入口](#按需组合开发自己的工具)开始。
 
 ## 把注意力留给当前这一段
 
-你说“30–35 秒这里不太连贯”时，可以把批注挂在那一段，或把视图链接交给 AI。AI 读取该范围各层的内容，按同一范围截图，沿关联查故事、素材和已有讨论，再定向修改并复查。暂时没处理完的意见留在原处，之后接着做。
+### 按需收起内容
 
-| 想做的事 | LayerWeave 提供的能力 |
+暂时不看的层可以折叠，名称、对象数量和展开入口仍然保留。把画面留给当前工作，需要时再展开。
+
+![用户折叠暂时不关注的分轨、故事和视频控制等层，保留对象数量与展开入口](docs/images/handdraw-folded.png)
+
+*[查看折叠视图原图](docs/images/handdraw-folded.png)。折叠改变显示，不删除内容。*
+
+### 同一份数据，各自选择关注范围
+
+同一个 **2:57** 时刻，AI 只查看相关四层，并独立选择一张原画。它可以读取对象正文和关联，也可以按需要截图；这些临时筛选不改变人的浏览状态。
+
+![AI 在 2:57 附近筛选含义推测、故事、原画和镜头设计四层，并单独选中一张原画](docs/images/ai-focus-177.png)
+
+*[查看 AI 局部视图原图](docs/images/ai-focus-177.png)。图中的“用户折叠”标记保留了人的关注状态，AI 仍可按任务查看对应内容。*
+
+| 工作中的需要 | LayerWeave 提供的能力 |
 |---|---|
-| 找到“这里”相关的信息 | 按时刻、区间、层或子树读取内容，沿关联追溯依据 |
-| 让 AI 对照画面与数据 | 查询对象身份、正文和关联，同时截取对应视图或范围 |
-| 留意见，又不打断当前工作 | 批注、回复、待处理状态；人和 AI 都能沿讨论追查 |
-| 看 AI 改到哪里了 | 画布每两秒同步项目变化，按位置查看新增或修改的内容 |
-| 改错后找回内容 | 改动记录、历史与撤销；覆盖冲突会明确报告 |
+| 留下可追溯的反馈 | 批注、回复、待处理状态；意见挂在具体内容上，方便之后接着处理 |
+| 查看 AI 改到哪里了 | 画布每两秒同步项目变化，按位置查看新增或修改的内容 |
+| 修正已经写入的内容 | 改动记录、历史与撤销；覆盖冲突会明确报告 |
 
 视频和歌曲可以按秒，文章按段落，漫画按页和格。轴的单位由项目解释，段落、页码与秒不会自动换算。图片和音视频通过路径或链接引用；生成、处理媒体由技能或外部工具完成。
 

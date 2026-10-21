@@ -2,102 +2,138 @@
 
 [简体中文](README.md) | **English**
 
-[GitHub](https://github.com/aceddad/LayerWeave/tree/visualization) · [Gitee](https://gitee.com/emotion1354414/layer-weave/tree/visualization) · [Quick start](#quick-start) · [Connect an AI](#connect-an-ai) · [Build your own tools](#compose-the-parts-build-your-own-tools)
+[GitHub](https://github.com/aceddad/LayerWeave/tree/visualization) · [Gitee](https://gitee.com/emotion1354414/layer-weave/tree/visualization) · [Quick install](#quick-install) · [Start using](#start-using-layerweave) · [Connect an AI](#connect-an-ai) · [Build your own tools](#compose-the-parts-build-your-own-tools)
 
 **Fewer distractions: look at the part that matters, and focus on the task at hand.**
 
-LayerWeave keeps text, media references, evidence, and comments in one project. Arrange them by time, paragraph, or reading order, then connect them through layers and relationships. People can browse, point, and comment on the canvas; AI agents can query the same content, capture its view, and follow links back to its sources.
+LayerWeave is an information management toolkit that AI agents can use and extend. Text, media references, evidence, and comments are organized by time, paragraph, or reading order, then connected through layers and relationships. Agents query, edit, and capture views through MCP; people can browse, point, and comment on the same project.
 
 ![A real music-video workspace: layers on the left, audio, stems, story, storyboards, and artwork on the timeline, with content and relationships in the Now panel](docs/images/handdraw-workspace.png)
 
 *A real hand-drawn MV project: audio, stems, story, storyboards, and artwork organized by time. The Now panel shows the selected item and content and relationships at the playhead. Full production media is not included in the download. [View full-size image](docs/images/handdraw-workspace.png).*
 
-## Quick start
+## Quick install
 
-The current release is the **0.7.9b1 Windows preview**. Open PowerShell in your chosen working directory and use either entry point.
+The current release is the **0.7.9b1 Windows preview**. Choose either installation method in PowerShell.
 
-With [uv](https://docs.astral.sh/uv/getting-started/installation/):
+With [uv](https://docs.astral.sh/uv/getting-started/installation/), including MCP dependencies:
 
 ```powershell
-uvx layerweave@0.7.9b1 demo
+uv tool install --python 3.11 "layerweave[mcp]==0.7.9b1"
 ```
 
 With Node.js 20+ / npm on Windows x64:
 
 ```powershell
-npx --yes layerweave@0.7.9-beta.1 demo
+npm install -g layerweave@0.7.9-beta.1
 ```
 
-The command prepares the environment and opens the article-reading example in your browser. uv manages Python; the npm entry point prepares uv and an independent Python 3.11 when needed. Initial setup needs internet access.
+After installation, use the `layerweave` command. uv prepares an isolated Python environment; npm installs a launcher that prepares Python and the required dependencies on first use. Initial setup needs internet access. **Installation does not create an example project or open the view.** If the command is not found, follow the installer's PATH instructions and reopen your terminal and MCP client.
 
-The project is saved in `./layerweave-demo/article-reading`. **Running the same command again preserves your edits**, including objects, comments, layout, and media. Keep the terminal running while using the view; Ctrl+C stops the server. Add `--no-browser` to print the URL without opening a browser.
+## Start using LayerWeave
 
-Replace the final `demo` argument to do more:
+### Connect an AI
 
-| Arguments | Purpose |
-|---|---|
-| `demo --list` | List all twelve examples |
-| `demo comic-creation --dir ./my-comic` | Download and open the comic example in a chosen directory |
-| `view ./project.sqlite3` | Open an existing database |
-| `new ./my-project --template subtitles` | Create a project from the subtitles template |
-| `help project_overview` | Read the project overview tool's help |
+**MCP is the recommended way for AI agents to use LayerWeave.** Agents can discover tools as needed, query and edit projects, inspect relevant views, and work through comments. People can view the same project and leave feedback on the canvas. Python and CLI interfaces remain available for scripts and custom tools.
 
-Article reading is bundled; other examples download on demand. Project data stays separate from the download cache. See the [launcher guide (Chinese)](src/layerweave/tool/builtin/shared/launcher/README.md) for more options, or get installation files from [GitHub Releases](https://github.com/aceddad/LayerWeave/releases/tag/v0.7.9b1).
+<details>
+<summary>MCP configuration after installing with uv or npm</summary>
 
-## Connect an AI
-
-LayerWeave provides a stdio MCP server that compatible clients can start automatically. **The view and MCP work independently and can also access the same project together.**
-
-The example below uses `D:/my-layerweave`. Replace it with the working directory where you ran the demo, and save an `mcp.json` there:
+Choose a working directory. The example uses `D:/my-layerweave`; save an `mcp.json` in that directory:
 
 ```json
 {"workspace": "D:/my-layerweave"}
 ```
 
-With uv installed, add this server to your client's MCP configuration:
+After installing with uv, add this server to your client's MCP configuration:
 
 ```json
 {
   "mcpServers": {
     "layerweave": {
-      "command": "uvx",
-      "args": ["--python", "3.11", "--from", "layerweave[mcp]==0.7.9b1", "layerweave", "mcp", "--config", "D:/my-layerweave/mcp.json"]
+      "command": "layerweave",
+      "args": ["mcp", "--config", "D:/my-layerweave/mcp.json"]
     }
   }
 }
 ```
 
-<details>
-<summary>Connect with npm instead (Windows)</summary>
-
-Replace the `layerweave` server entry above with this one. npm prepares Python and the MCP dependencies automatically:
+After installing with npm, replace the `layerweave` server entry with this one on Windows:
 
 ```json
 {
   "command": "cmd",
-  "args": ["/c", "npx", "--yes", "layerweave@0.7.9-beta.1", "mcp", "--config", "D:/my-layerweave/mcp.json"]
+  "args": ["/c", "layerweave", "mcp", "--config", "D:/my-layerweave/mcp.json"]
 }
+```
+
+The configuration location depends on your client. Replace the example paths. If the client cannot find the command, use `(Get-Command layerweave).Source` to locate the uv-installed program, or `(Get-Command layerweave.cmd).Source` to locate the npm launcher.
+
+Once connected, have the AI call `layerweave_help` to find tools for your task, then create or open your own project. Running a demo is optional. The client manages the server process; starting MCP does not open the canvas.
+
+Default databases and projects, tool exposure, uvx/npx, and existing Python environments are covered in the [MCP guide (Chinese)](src/layerweave/tool/builtin/shared/mcp/README.md) and [npm guide](distribution/npm/README.en.md).
+
+</details>
+
+### Open or create your own project
+
+| Command | Purpose |
+|---|---|
+| `layerweave --help` | List available commands |
+| `layerweave view ./project.sqlite3` | Open an existing database |
+| `layerweave new ./my-project --template subtitles` | Create a project from the subtitles template and open its view |
+| `layerweave help project_overview` | Read the project overview tool's help |
+
+The view and MCP can work independently or access the same project together. Keep the terminal running while using the view; Ctrl+C stops the server. Add `--no-browser` to print the URL without opening a browser.
+
+### Optional: try an example
+
+```powershell
+layerweave demo
+```
+
+This opens the article-reading example in `./layerweave-demo/article-reading`. **Running the same command again preserves your objects, comments, layout, and media edits.** Use `layerweave demo --list` to see all twelve examples. Others download on demand, for example with `layerweave demo comic-creation --dir ./my-comic`.
+
+<details>
+<summary>Try it without installing first</summary>
+
+With uv or npm available, use either command directly:
+
+```powershell
+uvx layerweave@0.7.9b1 demo
+```
+
+```powershell
+npx --yes layerweave@0.7.9-beta.1 demo
 ```
 
 </details>
 
-The configuration location depends on your client. Replace the example paths; if the client cannot find uvx, use `(Get-Command uvx).Source` in PowerShell to find its full path. Once connected, try asking:
-
-> Use layerweave_help to discover the tools, then inspect layerweave-demo/article-reading/project.sqlite3. Find the interpretation and evidence linked to the first paragraph.
-
-The client manages the server process. Starting MCP does not open the canvas. Default databases and projects, tool exposure, and an existing Python environment are covered in the [MCP guide (Chinese)](src/layerweave/tool/builtin/shared/mcp/README.md).
+Project data stays separate from the download cache. More options are in the [launcher guide (Chinese)](src/layerweave/tool/builtin/shared/launcher/README.md); installation files are on [GitHub Releases](https://github.com/aceddad/LayerWeave/releases/tag/v0.7.9b1). To import or extend the kernel in a Python project, start with [development and extension](#compose-the-parts-build-your-own-tools).
 
 ## Keep attention on the relevant part
 
-When you say “the transition at 30–35 seconds feels wrong,” attach a comment to that span or give the AI a view link. It can read the content across layers, capture the same range, follow relationships to the story, assets, and earlier discussion, then edit the relevant objects and check the result. Unfinished feedback stays with the content for later.
+### Collapse what you do not need right now
 
-| What you want to do | What LayerWeave provides |
+Collapse layers you are not working with while keeping their names, object counts, and expand controls visible. Make room for the current task and expand them again when needed.
+
+![The user collapses stems, story, video planning, and other layers while their counts and expand controls remain visible](docs/images/handdraw-folded.png)
+
+*[View the full-size collapsed view](docs/images/handdraw-folded.png). Collapsing changes the display; it does not delete content.*
+
+### Same data, different areas of focus
+
+At the same **2:57** moment, the AI looks at four relevant layers and selects a different piece of artwork. It can read object text and relationships as well as capture screenshots. These temporary filters leave the person's browsing state unchanged.
+
+![An AI view around 2:57, filtered to interpretation, story, artwork, and shot design, with an independently selected image](docs/images/ai-focus-177.png)
+
+*[View the full-size AI view](docs/images/ai-focus-177.png). “User collapsed” labels preserve the person's focus choices while allowing the AI to inspect that content for its task.*
+
+| Need during work | What LayerWeave provides |
 |---|---|
-| Find the information related to “here” | Read by moment, range, layer, or subtree; follow relationships back to sources |
-| Let AI compare the picture with the data | Query object identities, text, and relationships alongside a screenshot of the corresponding view |
-| Leave feedback without interrupting work | Comments, replies, and pending states that people and agents can revisit |
+| Leave feedback that can be followed up | Comments, replies, and pending states attached to the relevant content |
 | See how far the AI has got | A canvas that syncs project changes every two seconds |
-| Recover from a mistaken edit | Change records, history, and undo, with explicit conflict reports |
+| Correct an earlier edit | Change records, history, and undo, with explicit conflict reports |
 
 Use seconds for video and music, paragraphs for articles, or pages and panels for comics. The project defines what each axis means; units are not converted automatically. Images, audio, and video are referenced by path or URL. Skills and external tools handle media generation and processing.
 

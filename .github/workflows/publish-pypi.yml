@@ -6,7 +6,7 @@ on:
       tag:
         description: GitHub release tag containing the already-tested distributions
         required: true
-        default: v0.7.9b2
+        default: v0.7.9b3
 
 permissions:
   contents: read
@@ -36,7 +36,7 @@ jobs:
 
           tag = os.environ["RELEASE_TAG"]
           if not re.fullmatch(r"v\d+\.\d+\.\d+(?:(?:a|b|rc)\d+)?", tag):
-              raise SystemExit("Expected a version tag such as v0.7.9b2")
+              raise SystemExit("Expected a version tag such as v0.7.9b3")
           version = tag[1:]
           source = Path("downloads")
           checksums = {}

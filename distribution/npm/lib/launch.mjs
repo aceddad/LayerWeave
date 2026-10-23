@@ -9,6 +9,8 @@ import { pipeline } from 'node:stream/promises';
 
 const metadata = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
 const runtime = JSON.parse(await readFile(new URL('../runtime.json', import.meta.url), 'utf8'));
+// GHSA-hq85-5cpj-mr62: older uv releases trust the compromised emSign CA.
+const MIN_UV_VERSION = '0.13.4';
 
 export function cacheRoot(env = process.env) {
   return path.resolve(env.LAYERWEAVE_CACHE_DIR || path.join(env.LOCALAPPDATA || path.join(homedir(), 'AppData', 'Local'), 'LayerWeave', 'cache'));
@@ -44,13 +46,19 @@ export async function download(url, output, sha256) {
 
 function usableUv(command) {
   const result = spawnSync(command, ['--version'], { encoding: 'utf8', windowsHide: true, timeout: 10_000 });
-  const version = /^uv (\d+)\.(\d+)\./.exec(result.stdout || '');
-  return result.status === 0 && version && (Number(version[1]) > 0 || Number(version[2]) >= 9);
+  const version = /^uv (\d+)\.(\d+)\.(\d+)(?=\s|$)/.exec(result.stdout || '');
+  if (result.status !== 0 || !version) return false;
+  const installed = version.slice(1).map(Number);
+  const minimum = MIN_UV_VERSION.split('.').map(Number);
+  for (let index = 0; index < minimum.length; index++) {
+    if (installed[index] !== minimum[index]) return installed[index] > minimum[index];
+  }
+  return true;
 }
 
 export async function prepareUv(env = process.env) {
   if (env.LAYERWEAVE_UV) {
-    if (!usableUv(env.LAYERWEAVE_UV)) throw new Error('LAYERWEAVE_UV must point to uv >= 0.9.');
+    if (!usableUv(env.LAYERWEAVE_UV)) throw new Error(`LAYERWEAVE_UV must point to uv >= ${MIN_UV_VERSION} (updated CA certificates required).`);
     return env.LAYERWEAVE_UV;
   }
   if (usableUv('uv')) return 'uv';

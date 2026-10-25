@@ -2,36 +2,36 @@
 
 # LayerWeave
 
-[简体中文](https://github.com/aceddad/LayerWeave/blob/v0.7.10b1/README.md) | **English**
+[简体中文](https://github.com/aceddad/LayerWeave/blob/v0.7.10b2/README.md) | **English**
 
-[GitHub](https://github.com/aceddad/LayerWeave/tree/visualization) · [Gitee](https://gitee.com/emotion1354414/layer-weave/tree/visualization) · [Quick install](https://github.com/aceddad/LayerWeave/blob/v0.7.10b1/README.en.md#quick-install) · [Start using](https://github.com/aceddad/LayerWeave/blob/v0.7.10b1/README.en.md#start-using-layerweave) · [Connect an AI](https://github.com/aceddad/LayerWeave/blob/v0.7.10b1/README.en.md#connect-an-ai) · [Build your own tools](https://github.com/aceddad/LayerWeave/blob/v0.7.10b1/README.en.md#compose-the-parts-build-your-own-tools)
+[GitHub](https://github.com/aceddad/LayerWeave/tree/visualization) · [Gitee](https://gitee.com/emotion1354414/layer-weave/tree/visualization) · [Quick install](https://github.com/aceddad/LayerWeave/blob/v0.7.10b2/README.en.md#quick-install) · [Start using](https://github.com/aceddad/LayerWeave/blob/v0.7.10b2/README.en.md#start-using-layerweave) · [Connect an AI](https://github.com/aceddad/LayerWeave/blob/v0.7.10b2/README.en.md#connect-an-ai) · [Build your own tools](https://github.com/aceddad/LayerWeave/blob/v0.7.10b2/README.en.md#compose-the-parts-build-your-own-tools)
 
 **Fewer distractions: look at the part that matters, and focus on the task at hand.**
 
 LayerWeave is an information management toolkit that AI agents can use and extend. Text, media references, evidence, and comments are organized by time, paragraph, or reading order, then connected through layers and relationships. Agents query, edit, and capture views through MCP; people can browse, point, and comment on the same project.
 
-![A real music-video workspace: layers on the left, audio, stems, story, storyboards, and artwork on the timeline, with content and relationships in the Now panel](https://raw.githubusercontent.com/aceddad/LayerWeave/v0.7.10b1/docs/images/handdraw-workspace.png)
+![A real music-video workspace: layers on the left, audio, stems, story, storyboards, and artwork on the timeline, with content and relationships in the Now panel](https://raw.githubusercontent.com/aceddad/LayerWeave/v0.7.10b2/docs/images/handdraw-workspace.png)
 
-*A real hand-drawn MV project: audio, stems, story, storyboards, and artwork organized by time. The Now panel shows the selected item and content and relationships at the playhead. Full production media is not included in the download. [View full-size image](https://github.com/aceddad/LayerWeave/blob/v0.7.10b1/docs/images/handdraw-workspace.png).*
+*A real hand-drawn MV project: audio, stems, story, storyboards, and artwork organized by time. The Now panel shows the selected item and content and relationships at the playhead. Full production media is not included in the download. [View full-size image](https://github.com/aceddad/LayerWeave/blob/v0.7.10b2/docs/images/handdraw-workspace.png).*
 
 ## Quick install
 
-The current release is the **0.7.10b1 Windows preview**. Choose either installation method in PowerShell.
+The current release is the **0.7.10b2 Windows preview**. Choose either installation method in PowerShell.
 
-This preview adds BLOB fields and managed-table unregistration, with faster batch writes and history reads. See the [release notes](https://github.com/aceddad/LayerWeave/releases/tag/v0.7.10b1).
+This preview adds generic Data/DataLayer types and a worked example of lifecycle declarations and ordering. See the [release notes](https://github.com/aceddad/LayerWeave/releases/tag/v0.7.10b2).
 
 > Security update: the npm launcher skips PATH copies of uv older than 0.13.4 and uses a patched runtime; explicitly selected outdated copies produce an update message. For pip-based installation, first update pip to 26.2.2 or later and any installed certifi to 2026.10.19 or later. Updating LayerWeave does not update other Python environments. See the [Python certificate incident notice](https://discuss.python.org/t/information-for-python-users-regarding-emudhra-emsign-ca-certificate-security-incident/109576).
 
 With [uv](https://docs.astral.sh/uv/getting-started/installation/) **0.13.4 or later**, including MCP dependencies:
 
 ```powershell
-uv tool install --python 3.11 "layerweave[mcp]==0.7.10b1"
+uv tool install --python 3.11 "layerweave[mcp]==0.7.10b2"
 ```
 
 With Node.js 20+ / npm on Windows x64:
 
 ```powershell
-npm install -g layerweave@0.7.10-beta.1
+npm install -g layerweave@0.7.10-beta.2
 ```
 
 After installation, use the `layerweave` command. uv prepares an isolated Python environment; npm installs a launcher that prepares Python and the required dependencies on first use. Initial setup needs internet access. **Installation does not create an example project or open the view.** If the command is not found, follow the installer's PATH instructions and reopen your terminal and MCP client.
@@ -77,7 +77,7 @@ The configuration location depends on your client. Replace the example paths. If
 
 Once connected, have the AI call `layerweave_help` to find tools for your task, then create or open your own project. Running a demo is optional. The client manages the server process; starting MCP does not open the canvas.
 
-Default databases and projects, tool exposure, uvx/npx, and existing Python environments are covered in the [MCP guide (Chinese)](https://github.com/aceddad/LayerWeave/blob/v0.7.10b1/src/layerweave/tool/builtin/shared/mcp/README.md) and [npm environment guide (Chinese)](https://github.com/aceddad/LayerWeave/blob/v0.7.10b1/src/layerweave/tool/builtin/shared/launcher/README.md#npm-%E8%BF%90%E8%A1%8C%E7%8E%AF%E5%A2%83).
+Default databases and projects, tool exposure, uvx/npx, and existing Python environments are covered in the [MCP guide (Chinese)](https://github.com/aceddad/LayerWeave/blob/v0.7.10b2/src/layerweave/tool/builtin/shared/mcp/README.md) and [npm environment guide (Chinese)](https://github.com/aceddad/LayerWeave/blob/v0.7.10b2/src/layerweave/tool/builtin/shared/launcher/README.md#npm-%E8%BF%90%E8%A1%8C%E7%8E%AF%E5%A2%83).
 
 </details>
 
@@ -106,16 +106,16 @@ This opens the article-reading example in `./layerweave-demo/article-reading`. *
 With uv or npm available, use either command directly:
 
 ```powershell
-uvx layerweave@0.7.10b1 demo
+uvx layerweave@0.7.10b2 demo
 ```
 
 ```powershell
-npx --yes layerweave@0.7.10-beta.1 demo
+npx --yes layerweave@0.7.10-beta.2 demo
 ```
 
 </details>
 
-Project data stays separate from the download cache. More options are in the [launcher guide (Chinese)](https://github.com/aceddad/LayerWeave/blob/v0.7.10b1/src/layerweave/tool/builtin/shared/launcher/README.md); installation files are on [GitHub Releases](https://github.com/aceddad/LayerWeave/releases/tag/v0.7.10b1). To import or extend the kernel in a Python project, start with [development and extension](https://github.com/aceddad/LayerWeave/blob/v0.7.10b1/README.en.md#compose-the-parts-build-your-own-tools).
+Project data stays separate from the download cache. More options are in the [launcher guide (Chinese)](https://github.com/aceddad/LayerWeave/blob/v0.7.10b2/src/layerweave/tool/builtin/shared/launcher/README.md); installation files are on [GitHub Releases](https://github.com/aceddad/LayerWeave/releases/tag/v0.7.10b2). To import or extend the kernel in a Python project, start with [development and extension](https://github.com/aceddad/LayerWeave/blob/v0.7.10b2/README.en.md#compose-the-parts-build-your-own-tools).
 
 ## Keep attention on the relevant part
 
@@ -123,17 +123,17 @@ Project data stays separate from the download cache. More options are in the [la
 
 Collapse layers you are not working with while keeping their names, object counts, and expand controls visible. Make room for the current task and expand them again when needed.
 
-![The user collapses stems, story, video planning, and other layers while their counts and expand controls remain visible](https://raw.githubusercontent.com/aceddad/LayerWeave/v0.7.10b1/docs/images/handdraw-folded.png)
+![The user collapses stems, story, video planning, and other layers while their counts and expand controls remain visible](https://raw.githubusercontent.com/aceddad/LayerWeave/v0.7.10b2/docs/images/handdraw-folded.png)
 
-*[View the full-size collapsed view](https://github.com/aceddad/LayerWeave/blob/v0.7.10b1/docs/images/handdraw-folded.png). Collapsing changes the display; it does not delete content.*
+*[View the full-size collapsed view](https://github.com/aceddad/LayerWeave/blob/v0.7.10b2/docs/images/handdraw-folded.png). Collapsing changes the display; it does not delete content.*
 
 ### Same data, different areas of focus
 
 At the same **2:57** moment, the AI looks at four relevant layers and selects a different piece of artwork. It can read object text and relationships as well as capture screenshots. These temporary filters leave the person's browsing state unchanged.
 
-![An AI view around 2:57, filtered to interpretation, story, artwork, and shot design, with an independently selected image](https://raw.githubusercontent.com/aceddad/LayerWeave/v0.7.10b1/docs/images/ai-focus-177.png)
+![An AI view around 2:57, filtered to interpretation, story, artwork, and shot design, with an independently selected image](https://raw.githubusercontent.com/aceddad/LayerWeave/v0.7.10b2/docs/images/ai-focus-177.png)
 
-*[View the full-size AI view](https://github.com/aceddad/LayerWeave/blob/v0.7.10b1/docs/images/ai-focus-177.png). “User collapsed” labels preserve the person's focus choices while allowing the AI to inspect that content for its task.*
+*[View the full-size AI view](https://github.com/aceddad/LayerWeave/blob/v0.7.10b2/docs/images/ai-focus-177.png). “User collapsed” labels preserve the person's focus choices while allowing the AI to inspect that content for its task.*
 
 | Need during work | What LayerWeave provides |
 |---|---|
@@ -143,18 +143,18 @@ At the same **2:57** moment, the AI looks at four relevant layers and selects a 
 
 Use seconds for video and music, paragraphs for articles, or pages and panels for comics. The project defines what each axis means; units are not converted automatically. Images, audio, and video are referenced by path or URL. Skills and external tools handle media generation and processing.
 
-Understanding screenshots requires a vision-capable AI. The caller decides when to read comments and which agent handles them. Discover individual tools through help or the [view guide (Chinese)](https://github.com/aceddad/LayerWeave/blob/v0.7.10b1/src/layerweave/tool/builtin/view/GUIDE.md#%E7%BB%99-ai-%E7%94%A8).
+Understanding screenshots requires a vision-capable AI. The caller decides when to read comments and which agent handles them. Discover individual tools through help or the [view guide (Chinese)](https://github.com/aceddad/LayerWeave/blob/v0.7.10b2/src/layerweave/tool/builtin/view/GUIDE.md#%E7%BB%99-ai-%E7%94%A8).
 
 ## Try another setting
 
 | Example | What you can do |
 |---|---|
-| [Article reading](https://github.com/aceddad/LayerWeave/blob/v0.7.10b1/examples/showcases/article-reading/README.md) · recommended start · [screenshot](https://github.com/aceddad/LayerWeave/blob/v0.7.10b1/docs/images/article-reading.png) | Compare text with its interpretation, then trace claims to evidence, illustrations, and discussion |
-| [Storyboard and H3](https://github.com/aceddad/LayerWeave/blob/v0.7.10b1/examples/showcases/donut-hole-h3/README.md) | Compare shots, story sections, and implementation notes; trace shared assets |
-| [Hand-drawn MV](https://github.com/aceddad/LayerWeave/blob/v0.7.10b1/examples/showcases/donut-hole-tegaki/README.md) | Keep listening notes, story, visual design, character sheets, and implementation records together |
-| [Late Bloom](https://github.com/aceddad/LayerWeave/blob/v0.7.10b1/examples/showcases/late-bloom-scroll/README.md) | Follow four AIs using comments to coordinate seams and colors in one animated SVG scroll |
+| [Article reading](https://github.com/aceddad/LayerWeave/blob/v0.7.10b2/examples/showcases/article-reading/README.md) · recommended start · [screenshot](https://github.com/aceddad/LayerWeave/blob/v0.7.10b2/docs/images/article-reading.png) | Compare text with its interpretation, then trace claims to evidence, illustrations, and discussion |
+| [Storyboard and H3](https://github.com/aceddad/LayerWeave/blob/v0.7.10b2/examples/showcases/donut-hole-h3/README.md) | Compare shots, story sections, and implementation notes; trace shared assets |
+| [Hand-drawn MV](https://github.com/aceddad/LayerWeave/blob/v0.7.10b2/examples/showcases/donut-hole-tegaki/README.md) | Keep listening notes, story, visual design, character sheets, and implementation records together |
+| [Late Bloom](https://github.com/aceddad/LayerWeave/blob/v0.7.10b2/examples/showcases/late-bloom-scroll/README.md) | Follow four AIs using comments to coordinate seams and colors in one animated SVG scroll |
 
-The twelve examples also cover fiction, comics, course study, research, interactive stories, requirements design, translation review, and code navigation. See the [full directory](https://github.com/aceddad/LayerWeave/blob/v0.7.10b1/examples/showcases/README.md). The article is an original essay; the hand-drawn and H3 examples use stills without the song or video files. Recreating the full films needs additional media. Example content and detailed guides are currently in Chinese.
+The twelve examples also cover fiction, comics, course study, research, interactive stories, requirements design, translation review, and code navigation. See the [full directory](https://github.com/aceddad/LayerWeave/blob/v0.7.10b2/examples/showcases/README.md). The article is an original essay; the hand-drawn and H3 examples use stills without the song or video files. Recreating the full films needs additional media. Example content and detailed guides are currently in Chinese.
 
 ## Compose the parts, build your own tools
 
@@ -167,15 +167,15 @@ For example, a tool that lists “every shot featuring each character” can que
 **You and your agents are welcome to build applications on this kernel.** This branch is a usable application example, and the view itself is a tool package. Built-in tools demonstrate how to reuse the kernel; separate view plugins demonstrate how to extend the application. Comments are one such example: `Note` extends the text object, replies use relationships, and read states and layout live in the view's own tables.
 
 - [main development branch](https://github.com/aceddad/LayerWeave/tree/main): the kernel, support layer, and non-visual tools, with a minimal Python example.
-- [Extension guide](https://github.com/aceddad/LayerWeave/blob/v0.7.10b1/docs/build-with-layerweave/README.md): add types or tables, compose tools, or consume incremental changes.
-- [Public API](https://github.com/aceddad/LayerWeave/blob/v0.7.10b1/src/layerweave/support/API.md) and [tool-owned table example](https://github.com/aceddad/LayerWeave/blob/v0.7.10b1/examples/tool_tables.py): reuse the existing capabilities in your own features.
+- [Extension guide](https://github.com/aceddad/LayerWeave/blob/v0.7.10b2/docs/build-with-layerweave/README.md): add types or tables, compose tools, or consume incremental changes.
+- [Public API](https://github.com/aceddad/LayerWeave/blob/v0.7.10b2/src/layerweave/support/API.md) and [tool-owned table example](https://github.com/aceddad/LayerWeave/blob/v0.7.10b2/examples/tool_tables.py): reuse the existing capabilities in your own features.
 - [Official view plugins](https://github.com/aceddad/layerweave-plugins): overview, seams, preview, and web, all separately installed.
 
 ## Documentation and optional components
 
-[Using tools](https://github.com/aceddad/LayerWeave/blob/v0.7.10b1/src/layerweave/tool/builtin/usage/README.md) · [JSON exchange and templates](https://github.com/aceddad/LayerWeave/blob/v0.7.10b1/src/layerweave/tool/builtin/usage/exchange/README.md) · [View and plugins](https://github.com/aceddad/LayerWeave/blob/v0.7.10b1/src/layerweave/tool/builtin/view/README.md) · [Source development](https://github.com/aceddad/LayerWeave/blob/v0.7.10b1/docs/developer-conventions.md) · [Documentation index](https://github.com/aceddad/LayerWeave/blob/v0.7.10b1/docs/README.md)
+[Using tools](https://github.com/aceddad/LayerWeave/blob/v0.7.10b2/src/layerweave/tool/builtin/usage/README.md) · [JSON exchange and templates](https://github.com/aceddad/LayerWeave/blob/v0.7.10b2/src/layerweave/tool/builtin/usage/exchange/README.md) · [View and plugins](https://github.com/aceddad/LayerWeave/blob/v0.7.10b2/src/layerweave/tool/builtin/view/README.md) · [Source development](https://github.com/aceddad/LayerWeave/blob/v0.7.10b2/docs/developer-conventions.md) · [Documentation index](https://github.com/aceddad/LayerWeave/blob/v0.7.10b2/docs/README.md)
 
-Ordinary data management and article reading need no API key, FFmpeg, or official view plugin. Server-side frame extraction, video thumbnails, and waveforms need [FFmpeg (Chinese guide)](https://github.com/aceddad/LayerWeave/blob/v0.7.10b1/src/layerweave/tool/builtin/view/GUIDE.md#%E9%80%89%E8%A3%85-ffmpeg); AI screenshots need Chrome, Edge, or Chromium. The web UI supports Chinese and English. This release includes view component 0.31.1. The detailed documentation, CLI/help descriptions, and templates are currently in Chinese; machine-readable names are unchanged.
+Ordinary data management and article reading need no API key, FFmpeg, or official view plugin. Server-side frame extraction, video thumbnails, and waveforms need [FFmpeg (Chinese guide)](https://github.com/aceddad/LayerWeave/blob/v0.7.10b2/src/layerweave/tool/builtin/view/GUIDE.md#%E9%80%89%E8%A3%85-ffmpeg); AI screenshots need Chrome, Edge, or Chromium. The web UI supports Chinese and English. This release includes view component 0.31.1. The detailed documentation, CLI/help descriptions, and templates are currently in Chinese; machine-readable names are unchanged.
 
 ## AI-assisted development
 
@@ -183,4 +183,4 @@ The maintainer leads the project's design and maintenance. Astra (Codex) and Cla
 
 ## License
 
-LayerWeave itself is licensed under [MIT](https://github.com/aceddad/LayerWeave/blob/v0.7.10b1/LICENSE). Bundled web components keep their own licenses; see [third-party notices](https://github.com/aceddad/LayerWeave/blob/v0.7.10b1/THIRD_PARTY_NOTICES.md). Separate plugins, skills, and external services follow their own terms.
+LayerWeave itself is licensed under [MIT](https://github.com/aceddad/LayerWeave/blob/v0.7.10b2/LICENSE). Bundled web components keep their own licenses; see [third-party notices](https://github.com/aceddad/LayerWeave/blob/v0.7.10b2/THIRD_PARTY_NOTICES.md). Separate plugins, skills, and external services follow their own terms.

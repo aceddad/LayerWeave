@@ -16,21 +16,21 @@ python -X utf8 -m pip install -e ".[mcp,dev]"
 
 ```sh
 python -X utf8 -m build --sdist --wheel --outdir dist
-python -X utf8 -m tests.packaging.check_wheel dist/layerweave-0.7.10b1-py3-none-any.whl
-python -X utf8 -m tests.packaging.check_launcher dist/layerweave-0.7.10b1-py3-none-any.whl
-python -X utf8 -m tests.packaging.check_mcp_wheel dist/layerweave-0.7.10b1-py3-none-any.whl
-python -X utf8 -m tests.packaging.check_sdist dist/layerweave-0.7.10b1.tar.gz
+python -X utf8 -m tests.packaging.check_wheel dist/layerweave-0.7.10b2-py3-none-any.whl
+python -X utf8 -m tests.packaging.check_launcher dist/layerweave-0.7.10b2-py3-none-any.whl
+python -X utf8 -m tests.packaging.check_mcp_wheel dist/layerweave-0.7.10b2-py3-none-any.whl
+python -X utf8 -m tests.packaging.check_sdist dist/layerweave-0.7.10b2.tar.gz
 ```
 
 上述步骤只在本地构建和验收，不上传包仓库。上传位置、版本标签和正式发行说明应在实际发布时明确选择。
 
-统一入口版本为 Python 0.7.10b1 与 npm 0.7.10-beta.1，npm 预览使用 next 通道。npm 版本与固定的 Python 版本在 distribution/npm/package.json 声明，版本一致性由 npm 测试验证。在 distribution/npm 下执行 `npm test` 与 `npm pack --pack-destination ../../dist` 生成独立启动包。
+统一入口版本为 Python 0.7.10b2 与 npm 0.7.10-beta.2，npm 预览使用 next 通道。npm 版本与固定的 Python 版本在 distribution/npm/package.json 声明，版本一致性由 npm 测试验证。在 distribution/npm 下执行 `npm test` 与 `npm pack --pack-destination ../../dist` 生成独立启动包。
 
 构建钩子 setup.py/build_support.py 从 examples/showcases 自动生成案例清单，并只把 distribution/demos.json 声明的文章案例压缩进 wheel；其他案例保留版本固定的远端 ZIP 与 SHA-256。不要手改生成资源或把个人案例库放入安装包。
 
 发布到 PyPI 前，维护者需要 PyPI 账号与首次发布授权，可配置 GitHub Trusted Publishing；npm 需要独立账号和首次发布授权。先验收同一批 wheel、sdist 和 npm tarball，再上传；GitHub Release 与 PyPI 使用同一份 Python 发行物，不分别重建。包名简写只在对应索引发布后写成可直接执行的安装说明。此前发布的 0.7.8 保持原样。
 
-0.7.8 已作为公开预览版发布。GitHub 的默认展示分支与 Release 目标均使用 visualization，main 保持无视图开发源码。后续使用与 Python 发行版本对应的新标签（本轮预览为 v0.7.10b1），不覆盖已发布版本；预览版标记 pre-release。官方插件使用独立仓库与各自版本，不随宿主自动安装。地址与授权就绪后再创建新 Release，本地准备不等于发布。
+0.7.8 已作为公开预览版发布。GitHub 的默认展示分支与 Release 目标均使用 visualization，main 保持无视图开发源码。后续使用与 Python 发行版本对应的新标签（本轮预览为 v0.7.10b2），不覆盖已发布版本；预览版标记 pre-release。官方插件使用独立仓库与各自版本，不随宿主自动安装。地址与授权就绪后再创建新 Release，本地准备不等于发布。
 
 ## 软件发行物与案例包
 

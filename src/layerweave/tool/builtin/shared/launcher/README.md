@@ -25,14 +25,14 @@ layerweave mcp --config ./mcp.json
 
 ## uv / npm 启动
 
-Python 版本为 `0.7.10b1`，npm 版本为 `0.7.10-beta.1`。在自己的工作目录选择一种方式：
+Python 版本为 `0.7.10b2`，npm 版本为 `0.7.10-beta.2`。在自己的工作目录选择一种方式：
 
 ```powershell
-uvx layerweave@0.7.10b1 demo
-npx --yes layerweave@0.7.10-beta.1 demo
+uvx layerweave@0.7.10b2 demo
+npx --yes layerweave@0.7.10-beta.2 demo
 ```
 
-npm 自动管理运行环境，支持 Windows x64、Node.js 20+；无需预先安装 Python 或 uv，详细机制见下方 npm 运行环境。已有本地 wheel 时也可使用 `uvx --python 3.11 --from ./layerweave-0.7.10b1-py3-none-any.whl layerweave demo`。npm 使用预览通道 next，上面的明确版本命令不受通道变更影响。
+npm 自动管理运行环境，支持 Windows x64、Node.js 20+；无需预先安装 Python 或 uv，详细机制见下方 npm 运行环境。已有本地 wheel 时也可使用 `uvx --python 3.11 --from ./layerweave-0.7.10b2-py3-none-any.whl layerweave demo`。npm 使用预览通道 next，上面的明确版本命令不受通道变更影响。
 
 ## npm 运行环境
 

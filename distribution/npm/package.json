@@ -1,6 +1,6 @@
 {
   "name": "layerweave",
-  "version": "0.7.10-beta.1",
+  "version": "0.7.10-beta.2",
   "description": "One-command LayerWeave examples, projects and MCP with an automatically managed Python environment",
   "type": "module",
   "bin": {"layerweave": "bin/layerweave.mjs"},
@@ -11,5 +11,5 @@
   "scripts": {"test": "node --test test/*.test.mjs", "prepack": "python -X utf8 ../prepare_readmes.py"},
   "license": "MIT",
   "repository": {"type": "git", "url": "git+https://github.com/aceddad/LayerWeave.git", "directory": "distribution/npm"},
-  "layerweave": {"pythonVersion": "0.7.10b1"}
+  "layerweave": {"pythonVersion": "0.7.10b2"}
 }

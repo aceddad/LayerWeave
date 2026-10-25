@@ -13,7 +13,7 @@
 
 ## 开发自己的扩展
 
-- [扩展指南](build-with-layerweave/README.md)：在自己的工程中接入时序、有序列表、自有表和组合操作。
+- [扩展指南](build-with-layerweave/README.md)：选择数据组织与工具组合方式，也包含 MCP 组件目录、声明服务和 project 分区技巧。
 - [基础 API](../src/layerweave/support/API.md)：读取、写入、事务和实例装配。
 - [内部工具开发](../src/layerweave/tool/builtin/developer/README.md)：新增工具、封装与配置。
 - [配置 help](../src/layerweave/tool/builtin/shared/help/CONFIG_HELP.md)：开发模式可查询完整定义与继承关系。

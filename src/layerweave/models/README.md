@@ -15,6 +15,7 @@
 | 类型 | 层类 | 对象类 | 内容入口 |
 |---|---|---|---|
 | text | TextLayer | Text | information.text |
+| data | DataLayer | Data | information.data（任意 JSON 值） |
 | image | ImageLayer | Image | information.source |
 | audio | AudioLayer | Audio | information.source |
 | movie | MovieLayer | Movie | information.source |
@@ -22,6 +23,8 @@
 | active | ActiveLayer | Active | information.source / data |
 
 [Title](objects/title.py) 是继承 Text 的派生示例，对应[标题 TOML](../configs/objects/title.toml)，继续装入文字层。用途名称如歌词、背景等可以通过实例 name 区分。
+
+Data 与 DataLayer 直接继承基础类，用于结构化数据、参数和声明。information 保持字典，data 可以是嵌套对象、列表或标量；详见[数据封装](../configs/objects/README.md#通用数据-data)与[往返示例](../../../examples/data.py)。
 
 ## 扩充入口
 

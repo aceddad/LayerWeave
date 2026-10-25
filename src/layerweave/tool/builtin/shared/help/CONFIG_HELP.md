@@ -18,6 +18,7 @@
 ```sh
 python -X utf8 -B -m layerweave.tool.builtin.shared.help.config_help
 python -X utf8 -B -m layerweave.tool.builtin.shared.help.config_help combined text
+python -X utf8 -B -m layerweave.tool.builtin.shared.help.config_help combined data
 python -X utf8 -B -m layerweave.tool.builtin.shared.help.config_help objects model title --dev
 # 查当前参数、可选值及默认值。
 python -X utf8 -B -m layerweave.tool.builtin.shared.help.command_help config_help --json

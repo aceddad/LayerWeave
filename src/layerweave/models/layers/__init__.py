@@ -3,7 +3,7 @@
 from importlib import import_module
 
 
-_MODULES = {'Layer': 'base', 'TextLayer': 'text', 'ImageLayer': 'image', 'AudioLayer': 'audio', 'MovieLayer': 'movie', 'ModelLayer': 'model', 'ActiveLayer': 'active'}
+_MODULES = {'Layer': 'base', 'TextLayer': 'text', 'DataLayer': 'data', 'ImageLayer': 'image', 'AudioLayer': 'audio', 'MovieLayer': 'movie', 'ModelLayer': 'model', 'ActiveLayer': 'active'}
 __all__ = list(_MODULES)
 
 

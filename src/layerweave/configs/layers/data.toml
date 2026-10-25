@@ -1,0 +1,22 @@
+# 数据层；直接继承 Layer，轴含义由使用方选择。
+[layer]
+type    = "data"
+version = 1
+name    = "数据层"
+class   = "layerweave.models.layers.data:DataLayer"
+extends = "base.toml"
+objects = "data"
+when    = "组织结构化数据、参数、声明或有序条目；可按序号或时间定位"
+tools   = []
+
+[layer.constraint]
+overlap = true
+
+[layer.display]
+visibility = true
+
+[layer.example]
+name    = "数据目录"
+axis    = { unit = "序号", precision = 1 }
+tips    = "轴按需设置，也可以省略；内容含义由使用方解释"
+objects = []

@@ -27,7 +27,8 @@ class ConfigurationTests(unittest.TestCase):
             config = loader.load(loader.ref(path), kind)
             self.assertTrue(config["display"]["visibility"])
             self.assertIn(f"{kind}s/base.toml", config["_lineage"])
-        self.assertEqual(len(loader.cache), 15)   # main 不含视图工具登记的两份批注配置。
+        self.assertEqual(len(loader.cache), sum(1 for kind in ("layers", "objects")
+                                                     for _ in (self.root / kind).rglob("*.toml")))
 
     def test_derived_field_addition_repeats_rule_once(self):
         self.write("objects/dialogue.toml", '''[object]

@@ -43,6 +43,7 @@ python -X utf8 -m venv .venv
 | 在一个事务中组合多个现成工具 | [事务内组合](build-with-layerweave/04-composing-tools.md)，失败抛出，外层提交与检查 |
 | 让视图或缓存连续读取业务变化 | [增量接入](build-with-layerweave/05-incremental-reading.md)，初始快照与后续日志游标 |
 | 新增或维护内部工具 | [工具开发](../src/layerweave/tool/builtin/developer/README.md)、[基础 API](../src/layerweave/support/API.md) |
+| 设计组件目录、声明服务或定向读取 | [统一 MCP 入口](build-with-layerweave/06-mcp-components.md)、[声明服务](build-with-layerweave/07-declaration-services.md)、[project 分区技巧](build-with-layerweave/tip-project-scopes.md)；执行和路由由上层工具实现 |
 | MCP 启动、独立暴露与外部命令接入 | [MCP 接入](../src/layerweave/tool/builtin/shared/mcp/README.md)，复用本包的 Schema 和函数绑定 |
 | 工具包登记自己的层或对象类型 | [工具包登记类型](../src/layerweave/tool/builtin/developer/TOOL_TYPES.md) |
 | 扩充 JSON 交换或新增模板 | [交换开发](../src/layerweave/tool/builtin/usage/exchange/DEVELOPMENT.md)，模板新增文件即发现 |

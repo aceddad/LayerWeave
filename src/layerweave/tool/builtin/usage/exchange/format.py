@@ -5,6 +5,7 @@ import json
 
 from layerweave.support.feedback import InputError
 from layerweave.support.numbering.state import counter_fields
+from layerweave.support.storage.binary import encode_binary
 
 
 VERSION = 1
@@ -30,7 +31,7 @@ def document_value(document):
 def fingerprint(connection, kind, row, spec):
     ignored = counter_fields(connection, kind, row)
     fields = {name: row[name] for name in spec["fields"] if name not in ignored}
-    encoded = json.dumps(fields, sort_keys=True, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
+    encoded = json.dumps(encode_binary(spec, fields), sort_keys=True, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
     return "sha256:" + sha256(encoded.encode("utf-8")).hexdigest()
 
 

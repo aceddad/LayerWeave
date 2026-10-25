@@ -116,6 +116,10 @@ tables 为可选结构说明。默认完整项目导出保留已登记的工具�
 
 tables 沿用 register_tables 的声明：table、fields、scoped、id_source、references、logical_references、exchange。导入先独立准备这些表；已有列、身份及硬引用不能被文件改写，目标表后来增加的其他列保留。业务失败或撤销不会删除已准备的空表或回退声明，schema 字段明确报告这个阶段。
 
+声明为 BLOB 的 data 字段使用标准 Base64 字符串，NULL 使用 null；例如 "AAH/" 对应字节 00 01 FF。导入按列声明解码，TEXT/JSON 内的同形内容不转换；base 指纹包含完整二进制值。BLOB 默认值只能省略或 null，具体规则见[工具表开发指导](../../../../../../docs/build-with-layerweave/03-managed-tables.md#二进制字段-blob)。
+
+退出托管的表不参与导出；目标库已有退役 kind 时，导入不能重新登记或恢复它。交换不迁移源 changes 或退役目录；需要保留整库历史时同时保留原数据库及声明，不能仅用项目交换文档代替历史备份。
+
 logical_references 默认 []，沿用 references 的 fields/kind 写法；两者都参与范围收集与编号转换，但只有 references 建立数据库外键。声明和旧库升级的完整规则见[工具表开发指导](../../../../../../docs/build-with-layerweave/03-managed-tables.md#逻辑引用与复制策略)。例如，附着某层且与层共用编号的状态：
 
 ~~~json

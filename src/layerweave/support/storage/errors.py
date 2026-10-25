@@ -6,6 +6,54 @@ from layerweave.support.feedback import target
 from layerweave.core.identity import identity_key
 from .tables import table_specs, quote
 from .references import missing_references, dependent_records
+from .retirement import retired_tables
+
+
+def _retired_physical_tables(connection, specs):
+    """失败时才查目录；已被新 kind 使用的同名物理表以活动登记为准。"""
+    active = {spec["table"].lower() for spec in specs.values()}
+    existing = {row[0].lower() for row in connection.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+    # 同一物理表名可在外部删表后被新 kind 使用；以最近一次退出的登记说明它。
+    retired = sorted(retired_tables(connection).items(), key=lambda item: item[1]["retired_at"])
+    return {entry["definition"]["table"]: kind for kind, entry in retired
+            if entry["definition"]["table"].lower() in existing - active}
+
+
+def _foreign_keys(connection, table):
+    groups = {}
+    for row in connection.execute(f"PRAGMA foreign_key_list({quote(table)})"):
+        groups.setdefault(row[0], []).append(row)
+    return {key: sorted(rows, key=lambda row: row[1]) for key, rows in groups.items()}
+
+
+def _retired_dependent(connection, kind, record, specs):
+    parent = specs[kind]["table"]
+    for table, retired_kind in _retired_physical_tables(connection, specs).items():
+        for refs in _foreign_keys(connection, table).values():
+            # 退役后 DDL 由外部管理；只使用当前真实外键，不凭冻结声明猜测。
+            if refs[0][2].lower() != parent.lower() or any(ref[4] not in record for ref in refs):
+                continue
+            fields = [ref[3] for ref in refs]
+            where = " AND ".join(f"{quote(field)}=?" for field in fields)
+            row = connection.execute(f"SELECT * FROM {quote(table)} WHERE {where} LIMIT 1",
+                                     [record[ref[4]] for ref in refs]).fetchone()
+            if row is not None:
+                row = dict(row)
+                return (f"不能删除 {kind}：仍被已退出托管的 {retired_kind}（物理表 {table}）的 {','.join(fields)} 引用；请由外部工具处理这些引用",
+                        "id", target(retired_kind, row.get("project_id"), row.get("id")))
+    return None
+
+
+def _retired_violation(connection, table, rowid, parent, fk_id, kind, specs):
+    refs = _foreign_keys(connection, table).get(fk_id, [])
+    row = connection.execute(f"SELECT * FROM {quote(table)} WHERE rowid=?", (rowid,)).fetchone() if rowid is not None else None
+    row = dict(row) if row is not None else {}
+    parent_kind = next((k for k, spec in specs.items() if spec["table"].lower() == parent.lower()), parent)
+    values = {ref[4]: row.get(ref[3]) for ref in refs}
+    return {"target": target(kind, row.get("project_id"), row.get("id")), "code": "retired_reference",
+            "field": ",".join(ref[3] for ref in refs), "table": table, "retired": True,
+            "reference": target(parent_kind, values.get("project_id"), values.get("id")),
+            "message": f"已退出托管的 {kind}（物理表 {table}）仍引用 {parent} 中不存在的记录；请由外部工具处理这些引用"}
 
 
 def _missing_message(kind, ref, key):
@@ -27,6 +75,7 @@ def _declared_reference_failure(connection, kind, record, action):
             referenced_by = target(dependent, row.get("project_id"), row["id"])
             return (f"不能删除 {kind}：仍被 {dependent} ({referenced_by['project_id']}, {row['id']}) 的 {','.join(ref['fields'])} 引用",
                     "id", referenced_by)
+        return _retired_dependent(connection, kind, record, specs)
     return None
 
 
@@ -96,8 +145,13 @@ def commit(connection):
             violations, checked = [], set()
             specs = table_specs(connection)
             kinds = {spec["table"]: kind for kind, spec in specs.items()}
-            for table, rowid, parent, _ in connection.execute("PRAGMA foreign_key_check"):
-                if table not in kinds or (table, rowid) in checked:
+            retired = _retired_physical_tables(connection, specs)
+            for table, rowid, parent, fk_id in connection.execute("PRAGMA foreign_key_check"):
+                if table not in kinds:
+                    if table in retired:
+                        violations.append(_retired_violation(connection, table, rowid, parent, fk_id, retired[table], specs))
+                    continue
+                if (table, rowid) in checked:
                     continue
                 checked.add((table, rowid))
                 kind = kinds[table]

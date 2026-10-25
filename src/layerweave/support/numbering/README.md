@@ -49,6 +49,8 @@ write.numbering 返回本次领号信息的副本，提交前为临时结果；�
 
 只新增一张库内元数据表 _layerweave_numbering，以 name/definition 保存词条。没有额外 JSON/JSONL 文件。numbering_entries(connection) 读取全部词条，包含成员名单；读取不建表。默认项目词条可在旧库直接读取，首次发号或登记工具表/词条时持久保存。
 
+同一事务内复用的是词条声明，实际计数仍由数据库原子递增。numbering_entries 的返回值及传给外部规则的词条是独立副本，修改它们不会污染后续分配；规则声明持久化后刷新元信息，事务结束后不保留缓存。详见[缓存范围](../storage/SCHEMA.md#声明读取与缓存范围)。
+
 例如先通过 register_tables 建立 counter_state（独立身份，有 INTEGER 列 max_num）和两个按项目的工具表 job_a/job_b，再登记：
 
 ```python

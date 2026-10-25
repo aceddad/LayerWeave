@@ -37,7 +37,7 @@ MCP 的 request 支持单条对象或对象数组，两者使用同一份请求�
 | project_id | layer、object 及 scoped 工具表的必需项目范围；独立种类按 id 定位 |
 | id | read 的可选编号；update、delete 必须指定 |
 | data | create、update 的字段字典 |
-| filters | read 的可选普通列等值条件，None 表示 SQL NULL |
+| filters | read 的可选非 JSON/BLOB 列等值条件，None 表示 SQL NULL |
 | full | read 指定单条 layer/object 时可设为 true，带回装载对象与发出的关联 |
 
 层创建提供 config_ref，省略 type 时 dispatch 从 TOML 补齐；更新 config_ref 且省略 type 时也同步取得新配置标识。Python dispatch 可传 config_root，自动补齐与默认检测使用同一目录。底层原始请求仍可明确传 type；矛盾值会在提交后由 layer_type 报告 error。配置缺失时若提供原始 type，仍可保存并报告配置问题；缺少 type 则无法推导，操作失败。对象创建须传 config_ref 与实际存在的 layer。其他列可使用数据库默认值，见 [schema.sql](../../../support/storage/schema.sql)。项目只需 name、tips 等内容；编号、项目归属键和 max_id 由入口参数及发号方法管理，不通过 data 改写。
@@ -47,6 +47,8 @@ read 提供 id 时返回单条字典或 null，否则返回列表。对象列表
 update 只修改传入字段，JSON 字段整体替换。delete 只删除指定记录，不级联。目标不存在时返回 data = null、applied = false；空修改、修改成相同值也不产生改动日志。改号、迁移不属于本版普通 update。
 
 工具表由 register_tables 预先声明；dispatch 直接复用本库声明，不需要加载原工具代码。工具表使用记录字典，full=true 的模型装载组合仍仅适用于层和对象。接入方式见[工具表开发指导](../../../../../docs/build-with-layerweave/03-managed-tables.md)。
+
+声明为 BLOB 的字段在 JSON 请求/回复中使用标准 Base64，null 保持 null；Python 写会话使用字节，Python dispatch 可接收字节或按声明解码 Base64。退出托管的 kind 不能继续 CRUD，但可通过 change 和历史工具读取旧日志；完整规则见[二进制与注销](../../../../../docs/build-with-layerweave/03-managed-tables.md#二进制字段-blob)。
 
 批量请求使用已知的编号，不解释临时变量或结果引用表达式。若需要把刚创建的编号立即交给下一步，可以用 layerweave.support.api.transaction 或 run_operation 组合写会话原语，使用入口分配的 operation_id。
 
@@ -145,7 +147,7 @@ scope 不推断问题新旧。汇报等级由[诊断配置](../../../support/DIA
 }
 ```
 
-还可以按 kind、project_id、target_id、action 等实际列等值查询。before_data、after_data 会还原为 JSON 值。日志没有实体外键，删除目标后仍保留；日志记录的是请求目标的变化，发号带来的 max_id 更新不另记一条日志。bind 日志的项目上下文取修改后来源项目，删除时取删除前来源项目。
+还可以按 kind、project_id、target_id、action 等实际列等值查询。before_data、after_data 会还原为记录值；Python 中声明的 BLOB 字段为 bytes，JSON 回复为 Base64。日志没有实体外键，删除目标后仍保留；日志记录的是请求目标的变化，发号带来的 max_id 更新不另记一条日志。bind 日志的项目上下文取修改后来源项目，删除时取删除前来源项目。
 
 撤销产生新的操作与普通前后快照，undo_of 列指向被撤销的操作编号。原日志保持不变；重做就是撤销这个新操作。关联 id 在全库递增，不复用已删除编号；旧库先运行初始化命令升级。
 

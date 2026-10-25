@@ -1,9 +1,10 @@
 """薄发号入口：使用当前写会话，调度普通规则函数，不创建业务记录。"""
 from layerweave.support.feedback import InputError, target
-from layerweave.support.storage.tables import table_specs, quote, _exists
+from copy import deepcopy
+from layerweave.support.storage.tables import _table_specs, quote, _exists
 from layerweave.support.transaction import current_write_session
 
-from .registry import CATALOG, counter_key, numbering_entries, persist_entries
+from .registry import CATALOG, counter_key, _numbering_entries, persist_entries
 
 
 def increment(entry, data):
@@ -11,7 +12,7 @@ def increment(entry, data):
     session = current_write_session()
     connection = session.connection
     counter = entry["counter"]
-    spec = table_specs(connection)[counter["kind"]]
+    spec = _table_specs(connection)[counter["kind"]]
     key = counter_key(entry, data)
     column = quote(counter["field"])
     where = " AND ".join(f"{quote(field)}=?" for field in key)
@@ -53,10 +54,11 @@ def register_numbering_rule(name, function):
 def allocate(name, *, data=None):
     """当前事务中调度规则；连接由写会话隐式提供，返回身份字段字典。"""
     session = current_write_session()
-    entries = numbering_entries(session.connection)
+    entries = _numbering_entries(session.connection)
     if name not in entries:
         raise InputError(f"未知发号词条：{name}", field="numbering", allowed=sorted(entries))
-    entry = {**entries[name], "name": name}
+    # 规则函数由外部注册，不能把缓存中的可变字典交给它修改。
+    entry = {**deepcopy(entries[name]), "name": name}
     if entry["rule"] not in RULES:
         raise InputError(f"发号规则未加载：{entry['rule']}", field="rule", allowed=sorted(RULES))
     if not _exists(session.connection, CATALOG):
@@ -65,7 +67,6 @@ def allocate(name, *, data=None):
     identity = RULES[entry["rule"]](entry, {} if data is None else data)
     if not isinstance(identity, dict) or type(identity.get("id")) is not int or identity["id"] < 1:
         raise InputError("发号规则应返回包含正整数 id 的身份字典", code="numbering_result")
-    from copy import deepcopy
     for item in session._numbering[first:]:
         item.setdefault("identity", deepcopy(identity))
     return identity

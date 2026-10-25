@@ -1,5 +1,5 @@
 """依据托管表声明读取真实引用；供恢复规划和 SQL 失败说明复用。"""
-from .tables import table_specs, quote
+from .tables import _table_specs, quote
 
 
 def reference_key(ref, row, specs):
@@ -10,7 +10,7 @@ def reference_key(ref, row, specs):
 
 
 def missing_references(connection, kind, row, specs=None):
-    specs = table_specs(connection) if specs is None else specs
+    specs = _table_specs(connection) if specs is None else specs
     missing = []
     for ref in specs[kind]["references"]:
         key = reference_key(ref, row, specs)
@@ -28,7 +28,7 @@ def dependent_records(connection, key, specs=None):
     """返回引用指定身份的 (kind, 解码记录, 引用声明)，覆盖跨项目和全局表。"""
     from .crud import _decode
 
-    specs = table_specs(connection) if specs is None else specs
+    specs = _table_specs(connection) if specs is None else specs
     values = key[1:] if specs[key[0]]["scoped"] else key[2:]
     result = []
     for kind, spec in specs.items():

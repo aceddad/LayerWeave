@@ -5,6 +5,8 @@ import json
 
 from layerweave.support.values import same_value
 from layerweave.support.transaction import require_session, record_change
+from .binary import encode_binary
+from .tables import get_spec
 
 
 def json_text(value):
@@ -25,13 +27,14 @@ def append_change(connection, operation_id, kind, before, after, *, undo_of=None
     else:
         project_id = record.get("project_id")
     action = "create" if before is None else "delete" if after is None else "update"
+    spec = get_spec(connection, kind)
     cursor = connection.execute(
         "INSERT INTO changes (operation_id, created_at, kind, project_id, target_id, "
         "action, before_data, after_data, undo_of) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (operation_id, datetime.now(timezone.utc).isoformat(), kind, project_id,
          record["id"], action,
-         None if before is None else json_text(before),
-         None if after is None else json_text(after), undo_of),
+         None if before is None else json_text(encode_binary(spec, before)),
+         None if after is None else json_text(encode_binary(spec, after)), undo_of),
     )
     change = {
         "change_id": cursor.lastrowid,

@@ -1,8 +1,8 @@
 """编号状态与簇占用：恢复读取登记信息，不调用发号规则、不重新领号。"""
 from layerweave.support.feedback import InputError
-from layerweave.support.storage.tables import quote, table_specs
+from layerweave.support.storage.tables import quote, _table_specs
 
-from .registry import counter_key, entry_for, numbering_entries, scope_token
+from .registry import counter_key, entry_for, _numbering_entries, scope_token
 
 
 def identity(kind, row):
@@ -30,13 +30,13 @@ def _member_where(entry, key, *, snapshot=None):
 def cluster_occupants(connection, kind, record, *, entries=None, specs=None):
     """同一计数位置和范围中占用该编号的其他记录，不检查无关工具表。"""
     from layerweave.support.storage.crud import _decode
-    entries = numbering_entries(connection) if entries is None else entries
+    entries = _numbering_entries(connection) if entries is None else entries
     member = entry_for(connection, kind, entries)
     if member is None:
         return []
     spec_counter = member[1]["counter"]
     key = counter_key(member[1], record)
-    specs = table_specs(connection) if specs is None else specs
+    specs = _table_specs(connection) if specs is None else specs
     result = []
     for entry in entries.values():
         counter = entry["counter"]
@@ -74,7 +74,7 @@ def advance_member_counter(connection, kind, record):
         return
     entry = member[1]
     counter = entry["counter"]
-    spec = table_specs(connection)[counter["kind"]]
+    spec = _table_specs(connection)[counter["kind"]]
     key = counter_key(entry, record)
     field = quote(counter["field"])
     where = " AND ".join(f"{quote(column)}=?" for column in key)
@@ -85,7 +85,7 @@ def advance_member_counter(connection, kind, record):
 def _counter_entries(connection, kind, row, entries=None):
     if row is None:
         return []
-    entries = numbering_entries(connection) if entries is None else entries
+    entries = _numbering_entries(connection) if entries is None else entries
     return [entry for entry in entries.values() if entry["counter"]["kind"] == kind and
             all(isinstance(binding, str) or row.get(field) == binding for field, binding in entry["counter"]["key"].items())]
 
@@ -106,7 +106,7 @@ def preserve_counters(connection, kind, desired, current=None):
     entries = _counter_entries(connection, kind, desired)
     if not entries:
         return desired
-    specs = table_specs(connection)
+    specs = _table_specs(connection)
     result = dict(desired)
     for entry in entries:
         counter = entry["counter"]

@@ -4,7 +4,8 @@ import json
 
 from layerweave.core.values import same_value
 from layerweave.support.feedback import InputError
-from layerweave.support.storage.tables import table_specs, quote, _exists
+from layerweave.support.storage.tables import table_specs, _table_specs, quote, _exists
+from layerweave.support.storage._metadata import cached, invalidate
 
 
 CATALOG = "_layerweave_numbering"
@@ -16,13 +17,22 @@ DEFAULT = {"rule": "project_entity", "counter": {
 
 def numbering_entries(connection):
     """只读统一目录；旧库及尚未登记的默认表从原有声明取得默认成员。"""
+    return deepcopy(_numbering_entries(connection))
+
+
+def _numbering_entries(connection):
+    """内部借用规则与成员；不包含动态计数值。"""
+    return cached(connection, "numbering", _load_numbering_entries)
+
+
+def _load_numbering_entries(connection):
     result = {}
     if _exists(connection, CATALOG):
         result = {row[0]: json.loads(row[1]) for row in connection.execute(
             f"SELECT name, definition FROM {quote(CATALOG)} ORDER BY name")}
     result.setdefault(PROJECT_ENTRY, deepcopy(DEFAULT))
     assigned = {kind for entry in result.values() for kind in entry["members"]}
-    for kind, spec in table_specs(connection).items():
+    for kind, spec in _table_specs(connection).items():
         if spec["scoped"] and spec.get("id_source", "auto") == "auto" and kind not in assigned:
             result[PROJECT_ENTRY]["members"].append(kind)
     return result
@@ -31,6 +41,7 @@ def numbering_entries(connection):
 def persist_entries(connection, entries):
     from layerweave.support.transaction import require_session
     require_session(connection)
+    invalidate(connection)
     connection.execute(f"CREATE TABLE IF NOT EXISTS {quote(CATALOG)} (name TEXT PRIMARY KEY, definition TEXT NOT NULL)")
     for name, entry in entries.items():
         connection.execute(f"INSERT INTO {quote(CATALOG)} (name, definition) VALUES (?, ?) "
@@ -39,7 +50,7 @@ def persist_entries(connection, entries):
 
 
 def entry_for(connection, kind, entries=None):
-    entries = numbering_entries(connection) if entries is None else entries
+    entries = _numbering_entries(connection) if entries is None else entries
     return next(((name, entry) for name, entry in entries.items() if kind in entry["members"]), None)
 
 

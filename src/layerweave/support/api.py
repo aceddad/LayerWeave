@@ -4,6 +4,7 @@ from .providers import DEFAULT_CHECKER
 from .operation import run_operation
 from .transaction import transaction, WriteSession
 from .feedback import format_feedback, format_issue
+from .serialization import binary_json_default
 from .positions import PositionMath, decimal_value
 from .storage.assembly import read_layer, read_object, read_project_index
 from .storage.snapshot import read_snapshot
@@ -15,6 +16,7 @@ from .storage.queries import query_objects, read_bindings, read_layer_positions
 from .storage.details import read_project_details
 from .storage.change_feed import change_cursor, read_changes
 from .storage.tables import register_tables, table_specs
+from .storage.retirement import unregister_tables, retired_tables
 from .numbering import allocate, register_numbering, numbering_entries, register_numbering_rule, increment
 
 
@@ -33,6 +35,7 @@ __all__ = [
     'WriteSession',
     'format_feedback',
     'format_issue',
+    'binary_json_default',
     'PositionMath',
     'decimal_value',
     'read_layer',
@@ -55,6 +58,8 @@ __all__ = [
     'change_cursor',
     'read_changes',
     'register_tables',
+    'unregister_tables',
+    'retired_tables',
     'table_specs',
     'allocate',
     'register_numbering',

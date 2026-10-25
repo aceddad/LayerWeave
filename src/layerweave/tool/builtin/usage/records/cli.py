@@ -3,6 +3,7 @@
 import argparse
 from contextlib import closing
 import json
+from layerweave.support.serialization import binary_json_default
 from pathlib import Path
 import sqlite3
 import sys
@@ -32,7 +33,7 @@ def main():
             "error": error_detail(error),
             "checks": {"status": "not_run", "reason": "entry_failed", "issues": []},
         }
-    print(format_feedback(result) if args.text else json.dumps(result, ensure_ascii=False, allow_nan=False))
+    print(format_feedback(result) if args.text else json.dumps(result, ensure_ascii=False, allow_nan=False, default=binary_json_default))
     return 0 if result["ok"] else 1
 
 
@@ -72,7 +73,8 @@ COMMANDS = [{'name': 'dispatch',
                 'arguments': {'request': {'action': 'create', 'kind': 'project', 'data': {'name': '示例项目'}}}}],
   'notes': ['写请求与业务日志同事务；配置和语义在提交后检查。',
             '每条 layer/object 或有项目归属的工具记录请求须自己填写 project_id；启动默认项目不会补入 request。',
-            'update 只修改传入字段；information 等 JSON 字段整体替换，不递归合并。'],
+            'update 只修改传入字段；information 等 JSON 字段整体替换，不递归合并。',
+            '声明的 BLOB 字段在 JSON 中使用标准 Base64，null 保持 null；filters 不支持 JSON/BLOB 列。'],
   'input_schema': {'type': 'object',
                    'properties': {'database': {'type': 'string',
                                                'description': 'SQLite 数据库路径；Python 连接由适配器提供'},
@@ -103,7 +105,7 @@ COMMANDS = [{'name': 'dispatch',
                                                                                 '字段整体替换；provided 表创建编号放 '
                                                                                 'data.id'},
                                                         'filters': {'type': 'object',
-                                                                    'description': 'read 的普通列等值条件'},
+                                                                    'description': 'read 的普通列等值条件，不支持 JSON/BLOB'},
                                                         'full': {'type': 'boolean',
                                                                  'description': 'read 单条 layer/object '
                                                                                 '时装载完整内容'}},

@@ -35,5 +35,5 @@ def read_changes(connection, *, after=0, limit=100):
             end = connection.execute("SELECT MAX(id) FROM changes WHERE operation_id=?", (last["operation_id"],)).fetchone()[0]
             rows = connection.execute("SELECT * FROM changes WHERE id>? AND id<=? ORDER BY id", (after, end)).fetchall()
         next_cursor = rows[-1]["id"] if rows else after
-        return {"changes": [_decode(SPECS["change"], row) for row in rows],
+        return {"changes": [_decode(SPECS["change"], row, connection) for row in rows],
                 "next_cursor": next_cursor, "has_more": next_cursor < head}

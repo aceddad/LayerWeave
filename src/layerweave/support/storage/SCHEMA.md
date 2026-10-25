@@ -30,6 +30,10 @@ register_tables 可按工具声明创建额外的托管表；首次接入时建�
 
 _layerweave_tables 的 definition 同时保存 logical_references 和 exchange.on_copy 元信息，补登记不增加业务列或重建业务表。仅 references 生成 SQL 外键、参与引用错误及恢复判断；逻辑引用由交换等工具按需解释，不增加数据库约束。
 
+注销托管首次创建 _layerweave_retired_tables(kind TEXT PRIMARY KEY, definition TEXT NOT NULL, retired_at TEXT NOT NULL)，冻结原声明与 UTC 退出时间；普通读取不建表。活动/退役目录、发号成员在同一事务内更新，物理表不变。历史解释可用退役定义，正常 CRUD/交换只看活动目录；保留的物理外键仍会阻止相关删除，失败时诊断查当前真实外键。接口及依赖规则见[注销托管](../../../../docs/build-with-layerweave/03-managed-tables.md#注销托管)。
+
+工具 BLOB 列存真实字节，Python 返回 bytes；journal 将声明的 BLOB 字段编码为 Base64，快照根结构及 id/project_id 路径不变。读取历史时按活动/退役声明解码，不补后来新增的字段；恢复才对当前活动结构补默认值。普通 JSON 列不能包含字节。历史与对应声明需一起保留，0.7.9b3 及更早 SDK 不支持此编码与注销语义。
+
 - `config_ref` 是两类实体的存储元数据，路径相对于项目的 `src/layerweave/configs/`，例如 `objects/image.toml`。它给读取配置、恢复对应 Python 类提供依据，不添加到基础类中。
 - 层的 `type` 保存 TOML 中的类型标识，Python 类不再声明同名字符串。save_layer 自动取得它；dispatch 在省略 type 且提供 config_ref 时也会补齐。低层 crud 不读配置，仍写入调用方提供的原始 type/config_ref，独立检测负责报告矛盾。
 - 对象的 begin/end 在 CRUD 写入时按适用轴精度落点，缺少精度用 1e-6；直接 SQL 不经过该过程。更新只归一提交的坐标，换层时两端都按目标层精度归一；其他字段更新不改旧坐标。日志记录实际落点后的值。
@@ -69,6 +73,14 @@ with closing(open_database(path)) as connection:
 各托管表的主键防止同表重号，同簇、同范围的跨表编号由发号及提交前检查保证；未入簇的自定义 ID 不参与跨表占用比较。直接 SQL 会绕过日志与结构保证，不属于工具的受支持记录写入接口。工具声明通过 register_tables 交给支撑维护；建表脚本没有额外触发器。
 
 CDUR 请求由 records 包的 dispatch 翻译，最终通过支撑写会话执行。开发其他工具直接使用 transaction/run_operation，无需依赖 CDUR 包；记录原语只在统一写会话内工作。
+
+## 声明读取与缓存范围
+
+`_metadata.py` 仅在同一次写事务或 read_snapshot 内按连接复用表声明、退役声明及发号词条。同连接的嵌套读取共用这一份声明，不同连接隔离；最外层退出、失败回滚后丢弃，下次操作重新读取。不使用跨事务的全局缓存、后台刷新或额外数据库表。
+
+登记、追加列、注销及持久化发号规则会刷新当前范围的元信息。正常记录写入不使声明缓存失效；projects.max_id、业务记录、同簇实际占用始终从当前事务读取，不能缓存或按旧值回填。SQLite 快照本来可见的声明保持一致，其他连接提交的新声明在后续读取快照中生效。
+
+table_specs、retired_tables、numbering_entries 的公开返回仍是独立副本；内部只读消费者借用缓存，外部发号规则也得到独立词条。无需调用方增加参数或维护刷新动作。直接 read_record 也覆盖一次读取快照，在批量还原日志时复用声明；调用方已有事务时不会替其提交。
 
 ## 改动日志
 

@@ -12,6 +12,8 @@ text 使用 information.text；image/audio/movie/model/active 使用 information
 
 ## 通用数据 Data
 
+Data 与 DataLayer 自 0.7.10b2 起提供；已有数据库无需迁移，读取配置并还原这两种类时使用本版或更新版本。
+
 [data.toml](data.toml) 对应直接继承 Object 的 Data；[数据层](../layers/data.toml)对应直接继承 Layer 的 DataLayer，接受 Data 及其派生封装。它不继承 Text，不要求 information.text。
 
 information 外层保持字典，information.data 承载 JSON 对象、数组、字符串、整数、小数、布尔值或 null，可以嵌套组合：

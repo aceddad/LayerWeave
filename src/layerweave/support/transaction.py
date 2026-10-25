@@ -7,6 +7,7 @@ from uuid import uuid4
 
 from .feedback import InputError, target
 from .storage.errors import commit
+from .storage._metadata import metadata_scope
 
 
 @dataclass
@@ -141,7 +142,7 @@ def transaction(connection, *, writing=True, _operation_id=None):
     session = WriteSession(connection, _operation_id or uuid4().hex, writing)
     token = _active.set(session)
     try:
-        with connection:
+        with connection, metadata_scope(connection):
             connection.execute("BEGIN IMMEDIATE" if writing else "BEGIN")
             yield session
             _check_parents(session)

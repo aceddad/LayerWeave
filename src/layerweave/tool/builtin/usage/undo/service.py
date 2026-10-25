@@ -11,6 +11,7 @@ from layerweave.support.operation import run_operation
 from layerweave.support.transaction import require_write_session
 from layerweave.support.providers import DEFAULT_CHECKER, optional_checker
 from layerweave.support.values import same_value
+from layerweave.support.storage.tables import get_spec
 
 
 def _key(kind, row):
@@ -129,6 +130,9 @@ def undo_operation_in_session(write, operation_id):
     rows = operation_rows(connection, operation_id)
     if not rows:
         raise InputError(f"未找到有改动日志的操作：{operation_id}", code="operation_not_found", field="operation_id")
+    # 即便某种类的中间变化最终抵消，也不能恢复包含退役目标的操作。
+    for kind in dict.fromkeys(row["kind"] for row in rows):
+        get_spec(connection, kind, writing=True)
     plan = _plan(connection, rows)
     _dependencies(connection, plan)
     # 按最终状态恢复，外键在同一事务提交时检查，允许整批恢复父子；成环仍由写入入口拒绝。

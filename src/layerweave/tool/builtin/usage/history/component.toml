@@ -1,5 +1,5 @@
 name = "layerweave.history"
 kind = "tool"
-version = "0.2.2"
+version = "0.2.3"
 description = "按操作查看改动历史和字段变化"
-changes = "MCP 按完整操作分页，说明业务与回复游标的顺序。"
+changes = "退役 kind 的历史可查询；BLOB 快照保留字节语义，文字与 JSON 输出使用 Base64。"

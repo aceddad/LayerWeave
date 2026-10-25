@@ -6,6 +6,7 @@ from pathlib import Path
 import tomllib
 
 from layerweave.support.configuration.loader import DEFAULT_ROOT
+from .serialization import binary_json_default
 
 
 LEVELS = {"none": 0, "warn": 1, "error": 2}
@@ -77,9 +78,9 @@ def prepare_diagnostics(issues, *, config_root=DEFAULT_ROOT, policy=None):
     merged = {}
     for item in result:
         if item.get("code") not in CONFIG_FAILURES:
-            key = json.dumps(item, ensure_ascii=False, sort_keys=True)
+            key = json.dumps(item, ensure_ascii=False, sort_keys=True, default=binary_json_default)
         else:
-            key = json.dumps([item.get("target"), item["code"], item.get("value")], sort_keys=True)
+            key = json.dumps([item.get("target"), item["code"], item.get("value")], sort_keys=True, default=binary_json_default)
         if key not in merged:
             merged[key] = item
             continue

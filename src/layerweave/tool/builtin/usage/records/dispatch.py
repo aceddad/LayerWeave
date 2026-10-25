@@ -9,6 +9,8 @@ from layerweave.support.providers import DEFAULT_CHECKER, optional_checker
 from layerweave.support.configuration.loader import DEFAULT_ROOT, Loader
 from layerweave.support.feedback import InputError, target
 from layerweave.support.positions import PositionMath
+from layerweave.support.storage.tables import get_spec
+from layerweave.support.storage.binary import decode_binary
 
 
 WRITES = {"create": crud.create, "update": crud.update, "delete": crud.delete}
@@ -42,6 +44,8 @@ def _execute(write, request, *, config_root=DEFAULT_ROOT):
                     data = crud.read(connection, kind, **args)
                 change = None
             elif action in WRITES:
+                if action in {"create", "update"} and isinstance(args.get("data"), dict):
+                    args["data"] = decode_binary(get_spec(connection, kind, writing=True), args["data"])
                 # 原始请求仍可显式保存 type；省略时从本次指定的配置补齐。
                 payload = args.get("data")
                 if kind == "layer" and action in {"create", "update"} and isinstance(payload, dict):

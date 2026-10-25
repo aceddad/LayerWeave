@@ -10,7 +10,7 @@ from .numbering.state import cluster_occupants, cluster_identity
 
 def writable_fields(kind, *, connection=None):
     """返回记录允许写入的字段名，不暴露 SQL 表和编码细节。"""
-    return crud._spec(kind, writing=True, connection=connection)["fields"]
+    return crud._spec(kind, writing=True, connection=connection)["fields"][:]
 
 
 def create_exact(connection, kind, data, *, operation_id, project_id=None):

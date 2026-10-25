@@ -296,6 +296,16 @@ THUMB_KEEP = {".svg", ".gif"}            # 不缩：矢量图本来就轻；动�
 _thumb_slots = threading.BoundedSemaphore(4)   # 同时最多几个 ffmpeg：页面一打开会同时要几百张
 
 
+def _publish_cache(temp, cached):
+    """同 key 的另一个请求已发布完整缓存时，不让 Windows 替换竞争打断回复。"""
+    try:
+        os.replace(temp, cached)
+    except PermissionError:
+        if not cached.is_file():
+            raise
+        temp.unlink(missing_ok=True)
+
+
 def thumbnail(path, width, cache_root=None, *, ffmpeg=None):
     """图片的缩略图：(字节, 类型)。用 ffmpeg 缩到 width 宽（原图更窄时不放大），存在本机视图目录 thumbs/ 里，
     原文件的修改时间或大小变了就重做。带透明的格式（png、webp）缩成 PNG，其余缩成 JPEG。
@@ -329,7 +339,7 @@ def thumbnail(path, width, cache_root=None, *, ffmpeg=None):
     folder.mkdir(parents=True, exist_ok=True)
     temp = folder / f"{key}.{os.getpid()}.{threading.get_ident()}.tmp"
     temp.write_bytes(result.stdout)
-    os.replace(temp, cached)
+    _publish_cache(temp, cached)
     return result.stdout, kind
 
 
@@ -368,7 +378,7 @@ def waveform(path, cache_root=None, *, ffmpeg=None):
     folder.mkdir(parents=True, exist_ok=True)
     temp = folder / f"{key}.{os.getpid()}.{threading.get_ident()}.tmp"
     temp.write_text(json.dumps(rms), encoding="utf-8")
-    os.replace(temp, cached)
+    _publish_cache(temp, cached)
     return rms
 
 

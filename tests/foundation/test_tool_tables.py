@@ -244,7 +244,7 @@ class ToolTableTests(unittest.TestCase):
 
     def test_invalid_names_builtins_and_unmanaged_tables_are_not_overwritten(self):
         for kind, spec in (("object", {"fields": {}}), ("bad-name", {"fields": {}}), ("custom", {"table": "objects", "fields": {}}),
-                           ("custom", {"fields": {"id": "INTEGER"}}), ("custom", {"fields": {"x": {"type": "BLOB"}}})):
+                           ("custom", {"fields": {"id": "INTEGER"}}), ("custom", {"fields": {"x": {"type": "UNKNOWN"}}})):
             with self.subTest(kind=kind, spec=spec), self.assertRaises(ValueError):
                 register_tables(self.c, {kind: spec})
         self.c.execute("CREATE TABLE tool_unmanaged (id INTEGER PRIMARY KEY)")

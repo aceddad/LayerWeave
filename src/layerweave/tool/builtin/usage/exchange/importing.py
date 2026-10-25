@@ -6,6 +6,7 @@ from layerweave.support.configuration.loader import DEFAULT_ROOT
 from layerweave.support.providers import DEFAULT_CHECKER, optional_checker
 from layerweave.support.transaction import require_write_session, reject_nested_operation
 from layerweave.support.storage.tables import normalize_exchange_options
+from layerweave.support.storage.binary import decode_binary
 from .format import CORE, OPS, address, document_value, fail, fingerprint, identity, relation_definitions, table_definition
 
 
@@ -213,7 +214,7 @@ class Importer:
             data["type"] = self.loader.load(data["config_ref"], "layer")["type"]
         if node["op"] == "add" and spec["id_source"] == "provided" and "id" not in data:
             data["id"] = raw.get("id")
-        return data
+        return decode_binary(spec, data)
 
     def _execute(self, node):
         kind, op, raw = node["kind"], node["op"], node["raw"]

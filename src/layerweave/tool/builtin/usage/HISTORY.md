@@ -56,7 +56,7 @@ operation = read_history(connection, operation_id=operation_id)
 
 | 输入 | 含义 |
 |---|---|
-| project_id、kind、id | 按项目或记录筛选；kind 支持 project/layer/object/bind 及本库已登记的工具 kind |
+| project_id、kind、id | 按项目或记录筛选；kind 支持 project/layer/object/bind 及本库活动或已退役的工具 kind |
 | operation_id | 查询一个完整操作，与项目/实体筛选互斥 |
 | limit、before | 每页操作数（默认 20）和上一页的 next_cursor |
 | detail | True 时给列表附带完整前后快照；默认 False |
@@ -89,6 +89,8 @@ python -X utf8 -m layerweave.tool.builtin.usage.history.cli DATABASE --operation
 按操作编号撤回整批改动；撤销新的撤销操作即可重做。与其他操作组合时使用 undo_operation_in_session(write, operation_id)，返回业务摘要，外层统一提交；见[组合开发指导](../../../../../docs/build-with-layerweave/04-composing-tools.md)。
 
 同一操作中的工具表与核心记录一起处理。表声明由支撑从数据库读取，显式引用参与恢复依赖判断；结构维护不属于内容撤销。完整的接入与升级行为见[工具表开发指导](../../../../../docs/build-with-layerweave/03-managed-tables.md)。
+
+BLOB 按完整字段比较和恢复，Python 历史值为 bytes，CLI/MCP 输出为 Base64。退出托管的 kind 历史仍可读，但操作涉及任一退役 kind 时撤销整批停止，不重新建表或接管；注销不删除物理表及外键。详见[注销托管](../../../../../docs/build-with-layerweave/03-managed-tables.md#注销托管)。
 
 ```python
 from layerweave.tool.builtin.usage.undo.service import undo_operation

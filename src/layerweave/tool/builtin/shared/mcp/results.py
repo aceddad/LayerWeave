@@ -6,12 +6,15 @@ from threading import RLock
 from uuid import uuid4
 
 from layerweave.support.feedback import InputError
+from layerweave.support.serialization import binary_json_default
 
 
 def jsonable(value):
     from pathlib import Path
     if isinstance(value, Path):
         return str(value)
+    if isinstance(value, (bytes, bytearray, memoryview)):
+        return binary_json_default(value)
     if isinstance(value, dict):
         return {str(k):jsonable(v) for k,v in value.items()}
     if isinstance(value, (list,tuple)):

@@ -1,6 +1,7 @@
 """按操作组织可读历史；完整操作可跨项目，不能把筛选结果当成部分撤销。"""
 
 import json
+from layerweave.support.serialization import binary_json_default
 
 from layerweave.tool.builtin.usage.history.service import read_history
 
@@ -10,7 +11,7 @@ def history(connection, project_id=None, **options):
 
 
 def format_history(result):
-    dump = lambda value: json.dumps(value, ensure_ascii=False, allow_nan=False)
+    dump = lambda value: json.dumps(value, ensure_ascii=False, allow_nan=False, default=binary_json_default)
     lines = [f"匹配历史：{result['operation_count']} 次操作，{result['change_count']} 条改动；本页 {len(result['items'])} 次操作。"]
     for op in result["items"]:
         lines.extend(["", f"操作 {op['operation_id']} · {op['started_at']} · 项目 {op['project_ids']}"])
@@ -41,7 +42,7 @@ def main():
     from layerweave.support.cli import parser_for, run_cli
     parser = parser_for("LayerWeave 历史查询：按操作分页，已删除实体也可查询", project=False, commands=COMMANDS)
     parser.add_argument("--project-id", type=int)
-    parser.add_argument("--kind", help="内置种类或本数据库已登记的工具表 kind")
+    parser.add_argument("--kind", help="内置种类或本数据库活动/已退役的工具表 kind")
     parser.add_argument("--id", type=int, help="记录编号；按项目管理的种类还需 --project-id")
     parser.add_argument("--operation-id", help="展开完整操作，包含前后快照，不与实体范围混用")
     parser.add_argument("--limit", type=int, default=20)
@@ -72,7 +73,7 @@ COMMANDS = [{'name': 'read_history',
                                   'project_id': {'type': ['integer', 'null'],
                                                  'description': '按项目筛选相关操作；完整批次仍可跨项目'},
                                   'kind': {'type': ['string', 'null'],
-                                           'description': '内置种类或本数据库已登记的工具表 kind'},
+                                           'description': '内置种类或本数据库活动/已退役的工具表 kind'},
                                   'id': {'type': ['integer', 'null'],
                                          'description': '记录编号，按项目管理的种类还需 project_id'},
                                   'operation_id': {'type': ['string', 'null'],

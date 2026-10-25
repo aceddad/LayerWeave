@@ -1,5 +1,5 @@
 name = "layerweave.foundation"
 kind = "foundation"
-version = "0.5.3"
+version = "0.6.1"
 description = "层、对象等抽象结构，以及配置、存储、编号、事务和日志支撑"
-changes = "明确公共导出，读取快照独立于实体装配；包版本统一维护。"
+changes = "写事务和读取快照复用表声明、退役声明与发号规则；维护时刷新，公开接口仍返回独立副本，计数和业务数据不缓存。"

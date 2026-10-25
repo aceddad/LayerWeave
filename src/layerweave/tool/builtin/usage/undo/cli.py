@@ -1,6 +1,7 @@
 """按操作编号撤销；传入上次撤销返回的操作编号即可重做。"""
 
 import json
+from layerweave.support.serialization import binary_json_default
 
 from layerweave.tool.builtin.usage.undo.service import undo_operation
 from layerweave.support.api import format_feedback, format_issue
@@ -18,7 +19,7 @@ def format_undo(result):
             lines.append("  冲突顶层字段：" + ", ".join(".".join(item["path"]) for item in conflict["fields"]))
         for name, label in (("expected", "原操作结束时"), ("current", "当前记录"), ("restore", "拟恢复记录")):
             if name in conflict:
-                lines.append(f"  {label}：" + json.dumps(conflict[name], ensure_ascii=False, allow_nan=False))
+                lines.append(f"  {label}：" + json.dumps(conflict[name], ensure_ascii=False, allow_nan=False, default=binary_json_default))
     return "\n".join(lines)
 
 

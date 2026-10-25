@@ -1,6 +1,7 @@
 """操作结果与逐条诊断的共用表达，不执行写入或约束检测。"""
 
 import json
+from .serialization import binary_json_default
 from layerweave.core.identity import reference as target
 
 
@@ -91,7 +92,7 @@ def format_feedback(result):
     # 文字模式的读取仍返回数据，不能只显示一行“成功”。
     reads = [item for item in result.get("results", [result]) if item.get("action") == "read"]
     for item in reads:
-        lines.extend(["", json.dumps(item.get("data"), ensure_ascii=False, indent=2)])
+        lines.extend(["", json.dumps(item.get("data"), ensure_ascii=False, indent=2, default=binary_json_default)])
     checks = result.get("checks", {})
     if checks.get("status") == "failed":
         lines.extend(["", format_issue({**checks["error"], "field": "检测执行器", "skipped": True})])

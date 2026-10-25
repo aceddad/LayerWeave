@@ -3,6 +3,7 @@
 import json
 
 from layerweave.support.feedback import error_detail
+from .serialization import binary_json_default
 
 _NOT_CONFIGURED = object()
 
@@ -26,7 +27,7 @@ def run_checks(changes, read_record, checker=None):
         if not isinstance(issues, list) or any(not isinstance(issue, dict) for issue in issues):
             raise TypeError("检测器应返回由问题字典组成的列表")
         # 检测输出也须能够通过 JSON 入口返回，不能让反馈格式错误掩盖已提交的写入。
-        json.dumps(issues, ensure_ascii=False, allow_nan=False)
+        json.dumps(issues, ensure_ascii=False, allow_nan=False, default=binary_json_default)
     except Exception as error:
         return {
             "status": "failed", "issues": [],

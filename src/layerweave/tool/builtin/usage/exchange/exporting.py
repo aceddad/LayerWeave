@@ -3,6 +3,7 @@ from copy import deepcopy
 
 from layerweave.support.api import read_record, read_project_details, read_snapshot, table_specs, numbering_entries
 from .format import CORE, OPS, address, fail, fingerprint, identity, references, table_definition
+from layerweave.support.storage.binary import encode_binary
 
 
 def export_project(connection, project_id, *, layer_ids=None, object_ids=None, begin=None, end=None,
@@ -74,7 +75,7 @@ def export_project(connection, project_id, *, layer_ids=None, object_ids=None, b
 
         def node(kind, row):
             value = {"kind": kind, "op": op, "id": row["id"],
-                     "data": {field: deepcopy(row[field]) for field in specs[kind]["fields"]}}
+                     "data": encode_binary(specs[kind], {field: deepcopy(row[field]) for field in specs[kind]["fields"]})}
             if kind in {"layer", "object"}:
                 value["parent_id"] = row["father" if kind == "layer" else "layer"]
             if include_baseline and op != "add":

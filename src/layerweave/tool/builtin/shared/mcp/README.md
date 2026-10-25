@@ -50,7 +50,7 @@ MCP 客户端配置示意，解释器与文件使用实际绝对路径：
 安装 [uv](https://docs.astral.sh/uv/getting-started/installation/) 0.13.4 或更新版本后，可直接从版本固定的 PyPI 包启动 MCP，无需手工安装 Python 或激活环境：
 
 ```powershell
-uvx --python 3.11 --from "layerweave[mcp]==0.7.9b3" layerweave-mcp --config ./mcp.json
+uvx --python 3.11 --from "layerweave[mcp]==0.7.10b1" layerweave-mcp --config ./mcp.json
 ```
 
 uvx 按指定来源准备隔离环境；缺少所需 Python 时，uv 默认自动下载。首次准备需要联网，此后可复用缓存。该命令持续运行 stdio 服务，应由 MCP 客户端管理；不是网页启动器。安装与解释器策略见 [uv 工具说明](https://docs.astral.sh/uv/guides/tools/)和 [Python 管理](https://docs.astral.sh/uv/concepts/python-versions/)。
@@ -62,14 +62,14 @@ uvx 按指定来源准备隔离环境；缺少所需 Python 时，uv 默认自�
   "mcpServers": {
     "layerweave": {
       "command": "C:/Users/YOU/.local/bin/uvx.exe",
-      "args": ["--python", "3.11", "--from", "layerweave[mcp]==0.7.9b3", "layerweave-mcp", "--config", "D:/my-project/mcp.json"],
+      "args": ["--python", "3.11", "--from", "layerweave[mcp]==0.7.10b1", "layerweave-mcp", "--config", "D:/my-project/mcp.json"],
       "env": {"PYTHONUTF8": "1"}
     }
   }
 }
 ```
 
-这里的 Python 环境与其他 Python 安装分开。`--from` 也可改成 `D:/packages/layerweave-0.7.9b3-py3-none-any.whl[mcp]`；使用本地来源时请保留该 wheel 文件。配置、数据库和媒体放在自己的项目目录，不放进 uv 缓存。PYTHONUTF8=1 也使普通 `--list`/`--help` 文本便于 UTF-8 管道读取。可以选择此配置或上面的显式解释器配置，按客户端要求添加其中一种即可。
+这里的 Python 环境与其他 Python 安装分开。`--from` 也可改成 `D:/packages/layerweave-0.7.10b1-py3-none-any.whl[mcp]`；使用本地来源时请保留该 wheel 文件。配置、数据库和媒体放在自己的项目目录，不放进 uv 缓存。PYTHONUTF8=1 也使普通 `--list`/`--help` 文本便于 UTF-8 管道读取。可以选择此配置或上面的显式解释器配置，按客户端要求添加其中一种即可。
 
 ## 发现与调用
 

@@ -6,6 +6,7 @@ import re
 
 from layerweave.core.values import same_value
 from layerweave.support.feedback import InputError
+from ._metadata import cached, invalidate
 
 
 CATALOG = "_layerweave_tables"
@@ -39,20 +40,49 @@ def _exists(connection, table):
 
 def table_specs(connection=None):
     """返回内置与本库扩展表的声明副本；普通读取不会自动建表或修改数据库。"""
+    return deepcopy(_table_specs(connection))
+
+
+def _table_specs(connection=None):
+    """内部只读借用；修改声明必须使用公开副本或显式复制。"""
+    return cached(connection, "tables", _load_table_specs)
+
+
+def _load_table_specs(connection):
     result = deepcopy(SPECS)
     if connection is not None and _exists(connection, CATALOG):
         result.update((row[0], json.loads(row[1])) for row in connection.execute(
             f"SELECT kind, definition FROM {quote(CATALOG)} ORDER BY kind"))
     for spec in result.values():
-        spec.setdefault("id_source", "auto")
-        spec.setdefault("logical_references", [])
-        spec.setdefault("exchange", {"on_copy": "include"})
+        _complete_spec(spec)
     return result
 
 
-def get_spec(connection, kind, *, writing=False):
-    specs = SPECS if kind in SPECS else table_specs(connection)
+def _complete_spec(spec):
+    spec.setdefault("id_source", "auto")
+    spec.setdefault("logical_references", [])
+    spec.setdefault("exchange", {"on_copy": "include"})
+    return spec
+
+
+def historical_specs(connection):
+    """历史解释可查询冻结的退役声明，不使其进入正常 CRUD。"""
+    from .retirement import _retired_tables
+    return {**{kind: entry["definition"] for kind, entry in _retired_tables(connection).items()},
+            **_table_specs(connection)}
+
+
+def get_spec(connection, kind, *, writing=False, historical=False):
+    specs = SPECS if kind in SPECS else _table_specs(connection)
     if kind not in specs:
+        from .retirement import _retired_tables
+        retired = _retired_tables(connection)
+        if kind in retired:
+            if historical and not writing:
+                return retired[kind]["definition"]
+            raise InputError(f"{kind} 已退出托管；历史可读，不能通过记录接口读写或恢复其物理表",
+                             code="retired_kind", field="kind", kind=kind,
+                             table=retired[kind]["definition"]["table"])
         raise InputError(f"未知 kind：{kind}" + ("；change 仅支持 read" if not writing else ""),
                          code="unknown_kind", field="kind",
                          allowed=[name for name in specs if not writing or name != "change"])
@@ -72,13 +102,15 @@ def _column(raw):
     if set(column) - {"type", "nullable", "default"}:
         raise InputError("列声明支持 type、nullable、default", code="table_definition")
     column.setdefault("nullable", True)
-    if column.get("type") not in {"INTEGER", "REAL", "TEXT", "JSON"} or type(column["nullable"]) is not bool:
-        raise InputError("列类型使用 INTEGER、REAL、TEXT、JSON；nullable 使用布尔值", code="table_definition")
+    if column.get("type") not in {"INTEGER", "REAL", "TEXT", "JSON", "BLOB"} or type(column["nullable"]) is not bool:
+        raise InputError("列类型使用 INTEGER、REAL、TEXT、JSON、BLOB；nullable 使用布尔值", code="table_definition")
     if "default" in column:
         value, kind = column["default"], column["type"]
         if value is None:
             if not column["nullable"] and kind != "JSON":
                 raise InputError("非空列不能使用 NULL 默认值", code="table_definition")
+        elif kind == "BLOB":
+            raise InputError("BLOB 默认值只能省略或为 None；字节值请在创建记录时提供", code="table_definition")
         elif kind == "TEXT" and not isinstance(value, str):
             raise InputError("TEXT 默认值需要字符串", code="table_definition")
         elif kind == "INTEGER":
@@ -179,6 +211,11 @@ def register_tables(connection, definitions):
     proposed = {kind: _definition(kind, raw) for kind, raw in definitions.items()}
     with transaction(connection):
         existing = table_specs(connection)
+        from .retirement import retired_tables
+        retired = retired_tables(connection)
+        for kind in proposed.keys() & retired.keys():
+            raise InputError(f"{kind} 已退出托管，不能复用历史种类或重新接管；请使用新 kind",
+                             code="retired_kind", field="kind", kind=kind)
         for kind, spec in proposed.items():
             if kind in existing:
                 # 旧调用方和旧声明文件省略新字段时，不抹掉已登记的关系信息。
@@ -229,6 +266,7 @@ def register_tables(connection, definitions):
                                (kind, json.dumps(spec, ensure_ascii=False, allow_nan=False)))
         if proposed:
             from layerweave.support.numbering.registry import numbering_entries, persist_entries
+            invalidate(connection)  # 新声明必须参与本次登记生成的发号成员。
             persist_entries(connection, numbering_entries(connection))
     return deepcopy(proposed)
 

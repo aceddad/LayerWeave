@@ -11,6 +11,8 @@ from layerweave.support.positions import PositionMath, numeric_position
 from layerweave.support.storage.journal import append_change, json_text
 from layerweave.support.storage.errors import execute
 from .tables import SPECS, get_spec
+from .binary import blob_fields, normalize_binary, decode_binary
+from .snapshot import read_snapshot
 
 
 def _spec(kind, *, writing=False, connection=None):
@@ -39,6 +41,7 @@ def _encode(spec, data):
                     suggestions[key] = close[0]
         raise InputError(f"不能写入这些字段：{', '.join(sorted(unknown))}", code="unknown_fields",
                          field=", ".join(sorted(unknown)), allowed=list(spec["fields"]), suggestions=suggestions)
+    data = normalize_binary(spec, data)
     return {
         key: (None if spec["table"] == "layers" and key == "axis" and value is None else json_text(value))
         if key in spec["json"] else value
@@ -46,13 +49,17 @@ def _encode(spec, data):
     }
 
 
-def _decode(spec, row):
+def _decode(spec, row, connection=None):
     if row is None:
         return None
     record = dict(row)
     for key in spec["json"]:
         if record[key] is not None:
             record[key] = json.loads(record[key])
+    if spec["table"] == "changes" and connection is not None:
+        historical = get_spec(connection, record["kind"], historical=True)
+        for key in ("before_data", "after_data"):
+            record[key] = decode_binary(historical, record[key])
     return record
 
 
@@ -78,10 +85,11 @@ def _where(spec, project_id, id, filters):
     allowed = {"id", *spec["fields"], *spec["extra"]}
     if spec["scoped"]:
         allowed.add("project_id")
+    excluded = set(spec["json"]) | blob_fields(spec)
     for key, value in (filters or {}).items():
-        if key not in allowed or key in spec["json"]:
-            raise InputError(f"不支持此筛选字段：{key}；当前支持普通列的等值和空值筛选", code="unknown_filter",
-                             field=f"filters.{key}", allowed=sorted(allowed - set(spec["json"])))
+        if key not in allowed or key in excluded:
+            raise InputError(f"不支持此筛选字段：{key}；当前支持非 JSON/BLOB 列的等值和空值筛选", code="unknown_filter",
+                             field=f"filters.{key}", allowed=sorted(allowed - excluded))
         if value is None:
             terms.append(f'"{key}" IS NULL')
         else:
@@ -92,14 +100,15 @@ def _where(spec, project_id, id, filters):
 
 def read(connection, kind, *, project_id=None, id=None, filters=None):
     """按 id 返回单条或 None；不传 id 返回列表。JSON 字段解码为 Python 值。"""
-    spec = _spec(kind, connection=connection)
-    where, values = _where(spec, project_id, id, filters)
-    cursor = connection.execute(
-        f'SELECT * FROM "{spec["table"]}"{where} ORDER BY {spec["order"]}', values,
-    )
-    if id is not None:
-        return _decode(spec, cursor.fetchone())
-    return [_decode(spec, row) for row in cursor.fetchall()]
+    with read_snapshot(connection):
+        spec = _spec(kind, connection=connection)
+        where, values = _where(spec, project_id, id, filters)
+        cursor = connection.execute(
+            f'SELECT * FROM "{spec["table"]}"{where} ORDER BY {spec["order"]}', values,
+        )
+        if id is not None:
+            return _decode(spec, cursor.fetchone(), connection)
+        return [_decode(spec, row, connection) for row in cursor.fetchall()]
 
 
 def _positions(connection, values, project_id, before=None, math=None):

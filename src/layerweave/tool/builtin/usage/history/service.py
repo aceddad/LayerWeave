@@ -3,7 +3,8 @@
 from layerweave.support.storage.log_reader import content, operation_rows, operation_page
 from layerweave.support.feedback import InputError, target
 from layerweave.support.values import same_value
-from layerweave.support.api import read_snapshot, table_specs
+from layerweave.support.api import read_snapshot
+from layerweave.support.storage.tables import historical_specs
 
 
 def differences(before, after, path=()):
@@ -68,7 +69,7 @@ def read_history(connection, project_id=None, *, kind=None, id=None, operation_i
             raise ValueError("limit 应为正整数")
         if before is not None and (type(before) is not int or before < 1):
             raise ValueError("before 应为上一页返回的正整数游标")
-        specs = table_specs(connection)
+        specs = historical_specs(connection)
         if kind is not None and (kind not in specs or kind == "change"):
             raise InputError(f"未知历史目标：{kind}", field="kind", allowed=[name for name in specs if name != "change"])
         if id is not None and kind is None:

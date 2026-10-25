@@ -8,6 +8,7 @@ import sqlite3
 import sys
 
 from layerweave.support.api import open_database, format_feedback, format_issue
+from layerweave.support.serialization import binary_json_default
 
 
 def parser_for(description, *, project=True, commands=None):
@@ -37,7 +38,7 @@ def run_cli(parser, query, *, formatter=None, operation_output=False):
         elif formatter is not None and not args.json:
             output = formatter(result)
         else:
-            output = json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False)
+            output = json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False, default=binary_json_default)
     except (OSError, sqlite3.Error, ValueError, TypeError) as error:
         parser.exit(1, f"执行失败：{error}\n")
     print(output)

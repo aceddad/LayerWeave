@@ -351,7 +351,7 @@ class Runtime:
                 data['checks']=result.get('checks')
                 if result.get('operation',{}).get('status')=='committed':
                     data['note']='业务写入已经提交，但返回整理失败。请按 operation_id 查历史，不要重做。'
-            return Outcome(data,True)
+            return Outcome(jsonable(data),True)
 
     def continue_result(self,cursor):
         try:

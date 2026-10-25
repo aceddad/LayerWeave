@@ -258,6 +258,17 @@ class ViewTests(unittest.TestCase):
         arrange(self.database, self.project, "reset", state_root=self.state_root)
         self.assertEqual([b["x"] for b in self.json(url)["boards"]], [None, None])
 
+    def test_binary_tool_history_is_serializable_after_retirement(self):
+        from layerweave.support.api import register_tables, unregister_tables
+        with closing(open_database(self.database)) as c:
+            # 工具可自由选择 BLOB 列名；历史摘要保留的 name 也可能是字节。
+            register_tables(c, {"binary_name": {"fields": {"name": "BLOB"}}})
+            with transaction(c) as write:
+                write.create("binary_name", {"name": b"\x00\xff"}, project_id=self.project)
+            unregister_tables(c, ["binary_name"])
+        ops = self.json(f"/api/changes/{self.project}?limit=1")
+        self.assertEqual(ops[0]["items"][0]["after"]["name"], "AP8=")
+
     def test_recent_changes_show_moves_edits_and_deletes(self):
         with closing(open_database(self.database)) as c:
             with transaction(c) as write:

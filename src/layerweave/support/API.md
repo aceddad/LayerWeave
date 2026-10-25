@@ -54,9 +54,15 @@ change_cursor(connection) 返回当前快照最后一个 changes.id，空日志�
 
 register_tables(connection, definitions) 创建工具声明的表、追加列，或更新 logical_references/exchange 元信息；内部使用独立写会话，调用时连接没有待提交事务。已有列、身份和硬引用不变。table_specs(connection) 返回本数据库内置表与工具表的声明副本，普通读取不创建元数据表。
 
+表声明、退役声明和发号规则在一次事务/读取快照内复用，退出后丢弃；这些公开查询仍返回独立副本，调用方不需要刷新缓存。计数和业务记录不缓存，具体边界见[声明读取与缓存范围](storage/SCHEMA.md#声明读取与缓存范围)。
+
 声明持久化后，write 原语、read_record、dispatch、历史和撤销都能识别新 kind，无需依赖工具代码。工具表默认自动发号，也可声明 id_source="provided"，创建时在 data.id 提供正整数。项目范围与簇成员分开管理；日志仍由真实写入生成。字段、引用、结构升级和业务边界统一见[工具表开发指导](../../../docs/build-with-layerweave/03-managed-tables.md)。
 
 logical_references 只描述目标身份，不建立外键或阻止删除/撤销；exchange.on_copy 为 include/skip，由交换工具处理已有记录的复制。新元信息可给旧表补登记；省略时保留已登记值。声明用法和旧库接入步骤见[逻辑引用与复制策略](../../../docs/build-with-layerweave/03-managed-tables.md#逻辑引用与复制策略)。
+
+工具字段支持 BLOB：Python 原语使用字节，JSON 入口以 Base64 表达；Python 的历史/增量读取也返回 bytes。需要生成 JSON 时使用 json.dumps(value, default=binary_json_default)，该辅助函数从 support.api 导入。通用 filters 不支持 JSON/BLOB 列。字段声明、默认值和编码边界见[二进制字段](../../../docs/build-with-layerweave/03-managed-tables.md#二进制字段-blob)。
+
+unregister_tables(connection, kinds) 在独立事务中注销一批工具 kind，只迁移登记并解除发号成员关系，不删物理表、不回退计数。返回 retired（kind/table/retired_at）、already_retired、not_registered。retired_tables(connection) 只读返回 kind -> {definition, retired_at}；table_specs 仍仅含活动项。退役 kind 保留历史、不能复用，普通恢复涉及退役项时整批停止；依赖处理和保留外键的影响见[注销托管](../../../docs/build-with-layerweave/03-managed-tables.md#注销托管)。
 
 ## 发号与自定义身份
 

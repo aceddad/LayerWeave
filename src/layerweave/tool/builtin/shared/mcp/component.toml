@@ -1,5 +1,5 @@
 name = "layerweave.mcp"
 kind = "tool"
-version = "0.1.4"
+version = "0.1.5"
 description = "可选 MCP 接入、统一命令目录与 direct/routed 暴露"
-changes = "对外工具说明兼容根级 Schema 限制，服务端保留完整校验；query 模式错误明确反馈；帮助支持多词搜索排序。"
+changes = "工具表 BLOB 结果、历史与冲突以 Base64 返回；分页和异常回复保持可 JSON 序列化。"

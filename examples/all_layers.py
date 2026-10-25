@@ -1,10 +1,10 @@
-"""在 src 目录运行：python -X utf8 -B examples/all_layers.py。
+"""从项目根运行：python -X utf8 -B examples/all_layers.py。
 
-展示六类封装的创建、装载与关联。资源地址仅作示意，不读取资源。
+展示各类封装的创建、装载与关联。资源地址仅作示意，不读取资源。
 示例直接使用 Python 类，不加载配置或执行配置中的检查。
 """
 
-from layerweave.models import TextLayer, Text, ImageLayer, Image, AudioLayer, Audio, MovieLayer, Movie, ModelLayer, Model, ActiveLayer, Active
+from layerweave.models import TextLayer, Text, ImageLayer, Image, AudioLayer, Audio, MovieLayer, Movie, ModelLayer, Model, ActiveLayer, Active, DataLayer, Data
 
 
 def create_example():
@@ -50,6 +50,11 @@ def create_example():
     action = layers[-1].objects[0]
     action.bind.append({"target_kind": "object", "target_project_id": 1,
                         "target_id": model.id, "tips": "作用于这个模型"})
+
+    data_layer = DataLayer(id=13, name="制作参数", father=root.id)
+    data_layer.objects.append(Data(id=14, layer=data_layer.id, begin=0, end=5,
+                                   information={"data": {"palette": ["blue", "gold"], "draft": True}}))
+    layers.append(data_layer)
 
     return [layer.return_self() for layer in layers]
 

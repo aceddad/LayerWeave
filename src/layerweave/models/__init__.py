@@ -3,8 +3,8 @@
 from importlib import import_module
 
 
-_LAYERS = {"Layer", "TextLayer", "ImageLayer", "AudioLayer", "MovieLayer", "ModelLayer", "ActiveLayer"}
-_OBJECTS = {"Object", "Text", "Title", "Image", "Audio", "Movie", "Model", "Active"}
+_LAYERS = {"Layer", "TextLayer", "DataLayer", "ImageLayer", "AudioLayer", "MovieLayer", "ModelLayer", "ActiveLayer"}
+_OBJECTS = {"Object", "Text", "Title", "Data", "Image", "Audio", "Movie", "Model", "Active"}
 __all__ = sorted(_LAYERS | _OBJECTS)
 
 

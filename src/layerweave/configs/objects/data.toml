@@ -1,0 +1,27 @@
+# 通用数据对象；直接继承 Object，不继承文本字段约定。
+[object]
+type    = "data"
+version = 1
+name    = "通用数据对象"
+class   = "layerweave.models.objects.data:Data"
+extends = "base.toml"
+when    = "保存结构化声明、参数、列表或其他可用 JSON 表示的数据"
+note    = "information 外层仍为字典，data 承载内容；不自动解析文件格式、解释协议或执行代码"
+open    = true
+
+[object.information]
+data = { type = "dict | list | str | int | float | bool | None", note = "JSON 对象、数组、字符串、有限数字、布尔值或 null，可嵌套组合；字典键为字符串。空值 null 是合法内容，漏填 data 按现有诊断设置报告" }
+
+[object.constraint]
+duration = "any"
+
+[object.display]
+visibility = true
+
+# 假设已有数据层；help 保存示例使用调用方的真实 layer_id。
+[object.example]
+name        = "角色资料"
+layer       = 1
+begin       = 1.0
+end         = 1.0
+information = { data = { name = "角色甲", tags = ["主角"], enabled = true } }

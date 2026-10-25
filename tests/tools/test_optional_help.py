@@ -184,7 +184,7 @@ information={text="你好",speaker="A"}
     def test_both_help_save_examples_execute_with_real_context(self):
         self.derive("XModel", "model")
         for audience in ("usage", "developer"):
-            for kind in ("base", "text", "image", "audio", "movie", "model", "active"):
+            for kind in ("base", "text", "data", "image", "audio", "movie", "model", "active"):
                 item = self.query("layers", f"layers/{kind}.toml", audience=audience)["items"][0]
                 scope = {"connection": self.c, "project_id": self.project}
                 exec(item["save_example"]["code"], scope)

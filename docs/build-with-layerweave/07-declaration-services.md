@@ -17,7 +17,7 @@
    └─ 检索结果 v2（协议对象）
 ```
 
-这里的“事件对象”“处理器对象”“协议对象”是业务角色，不是已提供的 Python 类型。可以先使用现有层/对象保存 information；需要专用封装时仍遵守一份 Python 类对应一份 TOML 的方式。无需时间含义的条目可以采用[序号位置](02-ordered-metadata.md#用序号组织条目)。
+这里的“事件对象”“处理器对象”“协议对象”是业务角色，不是已提供的 Python 类型。可以使用 DataLayer 与 Data，在 information.data 中保存声明；[通用数据封装](../../src/layerweave/configs/objects/README.md#通用数据-data)支持 JSON 对象、列表及标量。需要专用封装时仍遵守一份 Python 类对应一份 TOML 的方式。无需时间含义的条目可以采用[序号位置](02-ordered-metadata.md#用序号组织条目)。
 
 | 声明 | 对象可以记录的内容 | 常见查询 |
 |---|---|---|
@@ -50,6 +50,83 @@ bindings = read_bindings(
 ```
 
 这返回直接关联，不触发钩子，也不自动装载目标。需要沿关联多步查看时使用现有 walk_relations；参数见[关联展开](../../src/layerweave/tool/builtin/usage/GUIDE.md#沿关联展开)。查询关系与执行动作分别由相应工具处理。
+
+## 具体示例：生命周期的两级流程与顺序
+
+当一个 Hook 下有多组流程、每个流程又有多个步骤时，可以将“流程目录”与“代码声明”分层。以小说应用的发送前处理为例，下列各层可使用 DataLayer，条目使用 Data：
+
+```text
+声明登记 project（根层设置序号轴，precision=1）
+├─ 协议目录
+│  └─ handler v1 对象
+└─ 发送开始 Hook
+   ├─ codelist
+   │  ├─ tips 对象 → 引用 tips 流程层
+   │  └─ aliases 对象 → 引用 aliases 流程层
+   └─ codeinformation
+      ├─ tips 流程层
+      │  ├─ load_tags 对象
+      │  └─ prepare_materials 对象
+      └─ aliases 流程层
+         └─ replace_names 对象
+```
+
+codelist 中的 tips 对象与 tips 流程层是不同记录：对象决定外层调用顺序，层容纳内部代码声明。名字用于显示，身份引用采用 project_id 与实体编号。宿主用稳定身份或自己的稳定键定位 Hook；“发送开始”等阶段及其推进方式由宿主定义，不是内核预置事件。
+
+下面只展示两个对象的 information；编号为示意，实际从保存结果取得。字段属于此用法的业务约定：
+
+```json
+{
+  "data": {
+    "target_layer": {"project_id": 1, "layer_id": 41},
+    "enabled": true
+  }
+}
+```
+
+```json
+{
+  "data": {
+    "implementation": {"kind": "python", "entrypoint": "example_hooks.tips:load_tags"},
+    "protocol_ref": {"project_id": 1, "object_id": 20},
+    "config": {},
+    "enabled": true
+  }
+}
+```
+
+第一份是流程目录条目；第二份是代码声明，entrypoint 仅为示意。使用方核对 target_layer 属于当前 Hook 的 codeinformation，并按 protocol_ref 查到完整协议。object.config_ref 仍为 objects/data.toml 或专用封装 TOML，业务入口不替代它。登记项目与本次运行的业务项目分别传递，避免把业务写入声明项目。
+
+### 用 bind 表达单链，用位置保存排序结果
+
+当工具需要明确前后继，又希望普通对象查询直接返回执行顺序时，可以采用以下约定；简单列表也可以仅由工具维护位置，无需建立单链。
+
+```text
+codelist 层 → tips 对象 → aliases 对象
+tips 流程层 → load_tags 对象 → prepare_materials 对象
+```
+
+容器的出向 bind 指向链头；每个对象的出向 bind 指向下一项，末项没有后继。每个容器维护自己的链。此示例将容器和排序节点的出向 bind 专用于 head/next，流程目标和协议引用则放在 information.data 中；若需要混合其他出向关系，使用方必须增加明确的用途区分，例如自己的关系表，不能用 tips 文本猜测。
+
+修改工具在同一个写事务中维护关系和排序结果：
+
+1. 读取当前容器的直属对象及链关系，创建、删除或重连所需记录。
+2. 检查空列表没有链头；非空列表只有一个链头。后继必须是同项目、同容器内的对象，每项最多一个后继。
+3. 从链头遍历，检查无重复访问，并且恰好覆盖全部直属对象；这同时排除成环、分叉和孤立节点。
+4. 按遍历结果将 begin=end 设为 1、2、3……，仅更新位置发生变化的对象。
+5. 成功后一起提交对象、关系、序号和日志；检查失败抛出异常，整批回滚。
+
+bind 是这里的顺序依据，begin/end 是持久保存的派生结果。正常编辑路径始终同时维护两者；禁用项保留位置，执行时跳过。LayerWeave 的 father 无环检查不检查 bind 链；提交后的可选内容检测也不能替代这项事务内检查。实现复用[统一写会话](04-composing-tools.md)，不在事务中等待模型请求或执行外部代码。
+
+正常读取使用 query_objects(connection, project_id, layer_id=...)，指定层后按 begin/end/id 排列，不必重新沿链排序。在 tips 内修改步骤只重整 tips 列表；调整流程顺序才重整 codelist。已读出并建立索引的 n 项链，遍历与序号计算为 O(n)，最坏更新 n 条位置，不能把整次修改称为 O(1)。
+
+### 运行与引用维护
+
+注册器可以封装“新建流程”“追加至某个流程层”“中间插入”等操作；这些是使用方接口。执行器在阶段到达时读取启用项、解析入口并按协议调用；例如由应用规定 handle(ctx, api) 返回 patch/control，校验通过后再应用结果。LayerWeave 保存声明，不负责提供这个调用外壳、代码权限或后台任务执行。
+
+运行开始时取得声明快照，配置变化作用于后续运行；需要多次查询取得一致数据时使用 read_snapshot。运行产物保存在业务数据中，避免写回共享的代码声明。协议可以存输入输出结构或指向已有 Schema；一份正式定义保持明确来源，文件默认值与数据库生效配置不要各自手工更新。
+
+复制、导入、恢复或直接改写后，使用方重新确认链与序号一致。bind 的常规复制能力不会解释 information.data.target_layer、protocol_ref 等 JSON 内部业务引用，配套工具需要明确转换并检查目标；删除流程内容也要先处理其引用。历史记录保留数据与标准关系，外部 Python 代码版本需由使用方另行保存。完整运行器、注册器与链维护工具均不由这个示例自动提供。
 
 ## 协议管理统一的是查找入口
 

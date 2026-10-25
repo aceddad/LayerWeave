@@ -229,14 +229,14 @@ class IOTests(unittest.TestCase):
         self.assertTrue(result["ok"], result)
         self.assertIsInstance(load_object(self.connection, self.project_id, obj.id, config_root=self.configs), Dialogue)
 
-    def test_all_six_types_survive_database_reopen_and_full_cli_read(self):
+    def test_all_builtin_types_survive_database_reopen_and_full_cli_read(self):
         from layerweave import models
         path = self.root / "round-trip.sqlite3"
         initialize_database(path)
         with closing(open_database(path)) as connection:
             project_id = dispatch(connection, {"action": "create", "kind": "project", "data": {}})["id"]
             ids = []
-            for prefix in ("Text", "Image", "Audio", "Movie", "Model", "Active"):
+            for prefix in ("Text", "Data", "Image", "Audio", "Movie", "Model", "Active"):
                 layer = getattr(models, prefix + "Layer")(name=prefix)
                 result = save_layer_with_checks(connection, project_id, layer)
                 self.assertTrue(result["ok"], result)

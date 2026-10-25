@@ -2,13 +2,13 @@
 
 [返回配置入口](../README.md)。
 
-基础约定与六种封装放在这里，可按需继续分子目录。对应 Python 类在 src/layerweave/models/layers/，读取与继承见 [配置说明](../../support/configuration/README.md)。
+基础约定与通用封装放在这里，可按需继续分子目录。对应 Python 类在 src/layerweave/models/layers/，读取与继承见 [配置说明](../../support/configuration/README.md)。
 
 每份封装明确声明自己的 type 与 class，一个类只绑定一份配置。type 字符串只在 TOML 定义，由保存接口写入层记录，Python 层类不重复声明。
 
 base.toml 说明字段、返回方法、固定规则、默认取值和可调选项。默认 overlap=true、visibility=true；具体封装的显式 constraint/display 成为固定父约定。axis_only_on_root 是明确可调选项，默认 true，根层不必填写轴。
 
-层的 objects 按对象配置 type 唯一定位，接受该类型及其派生配置。六种内置层分别为 text、image、audio、movie、model、active。
+层的 objects 按对象配置 type 唯一定位，接受该类型及其派生配置。内置层包括 text、data、image、audio、movie、model、active；data 用于[通用 JSON 数据](../objects/README.md#通用数据-data)。
 
 工具包也可以在这里登记自己的层类型：配置照常放在本目录，class 指向工具包里的类，并用 `requires = "工具包模块"` 写明依赖。这样 AI 和工具按类型就能找到它，配置帮助也会列出；卸掉那个工具包后，配置仍说明数据的样子、检测照常，只是不能还原成实例。现有的例子是视图工具的批注层 note.toml（装 objects/note.toml 的批注对象），约定见[视图工具](../../tool/builtin/view/DEVELOPMENT.md#批注层用一个层当有序列表)。完整步骤见[工具包登记类型](../../tool/builtin/developer/TOOL_TYPES.md)。
 
@@ -36,6 +36,6 @@ tools = [
 
 tier 和 when 都是原样展示的说明，不是枚举限制、开关或检测条件。route 不由本程序拼接、解析、检查存在性或执行。项目内文件路径应写清相对位置，外置引用由 AI 所在环境解释。
 
-当前文字、图片、音频、视频、动作层已填写技能引用，基础层和模型层仍以 tools=[] 留位。实际技能清单以各层 TOML 和配置 help 为准；引用只帮助 AI 查阅，不表示自动执行或已安装技能所需依赖。配置 help 会在总览和详情展示这些引用；具体输出位置见[配置 help](../../tool/builtin/shared/help/CONFIG_HELP.md)。这项声明不新增约束，也不改变现有字段的检查。
+当前文字、图片、音频、视频、动作层已填写技能引用，基础层、数据层和模型层仍以 tools=[] 留位。实际技能清单以各层 TOML 和配置 help 为准；引用只帮助 AI 查阅，不表示自动执行或已安装技能所需依赖。配置 help 会在总览和详情展示这些引用；具体输出位置见[配置 help](../../tool/builtin/shared/help/CONFIG_HELP.md)。这项声明不新增约束，也不改变现有字段的检查。
 
 仓库内的技能存放方式、实际示例与绑定写法见[外置工具](../../tool/README.md)。已有外置 skill 也可以直接填写它的引用位置。
